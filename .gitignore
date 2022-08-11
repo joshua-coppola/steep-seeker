@@ -1,2 +1,5 @@
 #ignore all CPython files
 *.pyc
+
+#ignore all files in OSM folder
+osm/

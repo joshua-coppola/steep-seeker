@@ -9,16 +9,16 @@ layout = html.Div(children=[
         "Select a city: ",
         dcc.RadioItems(['New York City', 'Montreal', 'San Francisco'],
                        'Montreal',
-                       id='analytics-input')
+                       id='test-input')
     ]),
     html.Br(),
-    html.Div(id='analytics-output'),
+    html.Div(id='test-output'),
 ])
 
 
 @callback(
-    Output(component_id='analytics-output', component_property='children'),
-    Input(component_id='analytics-input', component_property='value')
+    Output(component_id='test-output', component_property='children'),
+    Input(component_id='test-input', component_property='value')
 )
 def update_city_selected(input_value):
     if input_value == 'San Francisco':
