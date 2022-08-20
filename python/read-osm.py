@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 from os.path import exists
+from decimal import Decimal
 
 
 def read_osm(filename):
@@ -13,26 +14,46 @@ def read_osm(filename):
     file = open(f'data/{filename}', 'r', encoding='utf8')
     lines = file.readlines()
 
+    nodes = {}
+    in_way = False
+    ways = []
+
+    # reads through the file one line at a time
     for line in lines:
-        node_id = None
-        node_lat = None
-        node_lon = None
         parsed = read_xml_string(line)
+
         if len(parsed) == 0:
+            if ' </way>' in line:
+                in_way = False
             continue
-        if 'node' == parsed['type']:
+
+        # node processing -- nodes always appear before anything else in an OSM file
+        if 'node' == parsed['class']:
             try:
-                node_id = parsed['id']
-                node_lat = parsed['lat']
-                node_lon = parsed['lon']
+                parsed['lat'] = Decimal(parsed['lat'])
+                parsed['lon'] = Decimal(parsed['lon'])
+                nodes[parsed['id']] = {key: parsed[key]
+                                       for key in ['lat', 'lon']}
             except:
-                continue
-        if 'way' == parsed['type']:
-            print(parsed)
-        if 'nd' == parsed['type']:
-            print(parsed)
-        if 'tag' == parsed['type']:
-            print(parsed)
+                print(f'Malformed node: {line}')
+
+        # way processing -- converts list of node ids into coordinates
+        if 'way' == parsed['class']:
+            in_way = True
+            ways.append({'id': parsed['id'], 'nodes': [], 'tags': []})
+        if in_way:
+            # nd = node reference
+            if 'nd' == parsed['class']:
+                # find the latitude and longitude from the nodes dict
+                if parsed['ref'] in nodes:
+                    ways[-1]['nodes'].append(nodes[parsed['ref']])
+                else:
+                    print('Malformed node reference: {} not found'.format(
+                        parsed['ref']))
+            # creates list of tags for later use
+            if 'tag' == parsed['class']:
+                ways[-1]['tags'].append({'k': parsed['k'], 'v': parsed['v']})
+    return ways
 
 
 def read_xml_string(string):
@@ -42,10 +63,10 @@ def read_xml_string(string):
         # skips every other word
         if not '=' in word:
             continue
-        # sets up the 'type' header
+        # sets up the 'class' header to identify the type of object
         if i == 0:
             split_word = word.split()
-            output['type'] = re.sub(
+            output['class'] = re.sub(
                 r'[^A-Za-z0-9.\- ]+', ' ', split_word[0]).strip()
             word = split_word[1]
         # adds values & removes weird characters
@@ -53,6 +74,3 @@ def read_xml_string(string):
                ] = re.sub(r'[^A-Za-z0-9.\- ]+', ' ', words[i+1]).strip()
     # returns dict
     return output
-
-
-read_osm('Okemo.osm')
