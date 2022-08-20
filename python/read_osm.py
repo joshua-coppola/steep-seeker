@@ -3,6 +3,8 @@ import re
 from os.path import exists
 from decimal import Decimal
 
+import create_trails
+
 
 def read_osm(filename):
     # Check if file exists
@@ -52,7 +54,8 @@ def read_osm(filename):
                         parsed['ref']))
             # creates list of tags for later use
             if 'tag' == parsed['class']:
-                ways[-1]['tags'].append({'k': parsed['k'], 'v': parsed['v']})
+                ways[-1]['tags'].append({parsed['k']: parsed['v']})
+    create_trails.process_trails(ways)
     return ways
 
 
@@ -74,3 +77,6 @@ def read_xml_string(string):
                ] = re.sub(r'[^A-Za-z0-9.\- ]+', ' ', words[i+1]).strip()
     # returns dict
     return output
+
+
+read_osm('Okemo.osm')
