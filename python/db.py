@@ -26,6 +26,8 @@ def add_trails(cur, mountain_id, trails, lifts):
         for i, node in enumerate(lift['nodes']):
             cur.execute('INSERT INTO LiftPoints (ind, lift_id, lat, lon) \
                 VALUES ({}, {}, "{}", "{}")'.format(i, lift['id'], node['lat'], node['lon']))
+
+    # calculate elevation and slope for each point
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
 
@@ -34,6 +36,25 @@ def add_trails(cur, mountain_id, trails, lifts):
     for row in slope_nodes:
         cur.execute(
             f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+
+    # calculate trail pitch
+    trails_to_be_rated = cur.execute(
+        'SELECT trail_id FROM Trails WHERE steepest_50m IS NULL').fetchall()
+
+    for trail_id in trails_to_be_rated:
+        nodes = cur.execute(
+            'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ?', (trail_id)).fetchall()
+
+        pitch_50 = misc.get_steep_pitch(nodes, 50)
+        pitch_100 = misc.get_steep_pitch(nodes, 100)
+        pitch_200 = misc.get_steep_pitch(nodes, 200)
+        pitch_500 = misc.get_steep_pitch(nodes, 500)
+        pitch_1000 = misc.get_steep_pitch(nodes, 1000)
+
+        cur.execute(f'UPDATE Trails SET steepest_50m = {pitch_50}, \
+            steepest_100m = "{pitch_100}", steepest_200m = "{pitch_200}", \
+            steepest_500m = "{pitch_500}", steepest_1000m = "{pitch_1000}" \
+            WHERE trail_id = ?', (trail_id))
 
 
 # need to automate state, direction
@@ -74,15 +95,6 @@ def add_resort(name, state, direction):
 db = sqlite3.connect('data/db.db')
 
 cur = db.cursor()
-
-print('running lifts')
-all_incomplete_nodes = cur.execute(
-    'SELECT lat, lon FROM LiftPoints WHERE elevation IS NULL').fetchall()
-
-elevation_values = misc.get_elevation(all_incomplete_nodes)
-for row in elevation_values:
-    cur.execute(
-        f'UPDATE LiftPoints SET elevation = {row[2]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
 
 db.commit()
 db.close()

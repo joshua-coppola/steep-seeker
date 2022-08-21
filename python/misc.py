@@ -133,11 +133,67 @@ def get_slope(nodes):
         if elevation_change != 0:
             slope = degrees(atan(elevation_change / dist))
             nodes[i] = (nodes[i][0], nodes[i][1], nodes[i][2], slope)
+        else:
+            nodes[i] = (nodes[i][0], nodes[i][1], nodes[i][2], 0)
 
-    # fix weird edge cases where slope is not filled in
-    for i, point in enumerate(nodes):
-        if len(point) != 4:
-            for row in nodes:
-                if point[0] in row and point[1] in row and len(row) != 3:
-                    nodes[i] = (point[0], point[1], point[2], row[3])
     return nodes
+
+
+def trail_length(nodes):
+    previous_point = None
+    cumulative_dist = 0
+
+    for i, point in enumerate(nodes):
+        if i == 0:
+            previous_point = point
+            continue
+    dist = hs.haversine((previous_point[0], previous_point[1]), (
+        point[0], point[1]), unit=hs.Unit.METERS)
+    cumulative_dist += dist
+    previous_point = point
+
+    return cumulative_dist
+
+
+def get_steep_pitch(nodes, length):
+    previous_point = None
+    max_pitch = -90
+
+    for loc, node in enumerate(nodes):
+        i = loc + 1
+        cumulative_dist = 0
+        while i < len(nodes):
+            point = nodes[i]
+            previous_point = nodes[i-1]
+            i += 1
+            if i == 1:
+                continue
+            dist = hs.haversine((previous_point[0], previous_point[1]), (
+                point[0], point[1]), unit=hs.Unit.METERS)
+            cumulative_dist += dist
+            previous_point = point
+
+            if cumulative_dist >= length:
+                elevation_change = nodes[loc][2] - point[2]
+                slope = None
+                if elevation_change != 0:
+                    slope = degrees(atan(elevation_change / cumulative_dist))
+                else:
+                    slope = 0
+                if slope > max_pitch:
+                    max_pitch = slope
+                break
+
+    if max_pitch == -90:
+        # find pitch of whole trail if the length desired is short anyway
+        if length <= 50:
+            elevation_change = nodes[-1][2] - nodes[0][2]
+            if elevation_change != 0:
+                max_pitch = degrees(
+                    atan(elevation_change / trail_length(nodes)))
+            else:
+                max_pitch = 0
+            print(max_pitch)
+        else:
+            return 'NULL'
+    return max_pitch
