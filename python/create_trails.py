@@ -1,6 +1,10 @@
+from collections import Counter
+
+
 def process_trails(ways):
-    trails = 0
-    lifts = 0
+    print('running')
+    trails = []
+    lifts = []
     for unprocessed_way in ways:
         way = {
             'id': unprocessed_way['id'],
@@ -8,8 +12,8 @@ def process_trails(ways):
             'official_rating': None,
             'gladed': None,
             'area': None,
-            'type': None
-            # 'nodes': unprocessed_way['nodes']
+            'type': None,
+            'nodes': unprocessed_way['nodes']
         }
         for tag in unprocessed_way['tags']:
             # name
@@ -75,9 +79,34 @@ def process_trails(ways):
                     way['gladed'] = True
                     print('Way #{} ({}) was found to be a glade through its name. Please double check & add the necessary tags.'.format(
                         way['id'], way['name']))
+
         if way['type'] != None:
+            if way['name'] == None or way['name'] == '':
+                way['name'] = ''
+                print(
+                    'Way #{} has no name. Please add a name.'.format(way['id']))
             if way['type'] == 'trail':
-                trails += 1
+                if way['gladed'] == None:
+                    way['gladed'] = False
+                if way['area'] == None:
+                    way['area'] = False
+                trails.append({key: way[key] for key in [
+                    'id', 'name', 'official_rating', 'gladed', 'area', 'nodes']})
             if way['type'] == 'lift':
-                lifts += 1
-    print((trails, lifts))
+                lifts.append({key: way[key]
+                             for key in ['id', 'name', 'nodes']})
+
+    counts = Counter([trail['name'] for trail in trails])
+    multiples = set()
+    for trail in trails:
+        if counts[trail['name']] > 1:
+            multiples.add((trail['name'], counts[trail['name']]))
+    if len(multiples) > 0:
+        print('The following trails have X number of ways named the same. Please see if they all make sense.')
+        for item in multiples:
+            print(item)
+            for trail in trails:
+                if trail['name'] == item[0]:
+                    print(trail['id'])
+
+    return (trails, lifts)

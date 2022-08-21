@@ -1,4 +1,3 @@
-import pandas as pd
 import re
 from os.path import exists
 from decimal import Decimal
@@ -55,8 +54,8 @@ def read_osm(filename):
             # creates list of tags for later use
             if 'tag' == parsed['class']:
                 ways[-1]['tags'].append({parsed['k']: parsed['v']})
-    create_trails.process_trails(ways)
-    return ways
+    trails, lifts = create_trails.process_trails(ways)
+    return (trails, lifts)
 
 
 def read_xml_string(string):
@@ -70,13 +69,10 @@ def read_xml_string(string):
         if i == 0:
             split_word = word.split()
             output['class'] = re.sub(
-                r'[^A-Za-z0-9.\- ]+', ' ', split_word[0]).strip()
+                r"[^'A-Za-z0-9.\- ]+", ' ', split_word[0]).strip()
             word = split_word[1]
         # adds values & removes weird characters
-        output[re.sub(r'[^A-Za-z0-9.\- ]+', ' ', word).strip()
-               ] = re.sub(r'[^A-Za-z0-9.\- ]+', ' ', words[i+1]).strip()
+        output[re.sub(r"[^'A-Za-z0-9.\- ]+", ' ', word).strip()
+               ] = re.sub(r"[^'A-Za-z0-9.\- ]+", ' ', words[i+1]).strip()
     # returns dict
     return output
-
-
-read_osm('Okemo.osm')
