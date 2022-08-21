@@ -193,7 +193,17 @@ def get_steep_pitch(nodes, length):
                     atan(elevation_change / trail_length(nodes)))
             else:
                 max_pitch = 0
-            print(max_pitch)
         else:
             return 'NULL'
     return max_pitch
+
+
+def get_vert(nodes):
+    max_ele = 0
+    min_ele = 10000
+    for point in nodes:
+        if point[2] > max_ele:
+            max_ele = point[2]
+        if point[2] < min_ele:
+            min_ele = point[2]
+    return max_ele - min_ele

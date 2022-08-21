@@ -37,7 +37,7 @@ def add_trails(cur, mountain_id, trails, lifts):
         cur.execute(
             f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
 
-    # calculate trail pitch
+    # calculate trail pitch, vert, and length
     trails_to_be_rated = cur.execute(
         'SELECT trail_id FROM Trails WHERE steepest_50m IS NULL').fetchall()
 
@@ -50,11 +50,13 @@ def add_trails(cur, mountain_id, trails, lifts):
         pitch_200 = misc.get_steep_pitch(nodes, 200)
         pitch_500 = misc.get_steep_pitch(nodes, 500)
         pitch_1000 = misc.get_steep_pitch(nodes, 1000)
+        vert = misc.get_vert(nodes)
+        length = misc.trail_length(nodes)
 
         cur.execute(f'UPDATE Trails SET steepest_50m = {pitch_50}, \
             steepest_100m = "{pitch_100}", steepest_200m = "{pitch_200}", \
-            steepest_500m = "{pitch_500}", steepest_1000m = "{pitch_1000}" \
-            WHERE trail_id = ?', (trail_id))
+            steepest_500m = "{pitch_500}", steepest_1000m = "{pitch_1000}", \
+            vertical_drop = {vert}, length = {length} WHERE trail_id = ?', (trail_id))
 
 
 # need to automate state, direction
@@ -96,5 +98,5 @@ db = sqlite3.connect('data/db.db')
 
 cur = db.cursor()
 
-db.commit()
+# db.commit()
 db.close()
