@@ -87,6 +87,18 @@ def add_resort(name, state, direction):
 
     add_trails(cur, mountain_id, trails, lifts)
 
+    elevations = cur.execute(
+        f'SELECT elevation FROM TrailPoints NATURAL JOIN \
+        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
+
+    trail_slopes = cur.execute(
+        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_50m DESC').fetchall()
+    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
+
+    cur.execute(
+        f'UPDATE Mountains SET vertical = {misc.get_vert(elevations)}, difficulty = {difficulty}, \
+            beginner_friendliness = {beginner_friendliness} WHERE mountain_id = {mountain_id}')
+
     db.commit()
     db.close()
     # TO DO: add logic
@@ -97,6 +109,9 @@ def add_resort(name, state, direction):
 db = sqlite3.connect('data/db.db')
 
 cur = db.cursor()
+
+mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
+                          ('Okemo', 'VT',),).fetchone()[0]
 
 # db.commit()
 db.close()
