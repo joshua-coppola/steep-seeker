@@ -103,15 +103,15 @@ def add_resort(name, state, direction):
     db.close()
     # TO DO: add logic
 
+reset_db()
+add_resort('Okemo', 'VT', 'w')
 
-#add_resort('Okemo', 'VT', 'w')
+#db = sqlite3.connect('data/db.db')
 
-db = sqlite3.connect('data/db.db')
+#cur = db.cursor()
 
-cur = db.cursor()
-
-mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
-                          ('Okemo', 'VT',),).fetchone()[0]
+#mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
+#                          ('Okemo', 'VT',),).fetchone()[0]
 
 # db.commit()
-db.close()
+#db.close()

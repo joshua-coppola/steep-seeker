@@ -222,3 +222,23 @@ def mountain_rating(nodes):
     beginner_friendliness = ((sum(nodes[-divisor:])/divisor)
                              * .2) + ((sum(nodes[-5:])/5) * .8)
     return(difficulty, beginner_friendliness)
+
+
+def trail_color(pitch, gladed):
+    if gladed == 'True':
+        pitch += 7
+    # 0-17 degrees: green
+    if pitch < 17:
+        return 'green'
+    # 17-24 degrees: blue
+    if pitch < 24.2:
+        return 'royalblue'
+    # 24-30 degrees: black
+    if pitch < 30:
+        return 'black'
+    # 30-45 degrees: red
+    elif pitch < 45:
+        return 'red'
+    # >45 degrees: yellow
+    else:
+        return 'gold'

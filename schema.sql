@@ -55,8 +55,8 @@ CREATE TABLE "TrailPoints"
   "ind" INTEGER NOT NULL,
   "trail_id" INTEGER NOT NULL,
   "for_display" INTEGER NOT NULL,
-  "lat" DECIMAL(11,8) NOT NULL,
-  "lon" DECIMAL(11,8) NOT NULL,
+  "lat" DECIMAL(9,6) NOT NULL,
+  "lon" DECIMAL(9,6) NOT NULL,
   "elevation" REAL,
   "slope" REAL,
   PRIMARY KEY("ind","trail_id", "for_display"),
@@ -70,8 +70,8 @@ CREATE TABLE "LiftPoints"
 (
   "ind" INTEGER NOT NULL,
   "lift_id" INTEGER NOT NULL,
-  "lat" DECIMAL(11,8) NOT NULL,
-  "lon" DECIMAL(11,8) NOT NULL,
+  "lat" DECIMAL(9,6) NOT NULL,
+  "lon" DECIMAL(9,6) NOT NULL,
   "elevation" REAL,
   PRIMARY KEY("ind","lift_id"),
   FOREIGN KEY("lift_id") REFERENCES "Lifts"("lift_id") ON DELETE CASCADE
