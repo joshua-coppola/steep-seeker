@@ -7,12 +7,12 @@ import create_trails
 
 def read_osm(filename):
     # Check if file exists
-    if not exists(f'data/{filename}'):
+    if not exists(f'data/osm/{filename}'):
         print('No file found')
         return(None)
 
     # Open file & read each line into an array
-    file = open(f'data/{filename}', 'r', encoding='utf8')
+    file = open(f'data/osm/{filename}', 'r', encoding='utf8')
     lines = file.readlines()
 
     nodes = {}

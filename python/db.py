@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 import misc
 import read_osm
@@ -59,8 +60,13 @@ def add_trails(cur, mountain_id, trails, lifts):
             vertical_drop = {vert}, length = {length} WHERE trail_id = ?', (trail_id))
 
 
-# need to automate state, direction
-def add_resort(name, state, direction):
+# need to automate direction
+def add_resort(name, direction):
+    state = misc.find_state(f'{name}.osm')
+
+    if state == None:
+        return None
+
     db = sqlite3.connect('data/db.db')
 
     cur = db.cursor()
@@ -77,6 +83,13 @@ def add_resort(name, state, direction):
     region = misc.assign_region(state)
     trail_count = len(trails)
     lift_count = len(lifts)
+
+    if trail_count == 0:
+        print('No trails found, exiting')
+        db.close()
+
+    # move file once processed into the right folder for the state
+    os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
 
     cur.execute(f'INSERT INTO Mountains (name, state, region, direction, trail_count, lift_count) \
         VALUES ("{name}", "{state}", "{region}", "{direction}", {trail_count}, {lift_count})')
@@ -101,17 +114,17 @@ def add_resort(name, state, direction):
 
     db.commit()
     db.close()
-    # TO DO: add logic
 
-reset_db()
-add_resort('Okemo', 'VT', 'w')
+
+# reset_db()
+add_resort('Alyeska', 'e')
 
 #db = sqlite3.connect('data/db.db')
 
 #cur = db.cursor()
 
-#mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
+# mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
 #                          ('Okemo', 'VT',),).fetchone()[0]
 
 # db.commit()
-#db.close()
+# db.close()

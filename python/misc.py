@@ -4,6 +4,48 @@ import time
 from requests.api import get
 import json
 from math import degrees, atan
+from os.path import exists
+
+
+def find_state(filename: str):
+    # Check if file exists
+    if not exists(f'data/osm/{filename}'):
+        print('No file found')
+        return None
+
+    # Open file & read each line into an array
+    file = open(f'data/osm/{filename}', 'r', encoding='utf8')
+    lines = file.readlines()
+
+    if not '<bounds' in lines[2]:
+        print('Malformed OSM file. Line in question:')
+        print(lines[2])
+        return None
+    line = lines[2].split('"')
+    minlat = Decimal(line[1])
+    minlon = Decimal(line[3])
+    maxlat = Decimal(line[5])
+    maxlon = Decimal(line[7])
+
+    lat = (maxlat + minlat) / 2
+    lon = (maxlon + minlon) / 2
+
+    # Uses Open Street Maps Nominatim API to determine which state the resort is in
+    url = f'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={lat}&lon={lon}'
+
+    response = get(url)
+    if response.status_code == 200:
+        address = json.loads(response.content)['address']
+        if address['country_code'] != 'us':
+            print('Resort not located in United States. Unsupported region detected.')
+            return None
+        # if location is in USA, return state abbreviation
+        return address['ISO3166-2-lvl4'].split('-')[1]
+    else:
+        print('State API call failed with code:')
+        print(response.status_code)
+        print(response.content)
+        return None
 
 
 def assign_region(state: str):
