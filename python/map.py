@@ -3,6 +3,42 @@ import sqlite3
 import haversine as hs
 
 
+def create_legend(x, y, direction, font_size, legend_offset):
+    font_size = min(font_size, 8)
+
+    # rotate points to look correct
+    if 'n' in direction:
+        x *= -1
+        y *= -1
+    if 'e' in direction:
+        x *= -1
+    if 'w' in direction:
+        y *= -1
+    if 's' in direction or 'n' in direction:
+        temp = x
+        x = y
+        y = temp
+
+    # plot hidden lines with labels for legend creation
+    plt.plot(x, y, c='green', lw=0.001, label='Easy')
+    plt.plot(x, y, c='royalblue', lw=0.001, label='Intermediate')
+    plt.plot(x, y, c='black', lw=0.001, label='Advanced')
+    plt.plot(x, y, c='red', lw=0.001, label='Expert')
+    plt.plot(x, y, c='gold', lw=0.001, label='Extreme', )
+    plt.plot(x, y, c='black', lw=0.001, linestyle='dotted', label='Gladed')
+
+    # create the legend
+    leg = plt.legend(fontsize=font_size, loc='lower center', bbox_to_anchor=(
+        0.5, - legend_offset), frameon=False, ncol=3)
+
+    fig = plt.gcf()
+    # line width between .4 - 2
+    line_width = max(min(fig.get_size_inches()[0] / 3, 2), .4)
+
+    for row in leg.get_lines():
+        row.set_linewidth(line_width)
+
+
 def create_map(resort_name, state):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
@@ -67,6 +103,8 @@ def create_map(resort_name, state):
         rotate = 90
     plt.gcf().text(.1, .1, '\u25b2\n\u25c1 N \u25b7\n\u25bd',
                    ha='center', va='center', rotation=rotate, fontsize=font_size * .7)
+    create_legend(trail_extremes[0], trail_extremes[2],
+                  direction, font_size, bottom_loc)
 
     plt.show()
 
