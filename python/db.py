@@ -117,7 +117,7 @@ def add_resort(name, direction):
 
 
 # reset_db()
-add_resort('Alyeska', 'e')
+# add_resort('Alyeska', 'e')
 
 #db = sqlite3.connect('data/db.db')
 
