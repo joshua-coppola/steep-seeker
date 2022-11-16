@@ -270,10 +270,10 @@ def trail_color(pitch, gladed):
     if gladed == 'True':
         pitch += 7
     # 0-17 degrees: green
-    if pitch < 17:
+    if pitch < 15:
         return 'green'
     # 17-24 degrees: blue
-    if pitch < 24.2:
+    if pitch < 23:
         return 'royalblue'
     # 24-30 degrees: black
     if pitch < 30:

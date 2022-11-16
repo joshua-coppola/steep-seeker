@@ -59,6 +59,18 @@ def add_trails(cur, mountain_id, trails, lifts):
             steepest_500m = "{pitch_500}", steepest_1000m = "{pitch_1000}", \
             vertical_drop = {vert}, length = {length} WHERE trail_id = ?', (trail_id))
 
+    # calculate the length of lifts
+    lifts_to_be_computed = cur.execute(
+        'SELECT lift_id FROM Lifts WHERE length IS NULL').fetchall()
+
+    for lift_id in lifts_to_be_computed:
+        nodes = cur.execute(
+            'SELECT lat, lon FROM LiftPoints WHERE lift_id = ?', (lift_id)).fetchall()
+        length = misc.trail_length(nodes)
+
+        cur.execute(
+            f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
+
 
 # need to automate direction
 def add_resort(name, direction):
@@ -120,11 +132,9 @@ def add_resort(name, direction):
 # add_resort('Alyeska', 'e')
 
 #db = sqlite3.connect('data/db.db')
-
 #cur = db.cursor()
 
-# mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
-#                          ('Okemo', 'VT',),).fetchone()[0]
+#cur.execute('ALTER TABLE Lifts ADD COLUMN length REAL')
 
 # db.commit()
 # db.close()

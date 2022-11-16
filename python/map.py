@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
 import sqlite3
 import haversine as hs
+from math import degrees, atan2
+from os.path import exists
+from os import makedirs
+
+import misc
 
 
 def create_legend(x, y, direction, font_size, legend_offset):
@@ -39,7 +44,186 @@ def create_legend(x, y, direction, font_size, legend_offset):
         row.set_linewidth(line_width)
 
 
-def create_map(resort_name, state):
+def get_label_placement(x, y, length, name_length):
+    point_count = len(x)
+    average_point_gap = length / point_count
+    if average_point_gap == 0:
+        return (0, 0, 0)
+    letter_size = 10 / average_point_gap
+    label_length = average_point_gap * name_length * letter_size
+    label_length_in_points = int(label_length / average_point_gap)
+
+    # default answer is the middle of the trail
+    point = int(point_count / 2)
+    angle_list = []
+    valid_list = []
+
+    for i, _ in enumerate(x):
+        valid = False
+        if average_point_gap * i > label_length / 2.1:
+            if average_point_gap * (point_count - i) > label_length / 2:
+                valid = True
+        if i == 0:
+            ang = 0
+        else:
+            dx = x[i] - x[i-1]
+            dy = y[i] - y[i-1]
+            ang = degrees(atan2(dy, dx))
+        angle_list.append(ang)
+        valid_list.append(valid)
+
+    best_answer = (1, 10000)
+    for i, _ in enumerate(angle_list):
+        if valid_list[i]:
+            slice = angle_list[i - int(label_length_in_points / 2)
+                                       : i + int(label_length_in_points / 2)]
+            if len(slice) == 0:
+                continue
+            expected = sum(slice) / len(slice)
+            error = sum([abs(i - expected) for i in slice])
+            if error < best_answer[1]:
+                best_answer = (i, error)
+    if best_answer[1] != 0:
+        point = best_answer[0]
+    if point == 0:
+        dx = dy = 0
+    if point != 0:
+        try:
+            dx = x[point + int(label_length_in_points / 2)] - \
+                x[point - int(label_length_in_points / 2)]
+            dy = y[point + int(label_length_in_points / 2)] - \
+                y[point - int(label_length_in_points / 2)]
+        except:
+            return(0, 0, 0)
+    angle = degrees(atan2(dy, dx))
+    if angle < -90:
+        angle += 180
+    if angle > 90:
+        angle -= 180
+    return(point, angle, label_length)
+
+
+def populate_map(mountain_id, direction, with_labels=True):
+    # configure correct item rotation & scaling
+    lat_mirror = 1
+    lon_mirror = -1
+    flip_lat_lon = False
+    if 'e' in direction:
+        lat_mirror = -1
+        lon_mirror = 1
+    if 's' in direction:
+        lon_mirror = 1
+        flip_lat_lon = True
+    if 'n' in direction:
+        lat_mirror = -1
+        flip_lat_lon = True
+    if flip_lat_lon:
+        temp = lat_mirror
+        lat_mirror = lon_mirror
+        lon_mirror = temp
+        x_data = 'lon'
+        y_data = 'lat'
+    if not flip_lat_lon:
+        x_data = 'lat'
+        y_data = 'lon'
+
+    fig = plt.gcf()
+    # line width between .4 - 2
+    line_width = max(min(fig.get_size_inches()[0] / 3, 2), .4)
+
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+
+    # lifts
+    lift_list = cur.execute(
+        'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id)).fetchall()
+
+    # convert results to dict
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    lift_dict = [dict(zip(column_names, row)) for row in lift_list]
+
+    # for each lift
+    for lift in lift_dict:
+        x = cur.execute(
+            f"SELECT {x_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
+        y = cur.execute(
+            f"SELECT {y_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
+
+        # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
+        x = [i[0] * lat_mirror for i in x]
+        y = [j[0] * lon_mirror for j in y]
+
+        plt.plot(x, y, c='grey', lw=line_width)
+
+        if with_labels:
+            length = cur.execute(
+                f"SELECT length FROM Lifts WHERE lift_id = {lift['lift_id']}").fetchall()[0][0]
+            point, angle, label_length = get_label_placement(
+                x, y, length, len(lift['name']))
+            if point == 0 and angle == 0:
+                continue
+            # Check that label is shorter than trail
+            if label_length < length:
+                plt.text(x[point], y[point], lift['name'], {'color': 'grey', 'size': 2, 'rotation': angle}, ha='center',
+                         backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
+
+    # trails
+    trail_list = cur.execute(
+        'SELECT trail_id, name, area, gladed, steepest_50m FROM Trails WHERE mountain_id = ?', (mountain_id)).fetchall()
+
+    # convert results to dict
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    trail_dict = [dict(zip(column_names, row)) for row in trail_list]
+
+    # for each trail
+    for trail in trail_dict:
+        x = cur.execute(
+            f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
+        y = cur.execute(
+            f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
+
+        # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
+        x = [i[0] * lat_mirror for i in x]
+        y = [j[0] * lon_mirror for j in y]
+        color = misc.trail_color(trail['steepest_50m'], trail['gladed'])
+
+        # place lines
+        if trail['area'] == 'True':
+            if trail['gladed'] == 'True':
+                plt.fill(x, y, alpha=.1, fc=color)
+                plt.fill(x, y, ec=color, fc='none',
+                         linestyle='dashed', lw=line_width)
+            if trail['gladed'] == 'False':
+                plt.fill(x, y, alpha=.1, fc=color)
+                plt.fill(x, y, ec=color, fc='none', lw=line_width)
+        if trail['area'] == 'False':
+            if trail['gladed'] == 'True':
+                plt.plot(x, y, c=color, linestyle='dashed', lw=line_width)
+            if trail['gladed'] == 'False':
+                plt.plot(x, y, c=color, lw=line_width)
+
+        # add label names
+        if with_labels:
+            length = cur.execute(
+                f"SELECT length FROM Trails WHERE trail_id = {trail['trail_id']}").fetchall()[0][0]
+            label_text = '{} {:.1f}{}'.format(
+                trail['name'].strip(), trail['steepest_50m'], u'\N{DEGREE SIGN}')
+            point, angle, label_length = get_label_placement(
+                x, y, length, len(label_text))
+            if point == 0 and angle == 0:
+                continue
+            # Check that label is shorter than trail
+            if label_length < length:
+                # improves contrast
+                if color == 'gold':
+                    color = 'black'
+                plt.text(x[point], y[point], label_text, {'color': color, 'size': 2, 'rotation': angle}, ha='center',
+                         backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
+
+
+def create_map(resort_name, state, with_labels=True):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
@@ -64,6 +248,8 @@ def create_map(resort_name, state):
 
     direction = cur.execute(
         'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id)).fetchall()[0][0]
+
+    db.close()
 
     # rotate map to look correct
     if 's' in direction or 'n' in direction:
@@ -106,7 +292,12 @@ def create_map(resort_name, state):
     create_legend(trail_extremes[0], trail_extremes[2],
                   direction, font_size, bottom_loc)
 
-    plt.show()
+    populate_map(mountain_id, direction, with_labels)
+
+    # save map
+    if not exists(f'data/maps/{state}'):
+        makedirs(f'data/maps/{state}')
+    plt.savefig(f'data/maps/{state}/{resort_name}.svg', format='svg')
 
 
-create_map('Okemo', 'VT')
+create_map('Alyeska', 'AK')
