@@ -1,14 +1,16 @@
+import matplotlib.pyplot as plt
 from decimal import Decimal
 import haversine as hs
 import time
 from requests.api import get
 import json
-from math import degrees, atan
+from math import degrees, atan, atan2
 from os.path import exists
 
 
 def find_state(filename: str):
     # Check if file exists
+    print(filename)
     if not exists(f'data/osm/{filename}'):
         print('No file found')
         return None
@@ -17,11 +19,16 @@ def find_state(filename: str):
     file = open(f'data/osm/{filename}', 'r', encoding='utf8')
     lines = file.readlines()
 
-    if not '<bounds' in lines[2]:
-        print('Malformed OSM file. Line in question:')
-        print(lines[2])
+    loc = None
+    for line in lines:
+        if '<bounds' in line:
+            loc = line
+
+    if loc == None:
+        print('Malformed OSM file. No bounds defined.')
         return None
-    line = lines[2].split('"')
+
+    line = loc.split('"')
     minlat = Decimal(line[1])
     minlon = Decimal(line[3])
     maxlat = Decimal(line[5])
@@ -284,3 +291,113 @@ def trail_color(pitch, gladed):
     # >45 degrees: yellow
     else:
         return 'gold'
+
+
+def find_corrected_center(center_lat, center_lon, nodes, north_south):
+    if north_south:
+        # check lon
+        dist = []
+        for i, node in enumerate(nodes):
+            dist.append((abs(node[0] - center_lat), i))
+        dist = sorted(dist)
+        closest_index = [i[1] for i in dist[:6]]
+        closest_points = [nodes[j] for j in closest_index]
+    else:
+        # check lat
+        dist = []
+        for i, node in enumerate(nodes):
+            dist.append((abs(node[1] - center_lon), i))
+        dist = sorted(dist)
+        closest_index = [i[1] for i in dist[:6]]
+        closest_points = [nodes[j] for j in closest_index]
+
+    new_center_lat = sum([x[0] for x in closest_points]) / len(closest_points)
+    new_center_lon = sum([y[1] for y in closest_points]) / len(closest_points)
+
+    return (new_center_lat, new_center_lon)
+
+
+def process_area(nodes):
+    max_elevation = (0, 0)
+    min_elevation = (10000, 0)
+
+    for i, point in enumerate(nodes):
+        if point[2] > max_elevation[0]:
+            max_elevation = (point[2], i)
+        if point[2] < min_elevation[0]:
+            min_elevation = (point[2], i)
+    center_lat = sum([x[0] for x in nodes]) / len(nodes)
+    center_lon = sum([y[1] for y in nodes]) / len(nodes)
+
+    dx = nodes[max_elevation[1]][0] - nodes[min_elevation[1]][0]
+    dy = nodes[max_elevation[1]][1] - nodes[min_elevation[1]][1]
+
+    angle = degrees(atan2(dy, dx))
+    north_south = False
+    if abs(angle) < 45 or abs(angle) > 135:
+        north_south = True
+
+    new_center_lat, new_center_lon = find_corrected_center(
+        center_lat, center_lon, nodes, north_south)
+
+    sub_region1 = []
+    sub_region2 = []
+    for i, node in enumerate(nodes):
+        if north_south:
+            if node[0] > new_center_lat:
+                sub_region1.append(node)
+            else:
+                sub_region2.append(node)
+        if not north_south:
+            if node[1] > new_center_lon:
+                sub_region1.append(node)
+            else:
+                sub_region2.append(node)
+    center_lat_1 = sum([x[0] for x in sub_region1]) / len(sub_region1)
+    center_lon_1 = sum([y[1] for y in sub_region1]) / len(sub_region1)
+    center_lat_2 = sum([x[0] for x in sub_region2]) / len(sub_region2)
+    center_lon_2 = sum([y[1] for y in sub_region2]) / len(sub_region2)
+
+    plt.scatter(center_lat_1, center_lon_1)
+    plt.scatter(center_lat_2, center_lon_2)
+
+    new_center_lat_1, new_center_lon_1 = find_corrected_center(
+        center_lat_1, center_lon_1, sub_region1, north_south)
+
+    new_center_lat_2, new_center_lon_2 = find_corrected_center(
+        center_lat_2, center_lon_2, sub_region2, north_south)
+
+    plt.scatter(new_center_lat_1, new_center_lon_1)
+    plt.scatter(new_center_lat_2, new_center_lon_2)
+
+    sub_region1_ele = [x[2] for x in sub_region1]
+    sub_region2_ele = [y[2] for y in sub_region2]
+
+    new_nodes = []
+    new_node = {'lat': nodes[max_elevation[1]][0],
+                'lon': nodes[max_elevation[1]][1]}
+    new_nodes.append(new_node)
+    if max_elevation[0] in sub_region1_ele:
+        new_node = {'lat': new_center_lat_1,
+                    'lon': new_center_lon_1}
+        new_nodes.append(new_node)
+    else:
+        new_node = {'lat': new_center_lat_2,
+                    'lon': new_center_lon_2}
+        new_nodes.append(new_node)
+    new_node = {'lat': new_center_lat,
+                'lon': new_center_lon}
+    new_nodes.append(new_node)
+    if max_elevation[0] in sub_region1_ele:
+        new_node = {'lat': new_center_lat_2,
+                    'lon': new_center_lon_2}
+        new_nodes.append(new_node)
+    else:
+        new_node = {'lat': new_center_lat_1,
+                    'lon': new_center_lon_1}
+        new_nodes.append(new_node)
+    new_node = {'lat': nodes[min_elevation[1]][0],
+                'lon': nodes[min_elevation[1]][1]}
+    new_nodes.append(new_node)
+
+    return new_nodes

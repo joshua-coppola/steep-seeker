@@ -20,10 +20,11 @@ def add_trails(cur, mountain_id, trails, lifts):
         for i, node in enumerate(trail['nodes']):
             cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
                 VALUES ({}, {}, 1, "{}", "{}")'.format(i, trail['id'], node['lat'], node['lon']))
+
     for lift in lifts:
         cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
             VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
-        trail['nodes'] = misc.fill_point_gaps(lift['nodes'])
+        lift['nodes'] = misc.fill_point_gaps(lift['nodes'])
         for i, node in enumerate(lift['nodes']):
             cur.execute('INSERT INTO LiftPoints (ind, lift_id, lat, lon) \
                 VALUES ({}, {}, "{}", "{}")'.format(i, lift['id'], node['lat'], node['lon']))
@@ -38,13 +39,41 @@ def add_trails(cur, mountain_id, trails, lifts):
         cur.execute(
             f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
 
+    # process areas
+    trail_ids = cur.execute(
+        'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_50m IS NULL').fetchall()
+
+    for trail_id in trail_ids:
+        nodes = cur.execute(
+            'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ?', (trail_id)).fetchall()
+
+        centerline_nodes = misc.process_area(nodes)
+        centerline_nodes = misc.fill_point_gaps(centerline_nodes)
+        for i, node in enumerate(centerline_nodes):
+            cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
+                VALUES ({}, {}, 0, "{}", "{}")'.format(i, trail_id[0], node['lat'], node['lon']))
+
+    all_incomplete_nodes = cur.execute(
+        'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
+
+    elevation_values = misc.get_elevation(all_incomplete_nodes)
+    slope_nodes = misc.get_slope(elevation_values)
+    for row in slope_nodes:
+        cur.execute(
+            f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+
     # calculate trail pitch, vert, and length
     trails_to_be_rated = cur.execute(
         'SELECT trail_id FROM Trails WHERE steepest_50m IS NULL').fetchall()
 
     for trail_id in trails_to_be_rated:
+        area = cur.execute(
+            'SELECT area FROM Trails WHERE trail_id = ?', (trail_id))
+        for_display = 1
+        if area == 'True':
+            for_display = 0
         nodes = cur.execute(
-            'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ?', (trail_id)).fetchall()
+            f'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = {for_display}', (trail_id)).fetchall()
 
         pitch_50 = misc.get_steep_pitch(nodes, 50)
         pitch_100 = misc.get_steep_pitch(nodes, 100)
@@ -88,7 +117,8 @@ def add_resort(name, direction):
 
     if len(exists) > 0:
         print('Resort already exists, exiting')
-        return
+        db.close()
+        return None
 
     trails, lifts = read_osm.read_osm(f'{name}.osm')
 
@@ -99,6 +129,7 @@ def add_resort(name, direction):
     if trail_count == 0:
         print('No trails found, exiting')
         db.close()
+        return None
 
     # move file once processed into the right folder for the state
     os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
@@ -108,7 +139,6 @@ def add_resort(name, direction):
 
     mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
                               (name, state,),).fetchone()[0]
-    print(cur.execute('SELECT * FROM Mountains').fetchall())
 
     add_trails(cur, mountain_id, trails, lifts)
 
@@ -127,14 +157,60 @@ def add_resort(name, direction):
     db.commit()
     db.close()
 
+    return state
 
+
+def delete_resort(name, state):
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+    mountain_id = cur.execute(
+        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (name, state)).fetchall()[0][0]
+    trail_ids = cur.execute(
+        f'SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id}').fetchall()
+    lift_ids = cur.execute(
+        f'SELECT lift_id FROM Lifts WHERE mountain_id = {mountain_id}').fetchall()
+    cur.execute(
+        'DELETE FROM Mountains WHERE name = ? AND state = ?', (name, state))
+    cur.execute(f'DELETE FROM Trails WHERE mountain_id = {mountain_id}')
+    cur.execute(f'DELETE FROM Lifts WHERE mountain_id = {mountain_id}')
+
+    for trail_id in trail_ids:
+        cur.execute(f'DELETE FROM TrailPoints WHERE trail_id = {trail_id[0]}')
+    for lift_id in lift_ids:
+        cur.execute(f'DELETE FROM LiftPoints WHERE lift_id = {lift_id[0]}')
+
+    db.commit()
+    db.close()
+
+
+# delete_resort('Alyeska', 'AK')
 # reset_db()
-# add_resort('Alyeska', 'e')
+#add_resort('Alta', 'n')
 
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
-#cur.execute('ALTER TABLE Lifts ADD COLUMN length REAL')
+# trail_ids = cur.execute(
+#    'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_50m IS NULL').fetchall()
+
+# for trail_id in trail_ids:
+#    nodes = cur.execute(
+#        'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ?', (trail_id)).fetchall()
+
+#    centerline_nodes = misc.process_area(nodes)
+#    centerline_nodes = misc.fill_point_gaps(centerline_nodes)
+#    for i, node in enumerate(centerline_nodes):
+#        cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
+#            VALUES ({}, {}, 0, "{}", "{}")'.format(i, trail_id[0], node['lat'], node['lon']))
+
+# all_incomplete_nodes = cur.execute(
+#    'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
+
+#elevation_values = misc.get_elevation(all_incomplete_nodes)
+#slope_nodes = misc.get_slope(elevation_values)
+# for row in slope_nodes:
+#    cur.execute(
+#        f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
 
 # db.commit()
 # db.close()

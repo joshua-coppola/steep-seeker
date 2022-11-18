@@ -2,7 +2,6 @@ from collections import Counter
 
 
 def process_trails(ways):
-    print('running')
     trails = []
     lifts = []
     for unprocessed_way in ways:
@@ -67,6 +66,7 @@ def process_trails(ways):
             if 'natural' in tag:
                 if tag['natural'] == 'wood':
                     way['area'] = True
+                    way['gladed'] = True
                 if tag['natural'] == 'grassland':
                     way['type'] = None
             if 'leaf type' in tag:
