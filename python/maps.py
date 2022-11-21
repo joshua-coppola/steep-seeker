@@ -45,10 +45,11 @@ def create_legend(x, y, direction, font_size, legend_offset):
 
 
 def get_label_placement(x, y, length, name_length):
+    if length == 0:
+        print('Trail of 0 length found.')
+        return (0,0,0)
     point_count = len(x)
     average_point_gap = length / point_count
-    if average_point_gap == 0:
-        return (0, 0, 0)
     letter_size = 10 / average_point_gap
     label_length = average_point_gap * name_length * letter_size
     label_length_in_points = int(label_length / average_point_gap)
@@ -186,6 +187,15 @@ def populate_map(mountain_id, direction, with_labels=True):
         # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
         x = [i[0] * lat_mirror for i in x]
         y = [j[0] * lon_mirror for j in y]
+
+        if trail['area']:
+            x1 = cur.execute(
+            f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
+            y1 = cur.execute(
+                f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
+            x1 = [i[0] * lat_mirror for i in x1]
+            y1 = [j[0] * lon_mirror for j in y1]
+
         color = misc.trail_color(trail['steepest_50m'], trail['gladed'])
 
         # place lines
@@ -209,8 +219,12 @@ def populate_map(mountain_id, direction, with_labels=True):
                 f"SELECT length FROM Trails WHERE trail_id = {trail['trail_id']}").fetchall()[0][0]
             label_text = '{} {:.1f}{}'.format(
                 trail['name'].strip(), trail['steepest_50m'], u'\N{DEGREE SIGN}')
-            point, angle, label_length = get_label_placement(
-                x, y, length, len(label_text))
+            if trail['area'] == 'False':
+                point, angle, label_length = get_label_placement(
+                    x, y, length, len(label_text))
+            if trail['area'] == 'True':
+                point, angle, label_length = get_label_placement(
+                    x1, y1, length, len(label_text))
             if point == 0 and angle == 0:
                 continue
             # Check that label is shorter than trail

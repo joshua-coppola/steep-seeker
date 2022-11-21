@@ -4,22 +4,16 @@ Steep Seeker is a website that presents a standardized rating system to allow sk
 
 Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Ratings] and can be seen as a V2.
 
-## Todo
+## Upcoming
 
-### Python
+### Known Bugs
 
-[ ] Database
-[ ] API Endpoints
-[ ] OSM Processing
-[ ] Ranking Logic
+- [ ] Legends do not scale correctly on smaller maps anymore
+- [ ] Compass rose placement can be iffy on some mountains
+- [x] Area trail names do not display
+- [ ] Lifts do not have elevation
 
-### Pages
-
-[ ] Home
-[ ] Management Panel
-[ ] Mountain Search
-[ ] Mountain Rankings
-[ ] Trail Rankings
-[ ] Browse US Map
-[ ] 2D Maps
-[ ] 3D Maps
+### Features
+- [ ] Auto detect mountain direction
+- [ ] Use API to fetch OSM files for new resorts
+- [ ] Integrate with website

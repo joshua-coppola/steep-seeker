@@ -196,10 +196,10 @@ def trail_length(nodes):
         if i == 0:
             previous_point = point
             continue
-    dist = hs.haversine((previous_point[0], previous_point[1]), (
-        point[0], point[1]), unit=hs.Unit.METERS)
-    cumulative_dist += dist
-    previous_point = point
+        dist = hs.haversine((previous_point[0], previous_point[1]), (
+            point[0], point[1]), unit=hs.Unit.METERS)
+        cumulative_dist += dist
+        previous_point = point
 
     return cumulative_dist
 

@@ -112,10 +112,10 @@ def add_resort(name, direction):
 
     cur = db.cursor()
 
-    exists = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
+    resort_exists = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
                          (name, state,),).fetchall()
 
-    if len(exists) > 0:
+    if len(resort_exists) > 0:
         print('Resort already exists, exiting')
         db.close()
         return None
@@ -132,7 +132,8 @@ def add_resort(name, direction):
         return None
 
     # move file once processed into the right folder for the state
-    os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
+    if os.path.exists(f'data/osm/{state}'):
+        os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
 
     cur.execute(f'INSERT INTO Mountains (name, state, region, direction, trail_count, lift_count) \
         VALUES ("{name}", "{state}", "{region}", "{direction}", {trail_count}, {lift_count})')
@@ -190,27 +191,10 @@ def delete_resort(name, state):
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
-# trail_ids = cur.execute(
-#    'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_50m IS NULL').fetchall()
+#nodes = cur.execute(
+#            f'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = 554389088 AND for_display = 0').fetchall()
 
-# for trail_id in trail_ids:
-#    nodes = cur.execute(
-#        'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ?', (trail_id)).fetchall()
-
-#    centerline_nodes = misc.process_area(nodes)
-#    centerline_nodes = misc.fill_point_gaps(centerline_nodes)
-#    for i, node in enumerate(centerline_nodes):
-#        cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
-#            VALUES ({}, {}, 0, "{}", "{}")'.format(i, trail_id[0], node['lat'], node['lon']))
-
-# all_incomplete_nodes = cur.execute(
-#    'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
-
-#elevation_values = misc.get_elevation(all_incomplete_nodes)
-#slope_nodes = misc.get_slope(elevation_values)
-# for row in slope_nodes:
-#    cur.execute(
-#        f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+#misc.trail_length(nodes)
 
 # db.commit()
 # db.close()
