@@ -39,6 +39,15 @@ def add_trails(cur, mountain_id, trails, lifts):
         cur.execute(
             f'UPDATE TrailPoints SET elevation = {row[2]}, slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
 
+    # calculate elevation for each lift point
+    all_incomplete_nodes = cur.execute(
+        'SELECT lat, lon FROM LiftPoints WHERE elevation IS NULL').fetchall()
+
+    elevation_values = misc.get_elevation(all_incomplete_nodes)
+    for row in elevation_values:
+        cur.execute(
+            f'UPDATE LiftPoints SET elevation = {row[2]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+
     # process areas
     trail_ids = cur.execute(
         'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_50m IS NULL').fetchall()

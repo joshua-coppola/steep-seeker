@@ -303,7 +303,7 @@ def create_map(resort_name, state, with_labels=True):
     plt.gcf().text(.1, .1, '\u25b2\n\u25c1 N \u25b7\n\u25bd',
                    ha='center', va='center', rotation=rotate, fontsize=font_size * .7)
     create_legend(trail_extremes[0], trail_extremes[2],
-                  direction, font_size, bottom_loc)
+                  direction, font_size / 2, bottom_loc)
 
     populate_map(mountain_id, direction, with_labels)
 
