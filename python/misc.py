@@ -277,13 +277,13 @@ def mountain_rating(nodes):
 def trail_color(pitch, gladed):
     if gladed == 'True':
         pitch += 7
-    # 0-17 degrees: green
-    if pitch < 15:
+    # 0-16 degrees: green
+    if pitch < 16:
         return 'green'
-    # 17-24 degrees: blue
+    # 16-23 degrees: blue
     if pitch < 23:
         return 'royalblue'
-    # 24-30 degrees: black
+    # 23-30 degrees: black
     if pitch < 30:
         return 'black'
     # 30-45 degrees: red

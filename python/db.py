@@ -195,6 +195,40 @@ def delete_resort(name, state):
     db.commit()
     db.close()
 
+def delete_trail(mountain_id, trail_id):
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+
+    cur.execute(f'DELETE FROM TrailPoints WHERE trail_id = {trail_id}')
+    cur.execute(f'DELETE FROM Trails WHERE trail_id = {trail_id}')
+
+    elevations = cur.execute(
+        f'SELECT elevation FROM TrailPoints NATURAL JOIN \
+        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
+
+    trail_slopes = cur.execute(
+        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_50m DESC').fetchall()
+    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
+    trail_count = cur.execute(f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
+    cur.execute(
+        f'UPDATE Mountains SET vertical = {misc.get_vert(elevations)}, difficulty = {difficulty}, \
+            beginner_friendliness = {beginner_friendliness}, trail_count = {trail_count - 1} WHERE mountain_id = {mountain_id}')
+
+    db.commit()
+    db.close()
+
+def delete_lift(mountain_id, lift_id):
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+
+    cur.execute(f'DELETE FROM Lifts WHERE lift_id = {lift_id}')
+
+    lift_count = cur.execute(f'SELECT lift_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
+    cur.execute(
+        f'UPDATE Mountains SET lift_count = {lift_count - 1} WHERE mountain_id = {mountain_id}')
+
+    db.commit()
+    db.close()
 
 # delete_resort('Alyeska', 'AK')
 # reset_db()

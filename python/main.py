@@ -8,5 +8,9 @@ def add_resort(name, direction):
         maps.create_map(name, state)
 
 
-#maps.create_map('Alta', 'UT')
-add_resort('Okemo', 'w')
+#add_resort('Okemo', 'w')
+#db.delete_trail(2, 994105796)
+#db.delete_lift(2, 31845480)
+#db.delete_lift(2, 31845482)
+
+maps.create_map('Alta', 'UT')

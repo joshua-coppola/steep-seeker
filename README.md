@@ -15,7 +15,7 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 
 ### Features
 - [ ] Auto detect mountain direction
-- [ ] Loading Indicators
+- [x] Loading Indicators
 - [ ] Use API to fetch OSM files for new resorts
 - [ ] Integrate with website
 - [ ] Management interface to fix maps from
