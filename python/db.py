@@ -33,6 +33,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
 
+    print('Processing Trails')
     elevation_values = misc.get_elevation(all_incomplete_nodes)
     slope_nodes = misc.get_slope(elevation_values)
     for row in slope_nodes:
@@ -43,6 +44,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon FROM LiftPoints WHERE elevation IS NULL').fetchall()
 
+    print('Processing Lifts')
     elevation_values = misc.get_elevation(all_incomplete_nodes)
     for row in elevation_values:
         cur.execute(
@@ -65,6 +67,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
 
+    print('Processing Areas')
     elevation_values = misc.get_elevation(all_incomplete_nodes)
     slope_nodes = misc.get_slope(elevation_values)
     for row in slope_nodes:

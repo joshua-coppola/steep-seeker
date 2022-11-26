@@ -188,14 +188,6 @@ def populate_map(mountain_id, direction, with_labels=True):
         x = [i[0] * lat_mirror for i in x]
         y = [j[0] * lon_mirror for j in y]
 
-        if trail['area']:
-            x1 = cur.execute(
-            f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
-            y1 = cur.execute(
-                f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
-            x1 = [i[0] * lat_mirror for i in x1]
-            y1 = [j[0] * lon_mirror for j in y1]
-
         color = misc.trail_color(trail['steepest_50m'], trail['gladed'])
 
         # place lines
@@ -219,12 +211,8 @@ def populate_map(mountain_id, direction, with_labels=True):
                 f"SELECT length FROM Trails WHERE trail_id = {trail['trail_id']}").fetchall()[0][0]
             label_text = '{} {:.1f}{}'.format(
                 trail['name'].strip(), trail['steepest_50m'], u'\N{DEGREE SIGN}')
-            if trail['area'] == 'False':
-                point, angle, label_length = get_label_placement(
-                    x, y, length, len(label_text))
-            if trail['area'] == 'True':
-                point, angle, label_length = get_label_placement(
-                    x1, y1, length, len(label_text))
+            point, angle, label_length = get_label_placement(
+                x, y, length, len(label_text))
             if point == 0 and angle == 0:
                 continue
             # Check that label is shorter than trail

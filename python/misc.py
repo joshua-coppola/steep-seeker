@@ -6,6 +6,7 @@ from requests.api import get
 import json
 from math import degrees, atan, atan2
 from os.path import exists
+from rich.progress import track
 
 
 def find_state(filename: str):
@@ -140,7 +141,7 @@ def get_elevation(nodes):
                 '|{},{}'.format(node[0], node[1])
         piped_coords_list.append(piped_coords)
 
-    for item in piped_coords_list:
+    for item in track(piped_coords_list):
         if time.time() - last_called < 1:
             time.sleep(1 - (time.time() - last_called))
         response = get(url.format(item))
