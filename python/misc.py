@@ -372,7 +372,6 @@ def process_area(nodes):
     plt.scatter(new_center_lat_2, new_center_lon_2)
 
     sub_region1_ele = [x[2] for x in sub_region1]
-    sub_region2_ele = [y[2] for y in sub_region2]
 
     new_nodes = []
     new_node = {'lat': nodes[max_elevation[1]][0],
@@ -402,3 +401,22 @@ def process_area(nodes):
     new_nodes.append(new_node)
 
     return new_nodes
+
+def find_direction(trail_points):
+    heading = []
+    for trail in trail_points:
+        dx = trail[0][0] - trail[-1][0]
+        dy = trail[0][1] - trail[-1][1]
+
+        heading.append(degrees(atan2(dy, dx)))
+    
+    avg_heading = sum(heading) / len(heading)
+
+    if abs(avg_heading) < 45:
+        return('n')
+    if abs(avg_heading) > 135:
+        return('s')
+    if avg_heading > 0:
+        return('e')
+    if avg_heading < 0:
+        return('w')

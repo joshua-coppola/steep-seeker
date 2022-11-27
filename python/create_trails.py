@@ -73,12 +73,12 @@ def process_trails(ways):
                 if way['gladed'] != False:
                     way['gladed'] = True
                 way['area'] = True
-        if way['name'] != None and way['type'] == 'trail':
-            if 'glade' in way['name'] or 'Glade' in way['name'] or 'Tree Skiing' in way['name']:
-                if way['gladed'] == None:
-                    way['gladed'] = True
-                    print('Way #{} ({}) was found to be a glade through its name. Please double check & add the necessary tags.'.format(
-                        way['id'], way['name']))
+        #if way['name'] != None and way['type'] == 'trail':
+        #    if 'glade' in way['name'] or 'Glade' in way['name'] or 'Tree Skiing' in way['name']:
+        #        if way['gladed'] == None:
+        #            way['gladed'] = True
+        #            print('Way #{} ({}) was found to be a glade through its name. Please double check & add the necessary tags.'.format(
+        #                way['id'], way['name']))
 
         if way['type'] != None:
             if way['name'] == None or way['name'] == '':

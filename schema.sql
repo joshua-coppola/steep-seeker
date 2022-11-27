@@ -7,7 +7,7 @@ CREATE TABLE "Mountains"
     "name" TEXT NOT NULL,
     "state" TEXT NOT NULL,
     "region" TEXT NOT NULL,
-    "direction" TEXT NOT NULL,
+    "direction" TEXT,
     "trail_count" INTEGER NOT NULL,
     "lift_count" INTEGER NOT NULL,
     "vertical" INTEGER,

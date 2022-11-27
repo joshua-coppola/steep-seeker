@@ -114,7 +114,7 @@ def add_trails(cur, mountain_id, trails, lifts):
 
 
 # need to automate direction
-def add_resort(name, direction):
+def add_resort(name):
     state = misc.find_state(f'{name}.osm')
 
     if state == None:
@@ -147,8 +147,8 @@ def add_resort(name, direction):
     if os.path.exists(f'data/osm/{state}'):
         os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
 
-    cur.execute(f'INSERT INTO Mountains (name, state, region, direction, trail_count, lift_count) \
-        VALUES ("{name}", "{state}", "{region}", "{direction}", {trail_count}, {lift_count})')
+    cur.execute(f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
+        VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})')
 
     mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
                               (name, state,),).fetchone()[0]
@@ -166,6 +166,20 @@ def add_resort(name, direction):
     cur.execute(
         f'UPDATE Mountains SET vertical = {misc.get_vert(elevations)}, difficulty = {difficulty}, \
             beginner_friendliness = {beginner_friendliness} WHERE mountain_id = {mountain_id}')
+
+    # set direction
+    trail_ids = cur.execute(f'SELECT trail_id, area FROM Trails WHERE mountain_id = {mountain_id}').fetchall()
+
+    trail_points = []
+    for trail_id in trail_ids:
+        if trail_id[1] == 'True':
+            trail_points.append(cur.execute(f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 0").fetchall())
+        if trail_id[1] == 'False':
+            trail_points.append(cur.execute(f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 1").fetchall())
+
+    direction = misc.find_direction(trail_points)
+
+    cur.execute(f'UPDATE Mountains SET direction = "{direction}" WHERE mountain_id = {mountain_id}')
 
     db.commit()
     db.close()
@@ -230,17 +244,11 @@ def delete_lift(mountain_id, lift_id):
     db.commit()
     db.close()
 
-# delete_resort('Alyeska', 'AK')
-# reset_db()
-#add_resort('Alta', 'n')
 
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
-#nodes = cur.execute(
-#            f'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = 554389088 AND for_display = 0').fetchall()
+#cur.execute(f'UPDATE Trails SET gladed = "False" WHERE trail_id = 32684291')
 
-#misc.trail_length(nodes)
-
-# db.commit()
-# db.close()
+#db.commit()
+#db.close()
