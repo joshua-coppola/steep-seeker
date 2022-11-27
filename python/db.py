@@ -125,7 +125,7 @@ def add_resort(name):
     cur = db.cursor()
 
     resort_exists = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
-                         (name, state,),).fetchall()
+                                (name, state,),).fetchall()
 
     if len(resort_exists) > 0:
         print('Resort already exists, exiting')
@@ -140,6 +140,11 @@ def add_resort(name):
 
     if trail_count == 0:
         print('No trails found, exiting')
+        db.close()
+        return None
+
+    if lift_count == 0:
+        print('No lifts found, exiting')
         db.close()
         return None
 
@@ -168,18 +173,22 @@ def add_resort(name):
             beginner_friendliness = {beginner_friendliness} WHERE mountain_id = {mountain_id}')
 
     # set direction
-    trail_ids = cur.execute(f'SELECT trail_id, area FROM Trails WHERE mountain_id = {mountain_id}').fetchall()
+    trail_ids = cur.execute(
+        f'SELECT trail_id, area FROM Trails WHERE mountain_id = {mountain_id}').fetchall()
 
     trail_points = []
     for trail_id in trail_ids:
         if trail_id[1] == 'True':
-            trail_points.append(cur.execute(f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 0").fetchall())
+            trail_points.append(cur.execute(
+                f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 0").fetchall())
         if trail_id[1] == 'False':
-            trail_points.append(cur.execute(f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 1").fetchall())
+            trail_points.append(cur.execute(
+                f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 1").fetchall())
 
     direction = misc.find_direction(trail_points)
 
-    cur.execute(f'UPDATE Mountains SET direction = "{direction}" WHERE mountain_id = {mountain_id}')
+    cur.execute(
+        f'UPDATE Mountains SET direction = "{direction}" WHERE mountain_id = {mountain_id}')
 
     db.commit()
     db.close()
@@ -209,6 +218,7 @@ def delete_resort(name, state):
     db.commit()
     db.close()
 
+
 def delete_trail(mountain_id, trail_id):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
@@ -223,7 +233,8 @@ def delete_trail(mountain_id, trail_id):
     trail_slopes = cur.execute(
         f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_50m DESC').fetchall()
     difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
-    trail_count = cur.execute(f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
+    trail_count = cur.execute(
+        f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
     cur.execute(
         f'UPDATE Mountains SET vertical = {misc.get_vert(elevations)}, difficulty = {difficulty}, \
             beginner_friendliness = {beginner_friendliness}, trail_count = {trail_count - 1} WHERE mountain_id = {mountain_id}')
@@ -231,13 +242,15 @@ def delete_trail(mountain_id, trail_id):
     db.commit()
     db.close()
 
+
 def delete_lift(mountain_id, lift_id):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
     cur.execute(f'DELETE FROM Lifts WHERE lift_id = {lift_id}')
 
-    lift_count = cur.execute(f'SELECT lift_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
+    lift_count = cur.execute(
+        f'SELECT lift_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
     cur.execute(
         f'UPDATE Mountains SET lift_count = {lift_count - 1} WHERE mountain_id = {mountain_id}')
 
@@ -248,7 +261,19 @@ def delete_lift(mountain_id, lift_id):
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
-#cur.execute(f'UPDATE Trails SET gladed = "False" WHERE trail_id = 32684291')
+# trail_ids = cur.execute(
+#    f'SELECT trail_id, area FROM Trails WHERE mountain_id = 1').fetchall()
 
-#db.commit()
-#db.close()
+#trail_points = []
+# for trail_id in trail_ids:
+#    if trail_id[1] == 'True':
+#        trail_points.append(cur.execute(
+#            f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 0").fetchall())
+#    if trail_id[1] == 'False':
+#        trail_points.append(cur.execute(
+#            f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 1").fetchall())
+
+#direction = misc.find_direction(trail_points)
+
+# db.commit()
+# db.close()

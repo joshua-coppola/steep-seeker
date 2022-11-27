@@ -402,6 +402,7 @@ def process_area(nodes):
 
     return new_nodes
 
+
 def find_direction(trail_points):
     heading = []
     for trail in trail_points:
@@ -409,8 +410,28 @@ def find_direction(trail_points):
         dy = trail[0][1] - trail[-1][1]
 
         heading.append(degrees(atan2(dy, dx)))
-    
+
     avg_heading = sum(heading) / len(heading)
+    direction = []
+    for trail_heading in heading:
+        if abs(trail_heading) < 45:
+            direction.append('n')
+            continue
+        if abs(trail_heading) > 135:
+            direction.append('s')
+            continue
+        if trail_heading > 0:
+            direction.append('e')
+            continue
+        if trail_heading < 0:
+            direction.append('w')
+            continue
+
+    # print('nsew')
+    # print(direction.count('n'))
+    # print(direction.count('s'))
+    # print(direction.count('e'))
+    # print(direction.count('w'))
 
     if abs(avg_heading) < 45:
         return('n')

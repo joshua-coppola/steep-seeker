@@ -47,7 +47,7 @@ def create_legend(x, y, direction, font_size, legend_offset):
 def get_label_placement(x, y, length, name_length):
     if length == 0:
         print('Trail of 0 length found.')
-        return (0,0,0)
+        return (0, 0, 0)
     point_count = len(x)
     average_point_gap = length / point_count
     letter_size = 10 / average_point_gap

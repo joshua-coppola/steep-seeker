@@ -73,7 +73,10 @@ def process_trails(ways):
                 if way['gladed'] != False:
                     way['gladed'] = True
                 way['area'] = True
-        #if way['name'] != None and way['type'] == 'trail':
+            if 'public_transport' in tag:
+                if 'platform' in tag['public_transport']:
+                    way['type'] = None
+        # if way['name'] != None and way['type'] == 'trail':
         #    if 'glade' in way['name'] or 'Glade' in way['name'] or 'Tree Skiing' in way['name']:
         #        if way['gladed'] == None:
         #            way['gladed'] = True
