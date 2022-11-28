@@ -77,3 +77,13 @@ CREATE TABLE "LiftPoints"
     PRIMARY KEY("ind","lift_id"),
     FOREIGN KEY("lift_id") REFERENCES "Lifts"("lift_id") ON DELETE CASCADE
 );
+
+DROP TABLE IF EXISTS CachedPoints;
+
+CREATE TABLE "CachedPoints"
+(
+    "lat" DECIMAL(9,6) NOT NULL,
+    "lon" DECIMAL(9,6) NOT NULL,
+    "elevation" REAL,
+    PRIMARY KEY("lat", "lon")
+);

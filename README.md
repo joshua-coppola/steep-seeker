@@ -32,7 +32,7 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 - Killington - Magic Snow Play Park piste type, 10 unnamed trails, many duplicates
 - Mad River Glen - 13  unnamed trails, many duplicates
 - Magic - 16 unnamed trails, many duplicates
-- Mount Snow - 5 unnamed trails, 1 piste type
+- Mount Snow - 5 unnamed trails, 1 piste type, jagged trails
 - Northeast Slopes - legend cutoff
 - Pico - Outlaw piste type, many trails named the same, 'A slope' is rated -14 degrees
 - Smuggler's Notch - 22 unnamed trails

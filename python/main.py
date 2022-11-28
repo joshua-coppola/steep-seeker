@@ -16,8 +16,9 @@ def bulk_add_resorts():
             add_resort(item.split('.')[0])
 
 
+# db.fill_cache()
 bulk_add_resorts()
-# add_resort('Stratton')
+# add_resort('Bromley')
 #db.delete_trail(2, 994105796)
 #db.delete_lift(2, 31845482)
 #maps.create_map('Stratton', 'VT')
