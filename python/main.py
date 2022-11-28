@@ -1,4 +1,5 @@
 import os
+from rich.progress import track
 
 import db
 import maps
@@ -16,9 +17,12 @@ def bulk_add_resorts():
             add_resort(item.split('.')[0])
 
 
-# db.fill_cache()
+def bulk_create_maps():
+    mountains = db.get_mountains()
+    for mountain in track(mountains, description='Creating Maps...'):
+        maps.create_map(mountain[0], mountain[1])
+
+
 bulk_add_resorts()
-# add_resort('Bromley')
-#db.delete_trail(2, 994105796)
-#db.delete_lift(2, 31845482)
-#maps.create_map('Stratton', 'VT')
+# maps.create_map("Cochran's", 'VT')
+# bulk_create_maps()

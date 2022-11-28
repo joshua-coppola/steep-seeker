@@ -10,6 +10,9 @@ import misc
 
 def create_legend(x, y, direction, font_size, legend_offset):
     font_size = min(font_size, 8)
+    # no legend on tiny maps
+    if font_size <= 2.5:
+        return
 
     # rotate points to look correct
     if 'n' in direction:
@@ -76,7 +79,8 @@ def get_label_placement(x, y, length, name_length):
     best_answer = (1, 10000)
     for i, _ in enumerate(angle_list):
         if valid_list[i]:
-            slice = angle_list[i - int(label_length_in_points / 2): i + int(label_length_in_points / 2)]
+            slice = angle_list[i - int(label_length_in_points / 2)
+                                       : i + int(label_length_in_points / 2)]
             if len(slice) == 0:
                 continue
             expected = sum(slice) / len(slice)
@@ -277,19 +281,23 @@ def create_map(resort_name, state, with_labels=True):
 
     if font_size > 16:
         font_size = 16
-    plt.gcf().text(0.5, 0, 'Sources: USGS and OpenStreetMaps',
-                   fontsize=font_size/2.3, ha='center', va='bottom')
+    if font_size == 5:
+        plt.gcf().text(0.5, 0, 'Sources: USGS\nand OpenStreetMaps',
+                       fontsize=font_size/2.3, ha='center', va='bottom')
+    else:
+        plt.gcf().text(0.5, 0, 'Sources: USGS and OpenStreetMaps',
+                       fontsize=font_size/2.3, ha='center', va='bottom')
 
     # Compass Rose
-    rotate = 0
-    if direction == 's':
-        rotate = 180
-    if direction == 'w':
-        rotate = -90
-    if direction == 'e':
-        rotate = 90
-    plt.gcf().text(.1, .1, '\u25b2\n\u25c1 N \u25b7\n\u25bd',
-                   ha='center', va='center', rotation=rotate, fontsize=font_size * .7)
+    #rotate = 0
+    # if direction == 's':
+    #    rotate = 180
+    # if direction == 'w':
+    #    rotate = -90
+    # if direction == 'e':
+    #    rotate = 90
+    # plt.gcf().text(.1, .1, '\u25b2\n\u25c1 N \u25b7\n\u25bd',
+    #               ha='center', va='center', rotation=rotate, fontsize=font_size * .7)
     create_legend(trail_extremes[0], trail_extremes[2],
                   direction, font_size / 2, bottom_loc)
 

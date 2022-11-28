@@ -125,6 +125,8 @@ def fill_point_gaps(nodes):
 
 
 def get_elevation(nodes):
+    if len(nodes) == 0:
+        return []
     hundred_node_lists = list(divide_chunks(nodes, 100))
     piped_coords_list = []
     elevation = []

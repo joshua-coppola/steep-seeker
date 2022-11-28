@@ -345,6 +345,15 @@ def fill_cache():
     db.close()
 
 
+def get_mountains():
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+
+    mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
+
+    return(mountains)
+
+
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
