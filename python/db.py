@@ -37,29 +37,8 @@ def add_trails(cur, mountain_id, trails, lifts):
                 VALUES ({}, {}, "{}", "{}")'.format(i, lift['id'], node['lat'], node['lon']))
 
     # calculate elevation and slope for each point
-    all_incomplete_nodes = cur.execute(
-        'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
-
     print('Processing Trails')
-    print(
-        f'Before cache: {len(all_incomplete_nodes)} missing elevation values')
-    all_incomplete_nodes = [(round(Decimal(x[0]), 8), round(
-        Decimal(x[1]), 8)) for x in all_incomplete_nodes]
-    # check cache first
-    adjustment_values = (Decimal('0'), Decimal(
-        '.00000001'), Decimal('-.00000001'))
-    for node in track(all_incomplete_nodes):
-        for adjustment_lat in adjustment_values:
-            for adjustment_lon in adjustment_values:
-                lat = node[0] + adjustment_lat
-                lon = node[1] + adjustment_lon
-                elevation = cur.execute(
-                    f'SELECT elevation FROM CachedPoints WHERE lat = {lat} AND lon = {lon}').fetchall()
-                if len(elevation) > 0:
-                    cur.execute(
-                        f'UPDATE TrailPoints SET elevation = {elevation[0][0]} WHERE lat = "{node[0]}" AND lon =  "{node[1]}"')
-                    break
-
+    get_elevation_from_cache(cur, 'TrailPoints')
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
     # print(all_incomplete_nodes)
@@ -78,32 +57,15 @@ def add_trails(cur, mountain_id, trails, lifts):
             f'UPDATE TrailPoints SET slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
 
     # calculate elevation for each lift point
-    all_incomplete_nodes = cur.execute(
-        'SELECT lat, lon FROM LiftPoints WHERE elevation IS NULL').fetchall()
-
     print('Processing Lifts')
     # check cache first
-    print(
-        f'Before cache: {len(all_incomplete_nodes)} missing elevation values')
-    all_incomplete_nodes = [(round(Decimal(x[0]), 8), round(
-        Decimal(x[1]), 8)) for x in all_incomplete_nodes]
-    # check cache first
-    adjustment_values = (Decimal('0'), Decimal(
-        '.00000001'), Decimal('-.00000001'))
-    for node in track(all_incomplete_nodes):
-        for adjustment_lat in adjustment_values:
-            for adjustment_lon in adjustment_values:
-                lat = node[0] + adjustment_lat
-                lon = node[1] + adjustment_lon
-                elevation = cur.execute(
-                    f'SELECT elevation FROM CachedPoints WHERE lat = {lat} AND lon = {lon}').fetchall()
-                if len(elevation) > 0:
-                    cur.execute(
-                        f'UPDATE LiftPoints SET elevation = {elevation[0][0]} WHERE lat = "{node[0]}" AND lon =  "{node[1]}"')
-                    break
+    get_elevation_from_cache(cur, 'LiftPoints')
+
+    all_incomplete_nodes = cur.execute(
+        'SELECT lat, lon FROM LiftPoints WHERE elevation IS NULL').fetchall()
+    print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
 
     elevation_values = misc.get_elevation(all_incomplete_nodes)
-    print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
     for row in elevation_values:
         cur.execute(
             f'UPDATE LiftPoints SET elevation = {row[2]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
@@ -122,29 +84,8 @@ def add_trails(cur, mountain_id, trails, lifts):
             cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
                 VALUES ({}, {}, 0, "{}", "{}")'.format(i, trail_id[0], node['lat'], node['lon']))
 
-    all_incomplete_nodes = cur.execute(
-        'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
-
     print('Processing Areas')
-    # check cache first
-    print(
-        f'Before cache: {len(all_incomplete_nodes)} missing elevation values')
-    all_incomplete_nodes = [(round(Decimal(x[0]), 8), round(
-        Decimal(x[1]), 8)) for x in all_incomplete_nodes]
-    # check cache first
-    adjustment_values = (Decimal('0'), Decimal(
-        '.00000001'), Decimal('-.00000001'))
-    for node in track(all_incomplete_nodes):
-        for adjustment_lat in adjustment_values:
-            for adjustment_lon in adjustment_values:
-                lat = node[0] + adjustment_lat
-                lon = node[1] + adjustment_lon
-                elevation = cur.execute(
-                    f'SELECT elevation FROM CachedPoints WHERE lat = {lat} AND lon = {lon}').fetchall()
-                if len(elevation) > 0:
-                    cur.execute(
-                        f'UPDATE TrailPoints SET elevation = {elevation[0][0]} WHERE lat = "{node[0]}" AND lon =  "{node[1]}"')
-                    break
+    get_elevation_from_cache(cur, 'TrailPoints')
 
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
@@ -375,13 +316,48 @@ def get_mountains():
 
     mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
 
+    db.close()
     return(mountains)
+
+
+def get_elevation_from_cache(cur, table):
+    if table != 'TrailPoints' and table != 'LiftPoints':
+        print('Bad value for table name')
+        return
+
+    query = f'SELECT lat, lon FROM {table} WHERE elevation IS NULL'
+
+    all_incomplete_nodes = cur.execute(query).fetchall()
+
+    print(
+        f'Before cache: {len(all_incomplete_nodes)} missing elevation values')
+    all_incomplete_nodes = [(round(Decimal(x[0]), 8), round(
+        Decimal(x[1]), 8)) for x in all_incomplete_nodes]
+    # check cache first
+    adjustment_values = (Decimal('0'), Decimal(
+        '.00000001'), Decimal('-.00000001'))
+    elevation_nodes = []
+    for node in all_incomplete_nodes:
+        for adjustment_lat in adjustment_values:
+            for adjustment_lon in adjustment_values:
+                lat = node[0] + adjustment_lat
+                lon = node[1] + adjustment_lon
+                elevation = cur.execute(
+                    f'SELECT elevation FROM CachedPoints WHERE lat = {lat} AND lon = {lon}').fetchall()
+                if len(elevation) > 0:
+                    elevation_nodes.append(
+                        (str(elevation[0][0]), str(node[0]), str(node[1])))
+                    break
+
+    query = f'UPDATE {table} SET elevation = ? WHERE lat = ? AND lon = ?'
+    cur.executemany(query, track(elevation_nodes))
 
 
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
-#print(cur.execute('SELECT * FROM Trails WHERE name = "A Slope"').fetchall())
+#cur.execute('CREATE INDEX TrailCoordinates ON TrailPoints(lat, lon)')
+#cur.execute('CREATE INDEX LiftCoordinates ON LiftPoints(lat, lon)')
 
 # db.commit()
 # db.close()

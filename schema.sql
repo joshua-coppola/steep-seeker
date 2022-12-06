@@ -64,6 +64,9 @@ CREATE TABLE "TrailPoints"
     FOREIGN KEY("trail_id") REFERENCES "Trails"("trail_id") ON DELETE CASCADE
 );
 
+CREATE INDEX "TrailCoordinates"
+ON "TrailPoints"("lat", "lon")
+
 
 DROP TABLE IF EXISTS LiftPoints;
 
@@ -77,6 +80,9 @@ CREATE TABLE "LiftPoints"
     PRIMARY KEY("ind","lift_id"),
     FOREIGN KEY("lift_id") REFERENCES "Lifts"("lift_id") ON DELETE CASCADE
 );
+
+CREATE INDEX "LiftCoordinates"
+ON "LiftPoints"("lat", "lon")
 
 DROP TABLE IF EXISTS CachedPoints;
 
