@@ -31,8 +31,8 @@ def read_osm(filename):
         # node processing -- nodes always appear before anything else in an OSM file
         if 'node' == parsed['class']:
             try:
-                parsed['lat'] = Decimal(parsed['lat'])
-                parsed['lon'] = Decimal(parsed['lon'])
+                parsed['lat'] = round(Decimal(parsed['lat']), 8)
+                parsed['lon'] = round(Decimal(parsed['lon']), 8)
                 nodes[parsed['id']] = {key: parsed[key]
                                        for key in ['lat', 'lon']}
             except:

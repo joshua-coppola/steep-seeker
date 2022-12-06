@@ -12,7 +12,9 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 - [ ] Compass rose placement can be iffy on some mountains
 - [x] Area trail names do not display
 - [x] Lifts do not have elevation
-- [ ] Cache struggles with floating point errors, leads to about 90% success rate
+- [x] Cache struggles with floating point errors, leads to about 90% success rate
+- [ ] Cache fetch is slow, 30s for 3000 points
+- [ ] Program hangs between processing trails and lifts
 - [x] Legends display on tiny maps, leading to them being cutoff
 
 ### Features
@@ -27,11 +29,6 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 ### Maps to fix
 
 - Burke - rotate?
-- Killington - 10 unnamed trails, many duplicates
-- Mad River Glen - 13  unnamed trails, many duplicates
-- Magic - 16 unnamed trails, many duplicates
-- Mount Snow - 5 unnamed trails, 1 piste type, jagged trails
-- Pico - Outlaw piste type, many trails named the same, 'A slope' is rated -14 degrees
+- Pico - Outlaw piste type, many trails named the same
 - Smuggler's Notch - 22 unnamed trails
 - Stowe - 7 unnamed trails & many with same name, grab new OSM file
-- Sugarbush - 9 unnamed trails

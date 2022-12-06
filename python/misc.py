@@ -229,7 +229,8 @@ def get_steep_pitch(nodes, length):
                 elevation_change = nodes[loc][2] - point[2]
                 slope = None
                 if elevation_change != 0:
-                    slope = degrees(atan(elevation_change / cumulative_dist))
+                    slope = abs(
+                        degrees(atan(elevation_change / cumulative_dist)))
                 else:
                     slope = 0
                 if slope > max_pitch:
