@@ -23,6 +23,9 @@ def bulk_create_maps():
         maps.create_map(mountain[0], mountain[1])
 
 
+#db.rotate_clockwise('Sugar Bowl', 'CA')
+#maps.create_map('Sugar Bowl', 'CA')
+#db.change_state('Heavenly', 'NV', 'CA')
 bulk_add_resorts()
 # maps.create_map("Cochran's", 'VT')
 # bulk_create_maps()

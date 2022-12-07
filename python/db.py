@@ -8,8 +8,14 @@ import misc
 import read_osm
 
 
-def reset_db():
+def db_connect():
     db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+    return (cur, db)
+
+
+def reset_db():
+    cur, db = db_connect()
 
     with open('schema.sql') as f:
         db.executescript(f.read())
@@ -38,15 +44,7 @@ def add_trails(cur, mountain_id, trails, lifts):
 
     # calculate elevation and slope for each point
     print('Processing Trails')
-    get_elevation_from_cache(cur, 'TrailPoints')
-    all_incomplete_nodes = cur.execute(
-        'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
-    # print(all_incomplete_nodes)
-    print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
-    elevation_values = misc.get_elevation(all_incomplete_nodes)
-    for row in elevation_values:
-        cur.execute(
-            f'UPDATE TrailPoints SET elevation = {row[2]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+    add_elevation(cur, 'TrailPoints')
 
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon, elevation FROM TrailPoints WHERE slope IS NULL').fetchall()
@@ -59,16 +57,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     # calculate elevation for each lift point
     print('Processing Lifts')
     # check cache first
-    get_elevation_from_cache(cur, 'LiftPoints')
-
-    all_incomplete_nodes = cur.execute(
-        'SELECT lat, lon FROM LiftPoints WHERE elevation IS NULL').fetchall()
-    print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
-
-    elevation_values = misc.get_elevation(all_incomplete_nodes)
-    for row in elevation_values:
-        cur.execute(
-            f'UPDATE LiftPoints SET elevation = {row[2]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+    add_elevation(cur, 'LiftPoints')
 
     # process areas
     trail_ids = cur.execute(
@@ -80,21 +69,14 @@ def add_trails(cur, mountain_id, trails, lifts):
 
         centerline_nodes = misc.process_area(nodes)
         centerline_nodes = misc.fill_point_gaps(centerline_nodes)
+        centerline_nodes = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
+            Decimal(x['lon']), 8)} for x in centerline_nodes]
         for i, node in enumerate(centerline_nodes):
             cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
                 VALUES ({}, {}, 0, "{}", "{}")'.format(i, trail_id[0], node['lat'], node['lon']))
 
     print('Processing Areas')
-    get_elevation_from_cache(cur, 'TrailPoints')
-
-    all_incomplete_nodes = cur.execute(
-        'SELECT lat, lon FROM TrailPoints WHERE elevation IS NULL').fetchall()
-    print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
-
-    elevation_values = misc.get_elevation(all_incomplete_nodes)
-    for row in elevation_values:
-        cur.execute(
-            f'UPDATE TrailPoints SET elevation = {row[2]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
+    add_elevation(cur, 'TrailPoints')
 
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon, elevation FROM TrailPoints WHERE slope IS NULL').fetchall()
@@ -150,9 +132,7 @@ def add_resort(name):
     if state == None:
         return None
 
-    db = sqlite3.connect('data/db.db')
-
-    cur = db.cursor()
+    cur, db = db_connect()
 
     resort_exists = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
                                 (name, state,),).fetchall()
@@ -178,10 +158,6 @@ def add_resort(name):
         db.close()
         return None
 
-    # move file once processed into the right folder for the state
-    if os.path.exists(f'data/osm/{state}'):
-        os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
-
     cur.execute(f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
         VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})')
 
@@ -199,8 +175,8 @@ def add_resort(name):
     difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
 
     cur.execute(
-        f'UPDATE Mountains SET vertical = {misc.get_vert(elevations)}, difficulty = {difficulty}, \
-            beginner_friendliness = {beginner_friendliness} WHERE mountain_id = {mountain_id}')
+        f'UPDATE Mountains SET vertical = {int(misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
+            beginner_friendliness = {round(beginner_friendliness, 1)} WHERE mountain_id = {mountain_id}')
 
     # set direction
     trail_ids = cur.execute(
@@ -220,6 +196,10 @@ def add_resort(name):
     cur.execute(
         f'UPDATE Mountains SET direction = "{direction}" WHERE mountain_id = {mountain_id}')
 
+    # move file once processed into the right folder for the state
+    if os.path.exists(f'data/osm/{state}'):
+        os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
+
     db.commit()
     db.close()
 
@@ -227,8 +207,7 @@ def add_resort(name):
 
 
 def delete_resort(name, state):
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    cur, db = db_connect()
     mountain_id = cur.execute(
         'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (name, state)).fetchall()[0][0]
     trail_ids = cur.execute(
@@ -250,8 +229,7 @@ def delete_resort(name, state):
 
 
 def delete_trail(mountain_id, trail_id):
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    cur, db = db_connect()
 
     cur.execute(f'DELETE FROM TrailPoints WHERE trail_id = {trail_id}')
     cur.execute(f'DELETE FROM Trails WHERE trail_id = {trail_id}')
@@ -274,8 +252,7 @@ def delete_trail(mountain_id, trail_id):
 
 
 def delete_lift(mountain_id, lift_id):
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    cur, db = db_connect()
 
     cur.execute(f'DELETE FROM Lifts WHERE lift_id = {lift_id}')
 
@@ -289,8 +266,8 @@ def delete_lift(mountain_id, lift_id):
 
 
 def fill_cache():
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    cur, db = db_connect()
+
     for item in os.listdir('data/cached'):
         with open(f'data/cached/{item}', mode='r') as csv_file:
             csv_contents = csv.reader(csv_file)
@@ -311,8 +288,7 @@ def fill_cache():
 
 
 def get_mountains():
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    cur, db = db_connect()
 
     mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
 
@@ -320,13 +296,12 @@ def get_mountains():
     return(mountains)
 
 
-def get_elevation_from_cache(cur, table):
+def add_elevation(cur, table):
     if table != 'TrailPoints' and table != 'LiftPoints':
         print('Bad value for table name')
         return
 
     query = f'SELECT lat, lon FROM {table} WHERE elevation IS NULL'
-
     all_incomplete_nodes = cur.execute(query).fetchall()
 
     print(
@@ -350,7 +325,79 @@ def get_elevation_from_cache(cur, table):
                     break
 
     query = f'UPDATE {table} SET elevation = ? WHERE lat = ? AND lon = ?'
-    cur.executemany(query, track(elevation_nodes))
+    cur.executemany(query, elevation_nodes)
+
+    query = f'SELECT lat, lon FROM {table} WHERE elevation IS NULL'
+    all_incomplete_nodes = cur.execute(query).fetchall()
+
+    all_incomplete_nodes = [(round(Decimal(x[0]), 8), round(
+        Decimal(x[1]), 8)) for x in all_incomplete_nodes]
+
+    print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
+    uncached_elevation_nodes = misc.get_elevation(all_incomplete_nodes)
+    uncached_elevation_nodes = [(str(x[0]), str(x[1]), str(x[2]))
+                                for x in uncached_elevation_nodes]
+
+    query = f'UPDATE {table} SET elevation = ? WHERE lat = ? AND lon = ?'
+    cur.executemany(query, uncached_elevation_nodes)
+
+    for node in uncached_elevation_nodes:
+        try:
+            query = 'INSERT INTO CachedPoints (elevation, lat, lon) VALUES (?, ?, ?)'
+            cur.execute(query, node)
+        except:
+            count = cur.execute(
+                f'SELECT COUNT(*) FROM CachedPoints WHERE lat = {node[1]} AND lon = {node[2]}').fetchall()[0][0]
+            if count > 0:
+                continue
+            else:
+                print('Error encountered when inserting points into CachedPoints table')
+                return(-1)
+
+
+def rotate_clockwise(name, state):
+    cur, db = db_connect()
+
+    query = 'SELECT direction FROM Mountains WHERE name = ? AND state = ?'
+    params = (name, state)
+    current_direction = cur.execute(query, params).fetchall()[0][0]
+
+    new_direction = ''
+    if current_direction == 'n':
+        new_direction = 'e'
+    if current_direction == 'e':
+        new_direction = 's'
+    if current_direction == 's':
+        new_direction = 'w'
+    if current_direction == 'w':
+        new_direction = 'n'
+
+    query = 'UPDATE Mountains SET direction = ? WHERE name = ? AND state = ?'
+    params = (new_direction, name, state)
+
+    cur.execute(query, params)
+
+    db.commit()
+    db.close()
+
+
+def change_state(name, state, new_state):
+    cur, db = db_connect()
+
+    query = 'UPDATE Mountains SET state = ? WHERE name = ? AND state = ?'
+    params = (new_state, name, state)
+
+    cur.execute(query, params)
+    if os.path.exists(f'data/osm/{state}') and os.path.exists(f'data/osm/{new_state}'):
+        os.rename(f'data/osm/{state}/{name}.osm',
+                  f'data/osm/{new_state}/{name}.osm')
+
+    if os.path.exists(f'data/maps/{state}') and os.path.exists(f'data/maps/{new_state}'):
+        os.rename(f'data/maps/{state}/{name}.svg',
+                  f'data/maps/{new_state}/{name}.svg')
+
+    db.commit()
+    db.close()
 
 
 #db = sqlite3.connect('data/db.db')

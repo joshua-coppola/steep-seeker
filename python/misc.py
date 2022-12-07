@@ -11,7 +11,7 @@ from rich.progress import track
 
 def find_state(filename: str):
     # Check if file exists
-    print(filename)
+    print(f'\n{filename}\n')
     if not exists(f'data/osm/{filename}'):
         print('No file found')
         return None
@@ -161,7 +161,7 @@ def get_elevation(nodes):
         print('Error - Mismatch in number of coordinates vs number of elevation points')
 
     for i, point_ele in enumerate(elevation):
-        nodes[i] = (nodes[i][0], nodes[i][1], point_ele)
+        nodes[i] = (point_ele, nodes[i][0], nodes[i][1])
     return nodes
 
 

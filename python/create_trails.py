@@ -107,6 +107,8 @@ def process_trails(ways):
     if len(multiples) > 0:
         print('The following trails have X number of ways named the same. Please see if they all make sense.')
         for item in multiples:
+            if item[0] == '':
+                continue
             print(item)
             for trail in trails:
                 if trail['name'] == item[0]:

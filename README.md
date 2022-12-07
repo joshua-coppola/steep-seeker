@@ -13,8 +13,8 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 - [x] Area trail names do not display
 - [x] Lifts do not have elevation
 - [x] Cache struggles with floating point errors, leads to about 90% success rate
-- [ ] Cache fetch is slow, 30s for 3000 points
-- [ ] Program hangs between processing trails and lifts
+- [x] Cache fetch is slow, 30s for 3000 points
+- [x] Program hangs between processing trails and lifts
 - [x] Legends display on tiny maps, leading to them being cutoff
 
 ### Features
@@ -32,3 +32,10 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 - Pico - Outlaw piste type, many trails named the same
 - Smuggler's Notch - 22 unnamed trails
 - Stowe - 7 unnamed trails & many with same name, grab new OSM file
+- Heavenly - 24 unnamed trails
+- Mammoth - 35 unnamed trails
+- Palisades Tahoe - 182 unnamed trails
+- Echo Mountain - Title & sources cut off
+- Kendall Mountain - Title cut off
+- Sunlight - no trail names
+- Telluride - normal trails marked as areas
