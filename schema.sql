@@ -26,6 +26,7 @@ CREATE TABLE "Trails"
     "area" BOOLEAN NOT NULL,
     "gladed" BOOLEAN NOT NULL,
     "official_rating" REAL,
+    "steepest_30m" REAL,
     "steepest_50m" REAL,
     "steepest_100m" REAL,
     "steepest_200m" REAL,
@@ -67,6 +68,9 @@ CREATE TABLE "TrailPoints"
 CREATE INDEX "TrailCoordinates"
 ON "TrailPoints"("lat", "lon")
 
+CREATE INDEX "TrailId"
+ON "TrailPoints"("trail_id")
+
 
 DROP TABLE IF EXISTS LiftPoints;
 
@@ -83,6 +87,9 @@ CREATE TABLE "LiftPoints"
 
 CREATE INDEX "LiftCoordinates"
 ON "LiftPoints"("lat", "lon")
+
+CREATE INDEX "LiftId"
+ON "LiftPoints"("lift_id")
 
 DROP TABLE IF EXISTS CachedPoints;
 

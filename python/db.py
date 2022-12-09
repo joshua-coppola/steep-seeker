@@ -99,17 +99,18 @@ def add_trails(cur, mountain_id, trails, lifts):
         nodes = cur.execute(
             f'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = {for_display}', (trail_id)).fetchall()
 
+        pitch_30 = misc.get_steep_pitch(nodes, 30)
         pitch_50 = misc.get_steep_pitch(nodes, 50)
         pitch_100 = misc.get_steep_pitch(nodes, 100)
         pitch_200 = misc.get_steep_pitch(nodes, 200)
         pitch_500 = misc.get_steep_pitch(nodes, 500)
         pitch_1000 = misc.get_steep_pitch(nodes, 1000)
-        vert = misc.get_vert(nodes)
-        length = misc.trail_length(nodes)
+        vert = int(misc.get_vert(nodes))
+        length = int(misc.trail_length(nodes))
 
-        cur.execute(f'UPDATE Trails SET steepest_50m = {pitch_50}, \
-            steepest_100m = "{pitch_100}", steepest_200m = "{pitch_200}", \
-            steepest_500m = "{pitch_500}", steepest_1000m = "{pitch_1000}", \
+        cur.execute(f'UPDATE Trails SET steepest_30m = {pitch_30}, steepest_50m = {pitch_50}, \
+            steepest_100m = {pitch_100}, steepest_200m = {pitch_200}, \
+            steepest_500m = {pitch_500}, steepest_1000m = {pitch_1000}, \
             vertical_drop = {vert}, length = {length} WHERE trail_id = ?', (trail_id))
 
     # calculate the length of lifts
@@ -119,7 +120,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     for lift_id in lifts_to_be_computed:
         nodes = cur.execute(
             'SELECT lat, lon FROM LiftPoints WHERE lift_id = ?', (lift_id)).fetchall()
-        length = misc.trail_length(nodes)
+        length = int(misc.trail_length(nodes))
 
         cur.execute(
             f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
@@ -127,17 +128,18 @@ def add_trails(cur, mountain_id, trails, lifts):
 
 # need to automate direction
 def add_resort(name):
+    cur, db = db_connect()
+
     state = misc.find_state(f'{name}.osm')
 
     if state == None:
         return None
 
-    cur, db = db_connect()
+    query = 'SELECT COUNT(*) FROM Mountains WHERE name = ? AND state = ?'
+    params = (name, state)
+    resort_exists = cur.execute(query, params).fetchall()[0][0]
 
-    resort_exists = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
-                                (name, state,),).fetchall()
-
-    if len(resort_exists) > 0:
+    if resort_exists > 0:
         print('Resort already exists, exiting')
         db.close()
         return None
@@ -161,8 +163,7 @@ def add_resort(name):
     cur.execute(f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
         VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})')
 
-    mountain_id = cur.execute('SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?',
-                              (name, state,),).fetchone()[0]
+    mountain_id = get_mountain_id(name, state, cur)
 
     add_trails(cur, mountain_id, trails, lifts)
 
@@ -170,8 +171,9 @@ def add_resort(name):
         f'SELECT elevation FROM TrailPoints NATURAL JOIN \
         (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
 
+    # only use trails longer than 100m for difficulty calculations
     trail_slopes = cur.execute(
-        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_50m DESC').fetchall()
+        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} AND length > 100 ORDER BY steepest_50m DESC').fetchall()
     difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
 
     cur.execute(
@@ -206,23 +208,103 @@ def add_resort(name):
     return state
 
 
+def refresh_resort(name, state):
+    cur, db = db_connect()
+
+    try:
+        os.rename(f'data/osm/{state}/{name}.osm', f'data/osm/{name}.osm')
+    except:
+        if not os.path.exists(f'data/osm/{name}.osm'):
+            print('OSM file not found')
+            return None
+
+    delete_trails_and_lifts(name, state)
+    trails, lifts = read_osm.read_osm(f'{name}.osm')
+
+    trail_count = len(trails)
+    lift_count = len(lifts)
+
+    if trail_count == 0:
+        print('No trails found, exiting')
+        db.close()
+        return None
+
+    if lift_count == 0:
+        print('No lifts found, exiting')
+        db.close()
+        return None
+
+    mountain_id = get_mountain_id(name, state)
+
+    query = 'UPDATE Mountains SET trail_count = ?, lift_count = ? WHERE mountain_id = ?'
+    params = (trail_count, lift_count, mountain_id)
+    cur.execute(query, params)
+
+    add_trails(cur, mountain_id, trails, lifts)
+
+    elevations = cur.execute(
+        f'SELECT elevation FROM TrailPoints NATURAL JOIN \
+        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
+
+    # only use trails longer than 100m for difficulty calculations
+    trail_slopes = cur.execute(
+        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} AND length > 100 ORDER BY steepest_50m DESC').fetchall()
+    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
+
+    cur.execute(
+        f'UPDATE Mountains SET vertical = {int(misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
+            beginner_friendliness = {round(beginner_friendliness, 1)} WHERE mountain_id = {mountain_id}')
+
+    # move file once processed into the right folder for the state
+    if os.path.exists(f'data/osm/{state}'):
+        os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
+
+    db.commit()
+    db.close()
+
+    return state
+
+
 def delete_resort(name, state):
     cur, db = db_connect()
-    mountain_id = cur.execute(
-        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (name, state)).fetchall()[0][0]
-    trail_ids = cur.execute(
-        f'SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id}').fetchall()
-    lift_ids = cur.execute(
-        f'SELECT lift_id FROM Lifts WHERE mountain_id = {mountain_id}').fetchall()
-    cur.execute(
-        'DELETE FROM Mountains WHERE name = ? AND state = ?', (name, state))
-    cur.execute(f'DELETE FROM Trails WHERE mountain_id = {mountain_id}')
-    cur.execute(f'DELETE FROM Lifts WHERE mountain_id = {mountain_id}')
 
-    for trail_id in trail_ids:
-        cur.execute(f'DELETE FROM TrailPoints WHERE trail_id = {trail_id[0]}')
-    for lift_id in lift_ids:
-        cur.execute(f'DELETE FROM LiftPoints WHERE lift_id = {lift_id[0]}')
+    delete_trails_and_lifts(name, state)
+
+    query = 'DELETE FROM Mountains WHERE name = ? AND state = ?'
+    params = (name, state)
+    cur.execute(query, params)
+
+    db.commit()
+    db.close()
+
+
+def delete_trails_and_lifts(name, state):
+    cur, db = db_connect()
+
+    # clear out old mountain data without deleting entry in Mountains table
+    mountain_id = get_mountain_id(name, state)
+
+    query = 'SELECT trail_id FROM Trails WHERE mountain_id = ?'
+    params = (mountain_id,)
+    trail_ids = cur.execute(query, params).fetchall()
+
+    query = 'DELETE FROM TrailPoints WHERE trail_id = ?'
+    cur.executemany(query, trail_ids)
+
+    query = 'DELETE FROM Trails WHERE mountain_id = ?'
+    params = (mountain_id,)
+    cur.execute(query, params)
+
+    query = 'SELECT lift_id FROM Lifts WHERE mountain_id = ?'
+    params = (mountain_id,)
+    lift_ids = cur.execute(query, params).fetchall()
+
+    query = 'DELETE FROM LiftPoints WHERE lift_id = ?'
+    cur.executemany(query, lift_ids)
+
+    query = 'DELETE FROM Lifts WHERE mountain_id = ?'
+    params = (mountain_id,)
+    cur.execute(query, params)
 
     db.commit()
     db.close()
@@ -285,6 +367,17 @@ def fill_cache():
                         return -1
     db.commit()
     db.close()
+
+
+def get_mountain_id(name, state, cur=None):
+    if cur == None:
+        cur, db = db_connect()
+
+    query = 'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?'
+    params = (name, state)
+    mountain_id = cur.execute(query, params).fetchall()[0][0]
+
+    return mountain_id
 
 
 def get_mountains():
@@ -403,8 +496,9 @@ def change_state(name, state, new_state):
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 
-#cur.execute('CREATE INDEX TrailCoordinates ON TrailPoints(lat, lon)')
-#cur.execute('CREATE INDEX LiftCoordinates ON LiftPoints(lat, lon)')
+#cur.execute('ALTER TABLE Trails ADD COLUMN steepest_30m REAL')
+#cur.execute('CREATE INDEX TrailId ON TrailPoints(trail_id)')
+#cur.execute('CREATE INDEX LiftId ON LiftPoints(lift_id)')
 
 # db.commit()
 # db.close()

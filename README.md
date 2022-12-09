@@ -9,7 +9,7 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 ### Known Bugs
 
 - [x] Legends do not scale correctly on smaller maps anymore
-- [ ] Compass rose placement can be iffy on some mountains
+- [x] Compass rose placement can be iffy on some mountains
 - [x] Area trail names do not display
 - [x] Lifts do not have elevation
 - [x] Cache struggles with floating point errors, leads to about 90% success rate

@@ -4,6 +4,7 @@ import haversine as hs
 from math import degrees, atan2
 from os.path import exists
 from os import makedirs
+from rich.progress import track
 
 import misc
 
@@ -148,7 +149,8 @@ def populate_map(mountain_id, direction, with_labels=True):
     lift_dict = [dict(zip(column_names, row)) for row in lift_list]
 
     # for each lift
-    for lift in lift_dict:
+    print('Rendering Lifts')
+    for lift in track(lift_dict):
         x = cur.execute(
             f"SELECT {x_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
         y = cur.execute(
@@ -182,7 +184,8 @@ def populate_map(mountain_id, direction, with_labels=True):
     trail_dict = [dict(zip(column_names, row)) for row in trail_list]
 
     # for each trail
-    for trail in trail_dict:
+    print('Rendering Trails')
+    for trail in track(trail_dict):
         x = cur.execute(
             f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
         y = cur.execute(
@@ -307,3 +310,4 @@ def create_map(resort_name, state, with_labels=True):
     if not exists(f'data/maps/{state}'):
         makedirs(f'data/maps/{state}')
     plt.savefig(f'data/maps/{state}/{resort_name}.svg', format='svg')
+    plt.close()

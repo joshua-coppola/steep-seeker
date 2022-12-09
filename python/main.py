@@ -17,15 +17,47 @@ def bulk_add_resorts():
             add_resort(item.split('.')[0])
 
 
+def refresh_resort(name, state):
+    return_state = db.refresh_resort(name, state)
+    if state == return_state:
+        maps.create_map(name, state)
+
+
+def bulk_refresh_resorts():
+    mountains = db.get_mountains()
+    for i, mountain in enumerate(mountains):
+        print(f'\nResort #{i + 1}/{len(mountains)}')
+        print(f'{mountain[0]}\n')
+        refresh_resort(mountain[0], mountain[1])
+
+
 def bulk_create_maps():
     mountains = db.get_mountains()
-    for mountain in track(mountains, description='Creating Maps...'):
+    for mountain in mountains:
         maps.create_map(mountain[0], mountain[1])
 
 
-#db.rotate_clockwise('Sugar Bowl', 'CA')
-#maps.create_map('Sugar Bowl', 'CA')
-#db.change_state('Heavenly', 'NV', 'CA')
-bulk_add_resorts()
-# maps.create_map("Cochran's", 'VT')
-# bulk_create_maps()
+def delete_all_resorts():
+    mountains = db.get_mountains()
+    for mountain in mountains:
+        db.delete_resort(mountain[0], mountain[1])
+
+
+def move_all_osm_files(source_dir):
+    # Loop through all subdirectories in the source directory
+    for root, dirs, files in os.walk(source_dir):
+        # Loop through all files in each subdirectory
+        for file_name in files:
+            # Create the full file path for the source file
+            source_file = os.path.join(root, file_name)
+            # Create the full file path for the destination file
+            dest_file = os.path.join('data/osm', file_name)
+            # Use the os.rename() method to move the file from the source to the destination
+            os.rename(source_file, dest_file)
+
+
+# move_all_osm_files('data/osm/ID')
+# bulk_add_resorts()
+# bulk_refresh_resorts()
+db.rotate_clockwise('Bald Mountain', 'ID')
+maps.create_map('Bald Mountain', 'ID')

@@ -183,7 +183,7 @@ def get_slope(nodes):
         elevation_change = previous_point[2] - point[2]
         previous_point = point
         if elevation_change != 0:
-            slope = degrees(atan(elevation_change / dist))
+            slope = abs(degrees(atan(elevation_change / dist)))
             nodes[i] = (nodes[i][0], nodes[i][1], nodes[i][2], slope)
         else:
             nodes[i] = (nodes[i][0], nodes[i][1], nodes[i][2], 0)
@@ -231,6 +231,8 @@ def get_steep_pitch(nodes, length):
                 if elevation_change != 0:
                     slope = abs(
                         degrees(atan(elevation_change / cumulative_dist)))
+                    if slope < 0:
+                        print(slope)
                 else:
                     slope = 0
                 if slope > max_pitch:
@@ -242,13 +244,13 @@ def get_steep_pitch(nodes, length):
         if length <= 50:
             elevation_change = nodes[-1][2] - nodes[0][2]
             if elevation_change != 0:
-                max_pitch = degrees(
-                    atan(elevation_change / trail_length(nodes)))
+                max_pitch = abs(degrees(
+                    atan(elevation_change / trail_length(nodes))))
             else:
                 max_pitch = 0
         else:
             return 'NULL'
-    return max_pitch
+    return round(max_pitch, 1)
 
 
 def get_vert(nodes):
