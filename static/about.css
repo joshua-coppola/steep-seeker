@@ -1,0 +1,52 @@
+main {
+  display: block;
+  padding: 0;
+}
+
+#content {
+  font-size: 20px;
+}
+
+.blurb {
+  display: grid;
+  grid-template-columns: 1fr 600px 600px 1fr;
+  padding: 32px;
+  gap: 64px;
+  margin-bottom: 0px !important;
+}
+.blurb.blurb-dark {
+  background-color: #e5f2ff;
+}
+.dark .blurb.blurb-dark {
+  background-color: #001a29;
+}
+
+.blurb p {
+  line-height: 1.5em;
+  margin-bottom: 16px;
+}
+
+.blurb table {
+  font-size: 16px;
+  border: 2px solid var(--color-border);
+  width: 100%;
+  margin-top: 100px;
+}
+
+.blurb tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.blurb thead {
+  font-weight: bold;
+}
+
+.blurb td {
+  padding: 16px;
+  /* text-align: center; */
+  vertical-align: center;
+}
+
+.blurb h2 {
+  margin-bottom: 16px;
+}

@@ -1,0 +1,112 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+Rankings
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/rankings.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+  <h1>Mountain Rankings</h1>
+  <ul class="ranking-sort">
+    {% if sort == "difficulty" %}
+      {% if order == "desc" %}
+        <li><a href="/rankings?sort=difficulty&order=asc&region={{request.args.get('region')}}" class="active">Difficulty &#x25bc;</a></li>
+      {% endif %}
+      {% if order == "asc" %}
+        <li><a href="/rankings?sort=difficulty&order=desc&region={{request.args.get('region')}}" class="active">Difficulty &#x25b2;</a></li>
+      {% endif %}
+
+      <li><a href="/rankings?sort=beginner&order=desc&region={{request.args.get('region')}}">Beginner Friendliness</a></li>
+    {% endif %}
+
+    {% if sort == "beginner" %}
+      <li><a href="/rankings?sort=difficulty&order=desc&region={{request.args.get('region')}}">Difficulty</a></li>
+
+      {% if order == "desc" %}
+        <li><a href="/rankings?sort=beginner&order=asc&region={{request.args.get('region')}}" class="active">Beginner Friendliness &#x25bc;</a></li>
+      {% endif %}
+      {% if order == "asc" %}
+        <li><a href="/rankings?sort=beginner&order=desc&region={{request.args.get('region')}}" class="active">Beginner Friendliness &#x25b2;</a></li>
+      {% endif %}
+    {% endif %}
+  </ul>
+
+  <ul class="ranking-sort">
+    {% if region == "usa" %}
+      <li><a class="active">USA</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a></li>
+    {% endif %}
+    {% if region == "northeast" %}
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a></li>
+      <li><a class="active">Northeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a></li>
+    {% endif %}
+    {% if region == "southeast" %}
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a></li>
+      <li><a class="active">Southeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a></li>
+    {% endif %}
+    {% if region == "midwest" %}
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a></li>
+      <li><a class="active">Midwest</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a></li>
+    {% endif %}
+    {% if region == "west" %}
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a></li>
+      <li><a href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a></li>
+      <li><a class="active">West</a></li>
+    {% endif %}
+  </ul>
+
+  <p class="detail">
+    {% if sort == "beginner" %}
+      The Beginner Friendliness ranking is a weighted average of the easiest trails at each resort. It shows how easy it would be to learn to ski on these trails.
+      The color denotes what the easiest trails at a mountain are rated. The longer the bar, the easier the learning terrain is.
+    {% endif %}
+    {% if sort == "difficulty"%}
+      The Difficulty ranking is a weighted average of the hardest trails at each resort. It shows how much of a challenge the mountain will present to advanced skiers.
+      The color denotes how challenging the hardest trails at a mountain are. The longer the bar, the harder the average of the hardest trails at the resort.
+    {% endif %}
+  </p>
+
+  <div class="legend">
+    <ul>
+      <li><span class="icon difficulty-green"></span>Beginner</li>
+      <li><span class="icon difficulty-blue"></span>Intermediate</li>
+      <li><span class="icon difficulty-black"></span>Advanced</li>
+      <li><span class="icon difficulty-red"></span>Expert</li>
+      <li><span class="icon difficulty-yellow"></span>Extreme</li>
+    </ul>
+  </div>
+
+  <div class="rankings">
+    {% for mountain in mountains %}
+      {% if sort == "difficulty" %}
+        <a href="{{mountain.map_link}}" title="Difficulty: {{mountain.difficulty}}">{{mountain.name}} {{mountain.state}}</a>
+        <span class="{{'ranking-bar' if mountain.difficulty <= 45 else 'black-text'}}" title="{{mountain.name}} Difficulty: {{mountain.difficulty}}" style="--bar-size: {{
+          (mountain.difficulty)/55 * 60}}%; --bar-color: {{ 'green' if mountain.difficulty < 17 else 'royalblue' if mountain.difficulty < 24 else 'black' if mountain.difficulty < 30 else 'red' if mountain.difficulty < 45 else 'gold' }};">{{loop.index}}</span>
+      {% endif %}
+      {% if sort == "beginner" %}
+        <a href="{{mountain.map_link}}" title="Beginner Friendliness: {{mountain.beginner_friendliness}}">{{mountain.name}} {{mountain.state}}</a>
+        <span class="ranking-bar" title="{{mountain.name}} Beginner Friendliness: {{mountain.beginner_friendliness}}" style="--bar-size: {{
+          (mountain.beginner_friendliness)/30 * 60}}%; --bar-color: {{ 'green' if mountain.beginner_friendliness > 13 else 'royalblue' if mountain.beginner_friendliness > 6 else 'black' if mountain.beginner_friendliness > 0 else 'red' if mountain.beginner_friendliness > -15 else 'gold' }};">{{loop.index}}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock content %}

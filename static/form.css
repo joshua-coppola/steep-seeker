@@ -1,0 +1,107 @@
+.form-slider-tick, .form-slider-track {
+  fill: var(--color-primary);
+}
+.form-slider-tick:last-child {
+  transform: translateX(-1px);
+}
+
+.form-slider svg {
+  overflow: visible;
+}
+.form-slider-thumb {
+  fill: var(--color-background);
+}
+.form-slider-thumb-border.focused {
+  fill: var(--color-accent);
+}
+.form-slider-thumb-border {
+  fill: var(--color-primary);
+}
+*[disabled] .form-slider-thumb-border {
+  fill: var(--color-tertiary);
+}
+.form-slider-text {
+  font-size: 12px;
+  fill: var(--color-primary);
+  text-anchor: middle;
+}
+.form-slider-text:first-of-type {
+  text-anchor: start;
+}
+.form-slider-text:last-of-type {
+  text-anchor: end;
+}
+*[disabled] .form-slider-text {
+  fill: var(--color-tertiary);
+}
+
+.ts-form, .ts-form fieldset, .form-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ts-form {
+  font-size: 18px;
+  gap: 16px;
+}
+.ts-form input {
+  border-radius: 4px;
+  border: 1px solid var(--color-primary);
+  padding: 4px 8px;
+  background-color: transparent;
+}
+.ts-form input[type=submit] {
+  font-size: 20px;
+  color: white;
+  border: none;
+  background-color: var(--color-accent);
+  padding: 0 16px;
+  height: 36px;
+}
+*[disabled] {
+  color: var(--color-tertiary);
+}
+*[disabled] input {
+  border-color: var(--color-tertiary);
+}
+
+.ts-form > *:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+}
+
+.form-group, fieldset.form-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.form-group.form-group-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.form-group.big * {
+  font-size: 20px;
+}
+
+.form-difficulty.inactive {
+  opacity: 50%;
+}
+.form-difficulty.beginner {
+  fill: green;
+}
+.form-difficulty.intermediate {
+  fill: royalblue;
+}
+.form-difficulty.advanced {
+  fill: #222;
+}
+.form-difficulty.expert {
+  fill: red;
+}
+.form-difficulty.extreme {
+  fill: gold;
+}
+*[disabled] .form-difficulty {
+  filter: grayscale();
+}

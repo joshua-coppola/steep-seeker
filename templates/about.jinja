@@ -1,0 +1,99 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+About
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/about.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+  <section class="blurb">
+    <div></div>
+    <h1>About</h1>
+  </section>
+  <section class="blurb">
+    <div></div>
+    <div>
+      <p>The goal of this project is to allow for skiers and riders to have a
+      reliable metric with which to compare trails between mountains. Often,
+      a black diamond trail at one ski area is very different from another
+      black diamond trail at a different ski area, especially across
+      geographic regions. Our standardized rating scale aims to fix this.</p>
+    </div>
+  </section>
+  <section class="blurb blurb-dark">
+    <div></div>
+    <div class="center center-vertical">
+      <table>
+        <thead>
+          <tr>
+            <td>Pitch (in degrees)</td>
+            <td>Difficulty</td>
+            <td>Color on Map</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0-17</td>
+            <td>Beginner</td>
+            <td><span class="icon difficulty-green"></span>Green</td>
+          </tr>
+          <tr>
+            <td>17-24</td>
+            <td>Intermediate</td>
+            <td><span class="icon difficulty-blue"></span>Blue</td>
+          </tr>
+          <tr>
+            <td>24-30</td>
+            <td>Advanced</td>
+            <td><span class="icon difficulty-black"></span>Black</td>
+          </tr>
+          <tr>
+            <td>30-45</td>
+            <td>Expert</td>
+            <td><span class="icon difficulty-red"></span>Red</td>
+          </tr>
+          <tr>
+            <td>45+</td>
+            <td>Extreme Terrain</td>
+            <td><span class="icon difficulty-yellow"></span>Yellow</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h2>How It Works</h2>
+
+      <p>The data for each map comes from OpenStreetMaps and USGS.
+      OpenStreetmaps is used for the routes of each trail at a mountain.
+      This data is provided by the community, and is not error free. Should a
+      problem with a mountain be identified, the best course of action is to
+      correct the problem on OSM, then reach out so we can update the map. The
+      OSM data is then supplemented with elevation data from USGS’s NED10
+      elevation dataset. This dataset provides high quality elevation data
+      with a 10 meter resolution for the entire United States (minus some
+      parts of Alaska). Unfortunately, elevation data of sufficient quality
+      (10m or better resolution) is rare for other countries, hence why only
+      US mountains are included.</p>
+      
+      <p>On each map, the degree label on each trail is for the steepest 60
+      meters. The colors are determined by the same 60 meters, plus a
+      modifier of 7 degrees if the trail is gladed.</p>
+    </div>
+  </section>
+  <section class="blurb">
+    <div></div>
+    <div>
+      <h2 id="about-rankings">Mountain Rankings</h2>
+      <p>There are two types of mountain comparison barplots: how hard the
+      hardest trails are and how easy the easiest area is. This is created
+      using a weighted average of the top 20 hardest and easiest trails to
+      create a metric that describes how expert and beginner friendly an
+      area is, and how it stacks up to other mountains. </p>
+    </div>
+  </section>
+  </section>
+{% endblock content %}

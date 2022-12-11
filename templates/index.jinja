@@ -1,0 +1,29 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+STAR Maps
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/index.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+  <div class="hero-text">
+    <h1><em>S</em>ki <em>T</em>rail <em>A</em>utomated <em>R</em>ating</h1>
+    <p>
+      STAR Maps provides detailed trail maps using a standardized difficulty
+      scale. This means that a blue at one ski area is comparable to another,
+      no matter which mountains are being compared.
+    </p>
+    <div class="hero-links">
+      <a href="/search" class="button-cta">Browse Mountains</a>
+      <a href="/about">Learn more</a>
+    </div>
+  </div>
+  <div class="hero-image">
+    <img src="/hero-image.png" width="400" height="400" />
+  </div>
+</section>
+{% endblock content %}

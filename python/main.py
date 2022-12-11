@@ -43,6 +43,11 @@ def delete_all_resorts():
         db.delete_resort(mountain[0], mountain[1])
 
 
+def rotate_map_clockwise(name, state):
+    db.rotate_clockwise(name, state)
+    maps.create_map(name, state)
+
+
 def move_all_osm_files(source_dir):
     # Loop through all subdirectories in the source directory
     for root, dirs, files in os.walk(source_dir):
@@ -56,8 +61,7 @@ def move_all_osm_files(source_dir):
             os.rename(source_file, dest_file)
 
 
-# move_all_osm_files('data/osm/ID')
+# move_all_osm_files('data/osm/ME')
 # bulk_add_resorts()
 # bulk_refresh_resorts()
-db.rotate_clockwise('Bald Mountain', 'ID')
-maps.create_map('Bald Mountain', 'ID')
+# rotate_map_clockwise('Titcomb', 'ME')

@@ -1,0 +1,43 @@
+#content {
+  display: flex;
+  gap: 32px;
+}
+
+.hero-text {
+  font-size: 20px;
+}
+
+.hero-text > * {
+  margin-bottom: 32px;
+}
+
+.hero-text h1 {
+  font-size: 36px;
+}
+
+.hero-text p {
+  line-height: 1.5em;
+}
+
+.hero-links > *:not(:last-child) {
+  margin-right: 32px;
+}
+
+em {
+  font-weight: bold;
+}
+
+.button-cta {
+  display: inline-block;
+  padding: 16px;
+  background-color: var(--color-accent);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+}
+.button-cta:hover {
+  opacity: 1;
+  color: white;
+  background-color: var(--color-accent-light);
+}

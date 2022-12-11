@@ -39,3 +39,11 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 - Kendall Mountain - Title cut off
 - Sunlight - no trail names
 - Telluride - normal trails marked as areas
+- Nashoba Valley - All trails are areas
+- Catamount - almost no trail names
+- Eaton - no names at all
+
+### Mountains with no trails/lifts (not a complete list)
+
+- Barker Mountain
+  
