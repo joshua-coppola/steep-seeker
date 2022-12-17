@@ -8,7 +8,9 @@ import maps
 def add_resort(name):
     state = db.add_resort(name)
     if state != None:
+        print('Creating Map')
         maps.create_map(name, state)
+        maps.create_thumbnail(name, state)
 
 
 def bulk_add_resorts():
@@ -20,7 +22,9 @@ def bulk_add_resorts():
 def refresh_resort(name, state):
     return_state = db.refresh_resort(name, state)
     if state == return_state:
+        print('Creating Map')
         maps.create_map(name, state)
+        maps.create_thumbnail(name, state)
 
 
 def bulk_refresh_resorts():
@@ -33,8 +37,19 @@ def bulk_refresh_resorts():
 
 def bulk_create_maps():
     mountains = db.get_mountains()
-    for mountain in mountains:
+    for mountain in track(mountains):
         maps.create_map(mountain[0], mountain[1])
+        maps.create_thumbnail(mountain[0], mountain[1])
+
+
+def delete_resort(name, state):
+    db.delete_resort(name, state)
+    if os.path.exists(f'data/osm/{state}/{name}.osm'):
+        os.remove(f'data/osm/{state}/{name}.osm')
+    if os.path.exists(f'data/maps/{state}/{name}.svg'):
+        os.remove(f'data/maps/{state}/{name}.svg')
+    if os.path.exists(f'data/thumbnails/{state}/{name}.svg'):
+        os.remove(f'data/thumbnails/{state}/{name}.svg')
 
 
 def delete_all_resorts():
@@ -46,6 +61,7 @@ def delete_all_resorts():
 def rotate_map_clockwise(name, state):
     db.rotate_clockwise(name, state)
     maps.create_map(name, state)
+    maps.create_thumbnail(name, state)
 
 
 def move_all_osm_files(source_dir):
@@ -60,8 +76,7 @@ def move_all_osm_files(source_dir):
             # Use the os.rename() method to move the file from the source to the destination
             os.rename(source_file, dest_file)
 
+#move_all_osm_files('data/osm/MT')
+#bulk_add_resorts()
+rotate_map_clockwise('Discovery', 'MT')
 
-# move_all_osm_files('data/osm/ME')
-# bulk_add_resorts()
-# bulk_refresh_resorts()
-# rotate_map_clockwise('Titcomb', 'ME')

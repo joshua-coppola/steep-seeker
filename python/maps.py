@@ -141,7 +141,7 @@ def populate_map(mountain_id, direction, with_labels=True):
 
     # lifts
     lift_list = cur.execute(
-        'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id)).fetchall()
+        'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id,)).fetchall()
 
     # convert results to dict
     desc = cur.description
@@ -149,8 +149,7 @@ def populate_map(mountain_id, direction, with_labels=True):
     lift_dict = [dict(zip(column_names, row)) for row in lift_list]
 
     # for each lift
-    print('Rendering Lifts')
-    for lift in track(lift_dict):
+    for lift in lift_dict:
         x = cur.execute(
             f"SELECT {x_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
         y = cur.execute(
@@ -176,7 +175,7 @@ def populate_map(mountain_id, direction, with_labels=True):
 
     # trails
     trail_list = cur.execute(
-        'SELECT trail_id, name, area, gladed, steepest_50m FROM Trails WHERE mountain_id = ?', (mountain_id)).fetchall()
+        'SELECT trail_id, name, area, gladed, steepest_50m FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
 
     # convert results to dict
     desc = cur.description
@@ -184,8 +183,7 @@ def populate_map(mountain_id, direction, with_labels=True):
     trail_dict = [dict(zip(column_names, row)) for row in trail_list]
 
     # for each trail
-    print('Rendering Trails')
-    for trail in track(trail_dict):
+    for trail in trail_dict:
         x = cur.execute(
             f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
         y = cur.execute(
@@ -231,20 +229,17 @@ def populate_map(mountain_id, direction, with_labels=True):
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
 
-def create_map(resort_name, state, with_labels=True):
+def find_map_size(mountain_id):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
-    mountain_id = cur.execute(
-        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (resort_name, state,),).fetchall()[0]
-
     trail_extremes = cur.execute(
         'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
-        INNER JOIN TrailPoints ON Trails.trail_id=TrailPoints.trail_id WHERE Trails.mountain_id = ?', (mountain_id)).fetchall()[0]
+        INNER JOIN TrailPoints ON Trails.trail_id=TrailPoints.trail_id WHERE Trails.mountain_id = ?', (mountain_id,)).fetchall()[0]
 
     lift_extremes = cur.execute(
         'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Lifts ON Mountains.mountain_id=Lifts.mountain_id \
-        INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?', (mountain_id)).fetchall()[0]
+        INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?', (mountain_id,)).fetchall()[0]
 
     # change in latitude (km)
     x_length = hs.haversine((max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]), (max(
@@ -255,7 +250,7 @@ def create_map(resort_name, state, with_labels=True):
         trail_extremes[0], max(trail_extremes[3], lift_extremes[3])), unit=hs.Unit.KILOMETERS)
 
     direction = cur.execute(
-        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id)).fetchall()[0][0]
+        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
 
     db.close()
 
@@ -265,6 +260,23 @@ def create_map(resort_name, state, with_labels=True):
         x_length = y_length
         y_length = temp
 
+    return(dict(x_length = x_length, y_length = y_length, x_point = trail_extremes[0], y_point = trail_extremes[2]))
+
+def create_map(resort_name, state, with_labels=True):
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+
+    mountain_id = cur.execute(
+        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (resort_name, state,),).fetchall()[0][0]
+
+    direction = cur.execute(
+        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
+
+    db.close()
+
+    dimensions = find_map_size(mountain_id)
+    x_length = dimensions['x_length']
+    y_length = dimensions['y_length']
     # makes resort name between 5-25 font size depending on map size
     font_size = max(min(int(x_length*10), 25), 5)
 
@@ -301,7 +313,7 @@ def create_map(resort_name, state, with_labels=True):
     #    rotate = 90
     # plt.gcf().text(.1, .1, '\u25b2\n\u25c1 N \u25b7\n\u25bd',
     #               ha='center', va='center', rotation=rotate, fontsize=font_size * .7)
-    create_legend(trail_extremes[0], trail_extremes[2],
+    create_legend(dimensions['x_point'], dimensions['y_point'],
                   direction, font_size / 2, bottom_loc)
 
     populate_map(mountain_id, direction, with_labels)
@@ -310,4 +322,41 @@ def create_map(resort_name, state, with_labels=True):
     if not exists(f'data/maps/{state}'):
         makedirs(f'data/maps/{state}')
     plt.savefig(f'data/maps/{state}/{resort_name}.svg', format='svg')
+    plt.close()
+
+
+def create_thumbnail(resort_name, state):
+    db = sqlite3.connect('data/db.db')
+    cur = db.cursor()
+
+    mountain_id = cur.execute(
+        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (resort_name, state,),).fetchall()[0][0]
+
+    direction = cur.execute(
+        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
+
+    db.close()
+
+    dimensions = find_map_size(mountain_id)
+    x_length = dimensions['x_length']
+    y_length = dimensions['y_length']
+
+    divisor = x_length * 2
+    x_length = x_length / divisor
+    y_length = y_length / divisor
+
+    plt.subplots(figsize=(x_length*2, ((y_length*2))))
+
+    plt.subplots_adjust(left=0, bottom=0, right=1,
+                        top=1, wspace=0, hspace=0)
+    plt.axis('off')
+    plt.xticks([])
+    plt.yticks([])
+
+    populate_map(mountain_id, direction, False)
+
+    # save map
+    if not exists(f'data/thumbnails/{state}'):
+        makedirs(f'data/thumbnails/{state}')
+    plt.savefig(f'data/thumbnails/{state}/{resort_name}.svg', format='svg')
     plt.close()

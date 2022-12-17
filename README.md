@@ -42,6 +42,8 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 - Nashoba Valley - All trails are areas
 - Catamount - almost no trail names
 - Eaton - no names at all
+- Nub's Nob - glades not tagged
+- Pine Knob - 'The Wall' missing area tag
 
 ### Mountains with no trails/lifts (not a complete list)
 
