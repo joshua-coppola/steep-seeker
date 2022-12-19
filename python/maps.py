@@ -108,7 +108,7 @@ def get_label_placement(x, y, length, name_length):
     return(point, angle, label_length)
 
 
-def populate_map(mountain_id, direction, with_labels=True):
+def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
     # configure correct item rotation & scaling
     lat_mirror = 1
     lon_mirror = -1
@@ -169,8 +169,11 @@ def populate_map(mountain_id, direction, with_labels=True):
             if point == 0 and angle == 0:
                 continue
             # Check that label is shorter than trail
-            if label_length < length:
-                plt.text(x[point], y[point], lift['name'], {'color': 'grey', 'size': 2, 'rotation': angle}, ha='center',
+            label_text = lift['name']
+            if label_text == '' and debug_mode:
+                label_text = lift['lift_id']
+            if label_length < length or debug_mode:
+                plt.text(x[point], y[point], label_text, {'color': 'grey', 'size': 2, 'rotation': angle}, ha='center',
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
     # trails
@@ -218,10 +221,12 @@ def populate_map(mountain_id, direction, with_labels=True):
                 trail['name'].strip(), trail['steepest_50m'], u'\N{DEGREE SIGN}')
             point, angle, label_length = get_label_placement(
                 x, y, length, len(label_text))
-            if point == 0 and angle == 0:
+            if point == 0 and angle == 0 and not debug_mode:
                 continue
             # Check that label is shorter than trail
-            if label_length < length:
+            if label_length < length or debug_mode:
+                if trail['name'].strip() == '' and debug_mode:
+                    label_text = trail['trail_id']
                 # improves contrast
                 if color == 'gold':
                     color = 'black'
@@ -262,7 +267,7 @@ def find_map_size(mountain_id):
 
     return(dict(x_length = x_length, y_length = y_length, x_point = trail_extremes[0], y_point = trail_extremes[2]))
 
-def create_map(resort_name, state, with_labels=True):
+def create_map(resort_name, state, with_labels=True, debug_mode=False):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
@@ -316,7 +321,7 @@ def create_map(resort_name, state, with_labels=True):
     create_legend(dimensions['x_point'], dimensions['y_point'],
                   direction, font_size / 2, bottom_loc)
 
-    populate_map(mountain_id, direction, with_labels)
+    populate_map(mountain_id, direction, with_labels, debug_mode)
 
     # save map
     if not exists(f'data/maps/{state}'):

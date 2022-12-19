@@ -12,6 +12,7 @@ def process_trails(ways):
             'gladed': None,
             'area': None,
             'type': None,
+            'valid': True,
             'nodes': unprocessed_way['nodes']
         }
         for tag in unprocessed_way['tags']:
@@ -32,11 +33,13 @@ def process_trails(ways):
                     way['type'] = 'trail'
                 else:
                     way['type'] = None
+                    way['valid'] = False
 
             # check if the way is a lift
             if 'aerialway' in tag:
                 if tag['aerialway'] in ['goods', 'station', 'zip line', 'explosive', 'abandoned', 'pylon', 'disused', 'proposed', 'no']:
                     way['type'] = None
+                    way['valid'] = False
                 else:
                     way['type'] = 'lift'
 
@@ -58,17 +61,21 @@ def process_trails(ways):
             if 'piste grooming' in tag:
                 if 'skating' in tag['piste grooming']:
                     way['type'] = None
+                    way['valid'] = False
             if 'mtb scale imba' in tag:
                 way['type'] = None
+                way['valid'] = False
             if 'landuse' in tag:
                 if tag['landuse'] == 'grass':
                     way['type'] = None
+                    way['valid'] = False
             if 'natural' in tag:
                 if tag['natural'] == 'wood':
                     way['area'] = True
                     way['gladed'] = True
                 if tag['natural'] == 'grassland':
                     way['type'] = None
+                    way['valid'] = False
             if 'leaf type' in tag:
                 if way['gladed'] != False:
                     way['gladed'] = True
@@ -76,14 +83,9 @@ def process_trails(ways):
             if 'public_transport' in tag:
                 if 'platform' in tag['public_transport']:
                     way['type'] = None
-        # if way['name'] != None and way['type'] == 'trail':
-        #    if 'glade' in way['name'] or 'Glade' in way['name'] or 'Tree Skiing' in way['name']:
-        #        if way['gladed'] == None:
-        #            way['gladed'] = True
-        #            print('Way #{} ({}) was found to be a glade through its name. Please double check & add the necessary tags.'.format(
-        #                way['id'], way['name']))
+                    way['valid'] = False
 
-        if way['type'] != None:
+        if way['type'] != None and way['valid']:
             if way['name'] == None or way['name'] == '':
                 way['name'] = ''
                 print(
