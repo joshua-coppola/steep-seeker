@@ -76,7 +76,6 @@ def move_all_osm_files(source_dir):
             # Use the os.rename() method to move the file from the source to the destination
             os.rename(source_file, dest_file)
 
-#move_all_osm_files('data/osm/NJ')
-#bulk_add_resorts()
-refresh_resort('Pajarito Mountain', 'NM')
+#move_all_osm_files('data/osm/OH')
+bulk_add_resorts()
 

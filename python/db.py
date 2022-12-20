@@ -126,6 +126,20 @@ def add_trails(cur, mountain_id, trails, lifts):
             f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
 
 
+def calc_mountain_stats(cur, mountain_id):
+    query = 'SELECT elevation FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
+    elevations = cur.execute(query, (mountain_id,)).fetchall()
+
+    # only use trails longer than 100m for difficulty calculations
+    query = 'SELECT steepest_50m FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY steepest_50m DESC'
+    trail_slopes = cur.execute(query, (mountain_id,)).fetchall()
+    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
+
+    query = 'UPDATE Mountains SET vertical = ?, difficulty = ?, beginner_friendliness = ? WHERE mountain_id = ?'
+    params = (int(misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), mountain_id)
+    cur.execute(query, params)
+
+
 # need to automate direction
 def add_resort(name):
     cur, db = db_connect()
@@ -167,18 +181,7 @@ def add_resort(name):
 
     add_trails(cur, mountain_id, trails, lifts)
 
-    elevations = cur.execute(
-        f'SELECT elevation FROM TrailPoints NATURAL JOIN \
-        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
-
-    # only use trails longer than 100m for difficulty calculations
-    trail_slopes = cur.execute(
-        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} AND length > 100 ORDER BY steepest_50m DESC').fetchall()
-    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
-
-    cur.execute(
-        f'UPDATE Mountains SET vertical = {int(misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
-            beginner_friendliness = {round(beginner_friendliness, 1)} WHERE mountain_id = {mountain_id}')
+    calc_mountain_stats(cur, mountain_id)
 
     # set direction
     trail_ids = cur.execute(
@@ -242,18 +245,7 @@ def refresh_resort(name, state):
 
     add_trails(cur, mountain_id, trails, lifts)
 
-    elevations = cur.execute(
-        f'SELECT elevation FROM TrailPoints NATURAL JOIN \
-        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
-
-    # only use trails longer than 100m for difficulty calculations
-    trail_slopes = cur.execute(
-        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} AND length > 100 ORDER BY steepest_50m DESC').fetchall()
-    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
-
-    cur.execute(
-        f'UPDATE Mountains SET vertical = {int(misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
-            beginner_friendliness = {round(beginner_friendliness, 1)} WHERE mountain_id = {mountain_id}')
+    calc_mountain_stats(cur, mountain_id)
 
     # move file once processed into the right folder for the state
     if os.path.exists(f'data/osm/{state}'):
@@ -336,6 +328,7 @@ def delete_trail(mountain_id, trail_id):
 def delete_lift(mountain_id, lift_id):
     cur, db = db_connect()
 
+    cur.execute(f'DELETE FROM LiftPoints WHERE lift_id = {lift_id}')
     cur.execute(f'DELETE FROM Lifts WHERE lift_id = {lift_id}')
 
     lift_count = cur.execute(
