@@ -560,7 +560,7 @@
     random () {
       return (this.x = Math.random()), (this.y = Math.random()), this
     }
-    * [Symbol.iterator] () {
+    *[Symbol.iterator] () {
       yield this.x, yield this.y
     }
   }
@@ -739,9 +739,7 @@
       )
     }
     getNormalMatrix (t) {
-      return this.setFromMatrix4(t)
-        .invert()
-        .transpose()
+      return this.setFromMatrix4(t).invert().transpose()
     }
     transposeIntoArray (t) {
       const e = this.elements
@@ -1094,9 +1092,10 @@
           case 'rgb':
           case 'rgba':
             if (
-              (t = /^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec(
-                r
-              ))
+              (t =
+                /^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec(
+                  r
+                ))
             )
               return (
                 (this.r = Math.min(255, parseInt(t[1], 10)) / 255),
@@ -1106,9 +1105,10 @@
                 this
               )
             if (
-              (t = /^\s*(\d+)\%\s*,\s*(\d+)\%\s*,\s*(\d+)\%\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec(
-                r
-              ))
+              (t =
+                /^\s*(\d+)\%\s*,\s*(\d+)\%\s*,\s*(\d+)\%\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec(
+                  r
+                ))
             )
               return (
                 (this.r = Math.min(100, parseInt(t[1], 10)) / 100),
@@ -1121,9 +1121,10 @@
           case 'hsl':
           case 'hsla':
             if (
-              (t = /^\s*(\d*\.?\d+)\s*,\s*(\d+)\%\s*,\s*(\d+)\%\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec(
-                r
-              ))
+              (t =
+                /^\s*(\d*\.?\d+)\s*,\s*(\d+)\%\s*,\s*(\d+)\%\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec(
+                  r
+                ))
             ) {
               const n = parseFloat(t[1]) / 360,
                 i = parseInt(t[2], 10) / 100,
@@ -1965,7 +1966,7 @@
         this
       )
     }
-    * [Symbol.iterator] () {
+    *[Symbol.iterator] () {
       yield this.x, yield this.y, yield this.z, yield this.w
     }
   }
@@ -2976,7 +2977,7 @@
         this
       )
     }
-    * [Symbol.iterator] () {
+    *[Symbol.iterator] () {
       yield this.x, yield this.y, yield this.z
     }
   }
@@ -3210,10 +3211,7 @@
       return e.copy(t).clamp(this.min, this.max)
     }
     distanceToPoint (t) {
-      return Lt.copy(t)
-        .clamp(this.min, this.max)
-        .sub(t)
-        .length()
+      return Lt.copy(t).clamp(this.min, this.max).sub(t).length()
     }
     getBoundingSphere (t) {
       return (
@@ -3406,19 +3404,10 @@
       return this.origin.copy(t.origin), this.direction.copy(t.direction), this
     }
     at (t, e) {
-      return e
-        .copy(this.direction)
-        .multiplyScalar(t)
-        .add(this.origin)
+      return e.copy(this.direction).multiplyScalar(t).add(this.origin)
     }
     lookAt (t) {
-      return (
-        this.direction
-          .copy(t)
-          .sub(this.origin)
-          .normalize(),
-        this
-      )
+      return this.direction.copy(t).sub(this.origin).normalize(), this
     }
     recast (t) {
       return this.origin.copy(this.at(t, Xt)), this
@@ -3428,10 +3417,7 @@
       const n = e.dot(this.direction)
       return n < 0
         ? e.copy(this.origin)
-        : e
-            .copy(this.direction)
-            .multiplyScalar(n)
-            .add(this.origin)
+        : e.copy(this.direction).multiplyScalar(n).add(this.origin)
     }
     distanceToPoint (t) {
       return Math.sqrt(this.distanceSqToPoint(t))
@@ -3440,18 +3426,12 @@
       const e = Xt.subVectors(t, this.origin).dot(this.direction)
       return e < 0
         ? this.origin.distanceToSquared(t)
-        : (Xt.copy(this.direction)
-            .multiplyScalar(e)
-            .add(this.origin),
+        : (Xt.copy(this.direction).multiplyScalar(e).add(this.origin),
           Xt.distanceToSquared(t))
     }
     distanceSqToSegment (t, e, n, i) {
-      Yt.copy(t)
-        .add(e)
-        .multiplyScalar(0.5),
-        Zt.copy(e)
-          .sub(t)
-          .normalize(),
+      Yt.copy(t).add(e).multiplyScalar(0.5),
+        Zt.copy(e).sub(t).normalize(),
         Jt.copy(this.origin).sub(Yt)
       const r = 0.5 * t.distanceTo(e),
         s = -this.direction.dot(Zt),
@@ -3493,16 +3473,8 @@
           (h = Math.max(0, -(s * u + a))),
           (d = -h * h + u * (u + 2 * o) + l)
       return (
-        n &&
-          n
-            .copy(this.direction)
-            .multiplyScalar(h)
-            .add(this.origin),
-        i &&
-          i
-            .copy(Zt)
-            .multiplyScalar(u)
-            .add(Yt),
+        n && n.copy(this.direction).multiplyScalar(h).add(this.origin),
+        i && i.copy(Zt).multiplyScalar(u).add(Yt),
         d
       )
     }
@@ -5187,10 +5159,7 @@
       return (
         (s = f * g),
         (a = u * g),
-        e
-          .copy(n)
-          .addScaledVector(Pe, s)
-          .addScaledVector(De, a)
+        e.copy(n).addScaledVector(Pe, s).addScaledVector(De, a)
       )
     }
     equals (t) {
@@ -7105,9 +7074,7 @@
       return this.normal.copy(t), (this.constant = -e.dot(this.normal)), this
     }
     setFromCoplanarPoints (t, e, n) {
-      const i = Dn.subVectors(n, e)
-        .cross(In.subVectors(t, e))
-        .normalize()
+      const i = Dn.subVectors(n, e).cross(In.subVectors(t, e)).normalize()
       return this.setFromNormalAndCoplanarPoint(i, t), this
     }
     copy (t) {
@@ -7127,10 +7094,7 @@
       return this.distanceToPoint(t.center) - t.radius
     }
     projectPoint (t, e) {
-      return e
-        .copy(this.normal)
-        .multiplyScalar(-this.distanceToPoint(t))
-        .add(t)
+      return e.copy(this.normal).multiplyScalar(-this.distanceToPoint(t)).add(t)
     }
     intersectLine (t, e) {
       const n = t.delta(Dn),
@@ -7138,12 +7102,7 @@
       if (0 === i)
         return 0 === this.distanceToPoint(t.start) ? e.copy(t.start) : null
       const r = -(t.start.dot(this.normal) + this.constant) / i
-      return r < 0 || r > 1
-        ? null
-        : e
-            .copy(n)
-            .multiplyScalar(r)
-            .add(t.start)
+      return r < 0 || r > 1 ? null : e.copy(n).multiplyScalar(r).add(t.start)
     }
     intersectsLine (t) {
       const e = this.distanceToPoint(t.start),
@@ -10035,8 +9994,10 @@
     if (void 0 === n) throw new Error('Can not resolve #include <' + e + '>')
     return Wr(n)
   }
-  const qr = /#pragma unroll_loop[\s]+?for \( int i \= (\d+)\; i < (\d+)\; i \+\+ \) \{([\s\S]+?)(?=\})\}/g,
-    Xr = /#pragma unroll_loop_start\s+for\s*\(\s*int\s+i\s*=\s*(\d+)\s*;\s*i\s*<\s*(\d+)\s*;\s*i\s*\+\+\s*\)\s*{([\s\S]+?)}\s+#pragma unroll_loop_end/g
+  const qr =
+      /#pragma unroll_loop[\s]+?for \( int i \= (\d+)\; i < (\d+)\; i \+\+ \) \{([\s\S]+?)(?=\})\}/g,
+    Xr =
+      /#pragma unroll_loop_start\s+for\s*\(\s*int\s+i\s*=\s*(\d+)\s*;\s*i\s*<\s*(\d+)\s*;\s*i\s*\+\+\s*\)\s*{([\s\S]+?)}\s+#pragma unroll_loop_end/g
   function Yr (t) {
     return t.replace(Xr, Jr).replace(qr, Zr)
   }
@@ -14359,22 +14320,14 @@
       }),
       (this.setViewport = function (t, e, n, i) {
         t.isVector4 ? B.set(t.x, t.y, t.z, t.w) : B.set(t, e, n, i),
-          K.viewport(
-            L.copy(B)
-              .multiplyScalar(N)
-              .floor()
-          )
+          K.viewport(L.copy(B).multiplyScalar(N).floor())
       }),
       (this.getScissor = function (t) {
         return t.copy(U)
       }),
       (this.setScissor = function (t, e, n, i) {
         t.isVector4 ? U.set(t.x, t.y, t.z, t.w) : U.set(t, e, n, i),
-          K.scissor(
-            C.copy(U)
-              .multiplyScalar(N)
-              .floor()
-          )
+          K.scissor(C.copy(U).multiplyScalar(N).floor())
       }),
       (this.getScissorTest = function () {
         return H
@@ -14960,12 +14913,8 @@
             C.copy(t.scissor),
             (P = t.scissorTest)
         } else
-          L.copy(B)
-            .multiplyScalar(N)
-            .floor(),
-            C.copy(U)
-              .multiplyScalar(N)
-              .floor(),
+          L.copy(B).multiplyScalar(N).floor(),
+            C.copy(U).multiplyScalar(N).floor(),
             (P = H)
         if (
           (K.bindFramebuffer(36160, r) &&
@@ -15441,9 +15390,7 @@
     Ws = new rt(),
     js = new rt()
   function qs (t, e, n, i, r, s) {
-    Bs.subVectors(t, n)
-      .addScalar(0.5)
-      .multiply(i),
+    Bs.subVectors(t, n).addScalar(0.5).multiply(i),
       void 0 !== r
         ? ((Us.x = s * Bs.x - r * Bs.y), (Us.y = r * Bs.x + s * Bs.y))
         : Us.copy(Bs),
@@ -15457,26 +15404,8 @@
       if ((super(), (this.type = 'Sprite'), void 0 === Is)) {
         Is = new tn()
         const t = new Float32Array([
-            -0.5,
-            -0.5,
-            0,
-            0,
-            0,
-            0.5,
-            -0.5,
-            0,
-            1,
-            0,
-            0.5,
-            0.5,
-            0,
-            1,
-            1,
-            -0.5,
-            0.5,
-            0,
-            0,
-            1
+            -0.5, -0.5, 0, 0, 0, 0.5, -0.5, 0, 1, 0, 0.5, 0.5, 0, 1, 1, -0.5,
+            0.5, 0, 0, 1
           ]),
           e = new Ls(t, 5)
         Is.setIndex([0, 1, 2, 0, 2, 3]),
@@ -16199,13 +16128,7 @@
       const s = this.getPoint(i),
         a = this.getPoint(r),
         o = e || (s.isVector2 ? new rt() : new St())
-      return (
-        o
-          .copy(a)
-          .sub(s)
-          .normalize(),
-        o
-      )
+      return o.copy(a).sub(s).normalize(), o
     }
     getTangentAt (t, e) {
       const n = this.getUtoTmapping(t)
@@ -16655,13 +16578,7 @@
     }
     getTangent (t, e) {
       const n = e || new rt()
-      return (
-        n
-          .copy(this.v2)
-          .sub(this.v1)
-          .normalize(),
-        n
-      )
+      return n.copy(this.v2).sub(this.v1).normalize(), n
     }
     copy (t) {
       return super.copy(t), this.v1.copy(t.v1), this.v2.copy(t.v2), this
@@ -17636,10 +17553,7 @@
         function A (t, e, n) {
           return (
             e || console.error('THREE.ExtrudeGeometry: vec does not exist'),
-            e
-              .clone()
-              .multiplyScalar(n)
-              .add(t)
+            e.clone().multiplyScalar(n).add(t)
           )
         }
         const R = w.length,
@@ -17721,9 +17635,7 @@
           b
             ? (y.copy(v.normals[0]).multiplyScalar(e.x),
               x.copy(v.binormals[0]).multiplyScalar(e.y),
-              _.copy(g[0])
-                .add(y)
-                .add(x),
+              _.copy(g[0]).add(y).add(x),
               B(_.x, _.y, _.z))
             : B(e.x, e.y, 0)
         }
@@ -17733,9 +17645,7 @@
             b
               ? (y.copy(v.normals[t]).multiplyScalar(n.x),
                 x.copy(v.binormals[t]).multiplyScalar(n.y),
-                _.copy(g[t])
-                  .add(y)
-                  .add(x),
+                _.copy(g[t]).add(y).add(x),
                 B(_.x, _.y, _.z))
               : B(n.x, n.y, (l / o) * t)
           }
@@ -18548,11 +18458,7 @@
           t.evaluate(s), (d = bo.arraySlice(t.resultBuffer, e, n))
         }
         if ('quaternion' === r) {
-          new wt()
-            .fromArray(d)
-            .normalize()
-            .conjugate()
-            .toArray(d)
+          new wt().fromArray(d).normalize().conjugate().toArray(d)
         }
         const p = a.times.length
         for (let t = 0; t < p; ++t) {
@@ -20047,14 +19953,8 @@
         a = new St(r.r, r.g, r.b),
         o = Math.sqrt(Math.PI),
         l = o * Math.sqrt(0.75)
-      this.sh.coefficients[0]
-        .copy(s)
-        .add(a)
-        .multiplyScalar(o),
-        this.sh.coefficients[1]
-          .copy(s)
-          .sub(a)
-          .multiplyScalar(l)
+      this.sh.coefficients[0].copy(s).add(a).multiplyScalar(o),
+        this.sh.coefficients[1].copy(s).sub(a).multiplyScalar(l)
     }
   }.prototype.isHemisphereLightProbe = !0)
   ;(class extends nl {
@@ -23549,6 +23449,7 @@
         this.update()
     }
   }
+  // end of library
   var Ll = 1e3,
     Cl = 6370986,
     Pl = function (t) {
@@ -23693,19 +23594,13 @@
       r = i.thickness,
       s = i.ringPoints,
       a = []
-    a[0] = t[1]
-      .clone()
-      .sub(t[0])
-      .normalize()
+    a[0] = t[1].clone().sub(t[0]).normalize()
     for (var o = 1; o < t.length - 1; o++) {
       var l = t[o]
           .clone()
           .sub(t[o - 1])
           .normalize(),
-        c = t[o + 1]
-          .clone()
-          .sub(t[o])
-          .normalize()
+        c = t[o + 1].clone().sub(t[o]).normalize()
       a[o] = l.add(c).normalize()
     }
     a[t.length - 1] = t[t.length - 1]
@@ -23715,10 +23610,7 @@
     var h = []
     for (o = 0; o < t.length; o++) {
       for (
-        var u = a[o]
-            .clone()
-            .cross(new St(0.99, 0.2, 0.7))
-            .normalize(),
+        var u = a[o].clone().cross(new St(0.99, 0.2, 0.7)).normalize(),
           d = a[o].clone().cross(u),
           p = [],
           f = 0;

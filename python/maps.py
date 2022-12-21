@@ -324,9 +324,9 @@ def create_map(resort_name, state, with_labels=True, debug_mode=False):
     populate_map(mountain_id, direction, with_labels, debug_mode)
 
     # save map
-    if not exists(f'data/maps/{state}'):
-        makedirs(f'data/maps/{state}')
-    plt.savefig(f'data/maps/{state}/{resort_name}.svg', format='svg')
+    if not exists(f'static/maps/{state}'):
+        makedirs(f'static/maps/{state}')
+    plt.savefig(f'static/maps/{state}/{resort_name}.svg', format='svg')
     plt.close()
 
 
@@ -361,7 +361,7 @@ def create_thumbnail(resort_name, state):
     populate_map(mountain_id, direction, False)
 
     # save map
-    if not exists(f'data/thumbnails/{state}'):
-        makedirs(f'data/thumbnails/{state}')
-    plt.savefig(f'data/thumbnails/{state}/{resort_name}.svg', format='svg')
+    if not exists(f'static/thumbnails/{state}'):
+        makedirs(f'static/thumbnails/{state}')
+    plt.savefig(f'static/thumbnails/{state}/{resort_name}.svg', format='svg')
     plt.close()

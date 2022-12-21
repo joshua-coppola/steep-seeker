@@ -478,9 +478,13 @@ def change_state(name, state, new_state):
         os.rename(f'data/osm/{state}/{name}.osm',
                   f'data/osm/{new_state}/{name}.osm')
 
-    if os.path.exists(f'data/maps/{state}') and os.path.exists(f'data/maps/{new_state}'):
-        os.rename(f'data/maps/{state}/{name}.svg',
-                  f'data/maps/{new_state}/{name}.svg')
+    if os.path.exists(f'static/maps/{state}') and os.path.exists(f'static/maps/{new_state}'):
+        os.rename(f'static/maps/{state}/{name}.svg',
+                  f'static/maps/{new_state}/{name}.svg')
+
+    if os.path.exists(f'static/thumbnails/{state}') and os.path.exists(f'static/thumbnails/{new_state}'):
+        os.rename(f'static/thumbnails/{state}/{name}.svg',
+                  f'static/thumbnails/{new_state}/{name}.svg')
 
     db.commit()
     db.close()

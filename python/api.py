@@ -2,6 +2,7 @@ import sys
 import sqlite3
 from flask import Flask, render_template, json, redirect, url_for, request, flash, session, request
 from flask_wtf import FlaskForm
+import os
 
 from data.secret import secret
 
@@ -104,6 +105,7 @@ def search():
     if len(search_string) > 0 and search_string[-1] == "&":
         search_string = search_string[0:-1]
     
+    page = int(page)
     limit = int(limit)
     offset = limit * (int(page) - 1)
 
@@ -119,6 +121,10 @@ def search():
     params = (q, location, trailsmin, trailsmax, diffmin, diffmax, limit, offset)
     mountains = cur.execute(query,params).fetchall()
 
+    query = 'SELECT COUNT(*) FROM Mountains WHERE name LIKE ? AND state LIKE ? AND trail_count BETWEEN ? AND ? AND difficulty BETWEEN ? AND ?'
+    params = (q, location, trailsmin, trailsmax, diffmin, diffmax)
+    total_mountain_count = int(cur.execute(query,params).fetchall()[0][0])
+
     db.close()
 
     mountains_data = []
@@ -126,24 +132,184 @@ def search():
         name = mountain[0]
         mountains_data.append({
             'name': name,
-            'beginner_friendliness': mountain[1],
+            'beginner_friendliness': 30 - mountain[1],
             'difficulty': mountain[2],
             'state': misc.convert_state_abbrev_to_name(mountain[3]),
             'trail_count': mountain[4],
-            'vertical': mountain[5],
-            #'map_link': url_for('map', mountain_id=mountain[6]),
-            'thumbnail': f'thumbnails/{name}.svg'})
+            'vertical': int(float(mountain[5]) * 100 / (2.54 * 12)),
+            'map_link': url_for('map', mountain_id=mountain[6]),
+            'thumbnail': f'thumbnails/{mountain[3]}/{name}.svg'})
 
     pages = {}
-    if len(mountains) > limit and (len(mountains) * page) < len(mountains):
+    if total_mountain_count > limit and (limit * page) < total_mountain_count:
         urlBase = "/search?page=" + str(page + 1) + "&"
-        urlBase += queryParams
-        urlQuery = removesuffix(urlBase, '&')
-        pages["next"] = urlQuery
+        urlBase += search_string
+        if len(urlBase) > 0 and urlBase[-1] == "&":
+            urlBase = urlBase[0:-1]
+        pages["next"] = urlBase
     if offset != 0:
         urlBase = "/search?page=" + str(page - 1) + "&"
-        urlBase += queryParams
-        urlQuery = removesuffix(urlBase, '&')
-        pages["prev"] = urlQuery
+        urlBase += search_string
+        if len(urlBase) > 0 and urlBase[-1] == "&":
+            urlBase = urlBase[0:-1]
+        pages["prev"] = urlBase
 
     return render_template("mountains.jinja", nav_links=nav_links, active_page="search", mountains=mountains_data, pages=pages)
+
+
+@ app.route("/rankings")
+def rankings():
+    sort = request.args.get('sort')
+    if not sort:
+        sort = "difficulty"
+    order = request.args.get('order')
+    if not order:
+        order = "desc"
+    region = request.args.get('region')
+    if not region:
+        region = "usa"
+    # converts query string info into SQL
+    cur, db = database.db_connect()
+
+    mountains_formatted = []
+    if sort == "beginner":
+        sort_by = "beginner_friendliness"
+    else:
+        sort_by = "difficulty"
+    if region == "usa":
+        mountains = cur.execute(
+            f'SELECT * FROM Mountains ORDER BY {sort_by} {order}').fetchall()
+    else:
+        mountains = cur.execute(
+            f'SELECT * FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}', (region,)).fetchall()
+    
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    mountains = [dict(zip(column_names, row)) for row in mountains]
+
+    for mountain in mountains:
+        mountain_entry = {
+            "name": mountain['name'],
+            "beginner_friendliness": 30 - mountain['beginner_friendliness'],
+            "difficulty": mountain['difficulty'],
+            "state": mountain['state'],
+            "map_link": url_for('map', mountain_id=mountain['mountain_id'])
+        }
+        mountains_formatted.append(mountain_entry)
+
+    db.close()
+    return render_template("rankings.jinja", nav_links=nav_links, active_page="rankings", mountains=mountains_formatted, sort=sort, order=order, region=region)
+
+
+@ app.route("/map/<int:mountain_id>")
+def map(mountain_id):
+    cur, db = database.db_connect()
+
+    mountain_row = cur.execute(
+        'SELECT name, state, trail_count, lift_count, vertical FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()
+    if not mountain_row:
+        return "404"
+
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    mountain_row = [dict(zip(column_names, row)) for row in mountain_row][0]
+
+    statistics = {
+        "Trail Count": mountain_row['trail_count'],
+        "Lift Count": mountain_row['lift_count'],
+        "Vertical": str(int(float(mountain_row['vertical']) * 100 / (2.54 * 12))) + "'"
+    }
+
+    trails = cur.execute(
+        'SELECT name, gladed, steepest_50m FROM Trails WHERE mountain_id = ? ORDER BY steepest_50m DESC', (mountain_id,)).fetchall()
+    labels = ('name', 'difficulty', 'steepest_pitch')
+    for i, trail in enumerate(trails):
+        if trail[1] == 'False':
+            trails[i] = dict(zip(labels, (trail[0], trail[2], trail[2])))
+        if trail[1] == 'True':
+            trails[i] = dict(zip(labels, (trail[0], int(trail[2]) + 7, trail[2])))
+    
+    lifts = cur.execute(
+        'SELECT name FROM Lifts WHERE mountain_id = ? ORDER BY name ASC', (mountain_id,)).fetchall()
+    
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    lifts = [dict(zip(column_names, row)) for row in lifts]
+
+    db.close()
+
+    mountain = mountainInfo(
+        mountain_id, mountain_row['name'], mountain_row['state'], statistics, trails, lifts)
+
+    return render_template("map.jinja", nav_links=nav_links, active_page="map", mountain=mountain)
+
+
+@ app.route("/data/<int:mountain_id>/objects", methods=['GET'])
+def mountaindata(mountain_id):
+    cur, db = database.db_connect()
+    trail_rows = cur.execute(
+        'SELECT * FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
+
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    trail_rows = [dict(zip(column_names, row)) for row in trail_rows]
+
+    lift_rows = cur.execute(
+        'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id,)).fetchall()
+
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    lift_rows = [dict(zip(column_names, row)) for row in lift_rows]
+
+    conn.close()
+
+    if not trail_rows:
+        return "404"
+
+    jsonContents = {}
+    trails = []
+    lifts = []
+
+    for trail in trail_rows:
+        if trail['gladed']:
+            difficulty = trail['difficulty'] + 7
+        else:
+            difficulty = trail['difficulty']
+        trail_entry = {
+            "id": trail['trail_id'],
+            "name": trail['name'],
+            "difficulty": difficulty,
+            "length": trail['length'],
+            "vertical_drop": trail['vertical_drop'],
+            "steepest_pitch": trail['steepest_50m']
+        }
+        trails.append(trail_entry)
+
+    for lift in lift_rows:
+        lift_entry = {
+            "id": lift['lift_id'],
+            "name": lift['name'],
+        }
+        lifts.append(lift_entry)
+
+    jsonContents['trails'] = trails
+    jsonContents['lifts'] = lifts
+    jsonstring = json.dumps(jsonContents)
+    return jsonstring
+
+
+@ app.route("/data/<int:mountain_id>/map.svg", methods=['GET'])
+def svgmaps(mountain_id):
+    cur, db = database.db_connect()
+    mountain = cur.execute(
+        'SELECT name, state FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0]
+    db.close()
+
+    if not mountain:
+        return '404'
+
+    filename = f'static/maps/{mountain[1]}/{mountain[0]}.svg'
+    if os.path.exists(filename):
+        with open(filename, 'r') as fileReturn:
+            return fileReturn.read(), 200, {'Content-Type': 'image/svg+xml'}
+    return '404'

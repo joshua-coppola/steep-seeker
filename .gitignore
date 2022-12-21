@@ -3,3 +3,7 @@
 
 #ignore all files in data folder
 data/
+
+#ignore all maps
+static/maps
+static/thumbnails
