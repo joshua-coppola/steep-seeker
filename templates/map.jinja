@@ -29,7 +29,7 @@
             <h2>Trails - Sorted by Difficulty</h2>
             <ul>
                 {% for trail in mountain.trails %}
-                {% if not '_' in trail.name %}
+                {% if not '' == trail.name %}
                 <li>
                     {% if trail.difficulty < 17 %} <span class="icon difficulty-green"></span>
                         {% else %}
@@ -54,7 +54,7 @@
             <h2>Lifts</h2>
             <ul>
                 {% for lift in mountain.lifts %}
-                {% if not '_' in lift.name %}
+                {% if not '' == lift.name %}
                 <li>{{lift.name}}</li>
                 {% endif %}
                 {% endfor %}

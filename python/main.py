@@ -76,7 +76,15 @@ def move_all_osm_files(source_dir):
             # Use the os.rename() method to move the file from the source to the destination
             os.rename(source_file, dest_file)
 
-#move_all_osm_files('data/osm/UT')
+def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
+    mountain_id = db.get_mountain_id(resort_name, state)
+    for item in prune_id_list:
+            db.delete_trail(mountain_id, item)
+            db.delete_lift(mountain_id, item)
+    maps.create_map(resort_name, state, True, debug_mode)
+    maps.create_thumbnail(resort_name, state)
+
+#move_all_osm_files('data/osm/WY')
 #bulk_add_resorts()
-#bulk_create_maps()
+rotate_map_clockwise('Bromley', 'VT')
 

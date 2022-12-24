@@ -305,6 +305,13 @@ def delete_trails_and_lifts(name, state):
 def delete_trail(mountain_id, trail_id):
     cur, db = db_connect()
 
+    query = 'SELECT COUNT(*) FROM Trails WHERE mountain_id = ? AND trail_id = ?'
+    params = (mountain_id, trail_id)
+    exists = cur.execute(query, params).fetchall()[0][0]
+
+    if exists != 1:
+        return None
+
     cur.execute(f'DELETE FROM TrailPoints WHERE trail_id = {trail_id}')
     cur.execute(f'DELETE FROM Trails WHERE trail_id = {trail_id}')
 
@@ -318,8 +325,8 @@ def delete_trail(mountain_id, trail_id):
     trail_count = cur.execute(
         f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
     cur.execute(
-        f'UPDATE Mountains SET vertical = {misc.get_vert(elevations)}, difficulty = {difficulty}, \
-            beginner_friendliness = {beginner_friendliness}, trail_count = {trail_count - 1} WHERE mountain_id = {mountain_id}')
+        f'UPDATE Mountains SET vertical = {int(misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
+            beginner_friendliness = {round(beginner_friendliness, 1)}, trail_count = {trail_count - 1} WHERE mountain_id = {mountain_id}')
 
     db.commit()
     db.close()
@@ -327,6 +334,13 @@ def delete_trail(mountain_id, trail_id):
 
 def delete_lift(mountain_id, lift_id):
     cur, db = db_connect()
+
+    query = 'SELECT COUNT(*) FROM Lifts WHERE mountain_id = ? AND lift_id = ?'
+    params = (mountain_id, lift_id)
+    exists = cur.execute(query, params).fetchall()[0][0]
+
+    if exists != 1:
+        return None
 
     cur.execute(f'DELETE FROM LiftPoints WHERE lift_id = {lift_id}')
     cur.execute(f'DELETE FROM Lifts WHERE lift_id = {lift_id}')
