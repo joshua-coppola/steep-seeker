@@ -247,12 +247,12 @@ def find_map_size(mountain_id):
         INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?', (mountain_id,)).fetchall()[0]
 
     # change in latitude (km)
-    x_length = hs.haversine((max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]), (max(
+    x_length = hs.haversine((max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]), (min(
         trail_extremes[1], lift_extremes[1]), trail_extremes[2]), unit=hs.Unit.KILOMETERS)
 
     # change in longitude (km)
     y_length = hs.haversine((trail_extremes[0], max(trail_extremes[2], lift_extremes[2])), (
-        trail_extremes[0], max(trail_extremes[3], lift_extremes[3])), unit=hs.Unit.KILOMETERS)
+        trail_extremes[0], min(trail_extremes[3], lift_extremes[3])), unit=hs.Unit.KILOMETERS)
 
     direction = cur.execute(
         'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
@@ -264,7 +264,6 @@ def find_map_size(mountain_id):
         temp = x_length
         x_length = y_length
         y_length = temp
-
     return(dict(x_length = x_length, y_length = y_length, x_point = trail_extremes[0], y_point = trail_extremes[2]))
 
 def create_map(resort_name, state, with_labels=True, debug_mode=False):
