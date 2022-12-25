@@ -86,5 +86,5 @@ def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
 
 #move_all_osm_files('data/osm/WY')
 #bulk_add_resorts()
-rotate_map_clockwise('Bromley', 'VT')
+refresh_resort('Crested Butte', 'CO')
 
