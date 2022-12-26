@@ -47,6 +47,40 @@ def convert_to_numeric(rating):
         return 5
     return 0
 
+def compute_accuracy(all_trails):
+    trail_accuracy = []
+    for trail in all_trails:
+        rating = trail_rating(trail[0], trail[1])
+        trail_accuracy.append((trail[2], rating))
+
+    count_correct = 0
+    count_within_1 = 0
+    count_within_2 = 0
+    count_invalid = 0
+    miss_dict = {}
+    for row in trail_accuracy:
+        numeric_official = convert_to_numeric(row[0])
+        numeric_computed = convert_to_numeric(row[1])
+        if numeric_official == 0 or numeric_computed == 0:
+            count_invalid += 1
+            continue
+        if abs(numeric_official - numeric_computed) <= 1:
+            count_within_1 += 1
+        if abs(numeric_official - numeric_computed) <= 2:
+            count_within_2 += 1
+        if numeric_computed == numeric_official:
+            count_correct += 1
+            continue
+        try:
+            miss_dict[f'{numeric_official}->{numeric_computed}'] += 1
+        except:
+            miss_dict[f'{numeric_official}->{numeric_computed}'] = 1
+
+    print(f'\n{round((count_correct/ (len(trail_accuracy) - count_invalid))*100, 3)}% Correct')
+    print(f'{round((count_within_1/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 1 rating')
+    print(f'{round((count_within_2/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 2 ratings')
+    print_dict(miss_dict, ['Official->Calc', 'Count'])
+
 steepest_pitch = 'steepest_30m'
 print(steepest_pitch)
 
@@ -119,37 +153,14 @@ for value in ['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme',
 query = f'SELECT {steepest_pitch}, gladed, official_rating FROM Trails WHERE {steepest_pitch} > 0'
 all_trails = cur.execute(query).fetchall()
 
-trail_accuracy = []
-for trail in all_trails:
-    rating = trail_rating(trail[0], trail[1])
-    trail_accuracy.append((trail[2], rating))
+compute_accuracy(all_trails)
 
-count_correct = 0
-count_within_1 = 0
-count_within_2 = 0
-count_invalid = 0
-miss_dict = {}
-for row in trail_accuracy:
-    numeric_official = convert_to_numeric(row[0])
-    numeric_computed = convert_to_numeric(row[1])
-    if numeric_official == 0 or numeric_computed == 0:
-        count_invalid += 1
-        continue
-    if abs(numeric_official - numeric_computed) <= 1:
-        count_within_1 += 1
-    if abs(numeric_official - numeric_computed) <= 2:
-        count_within_2 += 1
-    if numeric_computed == numeric_official:
-        count_correct += 1
-        continue
-    try:
-        miss_dict[f'{numeric_official}->{numeric_computed}'] += 1
-    except:
-        miss_dict[f'{numeric_official}->{numeric_computed}'] = 1
+for region in ['northeast', 'southeast', 'midwest', 'west']:
+    print(f'\n{region}\n')
+    query = f'SELECT {steepest_pitch}, gladed, official_rating FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ?'
+    trails = cur.execute(query, (region,)).fetchall()
 
-print(f'\n{round((count_correct/ (len(trail_accuracy) - count_invalid))*100, 3)}% Correct')
-print(f'{round((count_within_1/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 1 rating')
-print(f'{round((count_within_2/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 2 ratings')
-print_dict(miss_dict, ['Official->Calc', 'Count'])
+    compute_accuracy(trails)
+
     
 
