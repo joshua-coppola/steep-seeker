@@ -31,11 +31,11 @@
                 {% for trail in mountain.trails %}
                 {% if not '' == trail.name %}
                 <li>
-                    {% if trail.difficulty < 17 %} <span class="icon difficulty-green"></span>
+                    {% if trail.difficulty < 16 %} <span class="icon difficulty-green"></span>
                         {% else %}
-                        {% if trail.difficulty < 24.2 %} <span class="icon difficulty-blue"></span>
+                        {% if trail.difficulty < 24 %} <span class="icon difficulty-blue"></span>
                             {% else %}
-                            {% if trail.difficulty < 30 %} <span class="icon difficulty-black"></span>
+                            {% if trail.difficulty < 32 %} <span class="icon difficulty-black"></span>
                                 {% else %}
                                 {% if trail.difficulty < 45 %} <span class="icon difficulty-red"></span>
                                     {% else %}

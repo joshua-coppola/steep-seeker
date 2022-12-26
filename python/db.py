@@ -61,7 +61,7 @@ def add_trails(cur, mountain_id, trails, lifts):
 
     # process areas
     trail_ids = cur.execute(
-        'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_50m IS NULL').fetchall()
+        'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_30m IS NULL').fetchall()
 
     for trail_id in trail_ids:
         nodes = cur.execute(
@@ -88,7 +88,7 @@ def add_trails(cur, mountain_id, trails, lifts):
 
     # calculate trail pitch, vert, and length
     trails_to_be_rated = cur.execute(
-        'SELECT trail_id FROM Trails WHERE steepest_50m IS NULL').fetchall()
+        'SELECT trail_id FROM Trails WHERE steepest_30m IS NULL').fetchall()
 
     for trail_id in trails_to_be_rated:
         area = cur.execute(
@@ -131,7 +131,7 @@ def calc_mountain_stats(cur, mountain_id):
     elevations = cur.execute(query, (mountain_id,)).fetchall()
 
     # only use trails longer than 100m for difficulty calculations
-    query = 'SELECT steepest_50m FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY steepest_50m DESC'
+    query = 'SELECT steepest_30m FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY steepest_30m DESC'
     trail_slopes = cur.execute(query, (mountain_id,)).fetchall()
     difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
 
@@ -320,7 +320,7 @@ def delete_trail(mountain_id, trail_id):
         (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
 
     trail_slopes = cur.execute(
-        f'SELECT steepest_50m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_50m DESC').fetchall()
+        f'SELECT steepest_30m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_30m DESC').fetchall()
     difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
     trail_count = cur.execute(
         f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]

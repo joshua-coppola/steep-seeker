@@ -23563,11 +23563,11 @@
                       difficulty: n.difficulty,
                       difficultyTier:
                         ((e = n.difficulty),
-                        e < 17
+                        e < 16
                           ? 'green'
                           : e < 24
                           ? 'blue'
-                          : e < 30
+                          : e < 32
                           ? 'black'
                           : e < 45
                           ? 'red'

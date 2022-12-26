@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import sqlite3
 import haversine as hs
 from math import degrees, atan2
@@ -8,6 +9,7 @@ from rich.progress import track
 
 import misc
 
+mpl.use('svg')
 
 def create_legend(x, y, direction, font_size, legend_offset):
     font_size = min(font_size, 8)
@@ -178,7 +180,7 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
 
     # trails
     trail_list = cur.execute(
-        'SELECT trail_id, name, area, gladed, steepest_50m FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
+        'SELECT trail_id, name, area, gladed, steepest_30m FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
 
     # convert results to dict
     desc = cur.description
@@ -196,7 +198,7 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
         x = [i[0] * lat_mirror for i in x]
         y = [j[0] * lon_mirror for j in y]
 
-        color = misc.trail_color(trail['steepest_50m'], trail['gladed'])
+        color = misc.trail_color(trail['steepest_30m'], trail['gladed'])
 
         # place lines
         if trail['area'] == 'True':
@@ -218,7 +220,7 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
             length = cur.execute(
                 f"SELECT length FROM Trails WHERE trail_id = {trail['trail_id']}").fetchall()[0][0]
             label_text = '{} {:.1f}{}'.format(
-                trail['name'].strip(), trail['steepest_50m'], u'\N{DEGREE SIGN}')
+                trail['name'].strip(), trail['steepest_30m'], u'\N{DEGREE SIGN}')
             point, angle, label_length = get_label_placement(
                 x, y, length, len(label_text))
             if point == 0 and angle == 0 and not debug_mode:

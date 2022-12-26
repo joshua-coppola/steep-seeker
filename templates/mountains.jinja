@@ -13,77 +13,77 @@ Search
 <h1 id="title">Mountains</h1>
 
 <section id="sidebar">
-  <h2>Filters</h2>
+    <h2>Filters</h2>
 
-  <form id="filters"></form>
+    <form id="filters"></form>
 </section>
 
 <section id="content">
-  <form id="search-form" class="search-form">
-    <input id="search" name="q" type="search" placeholder="Search all mountains" />
-    <input id="submit" type="submit" value="Search" />
-    <!-- Rework this field to click on arrow to change sort direction instead of having dropdown for each -->
-    <select id="sort" name="sort">
-      <option value="name-asc">Name A-Z</option>
-      <option value="name-desc">Name Z-A</option>
-      <option value="difficulty-asc">Difficulty &#x25b2;</option>
-      <option value="difficulty-desc">Difficulty &#x25bc;</option>
-      <option value="beginner_friendliness-asc">Beginner Friendliness &#x25b2;</option>
-      <option value="beginner_friendliness-desc">Beginner Friendliness &#x25bc;</option>
-      <option value="vertical-asc">Vertical Drop &#x25b2;</option>
-      <option value="vertical-desc">Vertical Drop &#x25bc;</option>
-      <option value="trail_count-asc">Trail Count &#x25b2;</option>
-      <option value="trail_count-desc">Trail Count &#x25bc;</option>
-    </select>
-  </form>
+    <form id="search-form" class="search-form">
+        <input id="search" name="q" type="search" placeholder="Search all mountains" />
+        <!-- Rework this field to click on arrow to change sort direction instead of having dropdown for each -->
+        <select id="sort" name="sort">
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+            <option value="difficulty-asc">Difficulty &#x25b2;</option>
+            <option value="difficulty-desc">Difficulty &#x25bc;</option>
+            <option value="beginner_friendliness-asc">Beginner Friendliness &#x25b2;</option>
+            <option value="beginner_friendliness-desc">Beginner Friendliness &#x25bc;</option>
+            <option value="vertical-asc">Vertical Drop &#x25b2;</option>
+            <option value="vertical-desc">Vertical Drop &#x25bc;</option>
+            <option value="trail_count-asc">Trail Count &#x25b2;</option>
+            <option value="trail_count-desc">Trail Count &#x25bc;</option>
+        </select>
+        <input id="submit" type="submit" value="Search" />
+    </form>
 
-  <ul class="results">
-    {% for mountain in mountains %}
-    <li class="result">
-      <a href="{{mountain.map_link}}">
-        <img class="thumbnail" src="{{mountain.thumbnail}}" width = 125px height = 100px/>
-      </a>
-      <h2><a href="{{mountain.map_link}}" style="color: black">{{mountain.name}}</a></h2>
-      {% if mountain.difficulty > 0 %}
-        {% if mountain.beginner_friendliness > 13 %}
-          <span class="icon difficulty-green"></span>
-        {% endif %}
-      {% endif %}
-      {% if mountain.difficulty >= 17 %}
-        {% if mountain.beginner_friendliness > 6 %}
-          <span class="icon difficulty-blue"></span>
-        {% endif %}
-      {% endif %}
-      {% if mountain.difficulty >= 24 %}
-        {% if mountain.beginner_friendliness > 0 %}
-          <span class="icon difficulty-black"></span>
-        {% endif %}
-      {% endif %}
-      {% if mountain.difficulty >= 30 %}
-        {% if mountain.beginner_friendliness > -15 %}
-          <span class="icon difficulty-red"></span>
-        {% endif %}
-      {% endif %}
-      {% if mountain.difficulty >= 45 %}
-        <span class="icon difficulty-yellow"></span>
-      {% endif %}
-      <p class="copy">
-        {{mountain.state}} — {{mountain.trail_count}} Trails — {{mountain.vertical}}' Vertical
-      </p>
-      <a class="map-link" href="{{mountain.map_link}}">View map</a>
-    </li>
-    {% endfor %}
-  </ul>
+    <ul class="results">
+        {% for mountain in mountains %}
+        <li class="result">
+            <a href="{{mountain.map_link}}">
+                <img class="thumbnail" src="{{mountain.thumbnail}}" width=125px height=100px />
+            </a>
+            <h2><a href="{{mountain.map_link}}" style="color: black">{{mountain.name}}</a></h2>
+            {% if mountain.difficulty > 0 %}
+            {% if mountain.beginner_friendliness > 14 %}
+            <span class="icon difficulty-green"></span>
+            {% endif %}
+            {% endif %}
+            {% if mountain.difficulty >= 16 %}
+            {% if mountain.beginner_friendliness > 6 %}
+            <span class="icon difficulty-blue"></span>
+            {% endif %}
+            {% endif %}
+            {% if mountain.difficulty >= 24 %}
+            {% if mountain.beginner_friendliness > -2 %}
+            <span class="icon difficulty-black"></span>
+            {% endif %}
+            {% endif %}
+            {% if mountain.difficulty >= 32 %}
+            {% if mountain.beginner_friendliness > -15 %}
+            <span class="icon difficulty-red"></span>
+            {% endif %}
+            {% endif %}
+            {% if mountain.difficulty >= 45 %}
+            <span class="icon difficulty-yellow"></span>
+            {% endif %}
+            <p class="copy">
+                {{mountain.state}} — {{mountain.trail_count}} Trails — {{mountain.vertical}}' Vertical
+            </p>
+            <a class="map-link" href="{{mountain.map_link}}">View map</a>
+        </li>
+        {% endfor %}
+    </ul>
 
-  <div class="links">
-    {% if 'prev' in pages %}
-      <a href="{{pages.prev}}">← Previous Page</a>
-    {% endif %}
-    <span style="flex-grow: 1"></span>
-    {% if 'next' in pages %}
-      <a href="{{pages.next}}">Next Page →</a>
-    {% endif %}
-  </div>
+    <div class="links">
+        {% if 'prev' in pages %}
+        <a href="{{pages.prev}}">← Previous Page</a>
+        {% endif %}
+        <span style="flex-grow: 1"></span>
+        {% if 'next' in pages %}
+        <a href="{{pages.next}}">Next Page →</a>
+        {% endif %}
+    </div>
 </section>
 {% endblock content %}
 

@@ -76,6 +76,7 @@ def move_all_osm_files(source_dir):
             # Use the os.rename() method to move the file from the source to the destination
             os.rename(source_file, dest_file)
 
+
 def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
     mountain_id = db.get_mountain_id(resort_name, state)
     for item in prune_id_list:
@@ -84,7 +85,19 @@ def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
     maps.create_map(resort_name, state, True, debug_mode)
     maps.create_thumbnail(resort_name, state)
 
+
+def update_mountain_stats():
+    cur, database = db.db_connect()
+
+    mountains = db.get_mountains()
+    for mountain in mountains:
+        mountain_id = db.get_mountain_id(mountain[0], mountain[1])
+        db.calc_mountain_stats(cur, mountain_id)
+
+    database.commit()
+    database.close()
+
 #move_all_osm_files('data/osm/WY')
 #bulk_add_resorts()
-refresh_resort('Crested Butte', 'CO')
+bulk_create_maps()
 

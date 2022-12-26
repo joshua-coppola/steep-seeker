@@ -298,17 +298,17 @@ def mountain_rating(nodes):
 
 def trail_color(pitch, gladed):
     if gladed == 'True':
-        pitch += 7
+        pitch += 5.5
     # 0-16 degrees: green
     if pitch < 16:
         return 'green'
     # 16-23 degrees: blue
-    if pitch < 23:
+    if pitch < 24:
         return 'royalblue'
-    # 23-30 degrees: black
-    if pitch < 30:
+    # 23-32 degrees: black
+    if pitch < 32:
         return 'black'
-    # 30-45 degrees: red
+    # 32-45 degrees: red
     elif pitch < 45:
         return 'red'
     # >45 degrees: yellow
@@ -448,12 +448,6 @@ def find_direction(trail_points):
         if trail_heading < 0:
             direction.append('w')
             continue
-
-    # print('nsew')
-    # print(direction.count('n'))
-    # print(direction.count('s'))
-    # print(direction.count('e'))
-    # print(direction.count('w'))
 
     if abs(avg_heading) < 45:
         return('n')

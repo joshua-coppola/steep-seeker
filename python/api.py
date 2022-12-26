@@ -206,7 +206,7 @@ def map(mountain_id):
     cur, db = database.db_connect()
 
     mountain_row = cur.execute(
-        'SELECT name, state, trail_count, lift_count, vertical FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()
+        'SELECT * FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()
     if not mountain_row:
         return "404"
 
@@ -217,17 +217,19 @@ def map(mountain_id):
     statistics = {
         "Trail Count": mountain_row['trail_count'],
         "Lift Count": mountain_row['lift_count'],
-        "Vertical": str(int(float(mountain_row['vertical']) * 100 / (2.54 * 12))) + "'"
+        "Vertical": str(int(float(mountain_row['vertical']) * 100 / (2.54 * 12))) + "'",
+        "Difficulty": mountain_row['difficulty'],
+        "Beginner Friendliness": 30 - mountain_row['beginner_friendliness']
     }
 
     trails = cur.execute(
-        'SELECT name, gladed, steepest_50m FROM Trails WHERE mountain_id = ? ORDER BY steepest_50m DESC', (mountain_id,)).fetchall()
+        'SELECT name, gladed, steepest_30m FROM Trails WHERE mountain_id = ? ORDER BY steepest_30m DESC', (mountain_id,)).fetchall()
     labels = ('name', 'difficulty', 'steepest_pitch')
     for i, trail in enumerate(trails):
         if trail[1] == 'False':
             trails[i] = dict(zip(labels, (trail[0], trail[2], trail[2])))
         if trail[1] == 'True':
-            trails[i] = dict(zip(labels, (trail[0], int(trail[2]) + 7, trail[2])))
+            trails[i] = dict(zip(labels, (trail[0], round(trail[2] + 5.5, 1), trail[2])))
     
     lifts = cur.execute(
         'SELECT name FROM Lifts WHERE mountain_id = ? ORDER BY name ASC', (mountain_id,)).fetchall()
@@ -272,7 +274,7 @@ def mountaindata(mountain_id):
 
     for trail in trail_rows:
         if trail['gladed']:
-            difficulty = trail['difficulty'] + 7
+            difficulty = trail['difficulty'] + 5.5
         else:
             difficulty = trail['difficulty']
         trail_entry = {
@@ -281,7 +283,7 @@ def mountaindata(mountain_id):
             "difficulty": difficulty,
             "length": trail['length'],
             "vertical_drop": trail['vertical_drop'],
-            "steepest_pitch": trail['steepest_50m']
+            "steepest_pitch": trail['steepest_30m']
         }
         trails.append(trail_entry)
 

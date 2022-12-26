@@ -24,10 +24,10 @@ def trail_rating(pitch, gladed):
     # 16-23 degrees: blue
     if pitch < 24:
         return 'intermediate'
-    # 23-30 degrees: black
+    # 23-32 degrees: black
     if pitch < 32:
         return 'advanced'
-    # 30-45 degrees: red
+    # 32-45 degrees: red
     elif pitch < 45:
         return 'expert'
     # >45 degrees: yellow

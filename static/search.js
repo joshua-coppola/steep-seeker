@@ -214,9 +214,8 @@
             (this.track = this.svg.children[0]),
             (this.barBorder = this.svg.children[1 + this.settings.steps]),
             (this.leftThumbBorder = this.svg.children[2 + this.settings.steps]),
-            (this.rightThumbBorder = this.svg.children[
-              3 + this.settings.steps
-            ]),
+            (this.rightThumbBorder =
+              this.svg.children[3 + this.settings.steps]),
             (this.bar = this.svg.children[4 + this.settings.steps]),
             (this.leftThumb = this.svg.children[5 + this.settings.steps]),
             (this.rightThumb = this.svg.children[6 + this.settings.steps])
@@ -585,11 +584,11 @@
       case 0:
         return 0
       case 1:
-        return 17
+        return 16
       case 2:
         return 24
       case 3:
-        return 30
+        return 32
       case 4:
         return 45
       case 5:
@@ -599,11 +598,11 @@
   function c (t) {
     return t == 0
       ? 0
-      : t <= 17
+      : t <= 16
       ? 1
       : t <= 24
       ? 2
-      : t <= 30
+      : t <= 32
       ? 3
       : t <= 45
       ? 4
