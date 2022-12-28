@@ -504,6 +504,17 @@ def change_state(name, state, new_state):
     db.close()
 
 
+def get_mountain_name(mountain_id, cur=None):
+    if cur == None:
+        cur, db = db_connect()
+
+    query = 'SELECT name, state FROM Mountains WHERE mountain_id = ?'
+    params = (mountain_id,)
+    mountain_name = cur.execute(query, params).fetchall()[0]
+
+    return mountain_name
+
+
 #db = sqlite3.connect('data/db.db')
 #cur = db.cursor()
 

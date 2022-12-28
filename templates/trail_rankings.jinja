@@ -1,0 +1,101 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+Trail Rankings
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/rankings.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+    <h1>Trail Rankings</h1>
+
+    <ul class="ranking-sort">
+        {% if region == "usa" %}
+        <li><a class="active">USA</a></li>
+        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a href="/trail-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "northeast" %}
+        <li><a href="/trail-rankings?region=usa">USA</a>
+        </li>
+        <li><a class="active">Northeast</a></li>
+        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a href="/trail-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "southeast" %}
+        <li><a href="/trail-rankings?region=usa">USA</a>
+        </li>
+        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a class="active">Southeast</a></li>
+        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a href="/trail-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "midwest" %}
+        <li><a href="/trail-rankings?region=usa">USA</a>
+        </li>
+        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a class="active">Midwest</a></li>
+        <li><a href="/trail-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "west" %}
+        <li><a href="/trail-rankings?region=usa">USA</a>
+        </li>
+        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a class="active">West</a></li>
+        {% endif %}
+    </ul>
+
+    <p class="detail">
+        The trails are ordered by their steepest 30 meter pitch. In order to qualify as an 'Extreme'
+        trail, a run must be over 45° for 30 meters.
+    </p>
+
+    <div class="legend">
+        <ul>
+            <li><span class="icon difficulty-green"></span>Beginner</li>
+            <li><span class="icon difficulty-blue"></span>Intermediate</li>
+            <li><span class="icon difficulty-black"></span>Advanced</li>
+            <li><span class="icon difficulty-red"></span>Expert</li>
+            <li><span class="icon difficulty-yellow"></span>Extreme</li>
+        </ul>
+    </div>
+
+    <div class="rankings">
+        {% for trail in trails %}
+        {% if not '' == trail.name %}
+        <a href="{{trail.map_link}}" title="Difficulty: {{trail.difficulty}}">{{trail.name}} - {{trail.mountain_name}},
+            {{trail.state}}</a>
+        <span class="{{'ranking-bar' if trail.difficulty <= 45 else 'black-text'}}"
+            title="{{trail.name}} Difficulty: {{trail.difficulty}}"
+            style="--bar-size: {{
+          (trail.difficulty)/60 * 60}}%; --bar-color: {{ 'green' if trail.difficulty < 16 else 'royalblue' if trail.difficulty < 24 else 'black' if trail.difficulty < 32 else 'red' if trail.difficulty < 45 else 'gold' }};">{{loop.index}}</span>
+        {% endif %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock content %}

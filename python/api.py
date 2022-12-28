@@ -36,8 +36,9 @@ app.config['SECRET_KEY'] = secret
 nav_links = []
 nav_links.append(navigationLink("About", "about", "/about"))
 nav_links.append(navigationLink("Search", "search", "/search"))
-nav_links.append(navigationLink("Rankings", "rankings",
+nav_links.append(navigationLink("Mountain Rankings", "rankings",
                                 "/rankings?sort=difficulty&order=desc&region=usa"))
+nav_links.append(navigationLink("Trail Rankings", "trail_rankings", "/trail-rankings?region=usa"))
 
 
 @app.route("/")
@@ -201,6 +202,39 @@ def rankings():
     db.close()
     return render_template("rankings.jinja", nav_links=nav_links, active_page="rankings", mountains=mountains_formatted, sort=sort, order=order, region=region)
 
+@ app.route("/trail-rankings")
+def trail_rankings():
+    region = request.args.get('region')
+    if not region:
+        region = "usa"
+    # converts query string info into SQL
+    cur, db = database.db_connect()
+
+    if region == "usa":
+        trails = cur.execute(
+            f'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id ORDER BY Trails.steepest_30m DESC').fetchall()
+    else:
+        trails = cur.execute(
+            f'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ? ORDER BY Trails.steepest_30m DESC', (region,)).fetchall()
+    
+    desc = cur.description
+    column_names = [col[0] for col in desc]
+    trails = [dict(zip(column_names, row)) for row in trails]
+
+    trails_formatted = []
+    for trail in trails:
+        trail_entry = {
+            "name": trail['name'],
+            "difficulty": trail['steepest_30m'],
+            "mountain_name": database.get_mountain_name(trail['mountain_id'], cur)[0],
+            "state": trail['state'],
+            "map_link": url_for('map', mountain_id=trail['mountain_id'])
+        }
+        trails_formatted.append(trail_entry)
+
+    db.close()
+    return render_template("trail_rankings.jinja", nav_links=nav_links, active_page="trail_rankings", trails=trails_formatted, region=region)
+
 
 @ app.route("/map/<int:mountain_id>")
 def map(mountain_id):
@@ -218,7 +252,7 @@ def map(mountain_id):
     statistics = {
         "Trail Count": mountain_row['trail_count'],
         "Lift Count": mountain_row['lift_count'],
-        "Vertical": str(int(float(mountain_row['vertical']) * 100 / (2.54 * 12))) + "'",
+        "Vertical": f"{int(float(mountain_row['vertical']) * 100 / (2.54 * 12))}'",
         "Difficulty": mountain_row['difficulty'],
         "Beginner Friendliness": 30 - mountain_row['beginner_friendliness']
     }
@@ -301,20 +335,3 @@ def mountaindata(mountain_id):
     jsonContents['lifts'] = lifts
     jsonstring = json.dumps(jsonContents)
     return jsonstring
-
-
-@ app.route("/data/<int:mountain_id>/map.svg", methods=['GET'])
-def svgmaps(mountain_id):
-    cur, db = database.db_connect()
-    mountain = cur.execute(
-        'SELECT name, state FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0]
-    db.close()
-
-    if not mountain:
-        return '404'
-
-    filename = f'static/maps/{mountain[1]}/{mountain[0]}.svg'
-    if os.path.exists(filename):
-        with open(filename, 'r') as fileReturn:
-            return fileReturn.read(), 200, {'Content-Type': 'image/svg+xml'}
-    return '404'
