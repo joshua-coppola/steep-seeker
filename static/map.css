@@ -3,12 +3,25 @@ body {
 }
 
 #map {
+    height: 100vh;
+    width: 100vw;
+    padding-top: 16px;
+    padding-left: 432px;
+    padding-right: 16px;
+    padding-bottom: 16px;
+}
+
+#zoom {
+  text-align: center;
   position: fixed;
   top: 0;
-  left: 400px;
+  left: 0;
   right: 0;
   bottom: 0;
   z-index: -1;
+  transform-origin: 0px 0px;
+  transform: scale(1) translate(0px, 0px);
+  cursor: grab;
 }
 
 main {
@@ -64,16 +77,6 @@ main > * {
 .mountain-section ul li {
   margin-top: 16px;
   color: var(--color-secondary);
-  display: flex;
-}
-
-.back-button {
-  position: absolute;
-  top: 0;
-  right: 0;
-  color: var(--color-secondary);
-  font-size: 20px;
-  text-decoration: none;
   display: flex;
 }
 

@@ -20,13 +20,14 @@ class navigationLink:
 
 
 class mountainInfo:
-    def __init__(self, mountain_id, name, state, statistics, trails, lifts):
+    def __init__(self, mountain_id, name, state, statistics, trails, lifts, map_link):
         self.mountain_id = mountain_id
         self.name = name
         self.state = state
         self.statistics = statistics
         self.trails = trails
         self.lifts = lifts
+        self.map_link = map_link
 
 
 app = Flask(__name__, static_url_path='', static_folder='../static', template_folder='../templates')
@@ -240,8 +241,10 @@ def map(mountain_id):
 
     db.close()
 
+    map_link = f'../maps/{mountain_row["state"]}/{mountain_row["name"]}.svg'
+
     mountain = mountainInfo(
-        mountain_id, mountain_row['name'], mountain_row['state'], statistics, trails, lifts)
+        mountain_id, mountain_row['name'], mountain_row['state'], statistics, trails, lifts, map_link)
 
     return render_template("map.jinja", nav_links=nav_links, active_page="map", mountain=mountain)
 
