@@ -134,7 +134,7 @@ def search():
         name = mountain[0]
         mountains_data.append({
             'name': name,
-            'beginner_friendliness': 30 - mountain[1],
+            'beginner_friendliness': round(30 - mountain[1], 1),
             'difficulty': mountain[2],
             'state': misc.convert_state_abbrev_to_name(mountain[3]),
             'trail_count': mountain[4],
@@ -192,7 +192,7 @@ def rankings():
     for mountain in mountains:
         mountain_entry = {
             "name": mountain['name'],
-            "beginner_friendliness": 30 - mountain['beginner_friendliness'],
+            "beginner_friendliness": round(30 - mountain['beginner_friendliness'], 1),
             "difficulty": mountain['difficulty'],
             "state": mountain['state'],
             "map_link": url_for('map', mountain_id=mountain['mountain_id'])
@@ -254,7 +254,7 @@ def map(mountain_id):
         "Lift Count": mountain_row['lift_count'],
         "Vertical": f"{int(float(mountain_row['vertical']) * 100 / (2.54 * 12))}'",
         "Difficulty": mountain_row['difficulty'],
-        "Beginner Friendliness": 30 - mountain_row['beginner_friendliness']
+        "Beginner Friendliness": round(30 - mountain_row['beginner_friendliness'], 1)
     }
 
     trails = cur.execute(

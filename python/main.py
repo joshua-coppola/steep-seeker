@@ -100,5 +100,7 @@ def update_mountain_stats():
 #move_all_osm_files('data/osm/WY')
 #bulk_add_resorts()
 #bulk_create_maps()
-refresh_resort('Crested Butte', 'CO')
+db.delete_lift(258,1088248964)
 
+maps.create_map('Mount Shasta', 'CA')
+maps.create_thumbnail('Mount Shasta', 'CA')

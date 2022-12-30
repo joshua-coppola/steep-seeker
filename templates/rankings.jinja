@@ -142,7 +142,7 @@ Rankings
     <div class="rankings">
         {% for mountain in mountains %}
         {% if sort == "difficulty" %}
-        <a href="{{mountain.map_link}}" title="Difficulty: {{mountain.difficulty}}">{{mountain.name}}
+        <a href="{{mountain.map_link}}" title="Difficulty: {{mountain.difficulty}}">{{mountain.name}},
             {{mountain.state}}</a>
         <span class="{{'ranking-bar' if mountain.difficulty <= 45 else 'black-text'}}"
             title="{{mountain.name}} Difficulty: {{mountain.difficulty}}"
@@ -151,7 +151,7 @@ Rankings
         {% endif %}
         {% if sort == "beginner" %}
         <a href="{{mountain.map_link}}"
-            title="Beginner Friendliness: {{mountain.beginner_friendliness}}">{{mountain.name}} {{mountain.state}}</a>
+            title="Beginner Friendliness: {{mountain.beginner_friendliness}}">{{mountain.name}}, {{mountain.state}}</a>
         <span class="ranking-bar" title="{{mountain.name}} Beginner Friendliness: {{mountain.beginner_friendliness}}"
             style="--bar-size: {{
           (mountain.beginner_friendliness)/30 * 60}}%; --bar-color: {{ 'green' if mountain.beginner_friendliness > 14 else 'royalblue' if mountain.beginner_friendliness > 6 else 'black' if mountain.beginner_friendliness > -2 else 'red' if mountain.beginner_friendliness > -15 else 'gold' }};">{{loop.index}}</span>

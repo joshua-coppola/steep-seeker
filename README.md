@@ -47,4 +47,6 @@ Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Rat
 ### Mountains with no trails/lifts (not a complete list)
 
 - Barker Mountain
+- China Peak
+- Coppervale
   

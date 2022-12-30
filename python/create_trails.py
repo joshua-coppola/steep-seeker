@@ -88,6 +88,9 @@ def process_trails(ways):
                 if 'closed' in tag['name'].lower():
                     way['type'] = None
                     way['valid'] = False
+            if 'disused' in tag:
+                way['type'] = None
+                way['valid'] = False
 
         if way['type'] != None and way['valid']:
             if way['name'] == None or way['name'] == '':
