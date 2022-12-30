@@ -93,9 +93,20 @@ Trail Rankings
         <span class="{{'ranking-bar' if trail.difficulty <= 45 else 'black-text'}}"
             title="{{trail.name}} Difficulty: {{trail.difficulty}}"
             style="--bar-size: {{
-          (trail.difficulty)/60 * 60}}%; --bar-color: {{ 'green' if trail.difficulty < 16 else 'royalblue' if trail.difficulty < 24 else 'black' if trail.difficulty < 32 else 'red' if trail.difficulty < 45 else 'gold' }};">{{loop.index}}</span>
+          (trail.difficulty)/60 * 60}}%; --bar-color: {{ 'green' if trail.difficulty < 16 else 'royalblue' if trail.difficulty < 24 else 'black' if trail.difficulty < 32 else 'red' if trail.difficulty < 45 else 'gold' }};">{{pages.offset
+            + loop.index}}</span>
         {% endif %}
         {% endfor %}
+    </div>
+
+    <div class="links">
+        {% if 'prev' in pages %}
+        <a href="{{pages.prev}}">← Previous Page</a>
+        {% endif %}
+        <span style="flex-grow: 1"></span>
+        {% if 'next' in pages %}
+        <a href="{{pages.next}}">Next Page →</a>
+        {% endif %}
     </div>
 </section>
 {% endblock content %}

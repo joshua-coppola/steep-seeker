@@ -54,3 +54,8 @@
   font-size: 14px;
   color:black
 }
+
+.links {
+    display: flex;
+    align-items: center;
+  }

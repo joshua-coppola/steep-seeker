@@ -204,18 +204,34 @@ def rankings():
 
 @ app.route("/trail-rankings")
 def trail_rankings():
+    search_string = ''
     region = request.args.get('region')
     if not region:
-        region = "usa"
-    # converts query string info into SQL
+        region = 'usa'
+    search_string += f'region={region}&'
+    page = request.args.get('page')
+    if not page:
+        page = 1
+    limit = request.args.get('limit')
+    if not limit:
+        limit = 50
+    search_string += f'limit={limit}&'
+
+    if len(search_string) > 0 and search_string[-1] == "&":
+        search_string = search_string[0:-1]
+    
+    page = int(page)
+    limit = int(limit)
+    offset = limit * (page - 1)
+    
     cur, db = database.db_connect()
 
-    if region == "usa":
-        trails = cur.execute(
-            f'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id ORDER BY Trails.steepest_30m DESC').fetchall()
+    if region == 'usa':
+        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        trails = cur.execute(query, (limit, offset)).fetchall()
     else:
-        trails = cur.execute(
-            f'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ? ORDER BY Trails.steepest_30m DESC', (region,)).fetchall()
+        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ? ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        trails = cur.execute(query, (region, limit, offset)).fetchall()
     
     desc = cur.description
     column_names = [col[0] for col in desc]
@@ -232,8 +248,24 @@ def trail_rankings():
         }
         trails_formatted.append(trail_entry)
 
+    query = 'SELECT COUNT(*) FROM Trails'
+    total_trail_count = int(cur.execute(query).fetchall()[0][0])
+
+    pages = {}
+    if total_trail_count > limit and (limit * page) < total_trail_count:
+        urlBase = f'/trail-rankings?page={page + 1}&{search_string}'
+        if len(urlBase) > 0 and urlBase[-1] == '&':
+            urlBase = urlBase[0:-1]
+        pages['next'] = urlBase
+    if offset != 0:
+        urlBase = f'/trail-rankings?page={page - 1}&{search_string}'
+        if len(urlBase) > 0 and urlBase[-1] == '&':
+            urlBase = urlBase[0:-1]
+        pages['prev'] = urlBase
+    pages['offset'] = offset
+
     db.close()
-    return render_template("trail_rankings.jinja", nav_links=nav_links, active_page="trail_rankings", trails=trails_formatted, region=region)
+    return render_template("trail_rankings.jinja", nav_links=nav_links, active_page="trail_rankings", trails=trails_formatted, region=region, pages=pages)
 
 
 @ app.route("/map/<int:mountain_id>")

@@ -286,13 +286,18 @@ def mountain_rating(nodes):
     if len(nodes) < 30:
         divisor = len(nodes)
 
+    small_divisor = 5
+    if divisor < small_divisor:
+        small_divisor = divisor
+
     for i, node in enumerate(nodes):
         nodes[i] = node[0]
 
     difficulty = ((sum(nodes[0:divisor])/divisor)
-                  * .2) + ((sum(nodes[0:5])/5) * .8)
+                  * .2) + ((sum(nodes[0:5])/small_divisor) * .8)
+
     beginner_friendliness = ((sum(nodes[-divisor:])/divisor)
-                             * .2) + ((sum(nodes[-5:])/5) * .8)
+                             * .2) + ((sum(nodes[-5:])/small_divisor) * .8)
     return(difficulty, beginner_friendliness)
 
 

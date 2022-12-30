@@ -23,8 +23,15 @@ def reset_db():
 
 def add_trails(cur, mountain_id, trails, lifts):
     for trail in trails:
-        cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
-            VALUES ({}, {}, "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['official_rating']))
+        try:
+            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
+                VALUES ({}, {}, "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['official_rating']))
+        except:
+            print()
+            print(trail['name'])
+            print(trail['id'])
+            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
+                VALUES ({}, {}, "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['official_rating']))
         trail['nodes'] = misc.fill_point_gaps(trail['nodes'])
         trail['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in trail['nodes']]
@@ -33,8 +40,15 @@ def add_trails(cur, mountain_id, trails, lifts):
                 VALUES ({}, {}, 1, "{}", "{}")'.format(i, trail['id'], str(node['lat']), str(node['lon'])))
 
     for lift in lifts:
-        cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
-            VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
+        try:
+            cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
+                VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
+        except:
+            print()
+            print(lift['name'])
+            print(lift['id'])
+            cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
+                VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
         lift['nodes'] = misc.fill_point_gaps(lift['nodes'])
         lift['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in lift['nodes']]
