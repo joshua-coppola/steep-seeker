@@ -88,6 +88,9 @@ def process_trails(ways):
                 if 'closed' in tag['name'].lower():
                     way['type'] = None
                     way['valid'] = False
+                if 'bike trail' in tag['name'].lower():
+                    way['type'] = None
+                    way['valid'] = False
             if 'disused' in tag:
                 way['type'] = None
                 way['valid'] = False

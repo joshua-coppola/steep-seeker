@@ -198,6 +198,16 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
         x = [i[0] * lat_mirror for i in x]
         y = [j[0] * lon_mirror for j in y]
 
+        if debug_mode and trail['area']:
+            debug_x = cur.execute(
+                f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
+            debug_y = cur.execute(
+                f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
+
+            # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
+            debug_x = [i[0] * lat_mirror for i in debug_x]
+            debug_y = [j[0] * lon_mirror for j in debug_y]
+
         color = misc.trail_color(trail['steepest_30m'], trail['gladed'])
 
         # place lines
@@ -209,6 +219,11 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
             if trail['gladed'] == 'False':
                 plt.fill(x, y, alpha=.1, fc=color)
                 plt.fill(x, y, ec=color, fc='none', lw=line_width)
+            if debug_mode:
+                if trail['gladed'] == 'True':
+                    plt.plot(debug_x, debug_y, c=color, linestyle='dashed', lw=line_width)
+                if trail['gladed'] == 'False':
+                    plt.plot(debug_x, debug_y, c=color, lw=line_width)
         if trail['area'] == 'False':
             if trail['gladed'] == 'True':
                 plt.plot(x, y, c=color, linestyle='dashed', lw=line_width)

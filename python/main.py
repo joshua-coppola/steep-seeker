@@ -96,8 +96,3 @@ def update_mountain_stats():
 
     database.commit()
     database.close()
-
-#move_all_osm_files('data/osm/WY')
-#bulk_add_resorts()
-#bulk_create_maps()
-refresh_resort('Solitude', 'UT')
