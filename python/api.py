@@ -227,10 +227,10 @@ def trail_rankings():
     cur, db = database.db_connect()
 
     if region == 'usa':
-        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
         trails = cur.execute(query, (limit, offset)).fetchall()
     else:
-        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ? ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
         trails = cur.execute(query, (region, limit, offset)).fetchall()
     
     desc = cur.description
@@ -241,7 +241,12 @@ def trail_rankings():
     for trail in trails:
         trail_entry = {
             "name": trail['name'],
-            "difficulty": trail['steepest_30m'],
+            "steepest_30m": trail['steepest_30m'],
+            "steepest_50m": trail['steepest_50m'],
+            "steepest_100m": trail['steepest_100m'],
+            "steepest_200m": trail['steepest_200m'],
+            "steepest_500m": trail['steepest_500m'],
+            "steepest_1000m": trail['steepest_1000m'],            
             "mountain_name": database.get_mountain_name(trail['mountain_id'], cur)[0],
             "state": trail['state'],
             "map_link": url_for('map', mountain_id=trail['mountain_id'])

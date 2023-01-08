@@ -85,18 +85,148 @@ Trail Rankings
         </ul>
     </div>
 
-    <div class="rankings">
-        {% for trail in trails %}
-        {% if not '' == trail.name %}
-        <a href="{{trail.map_link}}" title="Difficulty: {{trail.difficulty}}">{{trail.name}} - {{trail.mountain_name}},
-            {{trail.state}}</a>
-        <span class="{{'ranking-bar' if trail.difficulty <= 45 else 'black-text'}}"
-            title="{{trail.name}} Difficulty: {{trail.difficulty}}"
-            style="--bar-size: {{
-          (trail.difficulty)/60 * 60}}%; --bar-color: {{ 'green' if trail.difficulty < 16 else 'royalblue' if trail.difficulty < 24 else 'black' if trail.difficulty < 32 else 'red' if trail.difficulty < 45 else 'gold' }};">{{pages.offset
-            + loop.index}}</span>
-        {% endif %}
-        {% endfor %}
+    <div>
+        <table>
+            <tr>
+                <th>Trail Name</th>
+                <th>Resort</th>
+                <th>State</th>
+                <th>30m Pitch</th>
+                <th>50m Pitch</th>
+                <th>100m Pitch</th>
+                <th>200m Pitch</th>
+                <th>500m Pitch</th>
+                <th>1000m Pitch</th>
+            </tr>
+            {% for trail in trails %}
+            {% if not '' == trail.name %}
+            <tr>
+                <td>
+                    <p>{{pages.offset + loop.index}}. <a href="{{trail.map_link}}">{{trail.name}}</a></p>
+                </td>
+                <td><a href="{{trail.map_link}}">{{trail.mountain_name}}</a></td>
+                <td>{{trail.state}}</td>
+                <td>
+                    {% if trail.steepest_30m < 16 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.steepest_30m < 24 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.steepest_30m < 32 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.steepest_30m < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_30m}}°
+                </td>
+                <td>
+                    {% if trail.steepest_50m != None %}
+                    {% if trail.steepest_50m < 16 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.steepest_50m < 24 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.steepest_50m < 32 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.steepest_50m < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_50m}}°
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                </td>
+                <td>
+                    {% if trail.steepest_100m != None %}
+                    {% if trail.steepest_100m < 16 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.steepest_100m < 24 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.steepest_100m < 32 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.steepest_100m < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_100m}}°
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                </td>
+                <td>
+                    {% if trail.steepest_200m != None %}
+                    {% if trail.steepest_200m < 16 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.steepest_200m < 24 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.steepest_200m < 32 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.steepest_200m < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_200m}}°
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                </td>
+                <td>
+                    {% if trail.steepest_500m != None %}
+                    {% if trail.steepest_500m < 16 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.steepest_500m < 24 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.steepest_500m < 32 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.steepest_500m < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_500m}}°
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                </td>
+                <td>
+                    {% if trail.steepest_1000m != None %}
+                    {% if trail.steepest_1000m < 16 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.steepest_1000m < 24 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.steepest_1000m < 32 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.steepest_1000m < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_1000m}}°
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+
+        </table>
     </div>
 
     <div class="links">
