@@ -1,28 +1,28 @@
 {% extends "base.jinja"%}
 
 {% block head %}
-  <link href="/page.css" rel="stylesheet" />
-  {% block pagehead %}
-  {% endblock %}
+<link href="/page.css" rel="stylesheet" />
+{% block pagehead %}
+{% endblock %}
 {% endblock %}
 
 {% block body %}
-  <nav>
-    <a id="home-link" href="/"><img height="50" src="/logo.png" />Star Maps</a>
+<nav>
+    <a id="home-link" href="/"><img height="50" src="/logo.png" />Steep Seeker</a>
     <ul class="nav-list">
-      {% for link in nav_links %}
-        <li><a href="{{link.to}}" {% if active_page == link.page %} class="active" {% endif %}>
-          {{link.title}}
-        </a></li>
-      {% endfor %}
+        {% for link in nav_links %}
+        <li><a href="{{link.to}}" {% if active_page==link.page %} class="active" {% endif %}>
+                {{link.title}}
+            </a></li>
+        {% endfor %}
     </ul>
     <span style="flex-grow: 1"></span>
     {# <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button> #}
-  </nav>
+</nav>
 
-  <main>
+<main>
     {%block content%}
 
     {% endblock %}
-  </main>
+</main>
 {% endblock %}
