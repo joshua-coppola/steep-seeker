@@ -526,6 +526,16 @@ def change_state(name, state, new_state):
     db.commit()
     db.close()
 
+def rename_resort(old_name, state, new_name):
+    cur, db = db_connect()
+
+    query = 'UPDATE Mountains SET name = ? WHERE name = ? AND state = ?'
+    params = (new_name, old_name, state)
+
+    cur.execute(query, params)
+    db.commit()
+    db.close()
+
 
 def get_mountain_name(mountain_id, cur=None):
     if cur == None:

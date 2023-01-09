@@ -46,10 +46,20 @@ def delete_resort(name, state):
     db.delete_resort(name, state)
     if os.path.exists(f'data/osm/{state}/{name}.osm'):
         os.remove(f'data/osm/{state}/{name}.osm')
-    if os.path.exists(f'data/maps/{state}/{name}.svg'):
-        os.remove(f'data/maps/{state}/{name}.svg')
-    if os.path.exists(f'data/thumbnails/{state}/{name}.svg'):
-        os.remove(f'data/thumbnails/{state}/{name}.svg')
+    if os.path.exists(f'static/maps/{state}/{name}.svg'):
+        os.remove(f'static/maps/{state}/{name}.svg')
+    if os.path.exists(f'static/thumbnails/{state}/{name}.svg'):
+        os.remove(f'static/thumbnails/{state}/{name}.svg')
+
+
+def rename_resort(old_name, state, new_name):
+    db.rename_resort(old_name, state, new_name)
+    if os.path.exists(f'data/osm/{state}/{old_name}.osm'):
+        os.rename(f'data/osm/{state}/{old_name}.osm', f'data/osm/{state}/{new_name}.osm' )
+    if os.path.exists(f'static/maps/{state}/{old_name}.svg'):
+        os.rename(f'static/maps/{state}/{old_name}.svg', f'static/maps/{state}/{new_name}.svg')
+    if os.path.exists(f'static/thumbnails/{state}/{old_name}.svg'):
+        os.rename(f'static/thumbnails/{state}/{old_name}.svg', f'static/thumbnails/{state}/{new_name}.svg')
 
 
 def delete_all_resorts():
@@ -109,18 +119,20 @@ def repl():
         print('5) Create new map for a resort')
         print('6) Create new maps for all resorts')
         print('7) Update stats for all resorts')
-        print('8) Delete a trail or lift')
-        print('9) Delete a resort')
+        print('8) Rename a resort')
+        print('9) Rotate a map clockwise')
+        print('10) Delete a trail or lift')
+        print('11) Delete a resort')
         print('Other value: exit program\n')
 
-        operation = input('Select value: ')
+        operation = input('Enter value: ')
         try:
             operation = int(operation)
         except:
             valid = False
             continue
 
-        if operation > 9 or operation < 1:
+        if operation > 11 or operation < 1:
             valid = False
             continue
 
@@ -152,6 +164,18 @@ def repl():
             bulk_update_mountain_stats()
 
         if operation == 8:
+            old_name = input('\nEnter Current Resort Name: ')
+            state = input('\nEnter State: ')
+            new_name = input('\nEnter New Resort Name: ')
+            rename_resort(old_name, state, new_name)
+            maps.create_map(new_name, state)
+
+        if operation == 9:
+            name = input('\nEnter Resort Name: ')
+            state = input('\nEnter State: ')
+            rotate_map_clockwise(name, state)
+
+        if operation == 10:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             item_id = input('\nEnter OSM ID')
@@ -161,7 +185,7 @@ def repl():
             maps.create_map(name, state)
             maps.create_thumbnail(name, state)
 
-        if operation == 9:
+        if operation == 11:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             delete_resort(name, state)
