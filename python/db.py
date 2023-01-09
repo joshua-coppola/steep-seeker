@@ -216,9 +216,10 @@ def add_resort(name):
         f'UPDATE Mountains SET direction = "{direction}" WHERE mountain_id = {mountain_id}')
 
     # move file once processed into the right folder for the state
-    if os.path.exists(f'data/osm/{state}'):
-        os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
-
+    if not os.path.exists(f'data/osm/{state}'):
+        os.makedirs(f'data/osm/{state}')
+    os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
+  
     db.commit()
     db.close()
 
@@ -262,8 +263,9 @@ def refresh_resort(name, state):
     calc_mountain_stats(cur, mountain_id)
 
     # move file once processed into the right folder for the state
-    if os.path.exists(f'data/osm/{state}'):
-        os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
+    if not os.path.exists(f'data/osm/{state}'):
+        os.makedirs(f'data/osm/{state}')
+    os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
 
     db.commit()
     db.close()
@@ -502,15 +504,22 @@ def change_state(name, state, new_state):
     params = (new_state, name, state)
 
     cur.execute(query, params)
-    if os.path.exists(f'data/osm/{state}') and os.path.exists(f'data/osm/{new_state}'):
+    if not os.path.exists(f'data/osm/{new_state}'):
+        os.makedirs(f'data/osm/{new_state}')
+    if not os.path.exists(f'static/maps/{new_state}'):
+        os.makedirs(f'static/maps/{new_state}')
+    if not os.path.exists(f'static/thumbnails/{new_state}'):
+        os.makedirs(f'static/thumbnails/{new_state}')
+
+    if os.path.exists(f'data/osm/{state}'):
         os.rename(f'data/osm/{state}/{name}.osm',
                   f'data/osm/{new_state}/{name}.osm')
 
-    if os.path.exists(f'static/maps/{state}') and os.path.exists(f'static/maps/{new_state}'):
+    if os.path.exists(f'static/maps/{state}'):
         os.rename(f'static/maps/{state}/{name}.svg',
                   f'static/maps/{new_state}/{name}.svg')
 
-    if os.path.exists(f'static/thumbnails/{state}') and os.path.exists(f'static/thumbnails/{new_state}'):
+    if os.path.exists(f'static/thumbnails/{state}'):
         os.rename(f'static/thumbnails/{state}/{name}.svg',
                   f'static/thumbnails/{new_state}/{name}.svg')
 

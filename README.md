@@ -4,6 +4,28 @@ Steep Seeker is a website that presents a standardized rating system to allow sk
 
 Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Ratings] and can be seen as a V2.
 
+## Installation
+
+Start by cloning this repo into the desired location. The program works on both Windows and Linux, but this section assumes a linux system will be used.
+
+Next, install pip if you do not already have it. This can be done with:
+
+```bash
+sudo apt install python3-pip
+```
+
+Once pip is installed, the next step is the project's dependencies, which can be install with:
+
+```bash
+pip install rich flask matplotlib haversine requests
+```
+
+Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to add necessary directories and your secret file.
+
+If you have past data from a previous install, add it to the `data` directory.
+
+To run the website on localhost, execute the file called `run.py` with `python3 run.py`.
+
 ## Upcoming
 
 ### Known Bugs
