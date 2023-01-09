@@ -9,7 +9,7 @@ from data.secret import secret
 sys.path.append('python')
 
 import db as database
-import misc
+import _misc
 
 
 class navigationLink:
@@ -136,7 +136,7 @@ def search():
             'name': name,
             'beginner_friendliness': round(30 - mountain[1], 1),
             'difficulty': mountain[2],
-            'state': misc.convert_state_abbrev_to_name(mountain[3]),
+            'state': _misc.convert_state_abbrev_to_name(mountain[3]),
             'trail_count': mountain[4],
             'vertical': int(float(mountain[5]) * 100 / (2.54 * 12)),
             'map_link': url_for('map', mountain_id=mountain[6]),

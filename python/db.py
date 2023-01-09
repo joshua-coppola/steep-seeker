@@ -4,8 +4,8 @@ import csv
 from decimal import Decimal
 from rich.progress import track
 
-import misc
-import read_osm
+import _misc
+import _read_osm
 
 
 def db_connect():
@@ -32,7 +32,7 @@ def add_trails(cur, mountain_id, trails, lifts):
             print(trail['id'])
             cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
                 VALUES ({}, {}, "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['official_rating']))
-        trail['nodes'] = misc.fill_point_gaps(trail['nodes'])
+        trail['nodes'] = _misc.fill_point_gaps(trail['nodes'])
         trail['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in trail['nodes']]
         for i, node in enumerate(trail['nodes']):
@@ -49,7 +49,7 @@ def add_trails(cur, mountain_id, trails, lifts):
             print(lift['id'])
             cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
                 VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
-        lift['nodes'] = misc.fill_point_gaps(lift['nodes'])
+        lift['nodes'] = _misc.fill_point_gaps(lift['nodes'])
         lift['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in lift['nodes']]
         for i, node in enumerate(lift['nodes']):
@@ -63,7 +63,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon, elevation FROM TrailPoints WHERE slope IS NULL').fetchall()
 
-    slope_nodes = misc.get_slope(all_incomplete_nodes)
+    slope_nodes = _misc.get_slope(all_incomplete_nodes)
     for row in slope_nodes:
         cur.execute(
             f'UPDATE TrailPoints SET slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
@@ -81,8 +81,8 @@ def add_trails(cur, mountain_id, trails, lifts):
         nodes = cur.execute(
             'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ?', (trail_id)).fetchall()
 
-        centerline_nodes = misc.process_area(nodes)
-        centerline_nodes = misc.fill_point_gaps(centerline_nodes)
+        centerline_nodes = _misc.process_area(nodes)
+        centerline_nodes = _misc.fill_point_gaps(centerline_nodes)
         centerline_nodes = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in centerline_nodes]
         for i, node in enumerate(centerline_nodes):
@@ -95,7 +95,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     all_incomplete_nodes = cur.execute(
         'SELECT lat, lon, elevation FROM TrailPoints WHERE slope IS NULL').fetchall()
 
-    slope_nodes = misc.get_slope(all_incomplete_nodes)
+    slope_nodes = _misc.get_slope(all_incomplete_nodes)
     for row in slope_nodes:
         cur.execute(
             f'UPDATE TrailPoints SET slope = {row[3]} WHERE lat = "{row[0]}" AND lon =  "{row[1]}"')
@@ -113,14 +113,14 @@ def add_trails(cur, mountain_id, trails, lifts):
         nodes = cur.execute(
             f'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = {for_display}', (trail_id)).fetchall()
 
-        pitch_30 = misc.get_steep_pitch(nodes, 30)
-        pitch_50 = misc.get_steep_pitch(nodes, 50)
-        pitch_100 = misc.get_steep_pitch(nodes, 100)
-        pitch_200 = misc.get_steep_pitch(nodes, 200)
-        pitch_500 = misc.get_steep_pitch(nodes, 500)
-        pitch_1000 = misc.get_steep_pitch(nodes, 1000)
-        vert = int(misc.get_vert(nodes))
-        length = int(misc.trail_length(nodes))
+        pitch_30 = _misc.get_steep_pitch(nodes, 30)
+        pitch_50 = _misc.get_steep_pitch(nodes, 50)
+        pitch_100 = _misc.get_steep_pitch(nodes, 100)
+        pitch_200 = _misc.get_steep_pitch(nodes, 200)
+        pitch_500 = _misc.get_steep_pitch(nodes, 500)
+        pitch_1000 = _misc.get_steep_pitch(nodes, 1000)
+        vert = int(_misc.get_vert(nodes))
+        length = int(_misc.trail_length(nodes))
 
         cur.execute(f'UPDATE Trails SET steepest_30m = {pitch_30}, steepest_50m = {pitch_50}, \
             steepest_100m = {pitch_100}, steepest_200m = {pitch_200}, \
@@ -134,7 +134,7 @@ def add_trails(cur, mountain_id, trails, lifts):
     for lift_id in lifts_to_be_computed:
         nodes = cur.execute(
             'SELECT lat, lon FROM LiftPoints WHERE lift_id = ?', (lift_id)).fetchall()
-        length = int(misc.trail_length(nodes))
+        length = int(_misc.trail_length(nodes))
 
         cur.execute(
             f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
@@ -147,10 +147,10 @@ def calc_mountain_stats(cur, mountain_id):
     # only use trails longer than 100m for difficulty calculations
     query = 'SELECT steepest_30m FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY steepest_30m DESC'
     trail_slopes = cur.execute(query, (mountain_id,)).fetchall()
-    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
+    difficulty, beginner_friendliness = _misc.mountain_rating(trail_slopes)
 
     query = 'UPDATE Mountains SET vertical = ?, difficulty = ?, beginner_friendliness = ? WHERE mountain_id = ?'
-    params = (int(misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), mountain_id)
+    params = (int(_misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), mountain_id)
     cur.execute(query, params)
 
 
@@ -158,7 +158,7 @@ def calc_mountain_stats(cur, mountain_id):
 def add_resort(name):
     cur, db = db_connect()
 
-    state = misc.find_state(f'{name}.osm')
+    state = _misc.find_state(f'{name}.osm')
 
     if state == None:
         return None
@@ -172,9 +172,9 @@ def add_resort(name):
         db.close()
         return None
 
-    trails, lifts = read_osm.read_osm(f'{name}.osm')
+    trails, lifts = _read_osm.read_osm(f'{name}.osm')
 
-    region = misc.assign_region(state)
+    region = _misc.assign_region(state)
     trail_count = len(trails)
     lift_count = len(lifts)
 
@@ -210,7 +210,7 @@ def add_resort(name):
             trail_points.append(cur.execute(
                 f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 1").fetchall())
 
-    direction = misc.find_direction(trail_points)
+    direction = _misc.find_direction(trail_points)
 
     cur.execute(
         f'UPDATE Mountains SET direction = "{direction}" WHERE mountain_id = {mountain_id}')
@@ -237,7 +237,7 @@ def refresh_resort(name, state):
             return None
 
     delete_trails_and_lifts(name, state)
-    trails, lifts = read_osm.read_osm(f'{name}.osm')
+    trails, lifts = _read_osm.read_osm(f'{name}.osm')
 
     trail_count = len(trails)
     lift_count = len(lifts)
@@ -337,11 +337,11 @@ def delete_trail(mountain_id, trail_id):
 
     trail_slopes = cur.execute(
         f'SELECT steepest_30m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_30m DESC').fetchall()
-    difficulty, beginner_friendliness = misc.mountain_rating(trail_slopes)
+    difficulty, beginner_friendliness = _misc.mountain_rating(trail_slopes)
     trail_count = cur.execute(
         f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
     cur.execute(
-        f'UPDATE Mountains SET vertical = {int(misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
+        f'UPDATE Mountains SET vertical = {int(_misc.get_vert(elevations))}, difficulty = {round(difficulty, 1)}, \
             beginner_friendliness = {round(beginner_friendliness, 1)}, trail_count = {trail_count - 1} WHERE mountain_id = {mountain_id}')
 
     db.commit()
@@ -450,7 +450,7 @@ def add_elevation(cur, table):
         Decimal(x[1]), 8)) for x in all_incomplete_nodes]
 
     print(f'After cache: {len(all_incomplete_nodes)} missing elevation values')
-    uncached_elevation_nodes = misc.get_elevation(all_incomplete_nodes)
+    uncached_elevation_nodes = _misc.get_elevation(all_incomplete_nodes)
     uncached_elevation_nodes = [(str(x[0]), str(x[1]), str(x[2]))
                                 for x in uncached_elevation_nodes]
 

@@ -86,7 +86,7 @@ def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
     maps.create_thumbnail(resort_name, state)
 
 
-def update_mountain_stats():
+def bulk_update_mountain_stats():
     cur, database = db.db_connect()
 
     mountains = db.get_mountains()
@@ -96,3 +96,75 @@ def update_mountain_stats():
 
     database.commit()
     database.close()
+
+
+def repl():
+    valid = True
+    while valid:
+        print('\nSelect an action by entering the corresponding number:')
+        print('1) Add a resort')
+        print('2) Add all resorts that are unprocessed')
+        print('3) Refresh a resort')
+        print('4) Refresh all resorts')
+        print('5) Create new map for a resort')
+        print('6) Create new maps for all resorts')
+        print('7) Update stats for all resorts')
+        print('8) Delete a trail or lift')
+        print('9) Delete a resort')
+        print('Other value: exit program\n')
+
+        operation = input('Select value: ')
+        try:
+            operation = int(operation)
+        except:
+            valid = False
+            continue
+
+        if operation > 9 or operation < 1:
+            valid = False
+            continue
+
+        if operation == 1:
+            name = input('\nEnter Resort Name: ')
+            add_resort(name)
+
+        if operation == 2:
+            bulk_add_resorts()
+
+        if operation == 3:
+            name = input('\nEnter Resort Name: ')
+            state = input('\nEnter State: ')
+            refresh_resort(name, state)
+
+        if operation == 4:
+            bulk_refresh_resorts()
+
+        if operation == 5:
+            name = input('\nEnter Resort Name: ')
+            state = input('\nEnter State: ')
+            maps.create_map(name, state)
+            maps.create_thumbnail(name, state)
+
+        if operation == 6:
+            bulk_create_maps()
+
+        if operation == 7:
+            bulk_update_mountain_stats()
+
+        if operation == 8:
+            name = input('\nEnter Resort Name: ')
+            state = input('\nEnter State: ')
+            item_id = input('\nEnter OSM ID')
+            mountain_id = db.get_mountain_id(name, state)
+            db.delete_trail(mountain_id, item)
+            db.delete_lift(mountain_id, item)
+            maps.create_map(name, state)
+            maps.create_thumbnail(name, state)
+
+        if operation == 9:
+            name = input('\nEnter Resort Name: ')
+            state = input('\nEnter State: ')
+            delete_resort(name, state)
+
+        
+repl()

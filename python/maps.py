@@ -7,7 +7,7 @@ from os.path import exists
 from os import makedirs
 from rich.progress import track
 
-import misc
+import _misc
 
 mpl.use('svg')
 
@@ -208,7 +208,7 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
             debug_x = [i[0] * lat_mirror for i in debug_x]
             debug_y = [j[0] * lon_mirror for j in debug_y]
 
-        color = misc.trail_color(trail['steepest_30m'], trail['gladed'])
+        color = _misc.trail_color(trail['steepest_30m'], trail['gladed'])
 
         # place lines
         if trail['area'] == 'True':
@@ -282,6 +282,7 @@ def find_map_size(mountain_id):
         x_length = y_length
         y_length = temp
     return(dict(x_length = x_length, y_length = y_length, x_point = trail_extremes[0], y_point = trail_extremes[2]))
+
 
 def create_map(resort_name, state, with_labels=True, debug_mode=False):
     db = sqlite3.connect('data/db.db')

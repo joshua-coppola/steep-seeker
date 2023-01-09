@@ -2,7 +2,7 @@ import re
 from os.path import exists
 from decimal import Decimal
 
-import create_trails
+import _create_trails
 
 
 def read_osm(filename):
@@ -54,7 +54,7 @@ def read_osm(filename):
             # creates list of tags for later use
             if 'tag' == parsed['class']:
                 ways[-1]['tags'].append({parsed['k']: parsed['v']})
-    trails, lifts = create_trails.process_trails(ways)
+    trails, lifts = _create_trails.process_trails(ways)
     return (trails, lifts)
 
 

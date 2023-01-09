@@ -24,7 +24,7 @@ Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to ad
 
 If you are exporting data from a previous install, it can be found in the `data` directory and the `static/maps` and `static/thumbnails` directories.
 
-To run the website on localhost, execute the file called `run.py` with `python3 run.py`. If the port specified in the `run.py` file is less than 5000, sudo is required.
+To run the website on localhost, execute the file called `app.py` with `python3 app.py`. If the port specified in the `app.py` file is less than 5000, sudo is required.
 
 ## Upcoming
 
