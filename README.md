@@ -17,14 +17,14 @@ sudo apt install python3-pip
 Once pip is installed, the next step is the project's dependencies, which can be install with:
 
 ```bash
-pip install rich flask matplotlib haversine requests
+pip install rich flask flask_wtf matplotlib haversine requests
 ```
 
 Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to add necessary directories and your secret file.
 
-If you have past data from a previous install, add it to the `data` directory.
+If you are exporting data from a previous install, it can be found in the `data` directory and the `static/maps` and `static/thumbnails` directories.
 
-To run the website on localhost, execute the file called `run.py` with `python3 run.py`.
+To run the website on localhost, execute the file called `run.py` with `python3 run.py`. If the port specified in the `run.py` file is less than 5000, sudo is required.
 
 ## Upcoming
 
