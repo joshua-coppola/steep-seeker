@@ -11,7 +11,7 @@ import _misc
 
 mpl.use('svg')
 
-def create_legend(x, y, direction, font_size, legend_offset):
+def create_legend(x: float, y: float, direction: str, font_size: float, legend_offset: float) -> None:
     font_size = min(font_size, 8)
     # no legend on tiny maps
     if font_size <= 2.5:
@@ -50,7 +50,7 @@ def create_legend(x, y, direction, font_size, legend_offset):
         row.set_linewidth(line_width)
 
 
-def get_label_placement(x, y, length, name_length):
+def get_label_placement(x: list(float), y: list(float), length: float, name_length: int) -> tuple(int, float, float):
     if length == 0:
         print('Trail of 0 length found.')
         return (0, 0, 0)
@@ -110,7 +110,7 @@ def get_label_placement(x, y, length, name_length):
     return(point, angle, label_length)
 
 
-def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
+def populate_map(mountain_id: int, direction: str, with_labels: bool = True, debug_mode: bool = False) -> None:
     # configure correct item rotation & scaling
     lat_mirror = 1
     lon_mirror = -1
@@ -251,7 +251,7 @@ def populate_map(mountain_id, direction, with_labels=True, debug_mode=False):
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
 
-def find_map_size(mountain_id):
+def find_map_size(mountain_id: int) -> dict(float, float, float, float):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
@@ -284,7 +284,7 @@ def find_map_size(mountain_id):
     return(dict(x_length = x_length, y_length = y_length, x_point = trail_extremes[0], y_point = trail_extremes[2]))
 
 
-def create_map(resort_name, state, with_labels=True, debug_mode=False):
+def create_map(resort_name: str, state: str, with_labels: bool = True, debug_mode: bool = False) -> None:
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
@@ -347,7 +347,7 @@ def create_map(resort_name, state, with_labels=True, debug_mode=False):
     plt.close()
 
 
-def create_thumbnail(resort_name, state):
+def create_thumbnail(resort_name: str, state: str) -> None:
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 

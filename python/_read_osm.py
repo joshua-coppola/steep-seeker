@@ -5,11 +5,11 @@ from decimal import Decimal
 import _create_trails
 
 
-def read_osm(filename):
+def read_osm(filename: str) -> tuple(list(dict), list(dict)):
     # Check if file exists
     if not exists(f'data/osm/{filename}'):
         print('No file found')
-        return(None)
+        return None
 
     # Open file & read each line into an array
     file = open(f'data/osm/{filename}', 'r', encoding='utf8')
@@ -58,7 +58,7 @@ def read_osm(filename):
     return (trails, lifts)
 
 
-def read_xml_string(string):
+def read_xml_string(string: str) -> str:
     output = {}
     words = string.split('"')
     for i, word in enumerate(words):

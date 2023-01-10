@@ -6,7 +6,7 @@ import db as database
 
 cur, db = database.db_connect()
 
-def print_dict(dic, title):
+def print_dict(dic: dict, title: str) -> None:
     max_len_col_1 = len(title[0])
     for key, value in dic.items():
         if len(key) > max_len_col_1:
@@ -15,7 +15,7 @@ def print_dict(dic, title):
     for key, value in dic.items():
         print(f"{key}{' ' * (max_len_col_1 - len(key))} | {value}")
 
-def trail_rating(pitch, gladed):
+def trail_rating(pitch: float, gladed: str) -> 'str':
     if gladed == 'True':
         pitch += 5.5
     # 0-16 degrees: green
@@ -34,7 +34,7 @@ def trail_rating(pitch, gladed):
     else:
         return 'extreme'
 
-def convert_to_numeric(rating):
+def convert_to_numeric(rating: str) -> int:
     if rating == 'novice' or rating == 'easy':
         return 1
     if rating == 'intermediate':
@@ -47,7 +47,7 @@ def convert_to_numeric(rating):
         return 5
     return 0
 
-def compute_accuracy(all_trails):
+def compute_accuracy(all_trails: list(tuple(float, str, str))) -> None:
     trail_accuracy = []
     for trail in all_trails:
         rating = trail_rating(trail[0], trail[1])

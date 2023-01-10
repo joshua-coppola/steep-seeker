@@ -9,7 +9,7 @@ from os.path import exists
 from rich.progress import track
 
 
-def find_state(filename: str):
+def find_state(filename: str) -> str | None:
     # Check if file exists
     print(f'\n{filename}\n')
     if not exists(f'data/osm/{filename}'):
@@ -56,7 +56,7 @@ def find_state(filename: str):
         return None
 
 
-def assign_region(state: str):
+def assign_region(state: str) -> str | None:
     """
     Takes a 2 letter state code and outputs its region
 
@@ -90,10 +90,10 @@ def assign_region(state: str):
 
     if state in west:
         return 'west'
-    return 'error'
+    return None
 
 
-def convert_state_abbrev_to_name(state_abbrev):
+def convert_state_abbrev_to_name(state_abbrev: str) -> str:
     # Define a dictionary that maps state abbreviations to state names
     state_abbrevs_to_names = {
         "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
@@ -110,7 +110,7 @@ def convert_state_abbrev_to_name(state_abbrev):
     return state_abbrevs_to_names[state_abbrev]
 
 
-def fill_point_gaps(nodes):
+def fill_point_gaps(nodes: list(dict)) -> list(dict):
     max_gap = 15  # 15m between points
     previous_point = nodes[0]
 
@@ -141,7 +141,7 @@ def fill_point_gaps(nodes):
     return nodes
 
 
-def get_elevation(nodes):
+def get_elevation(nodes: list(tuple(float, float))) -> list(tuple(float, float, float)):
     if len(nodes) == 0:
         return []
     hundred_node_lists = list(divide_chunks(nodes, 100))
@@ -182,14 +182,14 @@ def get_elevation(nodes):
     return nodes
 
 
-def divide_chunks(l, n):
+def divide_chunks(l: list, n: int) -> list:
 
     # looping till length l
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
 
-def get_slope(nodes):
+def get_slope(nodes: list(tuple(float, float, float))) -> list(tuple(float, float, float, float)):
     for i, point in enumerate(nodes):
         if i == 0:
             previous_point = point
@@ -208,7 +208,7 @@ def get_slope(nodes):
     return nodes
 
 
-def trail_length(nodes):
+def trail_length(nodes: list(tuple(float, float))) -> float:
     previous_point = None
     cumulative_dist = 0
 
@@ -224,7 +224,7 @@ def trail_length(nodes):
     return cumulative_dist
 
 
-def get_steep_pitch(nodes, length):
+def get_steep_pitch(nodes: list(tuple(float, float, float)), length: float) -> float | str:
     previous_point = None
     max_pitch = -90
 
@@ -258,7 +258,7 @@ def get_steep_pitch(nodes, length):
 
     if max_pitch == -90:
         # find pitch of whole trail if the length desired is short anyway
-        if length <= 50:
+        if length <= 30:
             elevation_change = nodes[-1][2] - nodes[0][2]
             if elevation_change != 0:
                 max_pitch = abs(degrees(
@@ -270,7 +270,7 @@ def get_steep_pitch(nodes, length):
     return round(max_pitch, 1)
 
 
-def get_vert(nodes):
+def get_vert(nodes: list(tuple(float, float, float))) -> float:
     max_ele = 0
     min_ele = 10000
     for point in nodes:
@@ -281,7 +281,7 @@ def get_vert(nodes):
     return max_ele - min_ele
 
 
-def mountain_rating(nodes):
+def mountain_rating(nodes: list(float)) -> tuple(float, float):
     divisor = 30
     if len(nodes) < 30:
         divisor = len(nodes)
@@ -301,7 +301,7 @@ def mountain_rating(nodes):
     return(difficulty, beginner_friendliness)
 
 
-def trail_color(pitch, gladed):
+def trail_color(pitch: float, gladed: str) -> str:
     if gladed == 'True':
         pitch += 5.5
     # 0-16 degrees: green
@@ -321,7 +321,7 @@ def trail_color(pitch, gladed):
         return 'gold'
 
 
-def find_corrected_center(center_lat, center_lon, nodes, north_south):
+def find_corrected_center(center_lat: float, center_lon: float, nodes: list(tuple(float, float)), north_south: bool) -> tuple(float, float):
     if north_south:
         # check lon
         dist = []
@@ -345,7 +345,7 @@ def find_corrected_center(center_lat, center_lon, nodes, north_south):
     return (new_center_lat, new_center_lon)
 
 
-def process_area(nodes):
+def process_area(nodes: list(tuple(float, float, float))) -> list(tuple(float, float, float)):
     max_elevation = (0, 0)
     min_elevation = (10000, 0)
 
@@ -430,7 +430,7 @@ def process_area(nodes):
     return new_nodes
 
 
-def find_direction(trail_points):
+def find_direction(trail_points: list(tuple(float, float))) -> str:
     heading = []
     for trail in trail_points:
         dx = trail[0][0] - trail[-1][0]

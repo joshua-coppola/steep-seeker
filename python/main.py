@@ -5,7 +5,7 @@ import db
 import maps
 
 
-def add_resort(name):
+def add_resort(name: str) -> None:
     state = db.add_resort(name)
     if state != None:
         print('Creating Map')
@@ -13,13 +13,13 @@ def add_resort(name):
         maps.create_thumbnail(name, state)
 
 
-def bulk_add_resorts():
+def bulk_add_resorts() -> None:
     for item in os.listdir('data/osm'):
         if item.endswith('.osm'):
             add_resort(item.split('.')[0])
 
 
-def refresh_resort(name, state):
+def refresh_resort(name: str, state: str) -> None:
     return_state = db.refresh_resort(name, state)
     if state == return_state:
         print('Creating Map')
@@ -27,7 +27,7 @@ def refresh_resort(name, state):
         maps.create_thumbnail(name, state)
 
 
-def bulk_refresh_resorts():
+def bulk_refresh_resorts() -> None:
     mountains = db.get_mountains()
     for i, mountain in enumerate(mountains):
         print(f'\nResort #{i + 1}/{len(mountains)}')
@@ -35,14 +35,14 @@ def bulk_refresh_resorts():
         refresh_resort(mountain[0], mountain[1])
 
 
-def bulk_create_maps():
+def bulk_create_maps() -> None:
     mountains = db.get_mountains()
     for mountain in track(mountains):
         maps.create_map(mountain[0], mountain[1])
         maps.create_thumbnail(mountain[0], mountain[1])
 
 
-def delete_resort(name, state):
+def delete_resort(name: str, state: str) -> None:
     db.delete_resort(name, state)
     if os.path.exists(f'data/osm/{state}/{name}.osm'):
         os.remove(f'data/osm/{state}/{name}.osm')
@@ -52,7 +52,7 @@ def delete_resort(name, state):
         os.remove(f'static/thumbnails/{state}/{name}.svg')
 
 
-def rename_resort(old_name, state, new_name):
+def rename_resort(old_name: str, state: str, new_name: str) -> None:
     db.rename_resort(old_name, state, new_name)
     if os.path.exists(f'data/osm/{state}/{old_name}.osm'):
         os.rename(f'data/osm/{state}/{old_name}.osm', f'data/osm/{state}/{new_name}.osm' )
@@ -62,19 +62,19 @@ def rename_resort(old_name, state, new_name):
         os.rename(f'static/thumbnails/{state}/{old_name}.svg', f'static/thumbnails/{state}/{new_name}.svg')
 
 
-def delete_all_resorts():
+def delete_all_resorts() -> None:
     mountains = db.get_mountains()
     for mountain in mountains:
         db.delete_resort(mountain[0], mountain[1])
 
 
-def rotate_map_clockwise(name, state):
+def rotate_map_clockwise(name: str, state: str) -> None:
     db.rotate_clockwise(name, state)
     maps.create_map(name, state)
     maps.create_thumbnail(name, state)
 
 
-def move_all_osm_files(source_dir):
+def move_all_osm_files(source_dir: str) -> None:
     # Loop through all subdirectories in the source directory
     for root, dirs, files in os.walk(source_dir):
         # Loop through all files in each subdirectory
@@ -87,7 +87,7 @@ def move_all_osm_files(source_dir):
             os.rename(source_file, dest_file)
 
 
-def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
+def prune_objects(resort_name: str, state: str, prune_id_list: list(int), debug_mode: bool=True) -> None:
     mountain_id = db.get_mountain_id(resort_name, state)
     for item in prune_id_list:
             db.delete_trail(mountain_id, item)
@@ -96,7 +96,7 @@ def prune_objects(resort_name, state, prune_id_list, debug_mode=True):
     maps.create_thumbnail(resort_name, state)
 
 
-def bulk_update_mountain_stats():
+def bulk_update_mountain_stats() -> None:
     cur, database = db.db_connect()
 
     mountains = db.get_mountains()
@@ -108,7 +108,7 @@ def bulk_update_mountain_stats():
     database.close()
 
 
-def repl():
+def repl() -> None:
     valid = True
     while valid:
         print('\nSelect an action by entering the corresponding number:')

@@ -8,20 +8,20 @@ import _misc
 import _read_osm
 
 
-def db_connect():
+def db_connect() -> tuple(cursor, connection):
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
     return (cur, db)
 
 
-def reset_db():
+def reset_db() -> None:
     cur, db = db_connect()
 
     with open('schema.sql') as f:
         db.executescript(f.read())
 
 
-def add_trails(cur, mountain_id, trails, lifts):
+def add_trails(cur: sqlite3.connect(database).cursor(), mountain_id: int, trails: list(dict), lifts: list(dict)) -> None:
     for trail in trails:
         try:
             cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
@@ -140,7 +140,7 @@ def add_trails(cur, mountain_id, trails, lifts):
             f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
 
 
-def calc_mountain_stats(cur, mountain_id):
+def calc_mountain_stats(cur: sqlite3.connect(database).cursor(), mountain_id: int) -> None:
     query = 'SELECT elevation FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
     elevations = cur.execute(query, (mountain_id,)).fetchall()
 
@@ -154,8 +154,7 @@ def calc_mountain_stats(cur, mountain_id):
     cur.execute(query, params)
 
 
-# need to automate direction
-def add_resort(name):
+def add_resort(name: str) -> str | None:
     cur, db = db_connect()
 
     state = _misc.find_state(f'{name}.osm')
@@ -226,7 +225,7 @@ def add_resort(name):
     return state
 
 
-def refresh_resort(name, state):
+def refresh_resort(name: str, state: str) -> str | None:
     cur, db = db_connect()
 
     try:
@@ -273,7 +272,7 @@ def refresh_resort(name, state):
     return state
 
 
-def delete_resort(name, state):
+def delete_resort(name: str, state: str) -> None:
     cur, db = db_connect()
 
     delete_trails_and_lifts(name, state)
@@ -286,7 +285,7 @@ def delete_resort(name, state):
     db.close()
 
 
-def delete_trails_and_lifts(name, state):
+def delete_trails_and_lifts(name: str, state: str) -> None:
     cur, db = db_connect()
 
     # clear out old mountain data without deleting entry in Mountains table
@@ -318,7 +317,7 @@ def delete_trails_and_lifts(name, state):
     db.close()
 
 
-def delete_trail(mountain_id, trail_id):
+def delete_trail(mountain_id: int, trail_id: int) -> None:
     cur, db = db_connect()
 
     query = 'SELECT COUNT(*) FROM Trails WHERE mountain_id = ? AND trail_id = ?'
@@ -348,7 +347,7 @@ def delete_trail(mountain_id, trail_id):
     db.close()
 
 
-def delete_lift(mountain_id, lift_id):
+def delete_lift(mountain_id: int, lift_id: int) -> None:
     cur, db = db_connect()
 
     query = 'SELECT COUNT(*) FROM Lifts WHERE mountain_id = ? AND lift_id = ?'
@@ -370,7 +369,7 @@ def delete_lift(mountain_id, lift_id):
     db.close()
 
 
-def fill_cache():
+def fill_cache() -> None:
     cur, db = db_connect()
 
     for item in os.listdir('data/cached'):
@@ -392,7 +391,7 @@ def fill_cache():
     db.close()
 
 
-def get_mountain_id(name, state, cur=None):
+def get_mountain_id(name: str, state: str, cur: sqlite3.connect(database).cursor() | None=None) -> int:
     if cur == None:
         cur, db = db_connect()
 
@@ -403,7 +402,7 @@ def get_mountain_id(name, state, cur=None):
     return mountain_id
 
 
-def get_mountains():
+def get_mountains() -> list(tuple(str, str)):
     cur, db = db_connect()
 
     mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
@@ -412,7 +411,7 @@ def get_mountains():
     return(mountains)
 
 
-def add_elevation(cur, table):
+def add_elevation(cur: sqlite3.connect(database).cursor(), table: str) -> None:
     if table != 'TrailPoints' and table != 'LiftPoints':
         print('Bad value for table name')
         return
@@ -471,7 +470,7 @@ def add_elevation(cur, table):
                 return(-1)
 
 
-def rotate_clockwise(name, state):
+def rotate_clockwise(name: str, state: str) -> None:
     cur, db = db_connect()
 
     query = 'SELECT direction FROM Mountains WHERE name = ? AND state = ?'
@@ -497,7 +496,7 @@ def rotate_clockwise(name, state):
     db.close()
 
 
-def change_state(name, state, new_state):
+def change_state(name: str, state: str, new_state: str) -> None:
     cur, db = db_connect()
 
     query = 'UPDATE Mountains SET state = ? WHERE name = ? AND state = ?'
@@ -526,7 +525,7 @@ def change_state(name, state, new_state):
     db.commit()
     db.close()
 
-def rename_resort(old_name, state, new_name):
+def rename_resort(old_name: str, state: str, new_name: str) -> None:
     cur, db = db_connect()
 
     query = 'UPDATE Mountains SET name = ? WHERE name = ? AND state = ?'
@@ -537,7 +536,7 @@ def rename_resort(old_name, state, new_name):
     db.close()
 
 
-def get_mountain_name(mountain_id, cur=None):
+def get_mountain_name(mountain_id: int, cur: sqlite3.connect(database).cursor() | None = None) -> str:
     if cur == None:
         cur, db = db_connect()
 

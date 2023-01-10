@@ -34,32 +34,32 @@ app = Flask(__name__, static_url_path='', static_folder='../static', template_fo
 app.config['SECRET_KEY'] = secret
 
 nav_links = []
-nav_links.append(navigationLink("About", "about", "/about"))
-nav_links.append(navigationLink("Search", "search", "/search"))
-nav_links.append(navigationLink("Mountain Rankings", "rankings",
-                                "/rankings?sort=difficulty&order=desc&region=usa"))
-nav_links.append(navigationLink("Trail Rankings", "trail_rankings", "/trail-rankings?region=usa"))
+nav_links.append(navigationLink('About', 'about', '/about'))
+nav_links.append(navigationLink('Search', 'search', '/search'))
+nav_links.append(navigationLink('Mountain Rankings', 'rankings',
+                                '/rankings?sort=difficulty&order=desc&region=usa'))
+nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rankings?region=usa'))
 
 
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.jinja", nav_links=nav_links, active_page="index")
+    return render_template('index.jinja', nav_links=nav_links, active_page='index')
 
 
-@app.route("/about")
+@app.route('/about')
 def about():
-    return render_template("about.jinja", nav_links=nav_links, active_page="about")
+    return render_template('about.jinja', nav_links=nav_links, active_page='about')
 
-@app.route("/search")
+@app.route('/search')
 def search():
     # parsing query string for database search
-    search_string = ""
+    search_string = ''
     q = request.args.get('q')
-    if q and q != "%%":
-        q = "%" + q + "%"
-        search_string += "q=" + q.replace("%", "") + "&"
+    if q and q != '%%':
+        q = '%' + q + '%'
+        search_string += 'q=' + q.replace('%', '') + '&'
     else:
-        q = "%%"
+        q = '%%'
     page = request.args.get('page')
     if not page:
         page = 1
@@ -67,44 +67,44 @@ def search():
     if not limit:
         limit = 20
     else:
-        search_string += "limit=" + str(limit) + "&"
+        search_string += 'limit=' + str(limit) + '&'
     diffmin = request.args.get('diffmin')
     if not diffmin:
         diffmin = 0
     else:
-        search_string += "diffmin=" + str(diffmin) + "&"
+        search_string += 'diffmin=' + str(diffmin) + '&'
     diffmax = request.args.get('diffmax')
     if not diffmax:
         diffmax = 100
     else:
-        search_string += "diffmax=" + str(diffmax) + "&"
+        search_string += 'diffmax=' + str(diffmax) + '&'
     location = request.args.get('location')
-    if not location or location == "%%":
-        location = "%%"
+    if not location or location == '%%':
+        location = '%%'
     else:
-        search_string += "location=" + location + "&"
+        search_string += 'location=' + location + '&'
     trailsmin = request.args.get('trailsmin')
     if not trailsmin:
         trailsmin = 0
     else:
-        search_string += "trailsmin=" + str(trailsmin) + "&"
+        search_string += 'trailsmin=' + str(trailsmin) + '&'
     trailsmax = request.args.get('trailsmax')
     if not trailsmax:
         trailsmax = 1000
     else:
-        search_string += "trailsmax=" + str(trailsmax) + "&"
+        search_string += 'trailsmax=' + str(trailsmax) + '&'
     sort = request.args.get('sort')
     if not sort:
         sort = 'name'
     else:
-        search_string += "sort=" + sort + "&"
+        search_string += 'sort=' + sort + '&'
     order = request.args.get('order')
     if not order:
         order = 'asc'
     else:
-        search_string += "order=" + order + "&"
+        search_string += 'order=' + order + '&'
 
-    if len(search_string) > 0 and search_string[-1] == "&":
+    if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
     
     page = int(page)
@@ -144,41 +144,41 @@ def search():
 
     pages = {}
     if total_mountain_count > limit and (limit * page) < total_mountain_count:
-        urlBase = "/search?page=" + str(page + 1) + "&"
+        urlBase = '/search?page=' + str(page + 1) + '&'
         urlBase += search_string
-        if len(urlBase) > 0 and urlBase[-1] == "&":
+        if len(urlBase) > 0 and urlBase[-1] == '&':
             urlBase = urlBase[0:-1]
-        pages["next"] = urlBase
+        pages['next'] = urlBase
     if offset != 0:
-        urlBase = "/search?page=" + str(page - 1) + "&"
+        urlBase = '/search?page=' + str(page - 1) + '&'
         urlBase += search_string
-        if len(urlBase) > 0 and urlBase[-1] == "&":
+        if len(urlBase) > 0 and urlBase[-1] == '&':
             urlBase = urlBase[0:-1]
-        pages["prev"] = urlBase
+        pages['prev'] = urlBase
 
-    return render_template("mountains.jinja", nav_links=nav_links, active_page="search", mountains=mountains_data, pages=pages)
+    return render_template('mountains.jinja', nav_links=nav_links, active_page='search', mountains=mountains_data, pages=pages)
 
 
-@ app.route("/rankings")
+@ app.route('/rankings')
 def rankings():
     sort = request.args.get('sort')
     if not sort:
-        sort = "difficulty"
+        sort = 'difficulty'
     order = request.args.get('order')
     if not order:
-        order = "desc"
+        order = 'desc'
     region = request.args.get('region')
     if not region:
-        region = "usa"
+        region = 'usa'
     # converts query string info into SQL
     cur, db = database.db_connect()
 
     mountains_formatted = []
-    if sort == "beginner":
-        sort_by = "beginner_friendliness"
+    if sort == 'beginner':
+        sort_by = 'beginner_friendliness'
     else:
-        sort_by = "difficulty"
-    if region == "usa":
+        sort_by = 'difficulty'
+    if region == 'usa':
         mountains = cur.execute(
             f'SELECT * FROM Mountains ORDER BY {sort_by} {order}').fetchall()
     else:
@@ -191,18 +191,18 @@ def rankings():
 
     for mountain in mountains:
         mountain_entry = {
-            "name": mountain['name'],
-            "beginner_friendliness": round(30 - mountain['beginner_friendliness'], 1),
-            "difficulty": mountain['difficulty'],
-            "state": mountain['state'],
-            "map_link": url_for('map', mountain_id=mountain['mountain_id'])
+            'name': mountain['name'],
+            'beginner_friendliness': round(30 - mountain['beginner_friendliness'], 1),
+            'difficulty': mountain['difficulty'],
+            'state': mountain['state'],
+            'map_link': url_for('map', mountain_id=mountain['mountain_id'])
         }
         mountains_formatted.append(mountain_entry)
 
     db.close()
-    return render_template("rankings.jinja", nav_links=nav_links, active_page="rankings", mountains=mountains_formatted, sort=sort, order=order, region=region)
+    return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains_formatted, sort=sort, order=order, region=region)
 
-@ app.route("/trail-rankings")
+@ app.route('/trail-rankings')
 def trail_rankings():
     search_string = ''
     region = request.args.get('region')
@@ -217,7 +217,7 @@ def trail_rankings():
         limit = 50
     search_string += f'limit={limit}&'
 
-    if len(search_string) > 0 and search_string[-1] == "&":
+    if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
     
     page = int(page)
@@ -240,16 +240,16 @@ def trail_rankings():
     trails_formatted = []
     for trail in trails:
         trail_entry = {
-            "name": trail['name'],
-            "steepest_30m": trail['steepest_30m'],
-            "steepest_50m": trail['steepest_50m'],
-            "steepest_100m": trail['steepest_100m'],
-            "steepest_200m": trail['steepest_200m'],
-            "steepest_500m": trail['steepest_500m'],
-            "steepest_1000m": trail['steepest_1000m'],            
-            "mountain_name": database.get_mountain_name(trail['mountain_id'], cur)[0],
-            "state": trail['state'],
-            "map_link": url_for('map', mountain_id=trail['mountain_id'])
+            'name': trail['name'],
+            'steepest_30m': trail['steepest_30m'],
+            'steepest_50m': trail['steepest_50m'],
+            'steepest_100m': trail['steepest_100m'],
+            'steepest_200m': trail['steepest_200m'],
+            'steepest_500m': trail['steepest_500m'],
+            'steepest_1000m': trail['steepest_1000m'],            
+            'mountain_name': database.get_mountain_name(trail['mountain_id'], cur)[0],
+            'state': trail['state'],
+            'map_link': url_for('map', mountain_id=trail['mountain_id'])
         }
         trails_formatted.append(trail_entry)
 
@@ -270,28 +270,28 @@ def trail_rankings():
     pages['offset'] = offset
 
     db.close()
-    return render_template("trail_rankings.jinja", nav_links=nav_links, active_page="trail_rankings", trails=trails_formatted, region=region, pages=pages)
+    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails_formatted, region=region, pages=pages)
 
 
-@ app.route("/map/<int:mountain_id>")
+@ app.route('/map/<int:mountain_id>')
 def map(mountain_id):
     cur, db = database.db_connect()
 
     mountain_row = cur.execute(
         'SELECT * FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()
     if not mountain_row:
-        return "404"
+        return '404'
 
     desc = cur.description
     column_names = [col[0] for col in desc]
     mountain_row = [dict(zip(column_names, row)) for row in mountain_row][0]
 
     statistics = {
-        "Trail Count": mountain_row['trail_count'],
-        "Lift Count": mountain_row['lift_count'],
-        "Vertical": f"{int(float(mountain_row['vertical']) * 100 / (2.54 * 12))}'",
-        "Difficulty": mountain_row['difficulty'],
-        "Beginner Friendliness": round(30 - mountain_row['beginner_friendliness'], 1)
+        'Trail Count': mountain_row['trail_count'],
+        'Lift Count': mountain_row['lift_count'],
+        'Vertical': f'{int(float(mountain_row["vertical"]) * 100 / (2.54 * 12))}',
+        'Difficulty': mountain_row['difficulty'],
+        'Beginner Friendliness': round(30 - mountain_row['beginner_friendliness'], 1)
     }
 
     trails = cur.execute(
@@ -317,10 +317,10 @@ def map(mountain_id):
     mountain = mountainInfo(
         mountain_id, mountain_row['name'], mountain_row['state'], statistics, trails, lifts, map_link)
 
-    return render_template("map.jinja", nav_links=nav_links, active_page="map", mountain=mountain)
+    return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain)
 
 
-@ app.route("/data/<int:mountain_id>/objects", methods=['GET'])
+@ app.route('/data/<int:mountain_id>/objects', methods=['GET'])
 def mountaindata(mountain_id):
     cur, db = database.db_connect()
     trail_rows = cur.execute(
@@ -340,7 +340,7 @@ def mountaindata(mountain_id):
     conn.close()
 
     if not trail_rows:
-        return "404"
+        return '404'
 
     jsonContents = {}
     trails = []
@@ -352,19 +352,19 @@ def mountaindata(mountain_id):
         else:
             difficulty = trail['difficulty']
         trail_entry = {
-            "id": trail['trail_id'],
-            "name": trail['name'],
-            "difficulty": difficulty,
-            "length": trail['length'],
-            "vertical_drop": trail['vertical_drop'],
-            "steepest_pitch": trail['steepest_30m']
+            'id': trail['trail_id'],
+            'name': trail['name'],
+            'difficulty': difficulty,
+            'length': trail['length'],
+            'vertical_drop': trail['vertical_drop'],
+            'steepest_pitch': trail['steepest_30m']
         }
         trails.append(trail_entry)
 
     for lift in lift_rows:
         lift_entry = {
-            "id": lift['lift_id'],
-            "name": lift['name'],
+            'id': lift['lift_id'],
+            'name': lift['name'],
         }
         lifts.append(lift_entry)
 
