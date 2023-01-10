@@ -5,7 +5,7 @@ from decimal import Decimal
 import _create_trails
 
 
-def read_osm(filename: str) -> tuple(list(dict), list(dict)):
+def read_osm(filename: str) -> tuple():
     # Check if file exists
     if not exists(f'data/osm/{filename}'):
         print('No file found')

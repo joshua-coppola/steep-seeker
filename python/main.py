@@ -87,7 +87,7 @@ def move_all_osm_files(source_dir: str) -> None:
             os.rename(source_file, dest_file)
 
 
-def prune_objects(resort_name: str, state: str, prune_id_list: list(int), debug_mode: bool=True) -> None:
+def prune_objects(resort_name: str, state: str, prune_id_list: list(), debug_mode: bool=True) -> None:
     mountain_id = db.get_mountain_id(resort_name, state)
     for item in prune_id_list:
             db.delete_trail(mountain_id, item)

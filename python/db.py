@@ -8,7 +8,7 @@ import _misc
 import _read_osm
 
 
-def db_connect() -> tuple(cursor, connection):
+def db_connect() -> tuple():
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
     return (cur, db)
@@ -21,7 +21,7 @@ def reset_db() -> None:
         db.executescript(f.read())
 
 
-def add_trails(cur: sqlite3.connect(database).cursor(), mountain_id: int, trails: list(dict), lifts: list(dict)) -> None:
+def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict())) -> None:
     for trail in trails:
         try:
             cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
@@ -140,7 +140,7 @@ def add_trails(cur: sqlite3.connect(database).cursor(), mountain_id: int, trails
             f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
 
 
-def calc_mountain_stats(cur: sqlite3.connect(database).cursor(), mountain_id: int) -> None:
+def calc_mountain_stats(cur, mountain_id: int) -> None:
     query = 'SELECT elevation FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
     elevations = cur.execute(query, (mountain_id,)).fetchall()
 
@@ -154,7 +154,7 @@ def calc_mountain_stats(cur: sqlite3.connect(database).cursor(), mountain_id: in
     cur.execute(query, params)
 
 
-def add_resort(name: str) -> str | None:
+def add_resort(name: str) -> str:
     cur, db = db_connect()
 
     state = _misc.find_state(f'{name}.osm')
@@ -225,7 +225,7 @@ def add_resort(name: str) -> str | None:
     return state
 
 
-def refresh_resort(name: str, state: str) -> str | None:
+def refresh_resort(name: str, state: str) -> str:
     cur, db = db_connect()
 
     try:
@@ -391,7 +391,7 @@ def fill_cache() -> None:
     db.close()
 
 
-def get_mountain_id(name: str, state: str, cur: sqlite3.connect(database).cursor() | None=None) -> int:
+def get_mountain_id(name: str, state: str, cur = None) -> int:
     if cur == None:
         cur, db = db_connect()
 
@@ -402,7 +402,7 @@ def get_mountain_id(name: str, state: str, cur: sqlite3.connect(database).cursor
     return mountain_id
 
 
-def get_mountains() -> list(tuple(str, str)):
+def get_mountains() -> list(tuple()):
     cur, db = db_connect()
 
     mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
@@ -411,7 +411,7 @@ def get_mountains() -> list(tuple(str, str)):
     return(mountains)
 
 
-def add_elevation(cur: sqlite3.connect(database).cursor(), table: str) -> None:
+def add_elevation(cur, table: str) -> None:
     if table != 'TrailPoints' and table != 'LiftPoints':
         print('Bad value for table name')
         return
@@ -536,7 +536,7 @@ def rename_resort(old_name: str, state: str, new_name: str) -> None:
     db.close()
 
 
-def get_mountain_name(mountain_id: int, cur: sqlite3.connect(database).cursor() | None = None) -> str:
+def get_mountain_name(mountain_id: int, cur = None) -> str:
     if cur == None:
         cur, db = db_connect()
 

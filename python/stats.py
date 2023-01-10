@@ -6,7 +6,7 @@ import db as database
 
 cur, db = database.db_connect()
 
-def print_dict(dic: dict, title: str) -> None:
+def print_dict(dic: dict(), title: str) -> None:
     max_len_col_1 = len(title[0])
     for key, value in dic.items():
         if len(key) > max_len_col_1:
@@ -47,7 +47,7 @@ def convert_to_numeric(rating: str) -> int:
         return 5
     return 0
 
-def compute_accuracy(all_trails: list(tuple(float, str, str))) -> None:
+def compute_accuracy(all_trails: list(tuple())) -> None:
     trail_accuracy = []
     for trail in all_trails:
         rating = trail_rating(trail[0], trail[1])

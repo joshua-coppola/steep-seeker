@@ -1,7 +1,7 @@
 from collections import Counter
 
 
-def process_trails(ways: list(dict)) -> tuple(list(dict), list(dict)):
+def process_trails(ways: list(dict())) -> tuple():
     trails = []
     lifts = []
     for unprocessed_way in ways:

@@ -50,7 +50,7 @@ def create_legend(x: float, y: float, direction: str, font_size: float, legend_o
         row.set_linewidth(line_width)
 
 
-def get_label_placement(x: list(float), y: list(float), length: float, name_length: int) -> tuple(int, float, float):
+def get_label_placement(x: list(), y: list(), length: float, name_length: int) -> tuple():
     if length == 0:
         print('Trail of 0 length found.')
         return (0, 0, 0)
@@ -251,7 +251,7 @@ def populate_map(mountain_id: int, direction: str, with_labels: bool = True, deb
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
 
-def find_map_size(mountain_id: int) -> dict(float, float, float, float):
+def find_map_size(mountain_id: int) -> dict():
     db = sqlite3.connect('data/db.db')
     cur = db.cursor()
 
