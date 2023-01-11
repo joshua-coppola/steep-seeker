@@ -20,17 +20,6 @@ class navigationLink:
         self.to = to
 
 
-class mountainInfo:
-    def __init__(self, mountain_id, name, state, statistics, trails, lifts, map_link):
-        self.mountain_id = mountain_id
-        self.name = name
-        self.state = state
-        self.statistics = statistics
-        self.trails = trails
-        self.lifts = lifts
-        self.map_link = map_link
-
-
 app = Flask(__name__, static_url_path='', static_folder='../static', template_folder='../templates')
 app.config['SECRET_KEY'] = secret
 
@@ -207,21 +196,20 @@ def trail_rankings():
     limit = int(limit)
     offset = limit * (page - 1)
     
-    cur, db = database.db_connect()
+    conn = database.dict_cursor()
 
     if region == 'usa':
-        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
-        trails = cur.execute(query, (limit, offset)).fetchall()
+        query = 'SELECT * FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        trails = conn.execute(query, (limit, offset)).fetchall()
     else:
-        query = 'SELECT * FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
-        trails = cur.execute(query, (region, limit, offset)).fetchall()
-    
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    trails = [dict(zip(column_names, row)) for row in trails]
+        query = 'SELECT * FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        trails = conn.execute(query, (region, limit, offset)).fetchall()
+
+    conn.close()
 
     trails_formatted = []
     for trail in trails:
+        mountain_name, mountain_state = database.get_mountain_name(trail['mountain_id'])
         trail_entry = {
             'name': trail['name'],
             'steepest_30m': trail['steepest_30m'],
@@ -230,14 +218,18 @@ def trail_rankings():
             'steepest_200m': trail['steepest_200m'],
             'steepest_500m': trail['steepest_500m'],
             'steepest_1000m': trail['steepest_1000m'],            
-            'mountain_name': database.get_mountain_name(trail['mountain_id'], cur)[0],
+            'mountain_name': mountain_name,
             'state': trail['state'],
-            'map_link': url_for('map', mountain_id=trail['mountain_id'])
+            'map_link': url_for('map', state=mountain_state, name=mountain_name)
         }
         trails_formatted.append(trail_entry)
 
+    conn = database.tuple_cursor()
+
     query = 'SELECT COUNT(*) FROM Trails'
-    total_trail_count = int(cur.execute(query).fetchall()[0][0])
+    total_trail_count = int(conn.execute(query).fetchall()[0][0])
+
+    conn.close()
 
     pages = {}
     if total_trail_count > limit and (limit * page) < total_trail_count:
@@ -252,23 +244,17 @@ def trail_rankings():
         pages['prev'] = urlBase
     pages['offset'] = offset
 
-    db.close()
     return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails_formatted, region=region, pages=pages)
 
 
-@ app.route('/map/<int:mountain_id>')
-def map(mountain_id):
+@ app.route('/map/<string:state>/<string:name>')
+def map(state, name):
+    mountain = Mountain(name, state)
+
     conn = database.dict_cursor()
 
-    mountain_row = conn.execute(
-        'SELECT name, state FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0]
-    if not mountain_row:
-        return '404'
-
-    statistics = Mountain(mountain_row['name'], mountain_row['state'])
-
     trails = conn.execute(
-        'SELECT name, gladed, steepest_30m FROM Trails WHERE mountain_id = ? ORDER BY steepest_30m DESC', (mountain_id,)).fetchall()
+        'SELECT name, gladed, steepest_30m FROM Trails WHERE mountain_id = ? ORDER BY steepest_30m DESC', (mountain.mountain_id,)).fetchall()
     labels = ('name', 'difficulty', 'steepest_pitch')
     for i, trail in enumerate(trails):
         if trail['gladed'] == 'False':
@@ -277,16 +263,11 @@ def map(mountain_id):
             trails[i] = dict(zip(labels, (trail['name'], round(trail['steepest_30m'] + 5.5, 1), trail['steepest_30m'])))
     
     lifts = conn.execute(
-        'SELECT name FROM Lifts WHERE mountain_id = ? ORDER BY name ASC', (mountain_id,)).fetchall()
+        'SELECT name, length FROM Lifts WHERE mountain_id = ? ORDER BY length DESC', (mountain.mountain_id,)).fetchall()
 
     conn.close()
 
-    map_link = f'../maps/{mountain_row["state"]}/{mountain_row["name"]}.svg'
-
-    mountain = mountainInfo(
-        mountain_id, mountain_row['name'], mountain_row['state'], statistics, trails, lifts, map_link)
-
-    return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain)
+    return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain, trails=trails, lifts=lifts)
 
 
 @ app.route('/data/<int:mountain_id>/objects', methods=['GET'])

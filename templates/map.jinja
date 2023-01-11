@@ -19,17 +19,17 @@
         <div class="mountain-section">
             <h2>Overview</h2>
             <ul>
-                <li>Trail Count: {{mountain.statistics.trail_count}}</li>
-                <li>Lift Count: {{mountain.statistics.lift_count}}</li>
-                <li>Vertical: {{mountain.statistics.vertical}}</li>
-                <li>Difficulty: {{mountain.statistics.difficulty}}</li>
-                <li>Beginner Friendliness: {{mountain.statistics.beginner_friendliness}}</li>
+                <li>Trail Count: {{mountain.trail_count}}</li>
+                <li>Lift Count: {{mountain.lift_count}}</li>
+                <li>Vertical: {{mountain.vertical}}</li>
+                <li>Difficulty: {{mountain.difficulty}}</li>
+                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
             </ul>
         </div>
         <div class="mountain-section">
-            <h2>Trails - Sorted by Difficulty</h2>
+            <h2>Trails - Sorted by Steepness</h2>
             <ul>
-                {% for trail in mountain.trails %}
+                {% for trail in trails %}
                 {% if not '' == trail.name %}
                 <li>
                     {% if trail.difficulty < 16 %} <span class="icon difficulty-green"></span>
@@ -54,7 +54,7 @@
         <div class="mountain-section">
             <h2>Lifts</h2>
             <ul>
-                {% for lift in mountain.lifts %}
+                {% for lift in lifts %}
                 {% if not '' == lift.name %}
                 <li>{{lift.name}}</li>
                 {% endif %}
@@ -65,7 +65,7 @@
 
     <div id="zoom">
         <div id="shift">
-            <img src="{{mountain.map_link}}" id="map" />
+            <img src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
         </div>
     </div>
 
@@ -77,8 +77,5 @@
 {% endblock body %}
 
 {% block postbody %}
-<script>
-    window.mountainName = '{{mountain.mountain_id}}';
-</script>
 <script src="/map.js"></script>
 {% endblock postbody %}
