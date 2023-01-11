@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import sqlite3
 import haversine as hs
 from math import degrees, atan2
 from os.path import exists
@@ -8,6 +7,8 @@ from os import makedirs
 from rich.progress import track
 
 import _misc
+import db
+from mountain import Mountain
 
 mpl.use('svg')
 
@@ -110,18 +111,18 @@ def get_label_placement(x: list(), y: list(), length: float, name_length: int) -
     return(point, angle, label_length)
 
 
-def populate_map(mountain_id: int, direction: str, with_labels: bool = True, debug_mode: bool = False) -> None:
+def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = False) -> None:
     # configure correct item rotation & scaling
     lat_mirror = 1
     lon_mirror = -1
     flip_lat_lon = False
-    if 'e' in direction:
+    if 'e' in mountain_info.direction:
         lat_mirror = -1
         lon_mirror = 1
-    if 's' in direction:
+    if 's' in mountain_info.direction:
         lon_mirror = 1
         flip_lat_lon = True
-    if 'n' in direction:
+    if 'n' in mountain_info.direction:
         lat_mirror = -1
         flip_lat_lon = True
     if flip_lat_lon:
@@ -138,23 +139,16 @@ def populate_map(mountain_id: int, direction: str, with_labels: bool = True, deb
     # line width between .4 - 2
     line_width = max(min(fig.get_size_inches()[0] / 3, 2), .4)
 
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
-
     # lifts
-    lift_list = cur.execute(
-        'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id,)).fetchall()
+    lift_list = mountain_info.lifts()
 
-    # convert results to dict
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    lift_dict = [dict(zip(column_names, row)) for row in lift_list]
+    conn = db.tuple_cursor()
 
     # for each lift
-    for lift in lift_dict:
-        x = cur.execute(
+    for lift in lift_list:
+        x = conn.execute(
             f"SELECT {x_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
-        y = cur.execute(
+        y = conn.execute(
             f"SELECT {y_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
 
         # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
@@ -164,34 +158,26 @@ def populate_map(mountain_id: int, direction: str, with_labels: bool = True, deb
         plt.plot(x, y, c='grey', lw=line_width)
 
         if with_labels:
-            length = cur.execute(
-                f"SELECT length FROM Lifts WHERE lift_id = {lift['lift_id']}").fetchall()[0][0]
             point, angle, label_length = get_label_placement(
-                x, y, length, len(lift['name']))
+                x, y, lift['length'], len(lift['name']))
             if point == 0 and angle == 0:
                 continue
             # Check that label is shorter than trail
             label_text = lift['name']
             if label_text == '' and debug_mode:
                 label_text = lift['lift_id']
-            if label_length < length or debug_mode:
+            if label_length < lift['length'] or debug_mode:
                 plt.text(x[point], y[point], label_text, {'color': 'grey', 'size': 2, 'rotation': angle}, ha='center',
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
     # trails
-    trail_list = cur.execute(
-        'SELECT trail_id, name, area, gladed, steepest_30m FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
-
-    # convert results to dict
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    trail_dict = [dict(zip(column_names, row)) for row in trail_list]
+    trail_list = mountain_info.trails()
 
     # for each trail
-    for trail in trail_dict:
-        x = cur.execute(
+    for trail in trail_list:
+        x = conn.execute(
             f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
-        y = cur.execute(
+        y = conn.execute(
             f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
 
         # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
@@ -199,9 +185,9 @@ def populate_map(mountain_id: int, direction: str, with_labels: bool = True, deb
         y = [j[0] * lon_mirror for j in y]
 
         if debug_mode and trail['area']:
-            debug_x = cur.execute(
+            debug_x = conn.execute(
                 f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
-            debug_y = cur.execute(
+            debug_y = conn.execute(
                 f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
 
             # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
@@ -232,16 +218,14 @@ def populate_map(mountain_id: int, direction: str, with_labels: bool = True, deb
 
         # add label names
         if with_labels:
-            length = cur.execute(
-                f"SELECT length FROM Trails WHERE trail_id = {trail['trail_id']}").fetchall()[0][0]
             label_text = '{} {:.1f}{}'.format(
                 trail['name'].strip(), trail['steepest_30m'], u'\N{DEGREE SIGN}')
             point, angle, label_length = get_label_placement(
-                x, y, length, len(label_text))
+                x, y, trail['length'], len(label_text))
             if point == 0 and angle == 0 and not debug_mode:
                 continue
             # Check that label is shorter than trail
-            if label_length < length or debug_mode:
+            if label_length < trail['length'] or debug_mode:
                 if trail['name'].strip() == '' and debug_mode:
                     label_text = trail['trail_id']
                 # improves contrast
@@ -249,11 +233,12 @@ def populate_map(mountain_id: int, direction: str, with_labels: bool = True, deb
                     color = 'black'
                 plt.text(x[point], y[point], label_text, {'color': color, 'size': 2, 'rotation': angle}, ha='center',
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
+    
+    conn.close()
 
 
 def find_map_size(mountain_id: int) -> dict():
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    conn = db.tuple_cursor()
 
     trail_extremes = cur.execute(
         'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
@@ -274,7 +259,7 @@ def find_map_size(mountain_id: int) -> dict():
     direction = cur.execute(
         'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
 
-    db.close()
+    conn.close()
 
     # rotate map to look correct
     if 's' in direction or 'n' in direction:
@@ -285,18 +270,9 @@ def find_map_size(mountain_id: int) -> dict():
 
 
 def create_map(resort_name: str, state: str, with_labels: bool = True, debug_mode: bool = False) -> None:
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    mountain_info = Mountain(resort_name, state)
 
-    mountain_id = cur.execute(
-        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (resort_name, state,),).fetchall()[0][0]
-
-    direction = cur.execute(
-        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
-
-    db.close()
-
-    dimensions = find_map_size(mountain_id)
+    dimensions = find_map_size(mountain_info.mountain_id)
     x_length = dimensions['x_length']
     y_length = dimensions['y_length']
     # makes resort name between 5-25 font size depending on map size
@@ -325,20 +301,10 @@ def create_map(resort_name: str, state: str, with_labels: bool = True, debug_mod
         plt.gcf().text(0.5, 0, 'Sources: USGS and OpenStreetMaps',
                        fontsize=font_size/2.3, ha='center', va='bottom')
 
-    # Compass Rose
-    #rotate = 0
-    # if direction == 's':
-    #    rotate = 180
-    # if direction == 'w':
-    #    rotate = -90
-    # if direction == 'e':
-    #    rotate = 90
-    # plt.gcf().text(.1, .1, '\u25b2\n\u25c1 N \u25b7\n\u25bd',
-    #               ha='center', va='center', rotation=rotate, fontsize=font_size * .7)
     create_legend(dimensions['x_point'], dimensions['y_point'],
-                  direction, font_size / 2, bottom_loc)
+                  mountain_info.direction, font_size / 2, bottom_loc)
 
-    populate_map(mountain_id, direction, with_labels, debug_mode)
+    populate_map(mountain_info, with_labels, debug_mode)
 
     # save map
     if not exists(f'static/maps/{state}'):
@@ -348,18 +314,9 @@ def create_map(resort_name: str, state: str, with_labels: bool = True, debug_mod
 
 
 def create_thumbnail(resort_name: str, state: str) -> None:
-    db = sqlite3.connect('data/db.db')
-    cur = db.cursor()
+    mountain_info = Mountain(resort_name, state)
 
-    mountain_id = cur.execute(
-        'SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?', (resort_name, state,),).fetchall()[0][0]
-
-    direction = cur.execute(
-        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
-
-    db.close()
-
-    dimensions = find_map_size(mountain_id)
+    dimensions = find_map_size(mountain_info.mountain_id)
     x_length = dimensions['x_length']
     y_length = dimensions['y_length']
 
@@ -375,7 +332,7 @@ def create_thumbnail(resort_name: str, state: str) -> None:
     plt.xticks([])
     plt.yticks([])
 
-    populate_map(mountain_id, direction, False)
+    populate_map(mountain_info, False)
 
     # save map
     if not exists(f'static/thumbnails/{state}'):

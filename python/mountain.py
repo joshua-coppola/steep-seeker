@@ -1,6 +1,3 @@
-from decimal import Decimal
-from rich.progress import track
-
 import db
 
 class Mountain:
@@ -46,10 +43,3 @@ class Mountain:
         if self.mountain_id:
             return db._get_lifts(self.mountain_id)
         return None
-
-
-# example
-#x = Mountain('Okemo', 'VT')
-
-#for trail in x.trails():
-#    print(trail['name'])

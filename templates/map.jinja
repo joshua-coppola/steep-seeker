@@ -56,7 +56,7 @@
             <ul>
                 {% for lift in lifts %}
                 {% if not '' == lift.name %}
-                <li>{{lift.name}}</li>
+                <li>{{lift.name}} - {{lift.length}} ft</li>
                 {% endif %}
                 {% endfor %}
             </ul>

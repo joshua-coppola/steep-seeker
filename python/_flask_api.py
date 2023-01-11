@@ -251,41 +251,29 @@ def trail_rankings():
 def map(state, name):
     mountain = Mountain(name, state)
 
-    conn = database.dict_cursor()
-
-    trails = conn.execute(
-        'SELECT name, gladed, steepest_30m FROM Trails WHERE mountain_id = ? ORDER BY steepest_30m DESC', (mountain.mountain_id,)).fetchall()
-    labels = ('name', 'difficulty', 'steepest_pitch')
-    for i, trail in enumerate(trails):
+    trails = []
+    for trail in mountain.trails():
         if trail['gladed'] == 'False':
-            trails[i] = dict(zip(labels, (trail['name'], trail['steepest_30m'], trail['steepest_30m'])))
+            trails.append({'name': trail['name'], 'difficulty': trail['steepest_30m'], 'steepest_pitch': trail['steepest_30m']})
         if trail['gladed'] == 'True':
-            trails[i] = dict(zip(labels, (trail['name'], round(trail['steepest_30m'] + 5.5, 1), trail['steepest_30m'])))
-    
-    lifts = conn.execute(
-        'SELECT name, length FROM Lifts WHERE mountain_id = ? ORDER BY length DESC', (mountain.mountain_id,)).fetchall()
+            trails.append({'name': trail['name'], 'difficulty': round(trail['steepest_30m'] + 5.5, 1), 'steepest_pitch': trail['steepest_30m']})
 
-    conn.close()
+    lifts = []
+    for lift in mountain.lifts():
+        lifts.append({'name': lift['name'], 'length': int(float(lift['length']) * 100 / (2.54 * 12))})
 
     return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain, trails=trails, lifts=lifts)
 
 
 @ app.route('/data/<int:mountain_id>/objects', methods=['GET'])
 def mountaindata(mountain_id):
-    cur, db = database.db_connect()
+    conn = database.dict_cursor()
+
     trail_rows = cur.execute(
         'SELECT * FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
 
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    trail_rows = [dict(zip(column_names, row)) for row in trail_rows]
-
     lift_rows = cur.execute(
         'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id,)).fetchall()
-
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    lift_rows = [dict(zip(column_names, row)) for row in lift_rows]
 
     conn.close()
 
