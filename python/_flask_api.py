@@ -10,7 +10,7 @@ sys.path.append('python')
 
 import db as database
 import _misc
-from mountain import Mountain
+from mountain import Mountain, Trail, Lift
 
 
 class navigationLink:
@@ -46,8 +46,8 @@ def search():
     search_string = ''
     q = request.args.get('q')
     if q and q != '%%':
-        q = '%' + q + '%'
-        search_string += 'q=' + q.replace('%', '') + '&'
+        q = f'%{q}%'
+        search_string = f'{search_string}q={q.replace("%", "")}&'
     else:
         q = '%%'
     page = request.args.get('page')
@@ -57,42 +57,42 @@ def search():
     if not limit:
         limit = 20
     else:
-        search_string += 'limit=' + str(limit) + '&'
+        search_string = f'{search_string}limit={limit}&'
     diffmin = request.args.get('diffmin')
     if not diffmin:
         diffmin = 0
     else:
-        search_string += 'diffmin=' + str(diffmin) + '&'
+        search_string = f'{search_string}diffmin={diffmin}&'
     diffmax = request.args.get('diffmax')
     if not diffmax:
         diffmax = 100
     else:
-        search_string += 'diffmax=' + str(diffmax) + '&'
+        search_string = f'{search_string}diffmax={diffmax}&'
     location = request.args.get('location')
     if not location or location == '%%':
         location = '%%'
     else:
-        search_string += 'location=' + location + '&'
+        search_string = f'{search_string}location={location}&'
     trailsmin = request.args.get('trailsmin')
     if not trailsmin:
         trailsmin = 0
     else:
-        search_string += 'trailsmin=' + str(trailsmin) + '&'
+        search_string = f'{search_string}trailsmin={trailsmin}&'
     trailsmax = request.args.get('trailsmax')
     if not trailsmax:
         trailsmax = 1000
     else:
-        search_string += 'trailsmax=' + str(trailsmax) + '&'
+        search_string = f'{search_string}trailsmax={trailsmax}&'
     sort = request.args.get('sort')
     if not sort:
         sort = 'name'
     else:
-        search_string += 'sort=' + sort + '&'
+        search_string = f'{search_string}sort={sort}&'
     order = request.args.get('order')
     if not order:
         order = 'asc'
     else:
-        search_string += 'order=' + order + '&'
+        search_string = f'{search_string}order={order}&'
 
     if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
@@ -102,7 +102,7 @@ def search():
     offset = limit * (int(page) - 1)
 
     if not sort in ['name', 'trail_count', 'lift_count', 'vertical', 'difficulty', 'beginner_friendliness']:
-        sort = name
+        sort = 'name'
 
     if not order in ['asc', 'desc']:
         order = 'asc'
@@ -165,7 +165,7 @@ def rankings():
         query = f'SELECT name, state FROM Mountains ORDER BY {sort_by} {order}'
         mountains = conn.execute(query).fetchall()
     else:
-        query = f'SELECT * FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}'
+        query = f'SELECT name, state FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}'
         mountains = conn.execute(query, (region,)).fetchall()
 
     for i, mountain in enumerate(mountains):
@@ -199,30 +199,16 @@ def trail_rankings():
     conn = database.dict_cursor()
 
     if region == 'usa':
-        query = 'SELECT * FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        query = 'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
         trails = conn.execute(query, (limit, offset)).fetchall()
     else:
-        query = 'SELECT * FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        query = 'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
         trails = conn.execute(query, (region, limit, offset)).fetchall()
 
     conn.close()
 
-    trails_formatted = []
-    for trail in trails:
-        mountain_name, mountain_state = database.get_mountain_name(trail['mountain_id'])
-        trail_entry = {
-            'name': trail['name'],
-            'steepest_30m': trail['steepest_30m'],
-            'steepest_50m': trail['steepest_50m'],
-            'steepest_100m': trail['steepest_100m'],
-            'steepest_200m': trail['steepest_200m'],
-            'steepest_500m': trail['steepest_500m'],
-            'steepest_1000m': trail['steepest_1000m'],            
-            'mountain_name': mountain_name,
-            'state': trail['state'],
-            'map_link': url_for('map', state=mountain_state, name=mountain_name)
-        }
-        trails_formatted.append(trail_entry)
+    for i, trail in enumerate(trails):
+        trails[i] = Trail(trail['trail_id'])
 
     conn = database.tuple_cursor()
 
@@ -244,69 +230,28 @@ def trail_rankings():
         pages['prev'] = urlBase
     pages['offset'] = offset
 
-    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails_formatted, region=region, pages=pages)
+    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages)
 
 
 @ app.route('/map/<string:state>/<string:name>')
 def map(state, name):
     mountain = Mountain(name, state)
 
-    trails = []
-    for trail in mountain.trails():
-        if trail['gladed'] == 'False':
-            trails.append({'name': trail['name'], 'difficulty': trail['steepest_30m'], 'steepest_pitch': trail['steepest_30m']})
-        if trail['gladed'] == 'True':
-            trails.append({'name': trail['name'], 'difficulty': round(trail['steepest_30m'] + 5.5, 1), 'steepest_pitch': trail['steepest_30m']})
-
-    lifts = []
-    for lift in mountain.lifts():
-        lifts.append({'name': lift['name'], 'length': int(float(lift['length']) * 100 / (2.54 * 12))})
+    trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
+    
+    lifts = [Lift(lift['lift_id']) for lift in mountain.lifts()]
 
     return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain, trails=trails, lifts=lifts)
 
 
-@ app.route('/data/<int:mountain_id>/objects', methods=['GET'])
-def mountaindata(mountain_id):
-    conn = database.dict_cursor()
-
-    trail_rows = cur.execute(
-        'SELECT * FROM Trails WHERE mountain_id = ?', (mountain_id,)).fetchall()
-
-    lift_rows = cur.execute(
-        'SELECT lift_id, name FROM Lifts WHERE mountain_id = ?', (mountain_id,)).fetchall()
-
-    conn.close()
-
-    if not trail_rows:
-        return '404'
+@ app.route('/data/<string:state>/<string:name>/objects', methods=['GET'])
+def mountaindata(state, name):
+    mountain = Mountain(name, state)
 
     jsonContents = {}
-    trails = []
-    lifts = []
 
-    for trail in trail_rows:
-        if trail['gladed']:
-            difficulty = trail['difficulty'] + 5.5
-        else:
-            difficulty = trail['difficulty']
-        trail_entry = {
-            'id': trail['trail_id'],
-            'name': trail['name'],
-            'difficulty': difficulty,
-            'length': trail['length'],
-            'vertical_drop': trail['vertical_drop'],
-            'steepest_pitch': trail['steepest_30m']
-        }
-        trails.append(trail_entry)
+    jsonContents['trails'] = [Trail(trail['trail_id']) for trail in mountain.trails()]
+    jsonContents['lifts'] = [Lift(lift['lift_id']) for lift in mountain.lifts()]
 
-    for lift in lift_rows:
-        lift_entry = {
-            'id': lift['lift_id'],
-            'name': lift['name'],
-        }
-        lifts.append(lift_entry)
-
-    jsonContents['trails'] = trails
-    jsonContents['lifts'] = lifts
     jsonstring = json.dumps(jsonContents)
     return jsonstring

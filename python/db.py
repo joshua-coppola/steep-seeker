@@ -551,7 +551,7 @@ def get_mountain_name(mountain_id: int, cur = None) -> str:
 
     query = 'SELECT name, state FROM Mountains WHERE mountain_id = ?'
     params = (mountain_id,)
-    mountain_name = cur.execute(query, params).fetchall()[0]
+    mountain_name = cur.execute(query, params).fetchone()
 
     return mountain_name
 
@@ -561,7 +561,21 @@ def _get_mountain_dict(name: str, state: str) -> dict:
 
     query = 'SELECT * FROM Mountains WHERE name = ? AND state = ?'
     params = (name, state)
-    return conn.execute(query, params).fetchall()[0]
+    return conn.execute(query, params).fetchone()
+
+
+def _get_trail_dict(trail_id: int) -> dict:
+    conn = dict_cursor()
+
+    query = 'SELECT * FROM Trails WHERE trail_id = ?'
+    return conn.execute(query, (trail_id,)).fetchone()
+
+
+def _get_lift_dict(lift_id: int) -> dict:
+    conn = dict_cursor()
+
+    query = 'SELECT * FROM Lifts WHERE lift_id = ?'
+    return conn.execute(query, (lift_id,)).fetchone()
 
 
 def _get_trails(mountain_id: int) -> list(dict()):
@@ -578,12 +592,29 @@ def _get_lifts(mountain_id: int) -> list(dict()):
     return conn.execute(query, (mountain_id,)).fetchall()
 
 
-#db = sqlite3.connect('data/db.db')
-#cur = db.cursor()
+def _get_trail_points(trail_id: int, column: str, visible: bool) -> list(dict()):
+    conn = tuple_cursor()
+    
+    if visible:
+        for_display = 1
+    if not visible:
+        for_display = 0
+    query = f'SELECT {column} FROM TrailPoints WHERE trail_id = ? AND for_display = ?'
+    return_list = conn.execute(query, (trail_id, for_display)).fetchall()
 
-#cur.execute('ALTER TABLE Trails ADD COLUMN steepest_30m REAL')
-#cur.execute('CREATE INDEX TrailId ON TrailPoints(trail_id)')
-#cur.execute('CREATE INDEX LiftId ON LiftPoints(lift_id)')
+    conn.close()
 
-# db.commit()
-# db.close()
+    return_list = [x[0] for x in return_list]
+    return return_list
+
+
+def _get_lift_points(lift_id: int, column: str) -> list(dict()):
+    conn = tuple_cursor()
+
+    query = f'SELECT {column} FROM LiftPoints WHERE lift_id = ?'
+    return_list = conn.execute(query, (lift_id,)).fetchall()
+
+    conn.close()
+
+    return_list = [x[0] for x in return_list]
+    return return_list

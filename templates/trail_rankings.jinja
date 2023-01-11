@@ -102,9 +102,10 @@ Trail Rankings
             {% if not '' == trail.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="{{trail.map_link}}">{{trail.name}}</a></p>
+                    <p>{{pages.offset + loop.index}}. <a
+                            href="/map/{{trail.state}}/{{trail.resort_name}}">{{trail.name}}</a></p>
                 </td>
-                <td><a href="{{trail.map_link}}">{{trail.mountain_name}}</a></td>
+                <td><a href="/map/{{trail.state}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
                 <td>{{trail.state}}</td>
                 <td>
                     {% if trail.steepest_30m < 16 %} <span class="icon difficulty-green"></span>

@@ -36,7 +36,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 ### Python
 
-- [ ] Add classes as a wrapper around functions
+- [x] Add mountain, trail, and lift classes
 - [ ] Add weather data to difficulty ratings
 - [x] Add type hinting to functions
 

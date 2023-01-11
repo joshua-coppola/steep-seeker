@@ -8,7 +8,7 @@ from rich.progress import track
 
 import _misc
 import db
-from mountain import Mountain
+from mountain import Mountain, Trail, Lift
 
 mpl.use('svg')
 
@@ -140,20 +140,19 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
     line_width = max(min(fig.get_size_inches()[0] / 3, 2), .4)
 
     # lifts
-    lift_list = mountain_info.lifts()
+    for lift in mountain_info.lifts():
 
-    conn = db.tuple_cursor()
+        lift_class = Lift(lift['lift_id'])
+        if x_data == 'lat':
+            x = lift_class.lat()
+            y = lift_class.lon()
 
-    # for each lift
-    for lift in lift_list:
-        x = conn.execute(
-            f"SELECT {x_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
-        y = conn.execute(
-            f"SELECT {y_data} FROM LiftPoints WHERE lift_id = {lift['lift_id']}").fetchall()
+        if x_data == 'lon':
+            x = lift_class.lon()
+            y = lift_class.lat()
 
-        # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
-        x = [i[0] * lat_mirror for i in x]
-        y = [j[0] * lon_mirror for j in y]
+        x = [j * lat_mirror for j in x]
+        y = [k * lon_mirror for k in y]
 
         plt.plot(x, y, c='grey', lw=line_width)
 
@@ -171,28 +170,31 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
     # trails
-    trail_list = mountain_info.trails()
+    for trail in mountain_info.trails():
 
-    # for each trail
-    for trail in trail_list:
-        x = conn.execute(
-            f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
-        y = conn.execute(
-            f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 1").fetchall()
+        trail_class = Trail(trail['trail_id'])
+        if x_data == 'lat':
+            x = trail_class.lat()
+            y = trail_class.lon()
 
-        # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
-        x = [i[0] * lat_mirror for i in x]
-        y = [j[0] * lon_mirror for j in y]
+        if x_data == 'lon':
+            x = trail_class.lon()
+            y = trail_class.lat()
+        
+        x = [j * lat_mirror for j in x]
+        y = [k * lon_mirror for k in y]
 
         if debug_mode and trail['area']:
-            debug_x = conn.execute(
-                f"SELECT {x_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
-            debug_y = conn.execute(
-                f"SELECT {y_data} FROM TrailPoints WHERE trail_id = {trail['trail_id']} AND for_display = 0").fetchall()
+            if x_data == 'lat':
+                debug_x = trail_class.lat(visible=False)
+                debug_y = trail_class.lon(visible=False)
 
-            # remove the tuple of 1 item weirdness from the SQL query & reshape the data based on direction
-            debug_x = [i[0] * lat_mirror for i in debug_x]
-            debug_y = [j[0] * lon_mirror for j in debug_y]
+            if x_data == 'lon':
+                debug_x = trail_class.lon(visible=False)
+                debug_y = trail_class.lat(visible=False)
+            
+            debug_x = [j * lat_mirror for j in debug_x]
+            debug_y = [k * lon_mirror for k in debug_y]
 
         color = _misc.trail_color(trail['steepest_30m'], trail['gladed'])
 
@@ -233,20 +235,18 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
                     color = 'black'
                 plt.text(x[point], y[point], label_text, {'color': color, 'size': 2, 'rotation': angle}, ha='center',
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
-    
-    conn.close()
 
 
-def find_map_size(mountain_id: int) -> dict():
+def find_map_size(mountain_info) -> dict():
     conn = db.tuple_cursor()
 
-    trail_extremes = cur.execute(
-        'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
-        INNER JOIN TrailPoints ON Trails.trail_id=TrailPoints.trail_id WHERE Trails.mountain_id = ?', (mountain_id,)).fetchall()[0]
+    query = 'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
+            INNER JOIN TrailPoints ON Trails.trail_id=TrailPoints.trail_id WHERE Trails.mountain_id = ?'
+    trail_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
 
-    lift_extremes = cur.execute(
-        'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Lifts ON Mountains.mountain_id=Lifts.mountain_id \
-        INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?', (mountain_id,)).fetchall()[0]
+    query = 'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Lifts ON Mountains.mountain_id=Lifts.mountain_id \
+            INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?'
+    lift_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
 
     # change in latitude (km)
     x_length = hs.haversine((max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]), (min(
@@ -256,13 +256,10 @@ def find_map_size(mountain_id: int) -> dict():
     y_length = hs.haversine((trail_extremes[0], max(trail_extremes[2], lift_extremes[2])), (
         trail_extremes[0], min(trail_extremes[3], lift_extremes[3])), unit=hs.Unit.KILOMETERS)
 
-    direction = cur.execute(
-        'SELECT direction FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0][0]
-
     conn.close()
 
     # rotate map to look correct
-    if 's' in direction or 'n' in direction:
+    if 's' in mountain_info.direction or 'n' in mountain_info.direction:
         temp = x_length
         x_length = y_length
         y_length = temp
@@ -272,7 +269,7 @@ def find_map_size(mountain_id: int) -> dict():
 def create_map(resort_name: str, state: str, with_labels: bool = True, debug_mode: bool = False) -> None:
     mountain_info = Mountain(resort_name, state)
 
-    dimensions = find_map_size(mountain_info.mountain_id)
+    dimensions = find_map_size(mountain_info)
     x_length = dimensions['x_length']
     y_length = dimensions['y_length']
     # makes resort name between 5-25 font size depending on map size
@@ -316,7 +313,7 @@ def create_map(resort_name: str, state: str, with_labels: bool = True, debug_mod
 def create_thumbnail(resort_name: str, state: str) -> None:
     mountain_info = Mountain(resort_name, state)
 
-    dimensions = find_map_size(mountain_info.mountain_id)
+    dimensions = find_map_size(mountain_info)
     x_length = dimensions['x_length']
     y_length = dimensions['y_length']
 
