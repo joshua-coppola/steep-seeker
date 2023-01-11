@@ -40,10 +40,11 @@ Search
     <ul class="results">
         {% for mountain in mountains %}
         <li class="result">
-            <a href="{{mountain.map_link}}">
-                <img class="thumbnail" src="{{mountain.thumbnail}}" width=125px height=100px />
+            <a href="/map/{{mountain.mountain_id}}">
+                <img class="thumbnail" src="thumbnails/{{mountain.state}}/{{mountain.name}}.svg" width=125px
+                    height=100px />
             </a>
-            <h2><a href="{{mountain.map_link}}" style="color: black">{{mountain.name}}</a></h2>
+            <h2><a href="/map/{{mountain.mountain_id}}" style="color: black">{{mountain.name}}</a></h2>
             {% if mountain.difficulty > 0 %}
             {% if mountain.beginner_friendliness > 14 %}
             <span class="icon difficulty-green"></span>
@@ -70,7 +71,7 @@ Search
             <p class="copy">
                 {{mountain.state}} — {{mountain.trail_count}} Trails — {{mountain.vertical}}' Vertical
             </p>
-            <a class="map-link" href="{{mountain.map_link}}">View map</a>
+            <a class="map-link" href="/map/{{mountain.mountain_id}}">View map</a>
         </li>
         {% endfor %}
     </ul>

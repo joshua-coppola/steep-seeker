@@ -22,7 +22,7 @@ Rankings
                 class="active">Difficulty &#x25b2;</a></li>
         {% endif %}
 
-        <li><a href="/rankings?sort=beginner&order=desc&region={{request.args.get('region')}}">Beginner Friendliness</a>
+        <li><a href="/rankings?sort=beginner&order=asc&region={{request.args.get('region')}}">Beginner Friendliness</a>
         </li>
         {% endif %}
 
@@ -142,7 +142,7 @@ Rankings
     <div class="rankings">
         {% for mountain in mountains %}
         {% if sort == "difficulty" %}
-        <a href="{{mountain.map_link}}" title="Difficulty: {{mountain.difficulty}}">{{mountain.name}},
+        <a href="/map/{{mountain.mountain_id}}" title="Difficulty: {{mountain.difficulty}}">{{mountain.name}},
             {{mountain.state}}</a>
         <span class="{{'ranking-bar' if mountain.difficulty <= 45 else 'black-text'}}"
             title="{{mountain.name}} Difficulty: {{mountain.difficulty}}"
@@ -150,7 +150,7 @@ Rankings
           (mountain.difficulty)/55 * 60}}%; --bar-color: {{ 'green' if mountain.difficulty < 16 else 'royalblue' if mountain.difficulty < 24 else 'black' if mountain.difficulty < 32 else 'red' if mountain.difficulty < 45 else 'gold' }};">{{loop.index}}</span>
         {% endif %}
         {% if sort == "beginner" %}
-        <a href="{{mountain.map_link}}"
+        <a href="/map/{{mountain.mountain_id}}"
             title="Beginner Friendliness: {{mountain.beginner_friendliness}}">{{mountain.name}}, {{mountain.state}}</a>
         <span class="ranking-bar" title="{{mountain.name}} Beginner Friendliness: {{mountain.beginner_friendliness}}"
             style="--bar-size: {{

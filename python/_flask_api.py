@@ -112,37 +112,30 @@ def search():
     limit = int(limit)
     offset = limit * (int(page) - 1)
 
-    cur, db = database.db_connect()
-
     if not sort in ['name', 'trail_count', 'lift_count', 'vertical', 'difficulty', 'beginner_friendliness']:
         sort = name
 
     if not order in ['asc', 'desc']:
         order = 'asc'
 
-    query = f'SELECT name, beginner_friendliness, difficulty, state, trail_count, vertical, mountain_id  FROM Mountains WHERE name LIKE ? AND state LIKE ? AND trail_count BETWEEN ? AND ? AND difficulty BETWEEN ? AND ? ORDER BY {sort} {order} LIMIT ? OFFSET ?'
+    conn = database.dict_cursor()
+
+    query = f'SELECT name, state FROM Mountains WHERE name LIKE ? AND state LIKE ? AND trail_count BETWEEN ? AND ? AND difficulty BETWEEN ? AND ? ORDER BY {sort} {order} LIMIT ? OFFSET ?'
     params = (q, location, trailsmin, trailsmax, diffmin, diffmax, limit, offset)
-    mountains = cur.execute(query,params).fetchall()
+    mountains = conn.execute(query,params).fetchall()
+
+    conn.close()
+
+    conn = database.tuple_cursor()
 
     query = 'SELECT COUNT(*) FROM Mountains WHERE name LIKE ? AND state LIKE ? AND trail_count BETWEEN ? AND ? AND difficulty BETWEEN ? AND ?'
     params = (q, location, trailsmin, trailsmax, diffmin, diffmax)
-    total_mountain_count = int(cur.execute(query,params).fetchall()[0][0])
+    total_mountain_count = int(conn.execute(query,params).fetchall()[0][0])
 
-    db.close()
+    conn.close()
 
-    mountains_data = []
-    for mountain in mountains:
-        name = mountain[0]
-        mountains_data.append({
-            'name': name,
-            'mountain_id': mountain[6],
-            'beginner_friendliness': round(30 - mountain[1], 1),
-            'difficulty': mountain[2],
-            'state': _misc.convert_state_abbrev_to_name(mountain[3]),
-            'trail_count': mountain[4],
-            'vertical': int(float(mountain[5]) * 100 / (2.54 * 12)),
-            'map_link': url_for('map', mountain_id=mountain[6]),
-            'thumbnail': f'thumbnails/{mountain[3]}/{name}.svg'})
+    for i, mountain in enumerate(mountains):
+        mountains[i] = Mountain(mountain['name'], mountain['state'])
 
     pages = {}
     if total_mountain_count > limit and (limit * page) < total_mountain_count:
@@ -158,7 +151,7 @@ def search():
             urlBase = urlBase[0:-1]
         pages['prev'] = urlBase
 
-    return render_template('search.jinja', nav_links=nav_links, active_page='search', mountains=mountains_data, pages=pages)
+    return render_template('search.jinja', nav_links=nav_links, active_page='search', mountains=mountains, pages=pages)
 
 
 @ app.route('/rankings')
@@ -173,36 +166,24 @@ def rankings():
     if not region:
         region = 'usa'
     # converts query string info into SQL
-    cur, db = database.db_connect()
+    conn = database.dict_cursor()
 
-    mountains_formatted = []
     if sort == 'beginner':
         sort_by = 'beginner_friendliness'
     else:
         sort_by = 'difficulty'
     if region == 'usa':
-        mountains = cur.execute(
-            f'SELECT * FROM Mountains ORDER BY {sort_by} {order}').fetchall()
+        query = f'SELECT name, state FROM Mountains ORDER BY {sort_by} {order}'
+        mountains = conn.execute(query).fetchall()
     else:
-        mountains = cur.execute(
-            f'SELECT * FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}', (region,)).fetchall()
-    
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    mountains = [dict(zip(column_names, row)) for row in mountains]
+        query = f'SELECT * FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}'
+        mountains = conn.execute(query, (region,)).fetchall()
 
-    for mountain in mountains:
-        mountain_entry = {
-            'name': mountain['name'],
-            'beginner_friendliness': round(30 - mountain['beginner_friendliness'], 1),
-            'difficulty': mountain['difficulty'],
-            'state': mountain['state'],
-            'map_link': url_for('map', mountain_id=mountain['mountain_id'])
-        }
-        mountains_formatted.append(mountain_entry)
+    for i, mountain in enumerate(mountains):
+        mountains[i] = Mountain(mountain['name'], mountain['state'])
 
-    db.close()
-    return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains_formatted, sort=sort, order=order, region=region)
+    conn.close()
+    return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains, sort=sort, order=order, region=region)
 
 @ app.route('/trail-rankings')
 def trail_rankings():
@@ -277,42 +258,28 @@ def trail_rankings():
 
 @ app.route('/map/<int:mountain_id>')
 def map(mountain_id):
-    cur, db = database.db_connect()
+    conn = database.dict_cursor()
 
-    mountain_row = cur.execute(
-        'SELECT * FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()
+    mountain_row = conn.execute(
+        'SELECT name, state FROM Mountains WHERE mountain_id = ?', (mountain_id,)).fetchall()[0]
     if not mountain_row:
         return '404'
 
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    mountain_row = [dict(zip(column_names, row)) for row in mountain_row][0]
+    statistics = Mountain(mountain_row['name'], mountain_row['state'])
 
-    statistics = {
-        'Trail Count': mountain_row['trail_count'],
-        'Lift Count': mountain_row['lift_count'],
-        'Vertical': f'{int(float(mountain_row["vertical"]) * 100 / (2.54 * 12))}',
-        'Difficulty': mountain_row['difficulty'],
-        'Beginner Friendliness': round(30 - mountain_row['beginner_friendliness'], 1)
-    }
-
-    trails = cur.execute(
+    trails = conn.execute(
         'SELECT name, gladed, steepest_30m FROM Trails WHERE mountain_id = ? ORDER BY steepest_30m DESC', (mountain_id,)).fetchall()
     labels = ('name', 'difficulty', 'steepest_pitch')
     for i, trail in enumerate(trails):
-        if trail[1] == 'False':
-            trails[i] = dict(zip(labels, (trail[0], trail[2], trail[2])))
-        if trail[1] == 'True':
-            trails[i] = dict(zip(labels, (trail[0], round(trail[2] + 5.5, 1), trail[2])))
+        if trail['gladed'] == 'False':
+            trails[i] = dict(zip(labels, (trail['name'], trail['steepest_30m'], trail['steepest_30m'])))
+        if trail['gladed'] == 'True':
+            trails[i] = dict(zip(labels, (trail['name'], round(trail['steepest_30m'] + 5.5, 1), trail['steepest_30m'])))
     
-    lifts = cur.execute(
+    lifts = conn.execute(
         'SELECT name FROM Lifts WHERE mountain_id = ? ORDER BY name ASC', (mountain_id,)).fetchall()
-    
-    desc = cur.description
-    column_names = [col[0] for col in desc]
-    lifts = [dict(zip(column_names, row)) for row in lifts]
 
-    db.close()
+    conn.close()
 
     map_link = f'../maps/{mountain_row["state"]}/{mountain_row["name"]}.svg'
 

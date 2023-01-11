@@ -19,9 +19,11 @@
         <div class="mountain-section">
             <h2>Overview</h2>
             <ul>
-                {% for (key, value) in mountain.statistics.items() %}
-                <li>{{key}}: {{value}}</li>
-                {% endfor %}
+                <li>Trail Count: {{mountain.statistics.trail_count}}</li>
+                <li>Lift Count: {{mountain.statistics.lift_count}}</li>
+                <li>Vertical: {{mountain.statistics.vertical}}</li>
+                <li>Difficulty: {{mountain.statistics.difficulty}}</li>
+                <li>Beginner Friendliness: {{mountain.statistics.beginner_friendliness}}</li>
             </ul>
         </div>
         <div class="mountain-section">
