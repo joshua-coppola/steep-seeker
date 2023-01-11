@@ -13,6 +13,15 @@ def db_connect() -> tuple():
     cur = db.cursor()
     return (cur, db)
 
+def dict_cursor():
+    conn = sqlite3.connect('data/db.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def tuple_cursor():
+    conn = sqlite3.connect('data/db.db')
+    return conn
+
 
 def reset_db() -> None:
     cur, db = db_connect()
@@ -154,7 +163,7 @@ def calc_mountain_stats(cur, mountain_id: int) -> None:
     cur.execute(query, params)
 
 
-def add_resort(name: str) -> str:
+def _add_resort(name: str) -> str:
     cur, db = db_connect()
 
     state = _misc.find_state(f'{name}.osm')
@@ -545,6 +554,21 @@ def get_mountain_name(mountain_id: int, cur = None) -> str:
     mountain_name = cur.execute(query, params).fetchall()[0]
 
     return mountain_name
+
+
+def _get_mountain_dict(name: str, state: str) -> dict:
+    conn = dict_cursor()
+
+    query = 'SELECT * FROM Mountains WHERE name = ? AND state = ?'
+    params = (name, state)
+    return conn.execute(query, params).fetchall()[0]
+
+
+def _get_trails(mountain_id: int) -> list(dict()):
+    conn = dict_cursor()
+
+    query = 'SELECT * FROM Trails WHERE mountain_id = ?'
+    return conn.execute(query, (mountain_id,)).fetchall()
 
 
 #db = sqlite3.connect('data/db.db')

@@ -10,6 +10,7 @@ sys.path.append('python')
 
 import db as database
 import _misc
+from mountain import Mountain
 
 
 class navigationLink:
@@ -134,6 +135,7 @@ def search():
         name = mountain[0]
         mountains_data.append({
             'name': name,
+            'mountain_id': mountain[6],
             'beginner_friendliness': round(30 - mountain[1], 1),
             'difficulty': mountain[2],
             'state': _misc.convert_state_abbrev_to_name(mountain[3]),
@@ -156,7 +158,7 @@ def search():
             urlBase = urlBase[0:-1]
         pages['prev'] = urlBase
 
-    return render_template('mountains.jinja', nav_links=nav_links, active_page='search', mountains=mountains_data, pages=pages)
+    return render_template('search.jinja', nav_links=nav_links, active_page='search', mountains=mountains_data, pages=pages)
 
 
 @ app.route('/rankings')
