@@ -73,8 +73,9 @@ main {
 }
 
 #sidebar {
-  max-width: 350px;
+  max-width: 400px;
 }
 #sidebar h2 {
-  margin-bottom: 80px;
+  margin-top: 80px;
+  margin-bottom: 40px;
 }

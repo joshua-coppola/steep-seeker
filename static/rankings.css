@@ -1,3 +1,7 @@
+main {
+    --center-width: 900px;
+}
+
 .ranking-sort {
   display: flex;
   align-items: center;
@@ -59,26 +63,3 @@
     display: flex;
     align-items: center;
   }
-
-table {
-    font-size: 20px;
-}
-
-table a {
-    color: var(--color-primary);
-}
-
-th, td {
-    padding-left: 6px;
-    padding-right: 6px;
-    padding-bottom: 6px;
-    border-right: 2px solid var(--color-primary);
-}
-
-th {
-    font-size: 24px;
-}
-
-th:last-child, td:last-child {
-    border: none;
-}

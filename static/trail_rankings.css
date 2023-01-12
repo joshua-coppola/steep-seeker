@@ -1,0 +1,63 @@
+main {
+    --center-width: 1400px;
+}
+
+.ranking-sort {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+.ranking-sort > *:not(:last-child) {
+  margin-right: 32px;
+}
+.ranking-sort a {
+  text-decoration: none;
+  color: var(--color-primary);
+}
+.ranking-sort a.active {
+  color: var(--color-accent);
+}
+
+.legend ul li {
+  white-space: nowrap;
+  display: inline;
+  margin-top: 8px;
+  margin-right: 30px;
+  color: var(--color-secondary);
+}
+
+.links {
+    display: flex;
+    align-items: center;
+  }
+
+table {
+    font-size: 20px;
+}
+
+table a {
+    color: var(--color-primary);
+}
+
+th, td {
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-bottom: 6px;
+    border-right: 2px solid var(--color-primary);
+}
+
+th {
+    font-size: 24px;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+th:last-child, td:last-child {
+    border-right: none;
+}
+
+tr:nth-child(even) {
+    background-color: rgb(243, 242, 242);
+}

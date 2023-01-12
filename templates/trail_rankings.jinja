@@ -5,12 +5,18 @@ Trail Rankings
 {% endblock title %}
 
 {% block pagehead %}
-<link href="/rankings.css" rel="stylesheet" />
+<link href="/trail_rankings.css" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
 <section id="content">
+
     <h1>Trail Rankings</h1>
+
+    <p class="detail">
+        The trails are ordered by their steepest 30 meter pitch. In order to qualify as an 'Extreme'
+        trail, a run must be over 45° for 30 meters.
+    </p>
 
     <ul class="ranking-sort">
         {% if region == "usa" %}
@@ -70,11 +76,6 @@ Trail Rankings
         {% endif %}
     </ul>
 
-    <p class="detail">
-        The trails are ordered by their steepest 30 meter pitch. In order to qualify as an 'Extreme'
-        trail, a run must be over 45° for 30 meters.
-    </p>
-
     <div class="legend">
         <ul>
             <li><span class="icon difficulty-green"></span>Beginner</li>
@@ -83,6 +84,17 @@ Trail Rankings
             <li><span class="icon difficulty-red"></span>Expert</li>
             <li><span class="icon difficulty-yellow"></span>Extreme</li>
         </ul>
+    </div>
+
+    <div class="links">
+        {% if 'prev' in pages %}
+        <a href="{{pages.prev}}">← Previous Page</a>
+        <span style="width: 50px;"></span>
+        {% endif %}
+
+        {% if 'next' in pages %}
+        <a href="{{pages.next}}">Next Page →</a>
+        {% endif %}
     </div>
 
     <div>
@@ -233,8 +245,9 @@ Trail Rankings
     <div class="links">
         {% if 'prev' in pages %}
         <a href="{{pages.prev}}">← Previous Page</a>
+        <span style="width: 50px;"></span>
         {% endif %}
-        <span style="flex-grow: 1"></span>
+
         {% if 'next' in pages %}
         <a href="{{pages.next}}">Next Page →</a>
         {% endif %}
