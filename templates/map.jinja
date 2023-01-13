@@ -64,10 +64,14 @@
     </div>
 
     <div id="zoom">
-        <div id="shift">
-            <img src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
-        </div>
+        <img src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
     </div>
+
+    <div class="zoom-buttons">
+        <button class="zoom-button" id="zoom-out">-</button>
+        <button class="zoom-button" id="zoom-in">+</button>
+    </div>
+
 
     {#
     TODO: when trail selection is implemented, add selected pane, selected tool

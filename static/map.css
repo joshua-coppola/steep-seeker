@@ -131,28 +131,20 @@ main > * {
   background-color: gold;
 }
 
-.map-selector {
+.zoom-buttons {
   position: absolute;
-  left: 432px;
-  bottom: 0;
-  padding: 8px;
+  left: 416px;
+  top: 0;
 }
-.map-selector-icon {
-  width: 48px;
-  height: 48px;
+.zoom-button {
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
 }
-.map-selector-icon:not(:last-child) {
+.zoom-button:not(:last-child) {
   margin-right: 8px;
-}
-.map-selector-icon.active {
-  background-color: var(--color-accent);
-  border-color: transparent;
-}
-.map-selector-icon.active svg {
-  fill: white;
 }
 
 .hover-details {

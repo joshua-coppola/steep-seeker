@@ -3,7 +3,9 @@ var scale = 1,
   pointX = 0,
   pointY = 0,
   start = { x: 0, y: 0 },
-  zoom = document.getElementById('zoom')
+  zoom = document.getElementById('zoom'),
+  zoom_in = document.getElementById('zoom-in'),
+  zoom_out = document.getElementById('zoom-out')
 
 function setTransform () {
   zoom.style.transform =
@@ -32,10 +34,38 @@ zoom.onmousemove = function (e) {
 
 zoom.onwheel = function (e) {
   e.preventDefault()
+  zoom.style.transformOrigin = '0px 0px'
   var xs = (e.clientX - pointX) / scale,
     ys = (e.clientY - pointY) / scale,
     delta = e.wheelDelta ? e.wheelDelta : -e.deltaY
   delta > 0 ? (scale *= 1.25) : (scale /= 1.25)
+  pointX = e.clientX - xs * scale
+  pointY = e.clientY - ys * scale
+
+  setTransform()
+}
+
+zoom_in.onclick = function (e) {
+  e.preventDefault()
+
+  zoom.style.transformOrigin = 'center center'
+
+  var xs = (e.clientX - pointX - 32) / scale,
+    ys = (e.clientY - pointY) / scale
+  scale *= 1.2
+  pointX = e.clientX - xs * scale
+  pointY = e.clientY - ys * scale
+  setTransform()
+}
+
+zoom_out.onclick = function (e) {
+  e.preventDefault()
+
+  zoom.style.transformOrigin = 'center center'
+
+  var xs = (e.clientX - pointX + 32) / scale,
+    ys = (e.clientY - pointY) / scale
+  scale /= 1.2
   pointX = e.clientX - xs * scale
   pointY = e.clientY - ys * scale
 
