@@ -154,3 +154,7 @@ main > * {
   font-size: 20px;
   display: flex;
 }
+
+.icon.gladed{
+    margin-left: 1ch
+}
