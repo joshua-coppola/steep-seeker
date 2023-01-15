@@ -63,3 +63,7 @@ body {
 .icon.arrow-right {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,2L2,10L10,18M2,10L18,10' stroke='black' stroke-width='2' fill='none'/%3E%3C/svg%3E");
 }
+
+.icon.gladed{
+	background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='6 20 9 20 9 15 14 15 10 9 13 9 9 4 11 4 7.5 0 4 4 6 4 2 9 5 9 1 15 6 15' style='fill:black' /%3E%3C/svg%3E");
+}

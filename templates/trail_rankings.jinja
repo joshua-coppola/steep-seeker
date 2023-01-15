@@ -84,6 +84,7 @@ Trail Rankings
             <li><span class="icon difficulty-black"></span>Advanced</li>
             <li><span class="icon difficulty-red"></span>Expert</li>
             <li><span class="icon difficulty-yellow"></span>Extreme</li>
+            <li><span class="icon gladed"></span>Gladed</li>
         </ul>
     </div>
 
@@ -139,8 +140,12 @@ Trail Rankings
             {% if not '' == trail.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a
-                            href="/map/{{trail.state}}/{{trail.resort_name}}">{{trail.name}}</a></p>
+                    <p>{{pages.offset + loop.index}}. <a href="/map/{{trail.state}}/{{trail.resort_name}}">
+                            {{trail.name}}
+                            {% if trail.gladed == True %}
+                            <span class="icon gladed"></span>
+                            {% endif %}
+                        </a></p>
                 </td>
                 <td><a href="/map/{{trail.state}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
                 <td>{{trail.state}}</td>

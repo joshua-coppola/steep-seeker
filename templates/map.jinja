@@ -46,6 +46,9 @@
                                     {% endif %}
                                     {% endif %}
                                     {{trail.steepest_30m}}° - {{trail.name}}
+                                    {% if trail.gladed == True %}
+                                    <span> </span><span class="icon gladed"></span>
+                                    {% endif %}
                 </li>
                 {% endif %}
                 {% endfor %}
