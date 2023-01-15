@@ -1,5 +1,5 @@
 main {
-    --center-width: 1400px;
+    --center-width: 1500px;
 }
 
 .ranking-sort {
@@ -61,3 +61,7 @@ th:last-child, td:last-child {
 tr:nth-child(even) {
     background-color: rgb(243, 242, 242);
 }
+
+tr a.active {
+    color: var(--color-accent);
+  }

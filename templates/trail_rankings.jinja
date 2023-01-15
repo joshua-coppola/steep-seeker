@@ -14,8 +14,9 @@ Trail Rankings
     <h1>Trail Rankings</h1>
 
     <p class="detail">
-        The trails are ordered by their steepest 30 meter pitch. In order to qualify as an 'Extreme'
-        trail, a run must be over 45° for 30 meters.
+        The trails can be filtered by their region within the US, and sorted by the length of the steepest pitch.
+        Keep in mind that trail difficulties are calculated using the 30 meter pitch value, as well as other factors
+        not shown here.
     </p>
 
     <ul class="ranking-sort">
@@ -103,12 +104,36 @@ Trail Rankings
                 <th>Trail Name</th>
                 <th>Resort</th>
                 <th>State</th>
-                <th>30m Pitch</th>
-                <th>50m Pitch</th>
-                <th>100m Pitch</th>
-                <th>200m Pitch</th>
-                <th>500m Pitch</th>
-                <th>1000m Pitch</th>
+                {% if sort_by == "steepest_30m"%}
+                <th><a class="active">30m Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=steepest_30m">30m Pitch</a></th>
+                {% endif %}
+                {% if sort_by == "steepest_50m"%}
+                <th><a class="active">30m Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=steepest_50m">50m Pitch</a></th>
+                {% endif %}
+                {% if sort_by == "steepest_100m"%}
+                <th><a class="active">100m Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=steepest_100m">100m Pitch</a></th>
+                {% endif %}
+                {% if sort_by == "steepest_200m"%}
+                <th><a class="active">200m Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=steepest_200m">200m Pitch</a></th>
+                {% endif %}
+                {% if sort_by == "steepest_500m"%}
+                <th><a class="active">500m Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=steepest_500m">500m Pitch</a></th>
+                {% endif %}
+                {% if sort_by == "steepest_1000m"%}
+                <th><a class="active">1000m Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=steepest_1000m">1000m Pitch</a></th>
+                {% endif %}
             </tr>
             {% for trail in trails %}
             {% if not '' == trail.name %}

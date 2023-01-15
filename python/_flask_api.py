@@ -188,6 +188,10 @@ def trail_rankings():
     if not limit:
         limit = 50
     search_string += f'limit={limit}&'
+    sort_by = request.args.get('sort')
+    if not sort_by:
+        sort_by = 'steepest_30m'
+    search_string += f'sort={sort_by}&'
 
     if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
@@ -199,10 +203,10 @@ def trail_rankings():
     conn = database.dict_cursor()
 
     if region == 'usa':
-        query = 'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
         trails = conn.execute(query, (limit, offset)).fetchall()
     else:
-        query = 'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.steepest_30m DESC LIMIT ? OFFSET ?'
+        query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
         trails = conn.execute(query, (region, limit, offset)).fetchall()
 
     conn.close()
@@ -229,8 +233,11 @@ def trail_rankings():
             urlBase = urlBase[0:-1]
         pages['prev'] = urlBase
     pages['offset'] = offset
-
-    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages)
+    urlBase = f'/trail-rankings?page=1&{search_string}'
+    if len(urlBase) > 0 and urlBase[-1] == '&':
+        urlBase = urlBase[0:-1]
+    pages['first'] = f'/trail-rankings?region={region}&limit={limit}'
+    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages, sort_by=sort_by)
 
 
 @ app.route('/map/<string:state>/<string:name>')

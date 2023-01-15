@@ -137,6 +137,7 @@ main > * {
   top: 0;
 }
 .zoom-button {
+  font-weight: bold;
   width: 32px;
   height: 32px;
   border-radius: 4px;
