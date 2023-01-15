@@ -50,15 +50,13 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 ### Mountain Rankings
 
-- [ ] Center elements
 - [ ] Add better filters
 - [ ] Improve appearance
 
 ### Trail Rankings
 
-- [ ] Add ability to sort by each pitch length
-- [ ] Improve appearance
-- [ ] Center elements
+- [x] Add ability to sort by each pitch length
+- [x] Improve appearance
 
 ### Maps
 
