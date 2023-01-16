@@ -157,20 +157,21 @@ Rankings
     <div class="rankings">
         {% for mountain in mountains %}
         {% if sort == "difficulty" %}
-        <a href="/map/{{mountain.state}}/{{mountain.name}}"
-            title="Difficulty: {{mountain.difficulty}}">{{mountain.name}},
-            {{mountain.state}}</a>
+        <p>{{loop.index}}. <a href="/map/{{mountain.state}}/{{mountain.name}}"
+                title="Difficulty: {{mountain.difficulty}}">
+                {{mountain.name}}, {{mountain.state}}</a></p>
         <span class="{{'ranking-bar' if mountain.difficulty <= 45 else 'black-text'}}"
             title="{{mountain.name}} Difficulty: {{mountain.difficulty}}"
             style="--bar-size: {{
-          (mountain.difficulty)/55 * 100}}%; --bar-color: {{ 'green' if mountain.difficulty < 16 else 'royalblue' if mountain.difficulty < 24 else 'black' if mountain.difficulty < 32 else 'red' if mountain.difficulty < 45 else 'gold' }};">{{loop.index}}</span>
+          (mountain.difficulty)/55 * 100}}%; --bar-color: {{ 'green' if mountain.difficulty < 16 else 'royalblue' if mountain.difficulty < 24 else 'black' if mountain.difficulty < 32 else 'red' if mountain.difficulty < 45 else 'gold' }};">{{mountain.difficulty}}</span>
         {% endif %}
         {% if sort == "beginner" %}
-        <a href="/map/{{mountain.state}}/{{mountain.name}}"
-            title="Beginner Friendliness: {{mountain.beginner_friendliness}}">{{mountain.name}}, {{mountain.state}}</a>
+        <p>{{loop.index}}. <a href="/map/{{mountain.state}}/{{mountain.name}}"
+                title="Beginner Friendliness: {{mountain.beginner_friendliness}}">
+                {{mountain.name}}, {{mountain.state}}</a></p>
         <span class="ranking-bar" title="{{mountain.name}} Beginner Friendliness: {{mountain.beginner_friendliness}}"
             style="--bar-size: {{
-          (mountain.beginner_friendliness)/30 * 100}}%; --bar-color: {{ 'green' if mountain.beginner_friendliness > 14 else 'royalblue' if mountain.beginner_friendliness > 6 else 'black' if mountain.beginner_friendliness > -2 else 'red' if mountain.beginner_friendliness > -15 else 'gold' }};">{{loop.index}}</span>
+          (mountain.beginner_friendliness)/30 * 100}}%; --bar-color: {{ 'green' if mountain.beginner_friendliness > 14 else 'royalblue' if mountain.beginner_friendliness > 6 else 'black' if mountain.beginner_friendliness > -2 else 'red' if mountain.beginner_friendliness > -15 else 'gold' }};">{{mountain.beginner_friendliness}}</span>
         {% endif %}
         {% endfor %}
     </div>

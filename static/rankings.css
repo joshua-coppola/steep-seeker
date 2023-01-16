@@ -3,64 +3,82 @@ main {
 }
 
 .ranking-sort {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: 1.25rem;
-  text-transform: uppercase;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 1.2rem;
+    line-height: 1.75rem;
+    text-transform: uppercase;
 }
 .ranking-sort > *:not(:last-child) {
-  margin-right: 32px;
+    margin-right: 32px;
 }
 .ranking-sort a {
-  text-decoration: none;
-  color: var(--color-primary);
+    text-decoration: none;
+    color: var(--color-primary);
 }
 .ranking-sort a.active {
-  color: var(--color-accent);
+    color: var(--color-accent);
 }
 
 .legend ul li {
-  white-space: nowrap;
-  display: inline;
-  margin-top: 8px;
-  margin-right: 32px;
-  color: var(--color-secondary);
+    white-space: nowrap;
+    display: inline;
+    margin-top: 8px;
+    margin-right: 32px;
+    color: var(--color-secondary);
 }
 
 .rankings {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  grid-auto-rows: 28px;
-  row-gap: 6px;
-  column-gap: 64px;
-  align-items: center;
-  justify-items: left;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    grid-auto-rows: 28px;
+    row-gap: 6px;
+    column-gap: 64px;
+    align-items: center;
+    justify-items: left;
 }
-.rankings a {
-  color: var(--color-primary);
-  font-size: 1.25rem;
+.rankings a,p {
+    color: var(--color-primary);
+    font-size: 1.2rem;
 }
 .rankings .ranking-bar {
-  width: var(--bar-size);
-  background-color: var(--bar-color);
-  border-radius: 4px;
-  height: 28px;
-  display: inline-block;
-  font-size: .9rem;
-  color:white
+    width: var(--bar-size);
+    background-color: var(--bar-color);
+    border-radius: 4px;
+    height: 28px;
+    display: inline-block;
+    font-size: .9rem;
+    color:white
 }
 .rankings .black-text {
-  width: var(--bar-size);
-  background-color: var(--bar-color);
-  border-radius: 4px;
-  height: 28px;
-  display: inline-block;
-  font-size: .9rem;
-  color:black
+    width: var(--bar-size);
+    background-color: var(--bar-color);
+    border-radius: 4px;
+    height: 28px;
+    display: inline-block;
+    font-size: .9rem;
+    color:black
 }
 
 .links {
     display: flex;
     align-items: center;
   }
+
+@media screen and (max-width: 600px) {
+    .rankings {
+        grid-template-columns: max-content;
+    }
+    main {
+        padding: 16px;
+        margin-top: 0px;
+    }
+    .rankings a,p {
+        font-size: 1.05rem;
+    }
+
+    .ranking-sort {
+        display: block;
+    }
+}
