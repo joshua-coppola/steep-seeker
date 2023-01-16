@@ -1,43 +1,69 @@
 #content {
-  display: flex;
-  gap: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
 }
 
 .hero-text {
-  font-size: 1.25rem;
+    font-size: 1.25rem;
 }
 
 .hero-text > * {
-  margin-bottom: 32px;
+    margin-bottom: 32px;
 }
 
 .hero-text h1 {
-  font-size: 2.25rem;
+    font-size: 2.25rem;
 }
 
 .hero-text p {
-  line-height: 1.5em;
+    line-height: 1.5em;
+    max-width: 65ch;
 }
 
 .hero-links > *:not(:last-child) {
-  margin-right: 32px;
+    margin-right: 32px;
 }
 
 em {
-  font-weight: bold;
+    font-weight: bold;
+}
+
+img {
+    max-width: 100%;
+}
+
+.button {
+    padding-bottom: 16px;
 }
 
 .button-cta {
-  display: inline-block;
-  padding: 16px;
-  background-color: var(--color-accent);
-  color: white;
-  border-radius: 4px;
-  text-decoration: none;
-  font-weight: bold;
+    display: inline-block;
+    padding: 16px;
+    background-color: var(--color-accent);
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
 }
 .button-cta:hover {
-  opacity: 1;
-  color: white;
-  background-color: var(--color-accent-light);
+    opacity: 1;
+    color: white;
+    background-color: var(--color-accent-light);
+}
+
+.button-cta2 {
+    display: inline-block;
+    padding: 16px;
+    background-color: var(--color-secondary);
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.button-cta2:hover {
+    opacity: 1;
+    color: white;
+    background-color: var(--color-accent-light);
 }
