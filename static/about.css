@@ -1,52 +1,74 @@
 main {
-  display: block;
-  padding: 0;
+    display: block;
+    padding: 0;
 }
 
 #content {
-  font-size: 1.25rem;
+    font-size: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .blurb {
-  display: grid;
-  grid-template-columns: 1fr 600px 600px 1fr;
-  padding: 32px;
-  gap: 64px;
-  margin-bottom: 0px !important;
+    display: grid;
+    flex-wrap: wrap;
+    grid-template-columns: 1fr minmax(auto, 600px) minmax(auto, 600px) 1fr;
+    padding: 16px;
+    padding-top: 24px;
+    gap: 4vw;
+    margin-bottom: 0px !important;
+    width: 100vw;
 }
+
 .blurb.blurb-dark {
-  background-color: #e5f2ff;
+    background-color: #e5f2ff;
+    width: 100vw;
 }
 .dark .blurb.blurb-dark {
-  background-color: #001a29;
+    background-color: #001a29;
 }
 
 .blurb p {
-  line-height: 1.5rem;
-  margin-bottom: 1rem;
+    line-height: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .blurb table {
-  font-size: 1rem;
-  border: 2px solid var(--color-border);
-  width: 100%;
-  margin-top: 100px;
+    font-size: 1rem;
+    border: 2px solid var(--color-border);
+    width: 100%;
+    margin-top: 50px;
 }
 
 .blurb tr {
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .blurb thead {
-  font-weight: bold;
+    font-weight: bold;
 }
 
 .blurb td {
-  padding: 16px;
-  /* text-align: center; */
-  vertical-align: center;
+    padding: 16px;
+    /* text-align: center; */
+    vertical-align: center;
 }
 
 .blurb h2 {
-  margin-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+@media screen and (max-width: 800px) {
+    .blurb {
+        display: flex;
+        grid-template-columns: 1fr minmax(auto, 600px) 1fr;
+    }
+
+    .blurb table {
+        margin-top: 0px;
+    }
+
+    .blurb.blurb-dark h2 {
+        margin-top: 16px;
+    }
 }
