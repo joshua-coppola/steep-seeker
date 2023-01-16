@@ -58,7 +58,7 @@ main {
   padding: 32px;
   display: grid;
   grid-template-rows: min-content 1fr;
-  grid-template-columns: 1fr var(--center-width) 1fr;
+  grid-template-columns: 1fr minmax(auto, var(--center-width)) 1fr;
   gap: 32px;
 }
 #title {
@@ -88,7 +88,8 @@ h2 {
 p.detail {
   font-size: 1.2rem;
   color: var(--color-secondary);
-  max-width: 900px;
+  width: clamp(200px, auto, 900px);
+  max-width: 80vw;
 }
 p.copy {
   font-size: 1.2rem;

@@ -4,6 +4,7 @@ main {
 
 .ranking-sort {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   font-size: 1.25rem;
   text-transform: uppercase;
