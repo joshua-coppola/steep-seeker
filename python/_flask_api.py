@@ -161,6 +161,9 @@ def rankings():
         sort_by = 'beginner_friendliness'
     else:
         sort_by = 'difficulty'
+    if not order in ['asc', 'desc']:
+        order = 'desc'
+    
     if region == 'usa':
         query = f'SELECT name, state FROM Mountains ORDER BY {sort_by} {order}'
         mountains = conn.execute(query).fetchall()
@@ -190,6 +193,8 @@ def trail_rankings():
     search_string += f'limit={limit}&'
     sort_by = request.args.get('sort')
     if not sort_by:
+        sort_by = 'steepest_30m'
+    if not sort_by in ['steepest_30m', 'steepest_50m', 'steepest_100m', 'steepest_200m', 'steepest_500m', 'steepest_1000m']:
         sort_by = 'steepest_30m'
     search_string += f'sort={sort_by}&'
 

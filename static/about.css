@@ -4,7 +4,7 @@ main {
 }
 
 #content {
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .blurb {
@@ -22,12 +22,12 @@ main {
 }
 
 .blurb p {
-  line-height: 1.5em;
-  margin-bottom: 16px;
+  line-height: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .blurb table {
-  font-size: 16px;
+  font-size: 1rem;
   border: 2px solid var(--color-border);
   width: 100%;
   margin-top: 100px;

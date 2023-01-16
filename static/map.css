@@ -19,7 +19,6 @@ body {
   right: 0;
   bottom: 0;
   z-index: -1;
-  transform-origin: 0px 0px;
   transform: scale(1) translate(0px, 0px);
   cursor: grab;
 }
@@ -48,10 +47,10 @@ main > * {
   border-bottom: 1px solid var(--color-border);
 }
 .map-pane h1 {
-  font-size: 30px;
+  font-size: 1.9rem;
 }
 .map-pane h2 {
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .mountain-details {
@@ -68,11 +67,11 @@ main > * {
   align-items: flex-end;
 }
 .mountain-title .mountain-location {
-  font-size: 20px;
+  font-size: 1.25rem;
   color: var(--color-tertiary);
 }
 .mountain-section {
-  font-size: 16px;
+  font-size: 1rem;
 }
 .mountain-section ul li {
   margin-top: 16px;
@@ -151,7 +150,7 @@ main > * {
 .hover-details {
   position: absolute;
   padding: 8px;
-  font-size: 20px;
+  font-size: 1.25rem;
   display: flex;
 }
 

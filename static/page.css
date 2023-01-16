@@ -6,7 +6,7 @@ body {
 
 nav {
   height: 64px;
-  font-size: 16px;
+  font-size: 1rem;
   padding: 16px;
   box-shadow: 0 0 4px var(--color-shadow);
   border-bottom: 1px solid var(--color-border);
@@ -78,19 +78,19 @@ main {
 }
 
 h1 {
-  font-size: 48px;
+  font-size: 3rem;
 }
 
 h2 {
-  font-size: 28px;
+  font-size: 1.75rem;
 }
 
 p.detail {
-  font-size: 18px;
+  font-size: 1.2rem;
   color: var(--color-secondary);
   max-width: 900px;
 }
 p.copy {
-  font-size: 20px;
+  font-size: 1.2rem;
   color: var(--color-tertiary);
 }

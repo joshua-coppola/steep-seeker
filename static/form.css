@@ -52,7 +52,7 @@
   background-color: transparent;
 }
 .ts-form input[type=submit] {
-  font-size: 20px;
+  font-size: 1.25rem;
   color: white;
   border: none;
   background-color: var(--color-accent);
@@ -81,7 +81,7 @@
   align-items: flex-start;
 }
 .form-group.big * {
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .form-difficulty.inactive {

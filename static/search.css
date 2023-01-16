@@ -11,7 +11,7 @@ main {
   margin-bottom: 16px;
 }
 .map-link {
-  font-size: 20px;
+  font-size: 1.25rem;
   position: absolute;
   bottom: 0;
   right: 0;
@@ -28,7 +28,7 @@ main {
 }
 .result-difficulty ul .icon {
   margin-right: 2px;
-  font-size: 18px;
+  font-size: 1.2rem;
 }
 
 .links {
@@ -52,7 +52,7 @@ main {
   border-radius: 4px;
   border: 2px solid var(--color-primary);
   color: var(--color-primary);
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 .search-form #search {
   background-color: transparent;
@@ -61,7 +61,7 @@ main {
 }
 .search-form #search::placeholder {
   color: var(--color-tertiary);
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 .search-form #submit {
   background-color: var(--color-accent);
