@@ -36,13 +36,13 @@
 }
 
 .ts-form, .ts-form fieldset, .form-slider {
-  display: flex;
+  display: grid;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
 }
 .ts-form {
-  font-size: 18px;
+  font-size: 1.1rem;
   gap: 16px;
 }
 .ts-form input {
@@ -58,6 +58,7 @@
   background-color: var(--color-accent);
   padding: 0 16px;
   height: 36px;
+  width: 200px;
 }
 *[disabled] {
   color: var(--color-tertiary);
