@@ -65,4 +65,31 @@ tr:nth-child(even) {
 
 tr a.active {
     color: var(--color-accent);
+}
+
+@media screen and (min-width: 901px) {
+    .mobile {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 900px) {
+
+    .desktop {
+        display: none;
+    }
+
+    .mobile table {
+        width: 100%;
+    }
+
+    .mobile ul {
+        padding-bottom: 32px;
+    }
+
+    .header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding-top: 16px;
+    }
   }

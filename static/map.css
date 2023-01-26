@@ -1,5 +1,5 @@
 body {
-  background-color: var(--color-map-background);
+    background-color: var(--color-map-background);
 }
 
 #map {
@@ -12,148 +12,164 @@ body {
 }
 
 #zoom {
-  text-align: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
-  transform: scale(1) translate(0px, 0px);
-  cursor: grab;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    transform: scale(1) translate(0px, 0px);
+    cursor: grab;
 }
 
 main {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
-  z-index: 0;
-  pointer-events: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 0;
+    pointer-events: none;
 }
 
 main > * {
-  pointer-events: all;
+    pointer-events: all;
 }
 
 .map-pane {
-  background-color: var(--color-background);
-  border-radius: 4px;
-  box-shadow: 0 0 8px var(--color-shadow);
+    background-color: var(--color-background);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
 }
 .map-pane > div {
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
 }
 .map-pane h1 {
-  font-size: 1.9rem;
+    font-size: 1.9rem;
 }
 .map-pane h2 {
-  font-size: 1.25rem;
+    font-size: 1.25rem;
 }
 
 .mountain-details {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 400px;
-  height: 100%;
-  overflow-y: scroll;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 100%;
+    overflow-y: scroll;
 }
 .mountain-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
 }
 .mountain-title .mountain-location {
-  font-size: 1.25rem;
-  color: var(--color-tertiary);
+    font-size: 1.25rem;
+    color: var(--color-tertiary);
 }
 .mountain-section {
-  font-size: 1rem;
+    font-size: 1rem;
 }
 .mountain-section ul li {
-  margin-top: 16px;
-  color: var(--color-secondary);
-  display: flex;
+    margin-top: 16px;
+    color: var(--color-secondary);
+    display: flex;
 }
 
 .selected-details {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 256px;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 256px;
 }
 .selected-details .selected-title {
-  display: flex;
+    display: flex;
 }
 .selected-details table {
-  width: 100%;
-  color: var(--color-secondary);
+    width: 100%;
+    color: var(--color-secondary);
 }
 .selected-details td {
-  padding-bottom: 16px;
+    padding-bottom: 16px;
 }
 .selected-details .selected-difficulty {
-  color: var(--color-secondary);
+    color: var(--color-secondary);
 }
 .difficulty-meter {
-  width: 100%;
-  height: 16px;
-  border-radius: 4px;
-  margin-top: 16px;
+    width: 100%;
+    height: 16px;
+    border-radius: 4px;
+    margin-top: 16px;
 }
 .difficulty-meter-bar {
-  width: var(--size);
-  height: 16px;
-  opacity: 0.5;
-  display: inline-block;
-  margin: 0;
+    width: var(--size);
+    height: 16px;
+    opacity: 0.5;
+    display: inline-block;
+    margin: 0;
 }
 .difficulty-meter-bar.active {
-  opacity: 1;
+    opacity: 1;
 }
 .difficulty-meter-bar.green {
-  background-color: green;
+    background-color: green;
 }
 .difficulty-meter-bar.blue {
-  background-color: royalblue;
+    background-color: royalblue;
 }
 .difficulty-meter-bar.black {
-  background-color: black;
+    background-color: black;
 }
 .difficulty-meter-bar.red {
-  background-color: red;
+    background-color: red;
 }
 .difficulty-meter-bar.yellow {
-  background-color: gold;
+    background-color: gold;
 }
 
 .zoom-buttons {
-  position: absolute;
-  left: 416px;
-  top: 0;
+    position: absolute;
+    left: 416px;
+    top: 0;
 }
 .zoom-button {
-  font-weight: bold;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-background);
+    font-weight: bold;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
 }
 .zoom-button:not(:last-child) {
-  margin-right: 8px;
+    margin-right: 8px;
 }
 
 .hover-details {
-  position: absolute;
-  padding: 8px;
-  font-size: 1.25rem;
-  display: flex;
+    position: absolute;
+    padding: 8px;
+    font-size: 1.25rem;
+    display: flex;
 }
 
 .icon.gladed{
     margin-left: 1ch
+}
+
+
+@media screen and (max-width: 900px) {
+    .mountain-details {
+        visibility: hidden;
+        width: 0px;
+    }
+
+    #map {
+        padding-left: 16px;
+    }
+
+    .zoom-buttons {
+        left: 0px;
+    }
 }
