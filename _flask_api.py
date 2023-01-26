@@ -6,8 +6,6 @@ import os
 
 from data.secret import secret
 
-sys.path.append('python')
-
 import db as database
 import _misc
 from mountain import Mountain, Trail, Lift
@@ -20,7 +18,7 @@ class navigationLink:
         self.to = to
 
 
-app = Flask(__name__, static_url_path='', static_folder='../static', template_folder='../templates')
+app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = secret
 
 nav_links = []

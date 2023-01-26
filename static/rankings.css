@@ -69,16 +69,32 @@ main {
 @media screen and (max-width: 600px) {
     .rankings {
         grid-template-columns: max-content;
+        display: block;
+        line-height: 1.7rem;
     }
+
     main {
-        padding: 16px;
+        padding: 8px;
         margin-top: 0px;
-    }
-    .rankings a,p {
-        font-size: 1.05rem;
     }
 
     .ranking-sort {
-        display: block;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .legend ul{
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 350px) {
+    .ranking-sort {
+        grid-template-columns: 1fr;
+    }
+
+    .legend ul{
+        grid-template-columns: 1fr;
     }
 }
