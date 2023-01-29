@@ -3,35 +3,50 @@ main {
 }
 
 .ranking-sort {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: 1.25rem;
-  text-transform: uppercase;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 1.25rem;
+    text-transform: uppercase;
 }
-.ranking-sort > *:not(:last-child) {
-  margin-right: 32px;
+
+.ranking-sort > * {
+    margin-right: 16px;
 }
+
 .ranking-sort a {
-  text-decoration: none;
-  color: var(--color-primary);
+    text-decoration: none;
+    color: var(--color-primary);
 }
+
 .ranking-sort a.active {
-  color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.ranking-sort .button-cta {
+    color: white;
+    width: 100%;
+    max-width: 150px;
+}
+
+.ranking-sort .button-cta2 {
+    color: white;
+    width: 100%;
+    max-width: 150px;
 }
 
 .legend ul li {
-  white-space: nowrap;
-  display: inline;
-  margin-top: 8px;
-  margin-right: 30px;
-  color: var(--color-secondary);
+    white-space: nowrap;
+    display: inline;
+    margin-top: 8px;
+    margin-right: 30px;
+    color: var(--color-secondary);
 }
 
 .links {
     display: flex;
     align-items: center;
-  }
+}
 
 table {
     font-size: 1.25rem;
@@ -87,6 +102,10 @@ tr a.active {
     .ranking-sort {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ranking-sort > * {
+        margin-bottom: 8px;
     }
 
     .legend ul{

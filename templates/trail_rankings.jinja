@@ -21,91 +21,91 @@ Trail Rankings
 
     <ul class="ranking-sort">
         {% if region == "usa" %}
-        <li><a class="active">USA</a></li>
-        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        <li><a class="button-cta">USA</a></li>
+        <li><a class="button-cta2" href="/trail-rankings?region=northeast">Northeast</a>
         </li>
-        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=southeast">Southeast</a>
         </li>
-        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=midwest">Midwest</a>
         </li>
-        <li><a href="/trail-rankings?region=west">West</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=west">West</a>
         </li>
         {% endif %}
         {% if region == "northeast" %}
-        <li><a href="/trail-rankings?region=usa">USA</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=usa">USA</a>
         </li>
-        <li><a class="active">Northeast</a></li>
-        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        <li><a class="button-cta">Northeast</a></li>
+        <li><a class="button-cta2" href="/trail-rankings?region=southeast">Southeast</a>
         </li>
-        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=midwest">Midwest</a>
         </li>
-        <li><a href="/trail-rankings?region=west">West</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=west">West</a>
         </li>
         {% endif %}
         {% if region == "southeast" %}
-        <li><a href="/trail-rankings?region=usa">USA</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=usa">USA</a>
         </li>
-        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=northeast">Northeast</a>
         </li>
-        <li><a class="active">Southeast</a></li>
-        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        <li><a class="button-cta">Southeast</a></li>
+        <li><a class="button-cta2" href="/trail-rankings?region=midwest">Midwest</a>
         </li>
-        <li><a href="/trail-rankings?region=west">West</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=west">West</a>
         </li>
         {% endif %}
         {% if region == "midwest" %}
-        <li><a href="/trail-rankings?region=usa">USA</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=usa">USA</a>
         </li>
-        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=northeast">Northeast</a>
         </li>
-        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=southeast">Southeast</a>
         </li>
-        <li><a class="active">Midwest</a></li>
-        <li><a href="/trail-rankings?region=west">West</a>
+        <li><a class="button-cta">Midwest</a></li>
+        <li><a class="button-cta2" href="/trail-rankings?region=west">West</a>
         </li>
         {% endif %}
         {% if region == "west" %}
-        <li><a href="/trail-rankings?region=usa">USA</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=usa">USA</a>
         </li>
-        <li><a href="/trail-rankings?region=northeast">Northeast</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=northeast">Northeast</a>
         </li>
-        <li><a href="/trail-rankings?region=southeast">Southeast</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=southeast">Southeast</a>
         </li>
-        <li><a href="/trail-rankings?region=midwest">Midwest</a>
+        <li><a class="button-cta2" href="/trail-rankings?region=midwest">Midwest</a>
         </li>
-        <li><a class="active">West</a></li>
+        <li><a class="button-cta">West</a></li>
         {% endif %}
     </ul>
     <ul class="ranking-sort mobile">
         {% if sort_by == "steepest_30m"%}
-        <li><a class="active">30m Pitch</a></li>
+        <li><a class="button-cta">30m Pitch</a></li>
         {% else %}
-        <li><a href="{{pages.first}}&sort=steepest_30m">30m Pitch</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_30m">30m Pitch</a></li>
         {% endif %}
         {% if sort_by == "steepest_50m"%}
-        <li><a class="active">50m Pitch</a></li>
+        <li><a class="button-cta">50m Pitch</a></li>
         {% else %}
-        <li><a href="{{pages.first}}&sort=steepest_50m">50m Pitch</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_50m">50m Pitch</a></li>
         {% endif %}
         {% if sort_by == "steepest_100m"%}
-        <li><a class="active">100m Pitch</a></li>
+        <li><a class="button-cta">100m Pitch</a></li>
         {% else %}
-        <li><a href="{{pages.first}}&sort=steepest_100m">100m Pitch</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_100m">100m Pitch</a></li>
         {% endif %}
         {% if sort_by == "steepest_200m"%}
-        <li><a class="active">200m Pitch</a></li>
+        <li><a class="button-cta">200m Pitch</a></li>
         {% else %}
-        <li><a href="{{pages.first}}&sort=steepest_200m">200m Pitch</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_200m">200m Pitch</a></li>
         {% endif %}
         {% if sort_by == "steepest_500m"%}
-        <li><a class="active">500m Pitch</a></li>
+        <li><a class="button-cta">500m Pitch</a></li>
         {% else %}
-        <li><a href="{{pages.first}}&sort=steepest_500m">500m Pitch</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_500m">500m Pitch</a></li>
         {% endif %}
         {% if sort_by == "steepest_1000m"%}
-        <li><a class="active">1000m Pitch</a></li>
+        <li><a class="button-cta">1000m Pitch</a></li>
         {% else %}
-        <li><a href="{{pages.first}}&sort=steepest_1000m">1000m Pitch</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_1000m">1000m Pitch</a></li>
         {% endif %}
     </ul>
 
