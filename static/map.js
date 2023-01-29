@@ -6,6 +6,7 @@ var scale = 1,
   zoom = document.getElementById('zoom'),
   zoom_in = document.getElementById('zoom-in'),
   zoom_out = document.getElementById('zoom-out')
+  zoom_reset = document.getElementById('zoom-reset')
 
 function setTransform () {
   zoom.style.transform =
@@ -68,6 +69,17 @@ zoom_out.onclick = function (e) {
   scale /= 1.2
   pointX = e.clientX - xs * scale
   pointY = e.clientY - ys * scale
+
+  setTransform()
+}
+
+zoom_reset.onclick = function (e) {
+  e.preventDefault()
+
+  pointX = 0
+  pointY = 0
+  start = { x: 0, y: 0 }
+  scale = 1
 
   setTransform()
 }
