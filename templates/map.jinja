@@ -1,14 +1,14 @@
-{% extends "base.jinja" %}
+{% extends "page_base.jinja" %}
 
 {% block title %}
 {{mountain.name}} - Map
 {% endblock title %}
 
-{% block head %}
+{% block pagehead %}
 <link href="/map.css" rel="stylesheet" />
-{% endblock head %}
+{% endblock pagehead %}
 
-{% block body %}
+{% block content %}
 
 <main>
     <div class="map-pane mountain-details">
@@ -82,7 +82,7 @@
     tip, and hover tooltip
     #}
 </main>
-{% endblock body %}
+{% endblock content %}
 
 {% block postbody %}
 <script src="/map.js"></script>
