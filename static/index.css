@@ -33,37 +33,6 @@ img {
     max-width: 100%;
 }
 
-.button {
+.hero-links .button {
     padding-bottom: 16px;
-}
-
-.button-cta {
-    display: inline-block;
-    padding: 16px;
-    background-color: var(--color-accent);
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: bold;
-}
-.button-cta:hover {
-    opacity: 1;
-    color: white;
-    background-color: var(--color-accent-light);
-}
-
-.button-cta2 {
-    display: inline-block;
-    padding: 16px;
-    background-color: var(--color-secondary);
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.button-cta2:hover {
-    opacity: 1;
-    color: white;
-    background-color: var(--color-accent-light);
 }

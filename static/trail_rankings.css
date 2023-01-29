@@ -79,6 +79,21 @@ tr a.active {
         display: none;
     }
 
+    main {
+        padding: 8px;
+        margin-top: 0px;
+    }
+
+    .ranking-sort {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .legend ul{
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .mobile table {
         width: 100%;
     }
@@ -93,3 +108,13 @@ tr a.active {
         padding-top: 16px;
     }
   }
+
+@media screen and (max-width: 350px) {
+    .ranking-sort {
+        grid-template-columns: 1fr;
+    }
+
+    .legend ul{
+        grid-template-columns: 1fr;
+    }
+}

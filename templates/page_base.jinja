@@ -11,9 +11,9 @@
     <a id="home-link" href="/"><img height="50" src="/logo.png" />Steep Seeker</a>
     <ul class="nav-list">
         {% for link in nav_links %}
-        <li><a href="{{link.to}}" {% if active_page==link.page %} class="active" {% endif %}>
+        <li><div class="button"><a href="{{link.to}}" {% if active_page==link.page %} class="button-cta" {% else %} class="button-cta2" {% endif %}>
                 {{link.title}}
-            </a></li>
+            </a></div></li>
         {% endfor %}
     </ul>
     <span style="flex-grow: 1"></span>

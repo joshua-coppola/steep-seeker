@@ -34,11 +34,8 @@ nav {
     margin-right: 16px;
 }
 .nav-list a {
-    color: var(--color-primary);
+    color: white;
     text-decoration: none;
-}
-.nav-list a.active {
-    color: var(--color-accent);
 }
 
 /* COMMON STUFF */
@@ -96,14 +93,49 @@ p.copy {
     color: var(--color-tertiary);
 }
 
+.button-cta {
+    display: inline-block;
+    padding: 8px;
+    background-color: var(--color-accent);
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+.button-cta:hover {
+    opacity: 1;
+    color: white;
+    background-color: var(--color-accent-light);
+}
+
+.button-cta2 {
+    display: inline-block;
+    padding: 8px;
+    background-color: var(--color-secondary);
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.button-cta2:hover {
+    opacity: 1;
+    color: white;
+    background-color: var(--color-accent-light);
+}
+
 @media screen and (max-width: 620px) {
     .nav-list {
         float: none;
-        display: block;
+        display: grid;
         text-align: left;
     }
 
     #home-link {
         margin-right: 16px;
+    }
+
+    .button {
+        padding-bottom: 8px;
     }
 }
