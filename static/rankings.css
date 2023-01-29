@@ -6,8 +6,8 @@ main {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    font-size: 1.2rem;
-    line-height: 1.75rem;
+    font-size: 1.1rem;
+    line-height: 1.5rem;
     text-transform: uppercase;
 }
 

@@ -19,12 +19,9 @@ nav {
     font-weight: bold;
     text-decoration: none;
     text-transform: uppercase;
-    margin-right: 32px;
+    margin-right: 16px;
     display: flex;
     align-items: center;
-}
-#home-link img {
-    margin-right: 16px;
 }
 
 .nav-list {
@@ -93,6 +90,10 @@ p.copy {
     color: var(--color-tertiary);
 }
 
+.nav-list .button {
+    white-space: nowrap;
+}
+
 .button-cta {
     display: inline-block;
     padding: 8px;
@@ -124,7 +125,7 @@ p.copy {
     background-color: var(--color-accent-light);
 }
 
-@media screen and (max-width: 620px) {
+@media screen and (max-width: 680px) {
     .nav-list {
         float: none;
         display: grid;
