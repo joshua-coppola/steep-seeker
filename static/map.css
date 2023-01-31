@@ -184,6 +184,6 @@ main > * {
 
 @media screen and (max-width: 620px) {
     .zoom-buttons {
-        top: 150px
+        top: 130px
     }
 }
