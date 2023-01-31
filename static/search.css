@@ -1,83 +1,83 @@
 main {
-  --center-width: 900px !important;
+    --center-width: 900px !important;
 }
 
 .result {
-  border-bottom: 1px solid var(--color-border);
-  position: relative;
-  margin-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+    margin-bottom: 16px;
 }
 .result > * {
-  margin-bottom: 16px;
+    margin-bottom: 16px;
 }
 .map-link {
-  font-size: 1.25rem;
-  position: absolute;
-  bottom: 0;
-  right: 0;
+    font-size: 1.25rem;
+    position: absolute;
+    bottom: 0;
+    right: 0;
 }
 
 .result-difficulty {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 .result-difficulty ul {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 .result-difficulty ul .icon {
-  margin-right: 2px;
-  font-size: 1.2rem;
+    margin-right: 2px;
+    font-size: 1.2rem;
 }
 
 .links {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .thumbnail {
-  float: left;
-  width: 20%;
+    float: left;
+    width: 20%;
 }
 
 .search-form {
-  display: block;
-  height: 40px;
-  gap: 8px;
+    display: block;
+    height: 40px;
+    gap: 8px;
 }
 .search-form > * {
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 4px;
-  border: 2px solid var(--color-primary);
-  color: var(--color-primary);
-  font-size: 1.2rem;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 4px;
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+    font-size: 1.2rem;
 }
 .search-form #search {
-  background-color: transparent;
-  height: 40px;
-  width: 532px;
+    background-color: transparent;
+    height: 40px;
+    width: 532px;
 }
 .search-form #search::placeholder {
-  color: var(--color-tertiary);
-  font-size: 1.2rem;
+    color: var(--color-tertiary);
+    font-size: 1.2rem;
 }
 .search-form #submit {
-  background-color: var(--color-accent);
-  color: white;
-  border: none;
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
 }
 .search-form #sort {
-  background-color: transparent;
+    background-color: transparent;
 }
 
 #sidebar {
-  max-width: 400px;
+    max-width: 400px;
 }
 #sidebar h2 {
-  margin-top: 80px;
-  margin-bottom: 40px;
+    margin-top: 80px;
+    margin-bottom: 40px;
 }
 
 @media screen and (max-width: 1250px){

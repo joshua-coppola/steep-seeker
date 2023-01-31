@@ -10,18 +10,18 @@ About
 
 {% block content %}
 <section id="content">
-    <section class="blurb">
+    <section class="blurb top-blurb">
         <div></div>
         <h1>About</h1>
     </section>
     <section class="blurb">
         <div></div>
         <div>
-            <p>The goal of this project is to allow for skiers and riders to have a
-                reliable metric with which to compare trails between mountains. Often,
-                a black diamond trail at one ski area is very different from another
-                black diamond trail at a different ski area, especially across
-                geographic regions. Our standardized rating scale aims to fix this.</p>
+            <p>The goal of this project is to allow for skiers and riders to 
+            have a reliable metric with which to compare trails between mountains. 
+            Often, a black diamond trail at one ski area is very different from 
+            another black diamond trail at a different ski area, especially across 
+            geographic regions. This standardized rating scale aims to fix this.</p>
         </div>
     </section>
     <section class="blurb blurb-dark">
@@ -67,31 +67,122 @@ About
         <div>
             <h2>How It Works</h2>
 
-            <p>The data for each map comes from OpenStreetMaps and USGS.
-                OpenStreetMaps is used for the routes of each trail at a mountain.
-                This data is provided by the community, and is not error free. Should a
-                problem with a mountain be identified, the best course of action is to
-                correct the problem on OSM, then reach out so we can update the map. The
-                OSM data is then supplemented with elevation data from USGS’s NED10
-                elevation dataset. This dataset provides high quality elevation data
-                with a 10 meter resolution for nearly the entire United States. Unfortunately,
-                elevation data of sufficient quality (10m or better resolution) is rare for other
-                countries, hence why only US mountains are included.</p>
+            <p>The data for each map comes from OpenStreetMaps and the USGS. 
+            I used the publicly available map data on OpenStreetMaps and 
+            elevation data from the USGS in order to create a 3D representation 
+            of each resort, then calculated the steepest sections of trail and 
+            used tags from OpenStreetMaps to determine things like whether a 
+            trail is gladed to create a difficulty rating.</p>
 
-            <p>On each map, the degree label on each trail is for the steepest 30
-                meters. The colors are determined by the same 30 meters, plus a
-                modifier of 5.5 degrees if the trail is gladed.</p>
+            <p>On each map, the degree label on each trail is for the steepest 30 
+            meters. The colors are determined by the same 30 meters plus a modifier 
+            of 5.5 degrees if the trail is gladed.</p>
+
+            <p>The colors for each trail are determined based on the table on this 
+            page. The table was created by performing a statistical analysis of all 
+            the trails in the US to maximize the number of trails that are rated 
+            the same as their official rating from the resort, then spot checked by 
+            numerous individuals with first hand experience of a selection of resorts.</p>
         </div>
     </section>
     <section class="blurb">
         <div></div>
         <div>
             <h2 id="about-rankings">Mountain Rankings</h2>
-            <p>There are two types of mountain comparisons: how hard the
-                hardest trails are and how easy the easiest area is. This is created
-                using a weighted average of the top 30 hardest and easiest trails to
-                create a metric that describes how expert and beginner friendly an
-                area is, and how it stacks up to other mountains. </p>
+            <p>There are two types of mountain comparisons: how hard the hardest 
+            trails are and how easy the easiest area is. This is created using a 
+            weighted average of the top 30 hardest and easiest trails in order 
+            to create a metric that describes how expert and beginner friendly 
+            an area is, and how it stacks up to other mountains.</p>
+
+            <p>20% of the rating is composed from the top 30 trails, and 80% is 
+            from the top 5. The color a resort receives shows how the hardest 
+            (or easiest) trails are rated, and the actual score can be used for 
+            comparisons within the same difficulty color.</p>
+        </div>
+    </section>
+    <section class="blurb blurb-dark qa">
+        <div></div>
+        <div>
+            <h2>Q & A</h2>
+            <h3>Why only US resorts?</h3>
+            <p>Unfortunately, not very many countries 
+            have precise enough elevation maps available to the public. In 
+            order to get accurate results, I need 10m resolution or better. 
+            I hope to expand to other countries as better data becomes available.</p>
+
+            <h3>What about X factor that changes a trail’s difficulty?</h3>
+            <p>A large portion of variance between different trails is explained with the 
+            steepness of the trail and whether the trail is gladed, but not all of it. 
+            I have many ideas about other factors to consider, but the hardest part 
+            for many of them is getting the data. The next step in improving the model 
+            is factoring in weather patterns and snowfall.</p>
+
+            <h3>What should you do if you find a mistake?</h3>
+            <p>Given that the primary source for data is 
+            <a href="https://www.openstreetmap.org">OpenStreetMaps</a>, where individual 
+            users come together to crowdsource the map, trail quality can vary between 
+            resorts. The flip side to that is that anyone can improve the maps. If you 
+            know a resort well and are familiar with contributing to OpenStreetMaps (or 
+            want to learn), it would be extremely helpful to have local knowledge to fix 
+            problems on a resort’s map. Once OpenStreetMaps is updated, let me know 
+            and I’ll refresh the map here. If you find a problem that is beyond 
+            what you are willing to fix there (or is a problem with my 
+            model/website), let me know and I’ll do my best to resolve it. </p>
+
+            <p><a href="https://docs.google.com/forms/d/1I8XEy-CvO3qGFPvybvJfE9oG0BZj4JKHtk2Xm8Os9hU">Here</a> 
+            is a form you can fill out to let me know about an issue or when a map needs a refresh.</p>
+
+            <h3>X feature is missing!</h3>
+            <p>Reach out, I want to improve the site over 
+            time as I get feedback, and I need to know how the site can be better.</p>
+
+            <p>Use this <a href="https://docs.google.com/forms/d/1I8XEy-CvO3qGFPvybvJfE9oG0BZj4JKHtk2Xm8Os9hU">form</a>
+            to tell me about what you want to see added.</p>
+
+            <h3>Where did everything come from?</h3>
+            <p>The trail data is from OpenStreetMaps, 
+            the elevation data is from the USGS’s NED10 dataset, and the website and 
+            maps are my creation.</p>
+
+            <h3>Why did I make this?</h3>
+            <p>I’ve always wanted a way to compare trails that 
+            was less subjective, and this grew out of a small project I started to see 
+            if that was possible. So far I have hundreds of hours invested in coding, 
+            model development, and website design. This is an ongoing project that I 
+            work on because I’m passionate about skiing, and want to make it easier 
+            for people like myself to nerd out about statistics.</p>
+
+            <h3>Who am I?</h3>
+            <p>I’m an avid skier; I grew up skiing and look forward to 
+            every powder day. On a good day skiing, I’ll likely be found in some 
+            tight steep trees enjoying each turn. I also majored in data science, 
+            and used that combined background to put this website and statistical 
+            model together.</p>
+
+            <h3>How can you help?</h3>
+            <p>This project takes a fair bit of time to create and 
+            maintain, and hosting a website is far from free. If you have experience 
+            with editing OpenStreetMaps, it would be extremely helpful to help by 
+            maintaining your local areas. When new trails get added to a resort, 
+            someone needs to add them to OSM, and I likely won’t know that there is a 
+            new trail. Also, not every resort has all the trails added, and many are 
+            missing tags. For example, I’d love to have more resorts with proper tagging 
+            for moguls so I can add them to the model. </p>
+
+            <p>If this project has been of value to you, please consider donating at the 
+            link below to help support the time and resources that keep this website running.</p>
+
+            <form action="https://www.paypal.com/donate" method="post" target="_top">
+                <input type="hidden" name="business" value="44VPNA7R7CBJ2" />
+                <input type="hidden" name="no_recurring" value="0" />
+                <input type="hidden" name="item_name" value="Hosting Steep Seeker is not free - it takes time and money to keep the website running and to continue to add features." />
+                <input type="hidden" name="currency_code" value="USD" />
+                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+            </form>
+
+
         </div>
     </section>
 </section>

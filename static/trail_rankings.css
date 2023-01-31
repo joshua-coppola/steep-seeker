@@ -2,11 +2,15 @@ main {
     --center-width: 1500px;
 }
 
+#content {
+    grid-row: 1;
+}
+
 .ranking-sort {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     text-transform: uppercase;
 }
 
@@ -89,6 +93,9 @@ tr a.active {
 }
 
 @media screen and (max-width: 900px) {
+    h1 {
+        padding-top: 32px;
+    }
 
     .desktop {
         display: none;

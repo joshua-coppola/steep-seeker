@@ -6,7 +6,7 @@ body {
 
 nav {
     font-size: 1rem;
-    padding: 8px;
+    padding: 4px;
     box-shadow: 0 0 4px var(--color-shadow);
     border-bottom: 1px solid var(--color-border);
     display: flex;
@@ -138,5 +138,16 @@ p.copy {
 
     .button {
         padding-bottom: 8px;
+        line-height: .9rem;
+    }
+
+    .button-cta {
+        width: 100%;
+        max-width: 165px;
+    }
+
+    .button-cta2 {
+        width: 100%;
+        max-width: 165px;
     }
 }

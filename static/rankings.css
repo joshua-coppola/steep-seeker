@@ -2,6 +2,10 @@ main {
     --center-width: 900px;
 }
 
+#content {
+    grid-row: 1;
+}
+
 .ranking-sort {
     display: flex;
     flex-wrap: wrap;
@@ -81,6 +85,10 @@ main {
   }
 
 @media screen and (max-width: 600px) {
+    h1 {
+        padding-top: 32px;
+    }
+
     .rankings {
         grid-template-columns: max-content;
         display: block;
@@ -88,7 +96,7 @@ main {
     }
 
     main {
-        padding: 8px;
+        padding: 0px;
         margin-top: 0px;
     }
 

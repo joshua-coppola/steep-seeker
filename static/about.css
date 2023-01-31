@@ -15,15 +15,17 @@ main {
     grid-template-columns: 1fr minmax(auto, 600px) minmax(auto, 600px) 1fr;
     padding: 16px;
     padding-top: 24px;
-    gap: 4vw;
+    gap: 48px;
     margin-bottom: 0px !important;
     width: 100vw;
 }
+
 
 .blurb.blurb-dark {
     background-color: #e5f2ff;
     width: 100vw;
 }
+
 .dark .blurb.blurb-dark {
     background-color: #001a29;
 }
@@ -56,12 +58,35 @@ main {
 
 .blurb h2 {
     margin-bottom: 16px;
+    font-weight: bold;
+}
+
+.qa {
+    grid-template-columns: 1fr minmax(auto, 1248px) 1fr;
+}
+
+.qa p {
+    margin-bottom: 2rem;
+}
+
+.qa h3 {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.qa form {
+    text-align: center;
 }
 
 @media screen and (max-width: 800px) {
     .blurb {
         display: flex;
         grid-template-columns: 1fr minmax(auto, 600px) 1fr;
+        gap: 0px;
+    }
+
+    .blurb.top-blurb {
+        padding-top: 0px;
     }
 
     .blurb table {
