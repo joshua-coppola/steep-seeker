@@ -27,7 +27,7 @@ nav {
 .nav-list {
     display: flex;
 }
-.nav-list li:not(:last-child) {
+.nav-list li {
     margin-right: 16px;
 }
 .nav-list a {
@@ -127,8 +127,9 @@ p.copy {
 
 @media screen and (max-width: 680px) {
     .nav-list {
+        padding-top: 8px;
         float: none;
-        display: grid;
+        display: block;
         text-align: left;
     }
 
@@ -143,11 +144,9 @@ p.copy {
 
     .button-cta {
         width: 100%;
-        max-width: 163.5px;
     }
 
     .button-cta2 {
         width: 100%;
-        max-width: 163.5px;
     }
 }
