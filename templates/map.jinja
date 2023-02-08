@@ -69,12 +69,13 @@
     <div id="zoom">
         <img src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
     </div>
-
+    {#
     <div class="zoom-buttons">
         <button class="zoom-button" id="zoom-out">-</button>
         <button class="zoom-button" id="zoom-in">+</button>
         <button class="zoom-button" id="zoom-reset">Reset</button>
     </div>
+    #}
 
 
     {#
@@ -85,5 +86,6 @@
 {% endblock content %}
 
 {% block postbody %}
+<script src="https://unpkg.com/panzoom@7.0.2/dist/panzoom.min.js"></script>
 <script src="/map.js"></script>
 {% endblock postbody %}
