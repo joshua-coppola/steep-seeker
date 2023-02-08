@@ -186,4 +186,8 @@ main > * {
     .zoom-buttons {
         top: 138px
     }
+
+    #map {
+        padding-top: 188px
+    }
 }
