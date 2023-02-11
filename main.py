@@ -3,10 +3,11 @@ from rich.progress import track
 
 import db
 import maps
+import _flask_api
 
 
 def add_resort(name: str) -> None:
-    state = db.add_resort(name)
+    state = db._add_resort(name)
     if state != None:
         print('Creating Map')
         maps.create_map(name, state)
@@ -123,6 +124,7 @@ def repl() -> None:
         print('9) Rotate a map clockwise')
         print('10) Delete a trail or lift')
         print('11) Delete a resort')
+        print('12) Start Website')
         print('Other value: exit program\n')
 
         operation = input('Enter value: ')
@@ -132,7 +134,7 @@ def repl() -> None:
             valid = False
             continue
 
-        if operation > 11 or operation < 1:
+        if operation > 12 or operation < 1:
             valid = False
             continue
 
@@ -189,6 +191,9 @@ def repl() -> None:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             delete_resort(name, state)
+
+        if operation == 12:
+            _flask_api.app.run(host='0.0.0.0', port=5000, debug=False)
 
         
 repl()

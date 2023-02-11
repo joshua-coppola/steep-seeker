@@ -273,6 +273,10 @@ def refresh_resort(name: str, state: str) -> str:
     # move file once processed into the right folder for the state
     if not os.path.exists(f'data/osm/{state}'):
         os.makedirs(f'data/osm/{state}')
+
+    # delete old file if there is one
+    if os.path.exists(f'data/osm/{state}/{name}.osm'):
+        os.remove(f'data/osm/{state}/{name}.osm')
     os.rename(f'data/osm/{name}.osm', f'data/osm/{state}/{name}.osm')
 
     db.commit()
