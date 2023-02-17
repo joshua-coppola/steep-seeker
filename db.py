@@ -622,3 +622,18 @@ def _get_lift_points(lift_id: int, column: str) -> list(dict()):
 
     return_list = [x[0] for x in return_list]
     return return_list
+
+def _get_mountains():
+    conn = tuple_cursor()
+
+    query = 'SELECT name FROM Mountains'
+    names = conn.execute(query).fetchall()
+
+    names = [x[0] for x in names]
+
+    query = 'SELECT state FROM Mountains'
+    states = conn.execute(query).fetchall()
+
+    states = [y[0] for y in states]
+
+    return({"state": states, "name": names})

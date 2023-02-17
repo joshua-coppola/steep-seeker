@@ -2,6 +2,7 @@ import sys
 import sqlite3
 from flask import Flask, render_template, json, redirect, url_for, request, flash, session, request
 from flask_wtf import FlaskForm
+from flask_sitemapper import Sitemapper
 import os
 
 from data.secret import secret
@@ -17,9 +18,12 @@ class navigationLink:
         self.page = page
         self.to = to
 
+sitemap = Sitemapper()
 
 app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = secret
+
+sitemap.init_app(app)
 
 nav_links = []
 nav_links.append(navigationLink('About', 'about', '/about'))
@@ -29,15 +33,19 @@ nav_links.append(navigationLink('Mountain Rankings', 'rankings',
 nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rankings?region=usa'))
 
 
+@sitemap.include()
 @app.route('/')
 def index():
     return render_template('index.jinja', nav_links=nav_links, active_page='index')
 
 
+@sitemap.include()
 @app.route('/about')
 def about():
     return render_template('about.jinja', nav_links=nav_links, active_page='about')
 
+
+@sitemap.include()
 @app.route('/search')
 def search():
     # parsing query string for database search
@@ -141,7 +149,8 @@ def search():
     return render_template('search.jinja', nav_links=nav_links, active_page='search', mountains=mountains, pages=pages)
 
 
-@ app.route('/rankings')
+@sitemap.include()
+@app.route('/rankings')
 def rankings():
     sort = request.args.get('sort')
     if not sort:
@@ -175,7 +184,9 @@ def rankings():
     conn.close()
     return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains, sort=sort, order=order, region=region)
 
-@ app.route('/trail-rankings')
+
+@sitemap.include()
+@app.route('/trail-rankings')
 def trail_rankings():
     search_string = ''
     region = request.args.get('region')
@@ -242,8 +253,8 @@ def trail_rankings():
     pages['first'] = f'/trail-rankings?region={region}&limit={limit}'
     return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages, sort_by=sort_by)
 
-
-@ app.route('/map/<string:state>/<string:name>')
+@sitemap.include(url_variables=database._get_mountains())
+@app.route('/map/<string:state>/<string:name>')
 def map(state, name):
     mountain = Mountain(name, state)
 
@@ -254,7 +265,7 @@ def map(state, name):
     return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain, trails=trails, lifts=lifts)
 
 
-@ app.route('/data/<string:state>/<string:name>/objects', methods=['GET'])
+@app.route('/data/<string:state>/<string:name>/objects', methods=['GET'])
 def mountaindata(state, name):
     mountain = Mountain(name, state)
 
@@ -265,3 +276,8 @@ def mountaindata(state, name):
 
     jsonstring = json.dumps(jsonContents)
     return jsonstring
+
+
+@app.route('/sitemap.xml')
+def site_map():
+    return sitemap.generate()
