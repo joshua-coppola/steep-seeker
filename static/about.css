@@ -13,7 +13,7 @@ main {
     display: grid;
     flex-wrap: wrap;
     grid-template-columns: 1fr minmax(auto, 600px) minmax(auto, 600px) 1fr;
-    padding: 16px;
+    padding: 32px;
     padding-top: 24px;
     gap: 48px;
     margin-bottom: 0px !important;

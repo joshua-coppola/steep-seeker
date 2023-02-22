@@ -21,7 +21,7 @@
     max-width: 65ch;
 }
 
-.hero-links > *:not(:last-child) {
+.hero-links > * {
     margin-right: 32px;
 }
 
@@ -35,4 +35,11 @@ img {
 
 .hero-links .button {
     padding-bottom: 16px;
+}
+
+@media screen and (max-width: 680px) {
+    .hero-links > * {
+        margin-right: 0px;
+        text-align: center;
+    }
 }

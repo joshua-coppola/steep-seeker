@@ -126,15 +126,19 @@ p.copy {
 }
 
 @media screen and (max-width: 680px) {
+    #home-link {
+        margin-right: 16px;
+    }
+
+    .nav-div {
+        width: 100%;
+    }
+
     .nav-list {
         padding-top: 8px;
         float: none;
         display: block;
-        text-align: left;
-    }
-
-    #home-link {
-        margin-right: 16px;
+        text-align: center;
     }
 
     .button {
