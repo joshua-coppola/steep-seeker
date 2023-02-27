@@ -52,7 +52,7 @@ def search():
     search_string = ''
     q = request.args.get('q')
     if q and q != '%%':
-        q = f'%{q}%'
+        q = f'%{q.strip()}%'
         search_string = f'{search_string}q={q.replace("%", "")}&'
     else:
         q = '%%'
@@ -78,6 +78,10 @@ def search():
     if not location or location == '%%':
         location = '%%'
     else:
+        try:
+            location = _misc.convert_state_name_to_abbrev(location.title().strip())
+        except:
+            pass
         search_string = f'{search_string}location={location}&'
     trailsmin = request.args.get('trailsmin')
     if not trailsmin:

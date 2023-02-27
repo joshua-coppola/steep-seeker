@@ -30,7 +30,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 ### Overall
 
-- [ ] Add mobile support
+- [x] Add mobile support
 - [ ] Add footer
 - [ ] Improve comments on code
 

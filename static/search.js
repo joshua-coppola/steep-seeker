@@ -74,17 +74,10 @@
               .concat(this.id, '">')
               .concat(this.label, '</label>')
           )),
-            (this.toggleEl = t(
-              '<input class="form-group-checkbox" type="checkbox" id="'.concat(
-                this.id,
-                '" checked="true"/>'
-              )
-            )),
             (this.fieldSetEl = t('<fieldset></fieldset>'))
           var s = document.createElement('fieldset')
           s.classList.add('form-group', 'big'),
-            s.appendChild(this.labelEl),
-            s.appendChild(this.toggleEl)
+            s.appendChild(this.labelEl)
           var r = document.createElement('fieldset')
           r.appendChild(s),
             r.appendChild(this.fieldSetEl),
@@ -92,29 +85,17 @@
             this.subfields.forEach(function (t) {
               t.attach(i.fieldSetEl)
             }),
-            this.toggleEl.addEventListener('change', function () {
-              i.toggleEl.checked
-                ? (i.fieldSetEl.removeAttribute('disabled'),
-                  i.labelEl.removeAttribute('disabled'))
-                : (i.fieldSetEl.setAttribute('disabled', 'true'),
-                  i.labelEl.setAttribute('disabled', 'true'))
-            }),
-            this.startEnabled || this.toggleEl.click()
+            this.startEnabled
         }),
         (e.prototype.evaluate = function () {
-          if (this.toggleEl) {
-            if (this.toggleEl.checked) {
-              var t = {}
-              return (
-                this.subfields.forEach(function (e) {
-                  var i = e.evaluate()
-                  null != i && (t[e.id] = i)
-                }),
-                t
-              )
-            }
-          } else
-            console.warn('FormToggleGroup '.concat(this.id, ' not attached'))
+          var t = {}
+          return (
+            this.subfields.forEach(function (e) {
+              var i = e.evaluate()
+              null != i && (t[e.id] = i)
+            }),
+            t
+          )
         }),
         e
       )
@@ -155,7 +136,7 @@
         }),
         (e.prototype.attach = function (e) {
           ;(this.sliderLeft = t(
-            '<input type="range" value="25" name="'
+            '<input type="range" value="0" name="'
               .concat(this.id, '" id="')
               .concat(
                 this.id,
@@ -669,9 +650,9 @@
         g.order &&
         ((u = g.sort), (a = g.order), (d.value = ''.concat(u, '-').concat(a)))
     var m = {
-        difficulty: [0, 2],
+        difficulty: [0, 5],
         location: { state: '' },
-        trailCount: [25, 1 / 0]
+        trailCount: [0, 1 / 0]
       },
       p = !1,
       v = !1,
