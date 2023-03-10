@@ -479,3 +479,61 @@ def find_direction(trail_points: list(tuple())) -> str:
         return('e')
     if avg_heading < 0:
         return('w')
+
+
+def get_weather(lat: float, lon: float):
+    # Uses Open Metro's Historical Weather API to get typical conditions
+    url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date=2020-12-11&end_date=2023-03-06&models=best_match&daily=weathercode,temperature_2m_max,temperature_2m_min,rain_sum,snowfall_sum&timezone=America%2FNew_York&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch"
+
+    response = get(url)
+    if response.status_code == 200:
+        data = json.loads(response.content)['daily']
+        shaped_data = []
+        for i, value in enumerate(data['time']):
+            row = {}
+            for key in data.keys():
+                row[key] = data[key][i]
+            shaped_data.append(row)
+        return(process_weather(shaped_data))
+    else:
+        print('Weather API call failed with code:')
+        print(response.status_code)
+        print(response.content)
+        return None
+
+def process_weather(weather_list: list):
+    winter_list = []
+    for row in weather_list:
+        date = row['time'].split('-')
+        # only include dates from Dec - March
+        if int(date[1]) in [1,2,3,12]:
+            invalid = False
+            for value in row.keys():
+                if row[value] == None:
+                    invalid = True
+            if invalid == True:
+                continue
+            winter_list.append(row)
+
+    freeze_thaw = 0
+    for row in winter_list:
+        if float(row['temperature_2m_max']) > 32 and float(row['temperature_2m_min'] < 32):
+            freeze_thaw += 1
+
+    print(freeze_thaw)
+    
+#print('Okemo')
+#get_weather(44.42,-72.73)
+#130
+#print('Stowe')
+#get_weather(44.51,-72.77)
+#120
+#print('Jackson Hole')
+#get_weather(43.60,-110.806)
+#84
+#print('Snowshoe')
+#get_weather(38.42,-80.02)
+#183
+#print('Jay Peak')
+#get_weather(44.93,-72.50)
+#106
