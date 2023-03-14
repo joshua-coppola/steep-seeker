@@ -483,7 +483,10 @@ def find_direction(trail_points: list(tuple())) -> str:
 
 def get_weather(lat: float, lon: float):
     # Uses Open Metro's Historical Weather API to get typical conditions
-    url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date=2020-12-11&end_date=2023-03-06&models=best_match&daily=weathercode,temperature_2m_max,temperature_2m_min,rain_sum,snowfall_sum&timezone=America%2FNew_York&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch"
+    # Uses 5 seasons worth of data
+    start_date = '2017-11-30'
+    end_date = '2022-04-01'
+    url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&models=best_match&daily=weathercode,temperature_2m_max,temperature_2m_min,rain_sum,snowfall_sum&timezone=America%2FNew_York&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch"
 
     response = get(url)
     if response.status_code == 200:
@@ -501,6 +504,7 @@ def get_weather(lat: float, lon: float):
         print(response.content)
         return None
 
+
 def process_weather(weather_list: list):
     winter_list = []
     for row in weather_list:
@@ -517,23 +521,11 @@ def process_weather(weather_list: list):
 
     freeze_thaw = 0
     for row in winter_list:
-        if float(row['temperature_2m_max']) > 32 and float(row['temperature_2m_min'] < 32):
+        if float(row['temperature_2m_max']) > 34 and float(row['temperature_2m_min'] < 32):
             freeze_thaw += 1
 
-    print(freeze_thaw)
+    rain_total = sum([x['rain_sum'] for x in winter_list])
+    snow_total = sum([x['snowfall_sum'] for x in winter_list])
+
+    return {'freeze_thaw': freeze_thaw / 5, 'rain': rain_total / 5, 'snow': snow_total / 5}
     
-#print('Okemo')
-#get_weather(44.42,-72.73)
-#130
-#print('Stowe')
-#get_weather(44.51,-72.77)
-#120
-#print('Jackson Hole')
-#get_weather(43.60,-110.806)
-#84
-#print('Snowshoe')
-#get_weather(38.42,-80.02)
-#183
-#print('Jay Peak')
-#get_weather(44.93,-72.50)
-#106
