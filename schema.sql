@@ -12,7 +12,10 @@ CREATE TABLE "Mountains"
     "lift_count" INTEGER NOT NULL,
     "vertical" INTEGER,
     "difficulty" REAL,
-    "beginner_friendliness" REAL
+    "beginner_friendliness" REAL,
+    "icy_days" REAL,
+    "snow" REAL,
+    "rain" REAL,
 );
 
 

@@ -9,7 +9,7 @@ from os.path import exists
 from rich.progress import track
 
 
-def find_state(filename: str) -> str:
+def get_center_coordinates(filename: str):
     # Check if file exists
     print(f'\n{filename}\n')
     if not exists(f'data/osm/{filename}'):
@@ -37,6 +37,12 @@ def find_state(filename: str) -> str:
 
     lat = (maxlat + minlat) / 2
     lon = (maxlon + minlon) / 2
+
+    return(lat, lon)
+
+
+def find_state(filename: str) -> str:
+    lat, lon = get_center_coordinates(filename)
 
     # Uses Open Street Maps Nominatim API to determine which state the resort is in
     url = f'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={lat}&lon={lon}'
@@ -527,5 +533,48 @@ def process_weather(weather_list: list):
     rain_total = sum([x['rain_sum'] for x in winter_list])
     snow_total = sum([x['snowfall_sum'] for x in winter_list])
 
-    return {'freeze_thaw': freeze_thaw / 5, 'rain': rain_total / 5, 'snow': snow_total / 5}
-    
+    return {'icy_days': freeze_thaw / 5, 'rain': rain_total / 5, 'snow': snow_total / 5}
+
+
+def get_weather_modifier(weather_dict: dict):
+    '''
+    A resort can have a modifier of between 0-6 degrees based off how it's weather compares 
+    to other resorts. Each weather value contributes up to 2 degrees of difficulty.
+    A resort that is 2 SD harder than the mean for a given metric gets the full two points.
+
+    The statistical values for each metric are as follows (Updated 2023-03-14):
+    Metric       | Mean              | Standard Deviation
+    avg_icy_days | 41.65448028673834 | 18.562479199958606     
+    avg_snow     | 66.0301792114695  | 44.399707758856174     
+    avg_rain     | 4.908637992831541 | 4.573835469799186     
+
+    As such, the range of non-outlier are:
+    Metric       | Acceptable Values
+    avg_icy_days | 4.53 - 78.77
+    avg_snow     | 0 - 154.83     
+    avg_rain     | 0 - 14.05
+    '''
+    modifier = 0
+
+    if weather_dict['icy_days'] > 78.77:
+        weather_dict['icy_days'] = 78.77
+
+    if weather_dict['icy_days'] < 4.53:
+        weather_dict['icy_days'] = 4.53
+
+    if weather_dict['rain'] > 14.05:
+        weather_dict['rain'] = 14.05
+
+    if weather_dict['snow'] > 154.83:
+        weather_dict['snow'] = 154.83
+
+    # Icy days - note the adjustment for both ends of the range being valid outliers
+    modifier += ((weather_dict['icy_days'] - 4.53) / (78.77 - 4.53)) * 2
+
+    # Rain
+    modifier += (weather_dict['rain'] / 14.05) * 2
+
+    # Snow - note that since higher = better conditions, the percentage needs to be inverted
+    modifier += (1 - (weather_dict['snow'] / 154.83)) * 2
+
+    return modifier

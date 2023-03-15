@@ -149,7 +149,7 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()))
             f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
 
 
-def calc_mountain_stats(cur, mountain_id: int) -> None:
+def calc_mountain_stats(cur, mountain_id: int, mountain_name: str) -> None:
     query = 'SELECT elevation FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
     elevations = cur.execute(query, (mountain_id,)).fetchall()
 
@@ -161,6 +161,26 @@ def calc_mountain_stats(cur, mountain_id: int) -> None:
     query = 'UPDATE Mountains SET vertical = ?, difficulty = ?, beginner_friendliness = ? WHERE mountain_id = ?'
     params = (int(_misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), mountain_id)
     cur.execute(query, params)
+
+
+def add_weather_stats(cur, mountain_id: int, mountain_name: str):
+    # weather stats, all of them represent season totals
+    # the snow value is roughly equal to how much rain it would have been
+    filename = f'{mountain_name}.osm'
+
+    lat, lon = _misc.get_center_coordinates(filename)
+    weather_dict = _misc.get_weather(lat, lon)
+
+    weather_dict['icy_days'] = float(round(Decimal(weather_dict['icy_days']), 2))
+    weather_dict['snow'] = float(round(Decimal(weather_dict['snow']), 2))
+    weather_dict['rain'] = float(round(Decimal(weather_dict['rain']), 2))
+
+    query = 'UPDATE Mountains SET avg_icy_days = ?, avg_snow = ?, avg_rain = ? WHERE mountain_id = ?'
+    params = (weather_dict['icy_days'], weather_dict['snow'], weather_dict['rain'], mountain_id)
+
+    cur.execute(query, params)
+
+    return weather_dict
 
 
 def _add_resort(name: str) -> str:
@@ -201,9 +221,11 @@ def _add_resort(name: str) -> str:
 
     mountain_id = get_mountain_id(name, state, cur)
 
+    weather_modifier = add_weather_stats(cur, mountain_id, name)
+
     add_trails(cur, mountain_id, trails, lifts)
 
-    calc_mountain_stats(cur, mountain_id)
+    calc_mountain_stats(cur, mountain_id, name)
 
     # set direction
     trail_ids = cur.execute(
@@ -266,9 +288,12 @@ def refresh_resort(name: str, state: str) -> str:
     params = (trail_count, lift_count, mountain_id)
     cur.execute(query, params)
 
+    weather_modifier = add_weather_stats(cur, mountain_id, name)
+    print(weather_modifier)
+
     add_trails(cur, mountain_id, trails, lifts)
 
-    calc_mountain_stats(cur, mountain_id)
+    calc_mountain_stats(cur, mountain_id, name)
 
     # move file once processed into the right folder for the state
     if not os.path.exists(f'data/osm/{state}'):

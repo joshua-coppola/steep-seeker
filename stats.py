@@ -135,7 +135,7 @@ for value in ['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme',
     query = f'SELECT AVG({steepest_pitch} * {steepest_pitch}) - (AVG({steepest_pitch}) * AVG({steepest_pitch})) FROM Trails WHERE official_rating = ?'
     params = (value,)
 
-    official_rating_sd[value] = cur.execute(query, params).fetchall()[0][0]
+    official_rating_sd[value] = sqrt(cur.execute(query, params).fetchall()[0][0])
 
 print_dict(official_rating_sd, ['Official Rating', 'Standard Deviation'])
 
@@ -162,5 +162,18 @@ for region in ['northeast', 'southeast', 'midwest', 'west']:
 
     compute_accuracy(trails)
 
-    
+weather_mean = {}
+for column in ['avg_icy_days', 'avg_snow', 'avg_rain']:
+    query = f'SELECT AVG({column}) FROM Mountains WHERE {column} > 0'
 
+    weather_mean[column] = cur.execute(query).fetchall()[0][0]
+
+print_dict(weather_mean, ['Metric', 'Mean'])    
+
+weather_sd = {}
+for column in ['avg_icy_days', 'avg_snow', 'avg_rain']:
+    query = f'SELECT AVG({column} * {column}) - (AVG({column}) * AVG({column})) FROM Mountains'
+
+    weather_sd[column] = sqrt(cur.execute(query).fetchall()[0][0])
+
+print_dict(weather_sd, ['Metric', 'Standard Deviation'])
