@@ -30,7 +30,7 @@ def reset_db() -> None:
         db.executescript(f.read())
 
 
-def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict())) -> None:
+def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()), weather_modifier: float) -> None:
     for trail in trails:
         try:
             cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
@@ -131,7 +131,16 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()))
         vert = int(_misc.get_vert(nodes))
         length = int(_misc.trail_length(nodes))
 
-        cur.execute(f'UPDATE Trails SET steepest_30m = {pitch_30}, steepest_50m = {pitch_50}, \
+        difficulty = pitch_30 + weather_modifier
+
+        gladed = cur.execute(
+            'SELECT gladed FROM Trails WHERE trail_id = ?', (trail_id)).fetchall()[0][0]
+        if gladed == 'True':
+            difficulty += 5.5
+
+        difficulty = round(difficulty, 1)
+
+        cur.execute(f'UPDATE Trails SET difficulty = {difficulty}, steepest_30m = {pitch_30}, steepest_50m = {pitch_50}, \
             steepest_100m = {pitch_100}, steepest_200m = {pitch_200}, \
             steepest_500m = {pitch_500}, steepest_1000m = {pitch_1000}, \
             vertical_drop = {vert}, length = {length} WHERE trail_id = ?', (trail_id))
@@ -154,9 +163,9 @@ def calc_mountain_stats(cur, mountain_id: int, mountain_name: str) -> None:
     elevations = cur.execute(query, (mountain_id,)).fetchall()
 
     # only use trails longer than 100m for difficulty calculations
-    query = 'SELECT steepest_30m FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY steepest_30m DESC'
-    trail_slopes = cur.execute(query, (mountain_id,)).fetchall()
-    difficulty, beginner_friendliness = _misc.mountain_rating(trail_slopes)
+    query = 'SELECT difficulty FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY difficulty DESC'
+    trail_difficulty = cur.execute(query, (mountain_id,)).fetchall()
+    difficulty, beginner_friendliness = _misc.mountain_rating(trail_difficulty)
 
     query = 'UPDATE Mountains SET vertical = ?, difficulty = ?, beginner_friendliness = ? WHERE mountain_id = ?'
     params = (int(_misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), mountain_id)
@@ -180,7 +189,7 @@ def add_weather_stats(cur, mountain_id: int, mountain_name: str):
 
     cur.execute(query, params)
 
-    return weather_dict
+    return _misc.get_weather_modifier(weather_dict)
 
 
 def _add_resort(name: str) -> str:
@@ -223,7 +232,7 @@ def _add_resort(name: str) -> str:
 
     weather_modifier = add_weather_stats(cur, mountain_id, name)
 
-    add_trails(cur, mountain_id, trails, lifts)
+    add_trails(cur, mountain_id, trails, lifts, weather_modifier)
 
     calc_mountain_stats(cur, mountain_id, name)
 
@@ -289,9 +298,8 @@ def refresh_resort(name: str, state: str) -> str:
     cur.execute(query, params)
 
     weather_modifier = add_weather_stats(cur, mountain_id, name)
-    print(weather_modifier)
 
-    add_trails(cur, mountain_id, trails, lifts)
+    add_trails(cur, mountain_id, trails, lifts, weather_modifier)
 
     calc_mountain_stats(cur, mountain_id, name)
 
@@ -372,9 +380,9 @@ def delete_trail(mountain_id: int, trail_id: int) -> None:
         f'SELECT elevation FROM TrailPoints NATURAL JOIN \
         (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})').fetchall()
 
-    trail_slopes = cur.execute(
-        f'SELECT steepest_30m FROM Trails WHERE mountain_id = {mountain_id} ORDER BY steepest_30m DESC').fetchall()
-    difficulty, beginner_friendliness = _misc.mountain_rating(trail_slopes)
+    trail_difficulty = cur.execute(
+        f'SELECT difficulty FROM Trails WHERE mountain_id = {mountain_id} ORDER BY difficulty DESC').fetchall()
+    difficulty, beginner_friendliness = _misc.mountain_rating(trail_difficulty)
     trail_count = cur.execute(
         f'SELECT trail_count FROM Mountains WHERE mountain_id = {mountain_id}').fetchall()[0][0]
     cur.execute(

@@ -57,21 +57,21 @@ Search
             <h2><a href="/map/{{mountain.state}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>
             <div>
                 {% if mountain.difficulty > 0 %}
-                {% if mountain.beginner_friendliness > 14 %}
+                {% if mountain.beginner_friendliness > 12 %}
                 <span class="icon difficulty-green"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 16 %}
-                {% if mountain.beginner_friendliness > 6 %}
+                {% if mountain.difficulty >= 18 %}
+                {% if mountain.beginner_friendliness > 4 %}
                 <span class="icon difficulty-blue"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 24 %}
-                {% if mountain.beginner_friendliness > -2 %}
+                {% if mountain.difficulty >= 26 %}
+                {% if mountain.beginner_friendliness > -4 %}
                 <span class="icon difficulty-black"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 32 %}
+                {% if mountain.difficulty >= 34 %}
                 {% if mountain.beginner_friendliness > -15 %}
                 <span class="icon difficulty-red"></span>
                 {% endif %}

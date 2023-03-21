@@ -29,6 +29,7 @@ CREATE TABLE "Trails"
     "area" BOOLEAN NOT NULL,
     "gladed" BOOLEAN NOT NULL,
     "official_rating" REAL,
+    "difficulty" REAL,
     "steepest_30m" REAL,
     "steepest_50m" REAL,
     "steepest_100m" REAL,

@@ -196,7 +196,7 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
             debug_x = [j * lat_mirror for j in debug_x]
             debug_y = [k * lon_mirror for k in debug_y]
 
-        color = _misc.trail_color(trail['steepest_30m'], trail['gladed'])
+        color = _misc.trail_color(trail['difficulty'])
 
         # place lines
         if trail['area'] == 'True':

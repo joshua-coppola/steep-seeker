@@ -63,7 +63,7 @@ class Trail:
         self.official_rating = trail_dict['official_rating']
         self.vertical = int(float(trail_dict['vertical_drop']) * 100 / (2.54 * 12))
         self.length = int(float(trail_dict['length']) * 100 / (2.54 * 12))
-        self.difficulty = trail_dict['steepest_30m'] + (5.5 * self.gladed)
+        self.difficulty = trail_dict['difficulty']
         self.steepest_30m = trail_dict['steepest_30m']
         self.steepest_50m = trail_dict['steepest_50m']
         self.steepest_100m = trail_dict['steepest_100m']

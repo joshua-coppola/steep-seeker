@@ -19,13 +19,13 @@ def trail_rating(pitch: float, gladed: str) -> 'str':
     if gladed == 'True':
         pitch += 5.5
     # 0-16 degrees: green
-    if pitch < 16:
+    if pitch < 18:
         return 'easy'
     # 16-23 degrees: blue
-    if pitch < 24:
+    if pitch < 26:
         return 'intermediate'
     # 23-32 degrees: black
-    if pitch < 32:
+    if pitch < 34:
         return 'advanced'
     # 32-45 degrees: red
     elif pitch < 45:

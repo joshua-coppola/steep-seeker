@@ -280,7 +280,7 @@ def get_steep_pitch(nodes: list(tuple()), length: float) -> float:
                 break
 
     if max_pitch == -90:
-        # find pitch of whole trail if the length desired is short anyway
+        # find difficulty of whole trail if the length desired is short anyway
         if length <= 30:
             elevation_change = nodes[-1][2] - nodes[0][2]
             if elevation_change != 0:
@@ -324,20 +324,18 @@ def mountain_rating(nodes: list()) -> tuple:
     return(difficulty, beginner_friendliness)
 
 
-def trail_color(pitch: float, gladed: str) -> str:
-    if gladed == 'True':
-        pitch += 5.5
+def trail_color(difficulty: float) -> str:
     # 0-16 degrees: green
-    if pitch < 16:
+    if difficulty < 18:
         return 'green'
     # 16-23 degrees: blue
-    if pitch < 24:
+    if difficulty < 26:
         return 'royalblue'
     # 23-32 degrees: black
-    if pitch < 32:
+    if difficulty < 34:
         return 'black'
     # 32-45 degrees: red
-    elif pitch < 45:
+    elif difficulty < 45:
         return 'red'
     # >45 degrees: yellow
     else:

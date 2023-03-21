@@ -565,11 +565,11 @@
       case 0:
         return 0
       case 1:
-        return 16
+        return 18
       case 2:
-        return 24
+        return 26
       case 3:
-        return 32
+        return 34
       case 4:
         return 45
       case 5:
@@ -579,11 +579,11 @@
   function c (t) {
     return t == 0
       ? 0
-      : t <= 16
+      : t <= 18
       ? 1
-      : t <= 24
+      : t <= 26
       ? 2
-      : t <= 32
+      : t <= 34
       ? 3
       : t <= 45
       ? 4
