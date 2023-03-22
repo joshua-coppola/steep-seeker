@@ -618,7 +618,7 @@ def _get_lift_dict(lift_id: int) -> dict:
 def _get_trails(mountain_id: int) -> list(dict()):
     conn = dict_cursor()
 
-    query = 'SELECT * FROM Trails WHERE mountain_id = ? ORDER BY steepest_30m DESC'
+    query = 'SELECT * FROM Trails WHERE mountain_id = ? ORDER BY difficulty DESC'
     return conn.execute(query, (mountain_id,)).fetchall()
 
 

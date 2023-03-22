@@ -137,6 +137,11 @@ Trail Rankings
                 <th>Trail Name</th>
                 <th>Resort</th>
                 <th>State</th>
+                {% if sort_by == "difficulty"%}
+                <th><a class="active">Difficulty</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=difficulty">Difficulty</a></th>
+                {% endif %}
                 {% if sort_by == "steepest_30m"%}
                 <th><a class="active">30m Pitch</a></th>
                 {% else %}
@@ -181,6 +186,22 @@ Trail Rankings
                 </td>
                 <td><a href="/map/{{trail.state}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
                 <td>{{trail.state}}</td>
+                <td>
+                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.difficulty < 26 %} <span class="icon difficulty-blue"></span>
+                            {% else %}
+                            {% if trail.difficulty < 34 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.difficulty < 45 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-yellow"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.difficulty}}
+                </td>
                 <td>
                     {% if trail.steepest_30m < 18 %} <span class="icon difficulty-green"></span>
                         {% else %}

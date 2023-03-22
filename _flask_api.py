@@ -206,9 +206,9 @@ def trail_rankings():
     search_string += f'limit={limit}&'
     sort_by = request.args.get('sort')
     if not sort_by:
-        sort_by = 'steepest_30m'
-    if not sort_by in ['steepest_30m', 'steepest_50m', 'steepest_100m', 'steepest_200m', 'steepest_500m', 'steepest_1000m']:
-        sort_by = 'steepest_30m'
+        sort_by = 'difficulty'
+    if not sort_by in ['difficulty','steepest_30m', 'steepest_50m', 'steepest_100m', 'steepest_200m', 'steepest_500m', 'steepest_1000m']:
+        sort_by = 'difficulty'
     search_string += f'sort={sort_by}&'
 
     if len(search_string) > 0 and search_string[-1] == '&':
