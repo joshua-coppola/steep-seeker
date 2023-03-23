@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="119.51088mm"
+   height="119.51088mm"
+   viewBox="0 0 119.51088 119.51088"
+   version="1.1"
+   id="svg5"
+   inkscape:export-filename="bitmap.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="M 49.500001,0 59.5,19.945653 49.500001,39.51087 39.5,19.945653 Z"
+       id="path332" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="m 70.5,0 10,19.945653 -10,19.565215 -10,-19.565215 z"
+       id="path332-8" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="m 70.5,80 10,19.94566 -10,19.56521 -10,-19.56521 z"
+       id="path332-6" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="M 49.500001,80 59.5,99.945658 49.500001,119.51087 39.5,99.945658 Z"
+       id="path332-2" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="M 119.51088,49.499997 99.565222,59.499993 80,49.499997 99.565222,39.5 Z"
+       id="path332-4" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="m 119.51088,70.49999 -19.945664,10 L 80,70.49999 99.565216,60.5 Z"
+       id="path332-4-3" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="M 39.51088,49.5 19.56522,59.499995 0,49.5 19.56522,39.5 Z"
+       id="path332-4-1" />
+    <path
+       style="fill:#000000;stroke-width:0.162513"
+       d="m 39.51088,70.49999 -19.94566,10 L 0,70.49999 19.56522,60.5 Z"
+       id="path332-4-14" />
+    <rect
+       style="fill:#0030d4;stroke-width:0.264583"
+       id="rect499"
+       width="40"
+       height="40"
+       x="40"
+       y="40" />
+  </g>
+</svg>

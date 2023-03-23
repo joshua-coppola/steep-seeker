@@ -24,6 +24,10 @@ nav {
     align-items: center;
 }
 
+#home-link img{
+    padding:6px;
+}
+
 .nav-list {
     display: flex;
 }
