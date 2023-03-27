@@ -10,6 +10,7 @@ def process_trails(ways: list(dict())) -> tuple():
             'name': None,
             'official_rating': None,
             'gladed': None,
+            'ungroomed': False,
             'area': None,
             'type': None,
             'valid': True,
@@ -57,11 +58,16 @@ def process_trails(ways: list(dict())) -> tuple():
                 else:
                     way['area'] = False
 
-            # exceptions
+            # groomed
             if 'piste grooming' in tag:
-                if 'skating' in tag['piste grooming']:
+                # filter out nordic trails
+                if 'skating' in tag['piste grooming'] or 'scooter' in tag['piste grooming']:
                     way['type'] = None
                     way['valid'] = False
+                if 'backcountry' in tag['piste grooming'] or 'mogul' in tag['piste grooming'] or 'no' in tag['piste grooming']:
+                    way['ungroomed'] = True
+
+            # exceptions
             if 'mtb scale imba' in tag:
                 way['type'] = None
                 way['valid'] = False
@@ -105,8 +111,10 @@ def process_trails(ways: list(dict())) -> tuple():
                     way['gladed'] = False
                 if way['area'] == None:
                     way['area'] = False
+                if way['gladed'] == True:
+                    way['ungroomed'] = False
                 trails.append({key: way[key] for key in [
-                    'id', 'name', 'official_rating', 'gladed', 'area', 'nodes']})
+                    'id', 'name', 'official_rating', 'gladed', 'ungroomed', 'area', 'nodes']})
             if way['type'] == 'lift':
                 lifts.append({key: way[key]
                              for key in ['id', 'name', 'nodes']})

@@ -60,6 +60,10 @@ class Trail:
             self.gladed = True
         else:
             self.gladed = False
+        if trail_dict['ungroomed'] == 'True':
+            self.ungroomed = True
+        else:
+            self.ungroomed = False
         self.official_rating = trail_dict['official_rating']
         self.vertical = int(float(trail_dict['vertical_drop']) * 100 / (2.54 * 12))
         self.length = int(float(trail_dict['length']) * 100 / (2.54 * 12))

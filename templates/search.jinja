@@ -51,7 +51,7 @@ Search
         {% for mountain in mountains %}
         <li class="result">
             <a href="/map/{{mountain.state}}/{{mountain.name}}">
-                <img class="thumbnail" src="thumbnails/{{mountain.state}}/{{mountain.name}}.svg" width=125px
+                <img alt="{{mountain.name}} - {{mountain.state}}" class="thumbnail" src="thumbnails/{{mountain.state}}/{{mountain.name}}.svg" width=125px
                     height=100px />
             </a>
             <h2><a href="/map/{{mountain.state}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>

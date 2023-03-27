@@ -33,14 +33,14 @@ def reset_db() -> None:
 def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()), weather_modifier: float) -> None:
     for trail in trails:
         try:
-            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
-                VALUES ({}, {}, "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['official_rating']))
+            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
+                VALUES ({}, {}, "{}", "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['ungroomed'], trail['official_rating']))
         except:
             print()
             print(trail['name'])
             print(trail['id'])
-            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, official_rating) \
-                VALUES ({}, {}, "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['official_rating']))
+            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
+                VALUES ({}, {}, "{}", "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['ungroomed'], trail['official_rating']))
         trail['nodes'] = _misc.fill_point_gaps(trail['nodes'])
         trail['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in trail['nodes']]
@@ -137,6 +137,11 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
             'SELECT gladed FROM Trails WHERE trail_id = ?', (trail_id)).fetchall()[0][0]
         if gladed == 'True':
             difficulty += 5.5
+
+        ungroomed = cur.execute(
+            'SELECT ungroomed FROM Trails WHERE trail_id = ?', (trail_id)).fetchall()[0][0]
+        if ungroomed == 'True':
+            difficulty += 4
 
         difficulty = round(difficulty, 1)
 

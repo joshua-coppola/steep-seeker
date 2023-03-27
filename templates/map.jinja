@@ -49,6 +49,9 @@
                                     {% if trail.gladed == True %}
                                     <span> </span><span class="icon gladed"></span>
                                     {% endif %}
+                                    {% if trail.ungroomed == True %}
+                                    <span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>
+                                    {% endif %}
                 </li>
                 {% endif %}
                 {% endfor %}
@@ -67,7 +70,7 @@
     </div>
 
     <div id="zoom">
-        <img src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
+        <img alt="{{mountain.name}} - {{mountain.state}}" src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
     </div>
     <div class="zoom-buttons">
         <button class="zoom-button" id="zoom_out">-</button>
