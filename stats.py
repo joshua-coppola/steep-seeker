@@ -3,6 +3,7 @@ from math import sqrt
 import matplotlib.pyplot as plt
 
 import db as database
+import _misc
 
 cur, db = database.db_connect()
 
@@ -15,20 +16,27 @@ def print_dict(dic: dict(), title: str) -> None:
     for key, value in dic.items():
         print(f"{key}{' ' * (max_len_col_1 - len(key))} | {value}")
 
-def trail_rating(pitch: float, gladed: str) -> 'str':
+print('Weather: 6pts')
+print('Gladed: 5.5pts')
+print('Ungroomed: 2.5pts')
+
+def trail_rating(pitch: float, gladed: str, ungroomed: str, weather_modifier: float) -> 'str':
+    pitch += (weather_modifier / 6) * 6.5
     if gladed == 'True':
         pitch += 5.5
+    if ungroomed == 'True':
+        pitch += 2.5
     # 0-16 degrees: green
     if pitch < 18:
         return 'easy'
     # 16-23 degrees: blue
-    if pitch < 26:
+    if pitch < 27:
         return 'intermediate'
     # 23-32 degrees: black
-    if pitch < 34:
+    if pitch < 36:
         return 'advanced'
     # 32-45 degrees: red
-    elif pitch < 45:
+    elif pitch < 47:
         return 'expert'
     # >45 degrees: yellow
     else:
@@ -48,10 +56,12 @@ def convert_to_numeric(rating: str) -> int:
     return 0
 
 def compute_accuracy(all_trails: list(tuple())) -> None:
+
     trail_accuracy = []
     for trail in all_trails:
-        rating = trail_rating(trail[0], trail[1])
-        trail_accuracy.append((trail[2], rating))
+        weather_modifier = get_weather_data(trail[4])
+        rating = trail_rating(trail[0], trail[1], trail[2], weather_modifier)
+        trail_accuracy.append((trail[3], rating))
 
     count_correct = 0
     count_within_1 = 0
@@ -81,10 +91,22 @@ def compute_accuracy(all_trails: list(tuple())) -> None:
     print(f'{round((count_within_2/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 2 ratings')
     print_dict(miss_dict, ['Official->Calc', 'Count'])
 
-steepest_pitch = 'steepest_30m'
-print(steepest_pitch)
+def get_weather_data(mountain_id):
+    conn = database.dict_cursor()
+    query = 'SELECT avg_icy_days, avg_snow, avg_rain FROM Mountains WHERE mountain_id = ?'
 
-query = f'SELECT {steepest_pitch}, gladed FROM Trails'
+    weather_dict = conn.execute(query, (mountain_id,)).fetchone()
+    formatted_dict = {}
+    formatted_dict['icy_days'] = weather_dict['avg_icy_days']
+    formatted_dict['rain'] = weather_dict['avg_rain']
+    formatted_dict['snow'] = weather_dict['avg_snow']
+
+    return _misc.get_weather_modifier(formatted_dict)
+
+steepest_pitch = 'steepest_30m'
+#print(steepest_pitch)
+
+query = f'SELECT {steepest_pitch}, gladed, ungroomed FROM Trails'
 
 all_trails = cur.execute(query).fetchall()
 x = [x[0] for x in all_trails]
@@ -112,7 +134,7 @@ for gladed in ['True', 'False']:
 
 print_dict(gladed_sd, ['Gladed', 'Standard Deviation'])
 
-query = f'SELECT {steepest_pitch}, gladed FROM Trails WHERE gladed = "True"'
+query = f'SELECT {steepest_pitch}, gladed, ungroomed FROM Trails WHERE gladed = "True"'
 
 all_gladed_trails = cur.execute(query).fetchall()
 x = [x[0] for x in all_gladed_trails]
@@ -120,6 +142,22 @@ x = [x[0] for x in all_gladed_trails]
 plt.hist(x)
 plt.title('Gladed Trails')
 #plt.show()
+
+for official_rating in ['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme', 'freeride']:
+    print(official_rating)
+    ungroomed_pitch = {}
+    for ungroomed in ['True', 'False']:
+        query = f'SELECT AVG({steepest_pitch}) FROM Trails WHERE ungroomed= ? AND official_rating = ?'
+        params = (ungroomed, official_rating)
+
+        ungroomed_pitch[ungroomed] = cur.execute(query, params).fetchall()[0][0]
+
+    try:
+        ungroomed_pitch['Difference'] = ungroomed_pitch['True'] - ungroomed_pitch['False']
+        print_dict(ungroomed_pitch, ['Ungroomed', 'Average Pitch'])
+    except:
+        continue
+    
 
 official_rating_pitch = {}
 for value in ['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme', 'freeride']:
@@ -150,14 +188,14 @@ for value in ['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme',
     plt.title(f'{value} Trails')
     #plt.show()
 
-query = f'SELECT {steepest_pitch}, gladed, official_rating FROM Trails WHERE {steepest_pitch} > 0'
+query = f'SELECT {steepest_pitch}, gladed, ungroomed, official_rating, mountain_id FROM Trails WHERE {steepest_pitch} > 0'
 all_trails = cur.execute(query).fetchall()
 
 compute_accuracy(all_trails)
 
 for region in ['northeast', 'southeast', 'midwest', 'west']:
     print(f'\n{region}\n')
-    query = f'SELECT {steepest_pitch}, gladed, official_rating FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ?'
+    query = f'SELECT {steepest_pitch}, gladed, ungroomed, official_rating, Trails.mountain_id FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id WHERE Mountains.region = ?'
     trails = cur.execute(query, (region,)).fetchall()
 
     compute_accuracy(trails)
