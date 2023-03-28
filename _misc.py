@@ -329,13 +329,13 @@ def trail_color(difficulty: float) -> str:
     if difficulty < 18:
         return 'green'
     # 16-23 degrees: blue
-    if difficulty < 26:
+    if difficulty < 27:
         return 'royalblue'
     # 23-32 degrees: black
-    if difficulty < 34:
+    if difficulty < 36:
         return 'black'
     # 32-45 degrees: red
-    elif difficulty < 45:
+    elif difficulty < 47:
         return 'red'
     # >45 degrees: yellow
     else:

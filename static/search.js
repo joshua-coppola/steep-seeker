@@ -567,11 +567,11 @@
       case 1:
         return 18
       case 2:
-        return 26
+        return 27
       case 3:
-        return 34
+        return 36
       case 4:
-        return 45
+        return 47
       case 5:
         return 100
     }
@@ -581,11 +581,11 @@
       ? 0
       : t <= 18
       ? 1
-      : t <= 26
+      : t <= 27
       ? 2
-      : t <= 34
+      : t <= 36
       ? 3
-      : t <= 45
+      : t <= 47
       ? 4
       : 5
   }

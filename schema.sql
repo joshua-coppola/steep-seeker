@@ -13,9 +13,9 @@ CREATE TABLE "Mountains"
     "vertical" INTEGER,
     "difficulty" REAL,
     "beginner_friendliness" REAL,
-    "icy_days" REAL,
-    "snow" REAL,
-    "rain" REAL,
+    "avg_icy_days" REAL,
+    "avg_snow" REAL,
+    "avg_rain" REAL,
 );
 
 

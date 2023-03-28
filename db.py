@@ -141,7 +141,7 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         ungroomed = cur.execute(
             'SELECT ungroomed FROM Trails WHERE trail_id = ?', (trail_id)).fetchall()[0][0]
         if ungroomed == 'True':
-            difficulty += 4
+            difficulty += 2.5
 
         difficulty = round(difficulty, 1)
 

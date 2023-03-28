@@ -2,7 +2,9 @@
 
 Steep Seeker is a website that presents a standardized rating system to allow skiers to compare trails or resorts. Ever wonder how your local resort's definition of a black diamond stacks up to others? The goal of this rating system is to provide hard truths to questions like these. Resorts rate their trails relative only to the other trails at the resort, and as such there is tremendous variance between mountains, and especially between regions.
 
-Steep Seeker is an evolution of [[https://github.com/joshua-coppola/Ski-Trail-Ratings]] and can be seen as a V2.
+Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Ratings] and can be seen as a V2.
+
+The project can be viewed live at [https://www.steepseeker.com].
 
 ## Installation
 
@@ -37,7 +39,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 ### Python
 
 - [x] Add mountain, trail, and lift classes
-- [ ] Add weather data to difficulty ratings
+- [x] Add weather data to difficulty ratings
 - [x] Add type hinting to functions
 
 ### Landing Page
@@ -73,7 +75,6 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 - Echo Mountain - Title & sources cut off
 - Kendall Mountain - Title cut off
 - Telluride - normal trails marked as areas
-- Nashoba Valley - All trails are areas
 - Appalachian Ski Mountain - title cut off
 
 ### Mountains with no trails/lifts (not a complete list)

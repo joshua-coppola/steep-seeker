@@ -35,9 +35,9 @@ Rankings
         be high to reflect that.
         {% endif %}
         {% if sort == "difficulty"%}
-        The Difficulty scale is in theory from 0-90, but in practice the hardest resorts land at around 50. A "0" resort
-        would be perfectly flat, while a "90" would be that every trail is a clif. The steepest terrain is primarily in
-        the west, and as such western resorts dominate the top of the Difficulty list.
+        The Difficulty scale is roughly from 0-60, where a mountain scoring highly presents extremely difficult terrain.
+        Technically, the max possible score is ~100, but that would require a mix of terrible weather and deadly cliffs. 
+        The steepest terrain is primarily in the west, and as such western resorts dominate the top of the Difficulty list.
         {% endif %}
     </p>
 
@@ -163,7 +163,7 @@ Rankings
         <span class="{{'ranking-bar' if mountain.difficulty <= 45 else 'black-text'}}"
             title="{{mountain.name}} Difficulty: {{mountain.difficulty}}"
             style="--bar-size: {{
-          (mountain.difficulty)/55 * 100}}%; --bar-color: {{ 'green' if mountain.difficulty < 18 else 'royalblue' if mountain.difficulty < 26 else 'black' if mountain.difficulty < 34 else 'red' if mountain.difficulty < 45 else 'gold' }};">{{mountain.difficulty}}</span>
+          (mountain.difficulty)/55 * 100}}%; --bar-color: {{ 'green' if mountain.difficulty < 18 else 'royalblue' if mountain.difficulty < 27 else 'black' if mountain.difficulty < 36 else 'red' if mountain.difficulty < 47 else 'gold' }};">{{mountain.difficulty}}</span>
         {% endif %}
         {% if sort == "beginner" %}
         <p>{{loop.index}}. <a href="/map/{{mountain.state}}/{{mountain.name}}"
@@ -171,7 +171,7 @@ Rankings
                 {{mountain.name}}, {{mountain.state}}</a></p>
         <span class="ranking-bar" title="{{mountain.name}} Beginner Friendliness: {{mountain.beginner_friendliness}}"
             style="--bar-size: {{
-          (mountain.beginner_friendliness)/30 * 100}}%; --bar-color: {{ 'green' if mountain.beginner_friendliness > 12 else 'royalblue' if mountain.beginner_friendliness > 4 else 'black' if mountain.beginner_friendliness > -4 else 'red' if mountain.beginner_friendliness > -15 else 'gold' }};">{{mountain.beginner_friendliness}}</span>
+          (mountain.beginner_friendliness)/30 * 100}}%; --bar-color: {{ 'green' if mountain.beginner_friendliness > 12 else 'royalblue' if mountain.beginner_friendliness > 3 else 'black' if mountain.beginner_friendliness > -6 else 'red' if mountain.beginner_friendliness > -17 else 'gold' }};">{{mountain.beginner_friendliness}}</span>
         {% endif %}
         {% endfor %}
     </div>
