@@ -4,7 +4,7 @@ Steep Seeker is a website that presents a standardized rating system to allow sk
 
 Steep Seeker is an evolution of [https://github.com/joshua-coppola/Ski-Trail-Ratings] and can be seen as a V2.
 
-The project can be viewed live at [https://www.steepseeker.com].
+The project can be viewed live at [https://steepseeker.com].
 
 ## Installation
 
