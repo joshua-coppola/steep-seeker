@@ -119,6 +119,8 @@ def process_trails(ways: list(dict())) -> tuple():
                 lifts.append({key: way[key]
                              for key in ['id', 'name', 'nodes']})
 
+    trails = merge_trails(trails)
+
     counts = Counter([trail['name'] for trail in trails])
     multiples = set()
     for trail in trails:
@@ -135,3 +137,69 @@ def process_trails(ways: list(dict())) -> tuple():
                     print(trail['id'])
 
     return (trails, lifts)
+
+
+def merge_trails(trails):
+    def find_indices(list_to_check, item_to_find):
+        indices = []
+        for idx, value in enumerate(list_to_check):
+            if value == item_to_find:
+                indices.append(idx)
+        return indices
+    previously_seen_names = []
+    previously_seen_dicts = []
+
+    for i, trail in enumerate(trails):
+        trail_merged = False
+        previous_merge = None
+        if trail['name'] in previously_seen_names:
+            indices = find_indices(previously_seen_names, trail['name'])
+            for j in indices:
+                if previously_seen_dicts[j] == None:
+                    continue
+                common_traits = 1
+                if previously_seen_dicts[j]['official_rating'] == trail['official_rating']:
+                    common_traits += 1
+                if previously_seen_dicts[j]['gladed'] == trail['gladed']:
+                    common_traits += 1
+                if previously_seen_dicts[j]['ungroomed'] == trail['ungroomed']:
+                    common_traits += 1
+                if previously_seen_dicts[j]['area'] == trail['area']:
+                    common_traits += 1
+                if trail['name'] == 'Moon Shadow':
+                    print(common_traits)
+                    print(trail['id'])
+                    print(previously_seen_dicts[j]['id'])
+                if common_traits == 5:
+                    # check if previously seen trail connects to top of current trail
+                    if previously_seen_dicts[j]['nodes'][-1]['lat'] == trail['nodes'][0]['lat'] and previously_seen_dicts[j]['nodes'][-1]['lon'] == trail['nodes'][0]['lon']:
+                        new_nodes = previously_seen_dicts[j]['nodes'] + trail['nodes']
+                        previously_seen_dicts[j]['nodes'] = new_nodes
+                        trails[i]['nodes'] = new_nodes
+                        if trail_merged:
+                            previously_seen_dicts[previous_merge] = None
+                            indices = find_indices(previously_seen_names, trail['name'])
+                        trail_merged = True
+                        previous_merge = j
+                        
+                    # check if currently seen trail connects to a previous trail
+                    if previously_seen_dicts[j]['nodes'][0]['lat'] == trail['nodes'][-1]['lat'] and previously_seen_dicts[j]['nodes'][0]['lon'] == trail['nodes'][-1]['lon']:
+                        new_nodes = trail['nodes'] + previously_seen_dicts[j]['nodes']
+                        previously_seen_dicts[j]['nodes'] = new_nodes
+                        trails[i]['nodes'] = new_nodes
+                        if trail_merged:
+                            previously_seen_dicts[previous_merge] = None
+                            indices = find_indices(previously_seen_names, trail['name'])
+                        trail_merged = True
+                        previous_merge = j
+
+        if not trail_merged:
+            previously_seen_names.append(trail['name'])
+            previously_seen_dicts.append(trail)
+
+    output_trails = []
+    for trail in previously_seen_dicts:
+        if trail != None:
+            output_trails.append(trail)
+
+    return output_trails

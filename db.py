@@ -197,6 +197,25 @@ def add_weather_stats(cur, mountain_id: int, mountain_name: str):
     return _misc.get_weather_modifier(weather_dict)
 
 
+def cull_connectors(mountain_id):
+    conn = tuple_cursor()
+
+    query = 'SELECT trail_id FROM Trails WHERE name = "" AND length < 100 AND mountain_id = ?'
+    trail_ids = conn.execute(query, (mountain_id,)).fetchall()
+
+    for trail_id in trail_ids:
+        delete_trail(mountain_id, trail_id[0])
+
+    query = 'SELECT trail_count from Mountains WHERE mountain_id = ?'
+    old_trail_count = conn.execute(query, (mountain_id,)).fetchone()[0]
+    
+    query = 'UPDATE Mountains SET trail_count = ? WHERE mountain_id = ?'
+    conn.execute(query, (old_trail_count - len(trail_ids), mountain_id))
+
+    conn.commit()
+    conn.close()
+
+
 def _add_resort(name: str) -> str:
     cur, db = db_connect()
 
@@ -267,6 +286,8 @@ def _add_resort(name: str) -> str:
     db.commit()
     db.close()
 
+    cull_connectors(mountain_id)
+
     return state
 
 
@@ -319,6 +340,8 @@ def refresh_resort(name: str, state: str) -> str:
 
     db.commit()
     db.close()
+
+    cull_connectors(mountain_id)
 
     return state
 
