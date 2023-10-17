@@ -167,13 +167,24 @@ def calc_mountain_stats(cur, mountain_id: int, mountain_name: str) -> None:
     query = 'SELECT elevation FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
     elevations = cur.execute(query, (mountain_id,)).fetchall()
 
+    query = 'SELECT lat FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
+    lat = cur.execute(query, (mountain_id,)).fetchall()
+    lat_fixed = [l[0] for l in lat]
+
+    query = 'SELECT lon FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
+    lon = cur.execute(query, (mountain_id,)).fetchall()
+    lon_fixed = [l[0] for l in lon]
+
+    center_lat = sum(lat_fixed)/len(lat_fixed)
+    center_lon = sum(lon_fixed)/len(lon_fixed)
+
     # only use trails longer than 100m for difficulty calculations
     query = 'SELECT difficulty FROM Trails WHERE mountain_id = ? AND length > 100 ORDER BY difficulty DESC'
     trail_difficulty = cur.execute(query, (mountain_id,)).fetchall()
     difficulty, beginner_friendliness = _misc.mountain_rating(trail_difficulty)
 
-    query = 'UPDATE Mountains SET vertical = ?, difficulty = ?, beginner_friendliness = ? WHERE mountain_id = ?'
-    params = (int(_misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), mountain_id)
+    query = 'UPDATE Mountains SET vertical = ?, difficulty = ?, beginner_friendliness = ?, lat = ?, lon = ? WHERE mountain_id = ?'
+    params = (int(_misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), round(center_lat, 8), round(center_lon, 8), mountain_id)
     cur.execute(query, params)
 
 
@@ -683,6 +694,7 @@ def _get_lift_points(lift_id: int, column: str) -> list(dict()):
 
     return_list = [x[0] for x in return_list]
     return return_list
+
 
 def _get_mountains():
     conn = tuple_cursor()

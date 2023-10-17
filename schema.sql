@@ -16,6 +16,8 @@ CREATE TABLE "Mountains"
     "avg_icy_days" REAL,
     "avg_snow" REAL,
     "avg_rain" REAL,
+    "lat" DECIMAL(9,6),
+    "lon" DECIMAL(9,6)
 );
 
 

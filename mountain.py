@@ -32,6 +32,8 @@ class Mountain:
         self.vertical = int(float(mountain_dict['vertical']) * 100 / (2.54 * 12))
         self.difficulty = mountain_dict['difficulty']
         self.beginner_friendliness = round(30 - mountain_dict['beginner_friendliness'], 1)
+        self.lat = mountain_dict['lat']
+        self.lon = mountain_dict['lon']
         return
 
     def trails(self):

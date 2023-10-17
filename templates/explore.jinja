@@ -1,0 +1,68 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+Explore Resorts
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/explore.css" rel="stylesheet" />
+
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+<div id='map' style='width: 100%; height: 80vh;'></div>
+<script>
+    locations = {{geojson}}
+    mapboxgl.accessToken = '{{mapbox_token}}';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [-113.5795, 47.828175],
+        zoom: 3.1
+    });
+
+    map.on('load', () => {
+        // Add an image to use as a custom marker
+        map.loadImage(
+            'mountain.png',
+            (error, image) => {
+            if (error) throw error;
+            map.addImage('custom-marker', image);
+            // Add a GeoJSON source with 2 points
+            map.addSource('marker', {'type': 'geojson', 'data':{{geojson}}});
+            
+            // Add a symbol layer
+            map.addLayer({
+                'id': 'marker',
+                'type': 'symbol',
+                'source': 'marker',
+                'layout': {
+                    'icon-image': 'custom-marker',
+                    'icon-allow-overlap': true,
+                    'icon-ignore-placement': true,
+                    'icon-size': ['get', 'size'],
+                    'text-allow-overlap': true,
+                    // get the title name from the source's "title" property
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                    'text-offset': [0, 1.75],
+                    'text-anchor': 'center'
+                    }
+                });
+            }
+        );
+    });
+
+    map.on('click', 'marker', function (e) {
+    new mapboxgl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML('<h3><a href="/map/' + e.features[0].properties.state + '/' + e.features[0].properties.name + '">' +e.features[0].properties.name + '</a></h3>' + '<p> Vertical: ' + e.features[0].properties.vertical + '</p> <p> Difficulty: ' + e.features[0].properties.difficulty + '</p> <p> Beginner Friendliness: ' + e.features[0].properties.beginner_friendliness + '</p>')
+        .addTo(map);
+    });
+</script>
+
+</section>
+{% endblock content%}

@@ -4,8 +4,11 @@ from flask import Flask, render_template, json, redirect, url_for, request, flas
 from flask_wtf import FlaskForm
 from flask_sitemapper import Sitemapper
 import os
+import geojson
+from math import sqrt
 
 from data.secret import secret
+from data.secret import mapbox_token
 
 import db as database
 import _misc
@@ -28,6 +31,7 @@ sitemap.init_app(app)
 nav_links = []
 nav_links.append(navigationLink('About', 'about', '/about'))
 nav_links.append(navigationLink('Search', 'search', '/search'))
+nav_links.append(navigationLink('Explore', 'explore', '/explore'))
 nav_links.append(navigationLink('Mountain Rankings', 'rankings',
                                 '/rankings?sort=difficulty&order=desc&region=usa'))
 nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rankings?region=usa'))
@@ -280,6 +284,34 @@ def mountaindata(state, name):
 
     jsonstring = json.dumps(jsonContents)
     return jsonstring
+
+
+@app.route('/explore')
+def explore():
+    mountains = database.get_mountains()
+
+    geojson = {'type':'FeatureCollection', 'features':[]}
+
+    for mountain_name in mountains:
+        mountain = Mountain(*mountain_name)
+
+        feature = {'type':'Feature',
+                'properties':{},
+                'geometry':{'type':'Point',
+                            'coordinates':[]}}
+        feature['geometry']['coordinates'] = [mountain.lon,mountain.lat]
+        feature['properties']['name'] = mountain.name
+        feature['properties']['state'] = mountain.state
+        feature['properties']['trail_count'] = mountain.trail_count
+        feature['properties']['lift_count'] = mountain.lift_count
+        feature['properties']['vertical'] = mountain.vertical
+        feature['properties']['difficulty'] = mountain.difficulty
+        feature['properties']['beginner_friendliness'] = mountain.beginner_friendliness
+        feature['properties']['size'] = mountain.vertical**(1/3) / 10
+        geojson['features'].append(feature)
+
+        
+    return render_template('explore.jinja', nav_links=nav_links, active_page='explore', mapbox_token=mapbox_token, geojson=geojson)
 
 
 @app.route('/sitemap.xml')
