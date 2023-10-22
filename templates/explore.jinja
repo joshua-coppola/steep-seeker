@@ -5,10 +5,15 @@ Explore Resorts
 {% endblock title %}
 
 {% block pagehead %}
-<link href="/explore.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
 
-<script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
-<link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+<link href="/explore.css" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -16,52 +21,28 @@ Explore Resorts
 <div id='map' style='width: 100%; height: 80vh;'></div>
 <script>
     locations = {{geojson}}
-    mapboxgl.accessToken = '{{mapbox_token}}';
-    var map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v11',
-        center: [-113.5795, 47.828175],
-        zoom: 3.1
-    });
+    var map = L.map('map').setView([47.8281, -113.5795], 4);
 
-    map.on('load', () => {
-        // Add an image to use as a custom marker
-        map.loadImage(
-            'mountain.png',
-            (error, image) => {
-            if (error) throw error;
-            map.addImage('custom-marker', image);
-            // Add a GeoJSON source with 2 points
-            map.addSource('marker', {'type': 'geojson', 'data':{{geojson}}});
-            
-            // Add a symbol layer
-            map.addLayer({
-                'id': 'marker',
-                'type': 'symbol',
-                'source': 'marker',
-                'layout': {
-                    'icon-image': 'custom-marker',
-                    'icon-allow-overlap': true,
-                    'icon-ignore-placement': true,
-                    'icon-size': ['get', 'size'],
-                    'text-allow-overlap': true,
-                    // get the title name from the source's "title" property
-                    'text-field': ['get', 'name'],
-                    'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-                    'text-offset': [0, 1.75],
-                    'text-anchor': 'center'
-                    }
-                });
-            }
-        );
-    });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
 
-    map.on('click', 'marker', function (e) {
-    new mapboxgl.Popup()
-        .setLngLat(e.lngLat)
-        .setHTML('<h3><a href="/map/' + e.features[0].properties.state + '/' + e.features[0].properties.name + '">' +e.features[0].properties.name + '</a></h3>' + '<p> Vertical: ' + e.features[0].properties.vertical + '</p> <p> Difficulty: ' + e.features[0].properties.difficulty + '</p> <p> Beginner Friendliness: ' + e.features[0].properties.beginner_friendliness + '</p>')
-        .addTo(map);
-    });
+    function onEachFeature(feature, layer) {
+        // does this feature have a property named popupContent?
+        if (feature.properties && feature.properties.popupContent) {
+            var mountainIcon = L.icon({
+                iconUrl: 'mountain.png',
+                iconSize:     [43 * feature.properties.size, 26 * feature.properties.size], // size of the icon
+                iconAnchor:   [21 * feature.properties.size, 13 * feature.properties.size], // point of the icon which will correspond to marker's location
+                popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+            });
+            layer.bindPopup(feature.properties.popupContent);
+            layer.setIcon(mountainIcon)
+        }
+    }
+
+    L.geoJSON(locations, {onEachFeature: onEachFeature}).addTo(map);
 </script>
 
 </section>

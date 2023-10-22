@@ -4,10 +4,17 @@ main {
 
 h3 {
     font-size: 1.5rem;
-    padding-bottom: .5rem;
+
 }
 
-p.detail {
-    font-size: 1.2rem;
+.leaflet-popup-content p {
+    margin: 0;
+    margin-top: .2rem;
+    font-size: 1rem;
     color: var(--color-secondary);
+}
+
+.icon {
+    margin: 0;
+    margin-left: .5rem;
 }
