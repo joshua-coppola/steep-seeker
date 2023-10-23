@@ -32,9 +32,9 @@ Explore Resorts
         // does this feature have a property named popupContent?
         if (feature.properties && feature.properties.popupContent) {
             var mountainIcon = L.icon({
-                iconUrl: 'mountain.png',
-                iconSize:     [43 * feature.properties.size, 26 * feature.properties.size], // size of the icon
-                iconAnchor:   [21 * feature.properties.size, 13 * feature.properties.size], // point of the icon which will correspond to marker's location
+                iconUrl:      feature.properties.icon,
+                iconSize:     [100 * feature.properties.size, 61 * feature.properties.size], // size of the icon
+                iconAnchor:   [50 * feature.properties.size, 30 * feature.properties.size], // point of the icon which will correspond to marker's location
                 popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
             });
             layer.bindPopup(feature.properties.popupContent);

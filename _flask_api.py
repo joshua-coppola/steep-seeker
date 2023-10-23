@@ -307,7 +307,7 @@ def explore():
         feature['properties']['vertical'] = mountain.vertical
         feature['properties']['difficulty'] = mountain.difficulty
         feature['properties']['beginner_friendliness'] = mountain.beginner_friendliness
-        feature['properties']['size'] = mountain.vertical**(1/3) / 10
+        feature['properties']['size'] = mountain.vertical**(1/3) / 20
         href = f'<a href="/map/{mountain.state}/{mountain.name}">{mountain.name}</a>'
         difficulty_color = 'yellow'
         beginner_color = 'yellow'
@@ -330,6 +330,7 @@ def explore():
         
 
         feature['properties']['popupContent'] = f'<h3>{href}</h3><p>Vertical: {mountain.vertical} ft</p><p> Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+        feature['properties']['icon'] = f'mountain_{difficulty_color}.png'
         geojson['features'].append(feature)
         
     return render_template('explore.jinja', nav_links=nav_links, active_page='explore', mapbox_token=mapbox_token, geojson=geojson)
