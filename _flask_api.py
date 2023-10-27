@@ -286,6 +286,7 @@ def mountaindata(state, name):
     return jsonstring
 
 
+@sitemap.include()
 @app.route('/explore')
 def explore():
     mountains = database.get_mountains()
@@ -309,32 +310,88 @@ def explore():
         feature['properties']['beginner_friendliness'] = mountain.beginner_friendliness
         feature['properties']['size'] = mountain.vertical**(1/3) / 20
         href = f'<a href="/map/{mountain.state}/{mountain.name}">{mountain.name}</a>'
-        difficulty_color = 'yellow'
-        beginner_color = 'yellow'
-        if mountain.difficulty < 47:
-            difficulty_color = 'red'
+        difficulty_color = _misc.trail_color(mountain.difficulty)
+        beginner_color = 'gold'
         if mountain.beginner_friendliness > -17:
             beginner_color = 'red'
-        if mountain.difficulty < 36:
-            difficulty_color = 'black'
         if mountain.beginner_friendliness > -6:
             beginner_color = 'black'
-        if mountain.difficulty < 27:
-            difficulty_color = 'blue'
         if mountain.beginner_friendliness > 3:
-            beginner_color = 'blue'
-        if mountain.difficulty < 18:
-            difficulty_color = 'green'
+            beginner_color = 'royalblue'
         if mountain.beginner_friendliness > 12:
             beginner_color = 'green'
         
 
-        feature['properties']['popupContent'] = f'<h3>{href}</h3><p>Vertical: {mountain.vertical} ft</p><p> Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+        feature['properties']['popupContent'] = f'<h3>{href}</h3><p>Vertical: {mountain.vertical} ft</p><p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
         feature['properties']['icon'] = f'mountain_{difficulty_color}.png'
         geojson['features'].append(feature)
         
-    return render_template('explore.jinja', nav_links=nav_links, active_page='explore', mapbox_token=mapbox_token, geojson=geojson)
+    return render_template('explore.jinja', nav_links=nav_links, active_page='explore', geojson=geojson)
 
+
+@app.route('/interactive-map/<string:state>/<string:name>')
+def interactive_map(state, name):
+    mountain = Mountain(name, state)
+
+    trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
+    
+    lifts = [Lift(lift['lift_id']) for lift in mountain.lifts()]
+    
+    geojson = {'type':'FeatureCollection', 'features':[]}
+
+    for trail in trails:
+        geom_type = 'LineString'
+        if trail.area:
+            geom_type = 'Polygon'
+        feature = {'type':'Feature',
+                'properties':{},
+                'geometry':{'type': geom_type,
+                            'coordinates':[]}}
+        coords = list(zip(trail.lon(), trail.lat()))
+        coords = [list(element) for element in coords]
+        if trail.area:
+            coords.append(coords[0])
+            coords = [coords]
+        feature['geometry']['coordinates'] = coords
+        popup_content = f'<h3>{trail.name}</h3><p>Rating: {trail.difficulty}<span class="icon difficulty-{_misc.trail_color(trail.difficulty)}"></span></p>'
+        popup_content += f'<p>Length: {trail.length} ft</p><p>Vertical Drop: {trail.vertical} ft</p>'
+        if trail.steepest_30m:
+            popup_content += f'<p>30m Pitch: {trail.steepest_30m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_30m)}"></span>'
+        if trail.steepest_50m:
+            popup_content += f'<p>50m Pitch: {trail.steepest_50m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_50m)}"></span>'
+        if trail.steepest_100m:
+            popup_content += f'<p>100m Pitch: {trail.steepest_100m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_100m)}"></span>'
+        if trail.steepest_200m:
+            popup_content += f'<p>200m Pitch: {trail.steepest_200m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_200m)}"></span>'
+        if trail.steepest_500m:
+            popup_content += f'<p>500m Pitch: {trail.steepest_500m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_500m)}"></span>'
+        if trail.steepest_1000m:
+            popup_content += f'<p>1000m Pitch: {trail.steepest_1000m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_1000m)}"></span>'
+        feature['properties']['popupContent'] = popup_content
+        feature['properties']['color'] = _misc.trail_color(trail.difficulty)
+        feature['properties']['gladed'] = str(trail.gladed)
+
+        geojson['features'].append(feature)
+
+    for lift in lifts:
+        feature = {'type':'Feature',
+                'properties':{},
+                'geometry':{'type': 'LineString',
+                            'coordinates':[]}}
+        coords = list(zip(lift.lon(), lift.lat()))
+        coords = [list(element) for element in coords]
+        feature['geometry']['coordinates'] = coords
+        popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
+        feature['properties']['popupContent'] = popup_content
+        feature['properties']['color'] = 'grey'
+
+        geojson['features'].append(feature)
+
+    mountain_dict = {'lat': mountain.lat, 'lon': mountain.lon}
+
+    return render_template('test.jinja', nav_links=nav_links, active_page='map', geojson=geojson, mountain=mountain_dict)
+
+    
 
 @app.route('/sitemap.xml')
 def site_map():

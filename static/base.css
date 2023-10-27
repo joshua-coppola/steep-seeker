@@ -95,7 +95,7 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='green'/%3E%3C/svg%3E");
 }
 
-.icon.difficulty-blue {
+.icon.difficulty-royalblue {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect x='2' y='2' width='16' height='16' rx='1' ry='1' fill='royalblue'/%3E%3C/svg%3E");
 }
 
@@ -111,7 +111,7 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5,19l5,-9l-5,-9l-5,9l5,9z' fill='red' /%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m15,1l5,9l-5,9l-5,-9l5,-9z' fill='red'/%3E%3C/svg%3E");
 }
 
-.icon.difficulty-yellow {
+.icon.difficulty-gold {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m15,1l5,9l-5,9l-5,-9l5,-9z' fill='gold' /%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5,19l5,-9l-5,-9l-5,9l5,9z' fill='gold'/%3E%3C/svg%3E");
 }
 

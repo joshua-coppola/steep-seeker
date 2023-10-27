@@ -125,7 +125,7 @@ main > * {
 .difficulty-meter-bar.green {
     background-color: green;
 }
-.difficulty-meter-bar.blue {
+.difficulty-meter-bar.royalblue {
     background-color: royalblue;
 }
 .difficulty-meter-bar.black {
@@ -134,7 +134,7 @@ main > * {
 .difficulty-meter-bar.red {
     background-color: red;
 }
-.difficulty-meter-bar.yellow {
+.difficulty-meter-bar.gold {
     background-color: gold;
 }
 

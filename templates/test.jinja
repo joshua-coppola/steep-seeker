@@ -1,0 +1,75 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+Explore Resorts
+{% endblock title %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+<link href="/explore.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+<div id='map' style='width: 100%; height: 80vh;'></div>
+<script>
+    trails = {{geojson}}
+
+    var map = L.map('map').setView([{{mountain.lat}},{{mountain.lon}}], 13);
+
+    //L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //    maxZoom: 19,
+    //    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    //}).addTo(map);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+    }).addTo(map);
+
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 7,
+        });
+
+        layer.bringToFront();
+    }
+
+    function resetHighlight(e) {
+        geojson_features.resetStyle(e.target);
+    }
+
+    function onEachFeature(feature, layer) {
+        // does this feature have a property named popupContent?
+        if (feature.properties && feature.properties.popupContent) {
+            layer.bindPopup(feature.properties.popupContent);
+        }
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+        });
+    }
+
+    function style(feature) {
+        if (feature.properties.gladed) {
+            if (feature.properties.gladed == 'True') {
+                return {color: feature.properties.color, weight: 4, dashArray: '5,10'}
+            }
+        }
+        return {color: feature.properties.color, weight: 4}
+    }
+
+    geojson_features = L.geoJSON(trails, {onEachFeature: onEachFeature, style: style}).addTo(map);
+    map.fitBounds(geojson_features.getBounds());
+</script>
+
+</section>
+{% endblock content%}
