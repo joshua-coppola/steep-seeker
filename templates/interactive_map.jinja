@@ -1,0 +1,152 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+{{mountain.name}} - Trail Map
+{% endblock title %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+<link href="/interactive-map.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<main>
+    <div class="map-pane mountain-details">
+        <div class="mountain-title">
+            <h1>{{mountain.name}}</h1>
+            <span class="mountain-location">{{mountain.state}}</span>
+        </div>
+        <div class="mountain-section">
+            <h2>Overview</h2>
+            <ul>
+                <li>Trail Count: {{mountain.trail_count}}</li>
+                <li>Lift Count: {{mountain.lift_count}}</li>
+                <li>Vertical: {{mountain.vertical}} ft</li>
+                <li>Difficulty: {{mountain.difficulty}}</li>
+                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
+            </ul>
+        </div>
+        <div class="mountain-section">
+            <h2>Trails - Sorted by Difficulty</h2>
+            <ul>
+                <li><span class="icon gladed"></span>Gladed</li>
+                <li><span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>Ungroomed/Moguls</li>
+                {% for trail in trails %}
+                {% if not '' == trail.name %}
+                <li>
+                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
+                        {% else %}
+                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
+                            {% else %}
+                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
+                                {% else %}
+                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
+                                    {% else %}
+                                    <span class="icon difficulty-gold"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {{trail.steepest_30m}}° - {{trail.name}}
+                                    {% if trail.gladed == True %}
+                                    <span> </span><span class="icon gladed"></span>
+                                    {% endif %}
+                                    {% if trail.ungroomed == True %}
+                                    <span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>
+                                    {% endif %}
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="mountain-section">
+            <h2>Lifts</h2>
+            <ul>
+                {% for lift in lifts %}
+                {% if not '' == lift.name %}
+                <li>{{lift.name}} - {{lift.length}} ft</li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div id='map'></div>
+    <script>
+        trails = {{geojson}}
+
+        var map = L.map('map').setView([{{mountain.lat}},{{mountain.lon}}], 13);
+
+        //L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //    maxZoom: 19,
+        //    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        //}).addTo(map);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+        }).addTo(map);
+
+        function highlightFeature(e) {
+            var layer = e.target;
+
+            layer.setStyle({
+                weight: 7,
+            });
+
+            layer.bringToFront();
+        }
+
+        function resetHighlight(e) {
+            geojson_features.resetStyle(e.target);
+        }
+
+        function onEachFeature(feature, layer) {
+            // does this feature have a property named popupContent?
+            if (feature.properties && feature.properties.popupContent) {
+                layer.bindPopup(feature.properties.popupContent);
+            }
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
+            });
+        }
+
+        function style(feature) {
+            if (feature.properties.gladed) {
+                if (feature.properties.gladed == 'True') {
+                    return {color: feature.properties.color, weight: 4, dashArray: '5,10'}
+                }
+            }
+            return {color: feature.properties.color, weight: 4}
+        }
+
+        //let hg = L.control.heightgraph();
+        //hg.addTo(map);
+        //hg.addData(trails);
+
+        geojson_features = L.geoJSON(trails, {onEachFeature: onEachFeature, style: style}).addTo(map);
+        map.fitBounds(geojson_features.getBounds());
+
+        var legend = L.control({ position: "bottomright" });
+
+        legend.onAdd = function(map) {
+        var div = L.DomUtil.create("div", "legend");
+            div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
+            div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
+            div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
+            div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
+            div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
+            div.innerHTML += '<span>- - - Gladed</span><br>';
+            return div;
+        };
+
+        legend.addTo(map);
+    </script>
+</main>
+{% endblock content%}

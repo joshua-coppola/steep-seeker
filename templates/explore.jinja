@@ -18,7 +18,7 @@ Explore Resorts
 
 {% block content %}
 <section id="content">
-<div id='map' style='width: 100%; height: 80vh;'></div>
+<div id='map'></div>
 <script>
     locations = {{geojson}}
     var map = L.map('map').setView([47.8281, -113.5795], 4);
@@ -43,6 +43,20 @@ Explore Resorts
     }
 
     L.geoJSON(locations, {onEachFeature: onEachFeature}).addTo(map);
+
+    var legend = L.control({ position: "bottomright" });
+
+    legend.onAdd = function(map) {
+    var div = L.DomUtil.create("div", "legend");
+        div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
+        div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
+        div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
+        div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
+        div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
+        return div;
+    };
+
+    legend.addTo(map);
 </script>
 
 </section>

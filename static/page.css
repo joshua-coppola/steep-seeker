@@ -129,7 +129,7 @@ p.copy {
     background-color: var(--color-accent-light);
 }
 
-@media screen and (max-width: 680px) {
+@media screen and (max-width: 700px) {
     #home-link {
         margin-right: 16px;
     }
