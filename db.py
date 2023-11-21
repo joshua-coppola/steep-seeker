@@ -632,6 +632,36 @@ def get_mountain_name(mountain_id: int, cur = None) -> str:
     return mountain_name
 
 
+def bounding_box(name: str, state: str):
+    '''
+    Gets the minimum and maximum latitude and longitude of trails and lifts at a given resort.
+    Returns in the order:
+    
+    min_lon, min_lat, max_lon, max_lat 
+    
+    which is the order the Overpass API uses.
+    '''
+    mountain_id = get_mountain_id(name, state)
+
+    conn = tuple_cursor()
+
+    query = 'SELECT lat, lon FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)'
+    coords = conn.execute(query, (mountain_id,)).fetchall()
+
+    lat = [row[0] for row in coords]
+    lon = [row[1] for row in coords]
+
+    query = 'SELECT lat, lon FROM LiftPoints NATURAL JOIN (SELECT lift_id FROM Lifts WHERE mountain_id = ?)'
+    coords = conn.execute(query, (mountain_id,)).fetchall()
+
+    lat += [row[0] for row in coords]
+    lon += [row[1] for row in coords]
+
+    conn.close()
+
+    return [min(lon), min(lat), max(lon), max(lat)]
+
+
 def _get_mountain_dict(name: str, state: str) -> dict:
     conn = dict_cursor()
 

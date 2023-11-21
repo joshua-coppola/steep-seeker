@@ -1,6 +1,7 @@
 import re
 from os.path import exists
 from decimal import Decimal
+from requests.api import get
 
 import _create_trails
 
@@ -76,3 +77,31 @@ def read_xml_string(string: str) -> str:
                ] = re.sub(r"[^'A-Za-z0-9.\- ]+", ' ', words[i+1]).strip()
     # returns dict
     return output
+
+
+def osm_api(bounding_box: str):
+    """
+    Helper function for fetching OSM files when coordinates are provided. Accepts 
+    a comma separated string of min_lon, min_lat, max_lon, max_lat. 
+
+    Ex: '-72.7867,43.3652,-72.6727,43.4469'
+
+    #### Arguments:
+
+    - bounding_box: string of coordinates in the form outlined above
+
+    #### Returns:
+
+    - OSM text blob
+    - None in case of failure
+    """
+    url = f'https://overpass-api.de/api/map?bbox={bounding_box}'
+    print('\nFetching OSM file...')
+    response = get(url)
+    if response.status_code == 200:
+        return response.content
+    else:
+        print('OSM API call failed with code:')
+        print(response.status_code)
+        print(response.content)
+        return None

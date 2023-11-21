@@ -4,6 +4,7 @@ from rich.progress import track
 import db
 import maps
 import _flask_api
+import _read_osm
 
 
 def add_resort(name: str) -> None:
@@ -26,6 +27,29 @@ def refresh_resort(name: str, state: str) -> None:
         print('Creating Map')
         maps.create_map(name, state)
         maps.create_thumbnail(name, state)
+
+
+def refresh_resort_from_osm(name: str, state: str, area_padding: float = 0) -> None:
+    '''
+    Grabs a new OSM file & uses that to refresh the resort. Area padding denotes how much extra space to grab around the
+    resort, 1 meaning the bounding box used is double in every dimension, while .5 adds 50% to each dimension. Useful for when
+    a resort adds new terrain beyond the previous boundry. An area padding of 0 means that no adjacent land will be selected,
+    the safest option for resorts that neighbor each other.
+    '''
+    bbox = db.bounding_box(name, state)
+
+    lat_adj = (bbox[2] - bbox[0]) * area_padding * .5
+    lon_adj = (bbox[3] - bbox[1]) * area_padding * .5
+
+    bbox[0] -= lat_adj
+    bbox[1] -= lon_adj
+    bbox[2] += lat_adj
+    bbox[3] += lon_adj
+
+    bbox_string = f'{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}'
+    new_osm_file = _read_osm.osm_api(bbox_string)
+
+    # Todo: make copy of old OSM file with a datestamp, run refresh resort with new file. Add last updated column to mountains table
 
 
 def bulk_refresh_resorts() -> None:
