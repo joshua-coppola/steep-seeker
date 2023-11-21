@@ -1,5 +1,15 @@
 main {
     --center-width: 100%;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    pointer-events: none;
+}
+
+main > * {
+    pointer-events: all;
 }
 
 #map {
@@ -8,7 +18,6 @@ main {
     left: 16px;
     right: 16px;
     bottom: 16px;
-    z-index: -1;
 }
 
 h3 {

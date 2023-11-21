@@ -152,6 +152,19 @@ h3 {
     background-color: rgba(255, 255, 255, 1);
 }
 
+.map-button {
+    position: absolute;
+    left: 424px;
+    bottom: 8px;
+    font-weight: bold;
+    height: 2.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    font-size: 1.2rem;
+    padding: .4rem;
+}
+
 
 @media screen and (max-width: 900px) {
     .mountain-details {
@@ -161,6 +174,10 @@ h3 {
 
     #map {
         left: 16px;
+    }
+
+    .map-button {
+        left: 0px;
     }
 }
 
