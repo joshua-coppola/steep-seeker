@@ -7,6 +7,8 @@ import json
 from math import degrees, atan, atan2
 from os.path import exists
 from rich.progress import track
+import os
+import datetime
 
 
 def get_center_coordinates(filename: str):
@@ -576,3 +578,9 @@ def get_weather_modifier(weather_dict: dict):
     modifier += (1 - (weather_dict['snow'] / 154.83)) * 2
 
     return modifier
+
+
+def last_modified_date(path_to_file):
+    stat = os.stat(path_to_file)
+    epoch = stat.st_mtime
+    return datetime.datetime.fromtimestamp(epoch).date()

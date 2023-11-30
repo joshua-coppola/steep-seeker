@@ -240,11 +240,13 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
 def find_map_size(mountain_info) -> dict():
     conn = db.tuple_cursor()
 
-    query = 'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
+    query = 'SELECT MAX(TrailPoints.lat), MIN(TrailPoints.lat), MAX(TrailPoints.lon), MIN(TrailPoints.lon) FROM Mountains \
+            INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
             INNER JOIN TrailPoints ON Trails.trail_id=TrailPoints.trail_id WHERE Trails.mountain_id = ?'
     trail_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
 
-    query = 'SELECT MAX(lat), MIN(lat), MAX(lon), MIN(lon) FROM Mountains INNER JOIN Lifts ON Mountains.mountain_id=Lifts.mountain_id \
+    query = 'SELECT MAX(LiftPoints.lat), MIN(LiftPoints.lat), MAX(LiftPoints.lon), MIN(LiftPoints.lon) FROM Mountains \
+            INNER JOIN Lifts ON Mountains.mountain_id=Lifts.mountain_id \
             INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?'
     lift_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
 

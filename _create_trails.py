@@ -21,6 +21,9 @@ def process_trails(ways: list(dict())) -> tuple():
             if 'name' in tag:
                 way['name'] = tag['name']
 
+            if 'piste name' in tag:
+                way['name'] = tag['piste name']
+
             # check if the way can be a trail
             if 'piste difficulty' in tag:
                 way['official_rating'] = tag['piste difficulty']

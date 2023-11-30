@@ -3,8 +3,10 @@ from rich.progress import track
 
 import db
 import maps
+from mountain import Mountain
 import _flask_api
 import _read_osm
+import _misc
 
 
 def add_resort(name: str) -> None:
@@ -49,7 +51,24 @@ def refresh_resort_from_osm(name: str, state: str, area_padding: float = 0) -> N
     bbox_string = f'{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}'
     new_osm_file = _read_osm.osm_api(bbox_string)
 
-    # Todo: make copy of old OSM file with a datestamp, run refresh resort with new file. Add last updated column to mountains table
+    if os.path.exists(f'data/osm/{state}/{name}.osm'):
+        old_date = _misc.last_modified_date(f'data/osm/{state}/{name}.osm')
+
+        os.replace(f'data/osm/{state}/{name}.osm', f'data/osm-old/{state}/{old_date} {name}.osm')
+
+        f = open(f'data/osm/{state}/{name}.osm', 'wb')
+        f.write(new_osm_file)
+        f.close()
+
+    old_info = Mountain(name, state)
+
+    print(f'{old_date}: {old_info.trail_count} trails, {old_info.lift_count} lifts')
+    
+    refresh_resort(name, state)
+
+    new_info = Mountain(name, state)
+
+    print(f'Now: {new_info.trail_count} trails, {new_info.lift_count} lifts')
 
 
 def bulk_refresh_resorts() -> None:
@@ -58,6 +77,17 @@ def bulk_refresh_resorts() -> None:
         print(f'\nResort #{i + 1}/{len(mountains)}')
         print(f'{mountain[0]}\n')
         refresh_resort(mountain[0], mountain[1])
+
+
+def bulk_refresh_resorts_from_osm(state) -> None:
+    if state == 'USA':
+        mountains = db.get_mountains()
+    else:
+        mountains = db.get_mountains(state)
+    for i, mountain in enumerate(mountains):
+        print(f'\nResort #{i + 1}/{len(mountains)}')
+        print(f'{mountain[0]}\n')
+        refresh_resort_from_osm(mountain[0], mountain[1])
 
 
 def bulk_create_maps() -> None:
@@ -140,15 +170,17 @@ def repl() -> None:
         print('1) Add a resort')
         print('2) Add all resorts that are unprocessed')
         print('3) Refresh a resort')
-        print('4) Refresh all resorts')
-        print('5) Create new map for a resort')
-        print('6) Create new maps for all resorts')
-        print('7) Update stats for all resorts')
-        print('8) Rename a resort')
-        print('9) Rotate a map clockwise')
-        print('10) Delete a trail or lift')
-        print('11) Delete a resort')
-        print('12) Start Website')
+        print('4) Refresh OSM file, then resort')
+        print('5) Refresh all resorts')
+        print('6) Bulk refresh OSM files and resorts')
+        print('7) Create new map for a resort')
+        print('8) Create new maps for all resorts')
+        print('9) Update stats for all resorts')
+        print('10) Rename a resort')
+        print('11) Rotate a map clockwise')
+        print('12) Delete a trail or lift')
+        print('13) Delete a resort')
+        print('14) Start Website')
         print('Other value: exit program\n')
 
         operation = input('Enter value: ')
@@ -158,7 +190,7 @@ def repl() -> None:
             valid = False
             continue
 
-        if operation > 12 or operation < 1:
+        if operation > 14 or operation < 1:
             valid = False
             continue
 
@@ -175,33 +207,42 @@ def repl() -> None:
             refresh_resort(name, state)
 
         if operation == 4:
-            bulk_refresh_resorts()
+            name = input('\nEnter Resort Name: ')
+            state = input('\nEnter State: ')
+            refresh_resort_from_osm(name, state)
 
         if operation == 5:
+            bulk_refresh_resorts()
+
+        if operation == 6:
+            state = input('\nEnter State (or USA for all): ')
+            bulk_refresh_resorts_from_osm(state)
+
+        if operation == 7:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             maps.create_map(name, state)
             maps.create_thumbnail(name, state)
 
-        if operation == 6:
+        if operation == 8:
             bulk_create_maps()
 
-        if operation == 7:
+        if operation == 9:
             bulk_update_mountain_stats()
 
-        if operation == 8:
+        if operation == 10:
             old_name = input('\nEnter Current Resort Name: ')
             state = input('\nEnter State: ')
             new_name = input('\nEnter New Resort Name: ')
             rename_resort(old_name, state, new_name)
             maps.create_map(new_name, state)
 
-        if operation == 9:
+        if operation == 11:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             rotate_map_clockwise(name, state)
 
-        if operation == 10:
+        if operation == 12:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             item_id = input('\nEnter OSM ID')
@@ -211,13 +252,13 @@ def repl() -> None:
             maps.create_map(name, state)
             maps.create_thumbnail(name, state)
 
-        if operation == 11:
+        if operation == 13:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
             delete_resort(name, state)
 
-        if operation == 12:
+        if operation == 14:
             _flask_api.app.run(host='0.0.0.0', port=5000, debug=False)
 
-        
+
 repl()

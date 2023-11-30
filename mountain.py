@@ -12,6 +12,7 @@ class Mountain:
         self.vertical = None
         self.difficulty = None
         self.beginner_friendliness = None
+        self.last_updated = None
 
         if self.state != None:
             self._sync()
@@ -34,6 +35,7 @@ class Mountain:
         self.beginner_friendliness = round(30 - mountain_dict['beginner_friendliness'], 1)
         self.lat = mountain_dict['lat']
         self.lon = mountain_dict['lon']
+        self.last_updated = mountain_dict['last_updated']
         return
 
     def trails(self):

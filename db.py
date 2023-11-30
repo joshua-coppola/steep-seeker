@@ -298,6 +298,7 @@ def _add_resort(name: str) -> str:
     db.close()
 
     cull_connectors(mountain_id)
+    _set_last_updated(name, state)
 
     return state
 
@@ -353,6 +354,7 @@ def refresh_resort(name: str, state: str) -> str:
     db.close()
 
     cull_connectors(mountain_id)
+    _set_last_updated(name, state)
 
     return state
 
@@ -487,10 +489,13 @@ def get_mountain_id(name: str, state: str, cur = None) -> int:
     return mountain_id
 
 
-def get_mountains() -> list(tuple()):
+def get_mountains(state = None) -> list(tuple()):
     cur, db = db_connect()
-
-    mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
+    if state == None:
+        mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
+    else:
+        query = 'SELECT name, state FROM Mountains WHERE state = ?'
+        mounatins = cur.execute(query, (state,)).fetchall()
 
     db.close()
     return(mountains)
@@ -739,4 +744,19 @@ def _get_mountains():
 
     states = [y[0] for y in states]
 
+    conn.close()
+
     return({"state": states, "name": names})
+
+
+def _set_last_updated(name: str, state: str):
+    conn = tuple_cursor()
+
+    date = _misc.last_modified_date(f'data/osm/{state}/{name}.osm')
+
+    query = 'UPDATE Mountains SET last_updated = ? WHERE name = ? AND state = ?'
+    params = (date, name, state)
+    conn.execute(query, params)
+
+    conn.commit()
+    conn.close()
