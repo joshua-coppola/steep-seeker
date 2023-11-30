@@ -115,7 +115,7 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
 
     for trail_id in trails_to_be_rated:
         area = cur.execute(
-            'SELECT area FROM Trails WHERE trail_id = ?', (trail_id))
+            'SELECT area FROM Trails WHERE trail_id = ?', (trail_id)).fetchone()[0]
         for_display = 1
         if area == 'True':
             for_display = 0
@@ -134,12 +134,12 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         difficulty = pitch_30 + weather_modifier
 
         gladed = cur.execute(
-            'SELECT gladed FROM Trails WHERE trail_id = ?', (trail_id)).fetchall()[0][0]
+            'SELECT gladed FROM Trails WHERE trail_id = ?', (trail_id)).fetchone()[0]
         if gladed == 'True':
             difficulty += 5.5
 
         ungroomed = cur.execute(
-            'SELECT ungroomed FROM Trails WHERE trail_id = ?', (trail_id)).fetchall()[0][0]
+            'SELECT ungroomed FROM Trails WHERE trail_id = ?', (trail_id)).fetchone()[0]
         if ungroomed == 'True':
             difficulty += 2.5
 
