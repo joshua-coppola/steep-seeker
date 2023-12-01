@@ -490,8 +490,8 @@ def find_direction(trail_points: list(tuple())) -> str:
 def get_weather(lat: float, lon: float):
     # Uses Open Metro's Historical Weather API to get typical conditions
     # Uses 5 seasons worth of data
-    start_date = '2017-11-30'
-    end_date = '2022-04-01'
+    start_date = '2018-11-30'
+    end_date = '2023-04-01'
     url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&models=best_match&daily=weathercode,temperature_2m_max,temperature_2m_min,rain_sum,snowfall_sum&timezone=America%2FNew_York&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch"
 
     response = get(url)
@@ -504,11 +504,15 @@ def get_weather(lat: float, lon: float):
                 row[key] = data[key][i]
             shaped_data.append(row)
         return(process_weather(shaped_data))
+    elif response.status_code == 429:
+        if 'Daily API request limit exceeded. Please try again tomorrow.' in str(response.content):
+            raise ValueError('Daily API request limit exceeded. Please try again tomorrow.')
+        print('Too Many Weather API requests, waiting 1 minute before resuming')
+        time.sleep(60)
+        return(get_weather(lat, lon))
     else:
-        print('Weather API call failed with code:')
-        print(response.status_code)
-        print(response.content)
-        return None
+        raise ValueError(f'Weather API call failed with code: {response.status_code} \n{response.content}')
+        
 
 
 def process_weather(weather_list: list):
