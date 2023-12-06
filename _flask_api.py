@@ -8,7 +8,6 @@ import geojson
 from math import sqrt
 
 from data.secret import secret
-from data.secret import mapbox_token
 
 import db as database
 import _misc
