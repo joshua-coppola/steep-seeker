@@ -13,6 +13,12 @@ Explore Resorts
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 
+<script type="text/javascript" src="https://cdn.rawgit.com/makinacorpus/Leaflet.GeometryUtil/master/src/leaflet.geometryutil.js">
+</script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
+</script>
+
 <link href="/explore.css" rel="stylesheet" />
 {% endblock pagehead %}
 
@@ -42,7 +48,7 @@ Explore Resorts
         }
     }
 
-    L.geoJSON(locations, {onEachFeature: onEachFeature}).addTo(map);
+    geojson_features = L.geoJSON(locations, {onEachFeature: onEachFeature}).addTo(map);
 
     var legend = L.control({ position: "bottomright" });
 
@@ -57,6 +63,12 @@ Explore Resorts
     };
 
     legend.addTo(map);
+
+    map.almostOver.addLayer(geojson_features);
+
+    map.on('almost:click', function (e) {
+        e.layer.openPopup();
+    });
 </script>
 
 </section>

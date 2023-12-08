@@ -13,6 +13,12 @@
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 
+<script type="text/javascript" src="https://cdn.rawgit.com/makinacorpus/Leaflet.GeometryUtil/master/src/leaflet.geometryutil.js">
+</script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
+</script>
+
 <link href="/interactive-map.css" rel="stylesheet" />
 {% endblock pagehead %}
 
@@ -93,32 +99,14 @@
         //}).addTo(map);
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+            attribution: 'Data: OSM, USGS. Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
         }).addTo(map);
-
-        function highlightFeature(e) {
-            var layer = e.target;
-
-            layer.setStyle({
-                weight: 7,
-            });
-
-            layer.bringToFront();
-        }
-
-        function resetHighlight(e) {
-            geojson_features.resetStyle(e.target);
-        }
 
         function onEachFeature(feature, layer) {
             // does this feature have a property named popupContent?
             if (feature.properties && feature.properties.popupContent) {
                 layer.bindPopup(feature.properties.popupContent);
             }
-            layer.on({
-                mouseover: highlightFeature,
-                mouseout: resetHighlight,
-            });
         }
 
         function style(feature) {
@@ -129,10 +117,6 @@
             }
             return {color: feature.properties.color, weight: 4}
         }
-
-        //let hg = L.control.heightgraph();
-        //hg.addTo(map);
-        //hg.addData(trails);
 
         geojson_features = L.geoJSON(trails, {onEachFeature: onEachFeature, style: style}).addTo(map);
         map.fitBounds(geojson_features.getBounds());
@@ -151,6 +135,21 @@
         };
 
         legend.addTo(map);
+
+        map.almostOver.addLayer(geojson_features);
+
+        map.on('almost:over', function (e) {
+            e.layer.setStyle({weight: 10, opacity: .7});
+        });
+
+        map.on('almost:out', function (e){
+            e.layer.setStyle({weight: 4, opacity: 1});
+        });
+
+        map.on('almost:click', function (e) {
+            e.layer.openPopup();
+        });
+
     </script>
 </main>
 {% endblock content%}
