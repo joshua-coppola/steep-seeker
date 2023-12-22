@@ -35,12 +35,20 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         try:
             cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
                 VALUES ({}, {}, "{}", "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['ungroomed'], trail['official_rating']))
-        except:
-            print()
-            print(trail['name'])
-            print(trail['id'])
-            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
-                VALUES ({}, {}, "{}", "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['ungroomed'], trail['official_rating']))
+        except sqlite3.IntegrityError as e:
+            query = 'SELECT mountain_id FROM Trails WHERE trail_id = ?'
+            params = (trail['id'],)
+            conflict_mountain = cur.execute(query, params).fetchone()[0]
+            name, id = trail['name'], trail['id']
+            print(f'\n{name} {id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Trail.')
+
+            query = 'SELECT trail_count from Mountains WHERE mountain_id = ?'
+            old_trail_count = cur.execute(query, (mountain_id,)).fetchone()[0]
+    
+            query = 'UPDATE Mountains SET trail_count = ? WHERE mountain_id = ?'
+            cur.execute(query, (old_trail_count - 1, mountain_id))
+            continue
+
         trail['nodes'] = _misc.fill_point_gaps(trail['nodes'])
         trail['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in trail['nodes']]
@@ -52,12 +60,19 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         try:
             cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
                 VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
-        except:
-            print()
-            print(lift['name'])
-            print(lift['id'])
-            cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
-                VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
+        except sqlite3.IntegrityError as e:
+            query = 'SELECT mountain_id FROM Lifts WHERE lift_id = ?'
+            params = (lift['id'],)
+            conflict_mountain = cur.execute(query, params).fetchone()[0]
+            name, id = lift['name'], lift['id']
+            print(f'\n{name} {id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Lift.')
+
+            query = 'SELECT lift_count from Mountains WHERE mountain_id = ?'
+            old_lift_count = cur.execute(query, (mountain_id,)).fetchone()[0]
+    
+            query = 'UPDATE Mountains SET lift_count = ? WHERE mountain_id = ?'
+            cur.execute(query, (old_lift_count - 1, mountain_id))
+            continue
         lift['nodes'] = _misc.fill_point_gaps(lift['nodes'])
         lift['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in lift['nodes']]
@@ -495,7 +510,7 @@ def get_mountains(state = None) -> list(tuple()):
         mountains = cur.execute('SELECT name, state FROM Mountains').fetchall()
     else:
         query = 'SELECT name, state FROM Mountains WHERE state = ?'
-        mounatins = cur.execute(query, (state,)).fetchall()
+        mountains = cur.execute(query, (state,)).fetchall()
 
     db.close()
     return(mountains)

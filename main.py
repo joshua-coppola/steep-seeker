@@ -83,7 +83,7 @@ def bulk_refresh_resorts(start = 0, end = 1000) -> None:
         refresh_resort(mountain[0], mountain[1])
 
 
-def bulk_refresh_resorts_from_osm(state) -> None:
+def bulk_refresh_resorts_from_osm(state, area_padding = 0) -> None:
     if state == 'USA':
         mountains = db.get_mountains()
     else:
@@ -91,7 +91,7 @@ def bulk_refresh_resorts_from_osm(state) -> None:
     for i, mountain in enumerate(mountains):
         print(f'\nResort #{i + 1}/{len(mountains)}')
         print(f'{mountain[0]}\n')
-        refresh_resort_from_osm(mountain[0], mountain[1])
+        refresh_resort_from_osm(mountain[0], mountain[1], area_padding)
 
 
 def bulk_create_maps() -> None:
@@ -226,7 +226,8 @@ def repl() -> None:
 
         if operation == 7:
             state = input('\nEnter State (or USA for all): ')
-            bulk_refresh_resorts_from_osm(state)
+            extra_area = float(input('Enter Addition Search Area Ratio (0 is no change, 1 is double both dimensions): '))
+            bulk_refresh_resorts_from_osm(state, extra_area)
 
         if operation == 8:
             name = input('\nEnter Resort Name: ')
