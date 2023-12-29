@@ -330,6 +330,11 @@ def explore():
 
 @app.route('/interactive-map/<string:state>/<string:name>')
 def interactive_map(state, name):
+    debug_mode = False
+    debug = request.args.get('debug')
+    if debug == 'true':
+        debug_mode = True
+
     mountain = Mountain(name, state)
 
     trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
@@ -366,6 +371,9 @@ def interactive_map(state, name):
             popup_content += f'<p>500m Pitch: {trail.steepest_500m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_500m)}"></span>'
         if trail.steepest_1000m:
             popup_content += f'<p>1000m Pitch: {trail.steepest_1000m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_1000m)}"></span>'
+        if debug_mode:
+            popup_content += f'<p>Trail ID: {trail.trail_id}</p>'
+        
         feature['properties']['popupContent'] = popup_content
         feature['properties']['color'] = _misc.trail_color(trail.difficulty)
         feature['properties']['gladed'] = str(trail.gladed)
@@ -381,6 +389,8 @@ def interactive_map(state, name):
         coords = [list(element) for element in coords]
         feature['geometry']['coordinates'] = coords
         popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
+        if debug_mode:
+            popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
         feature['properties']['popupContent'] = popup_content
         feature['properties']['color'] = 'grey'
 

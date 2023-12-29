@@ -3,6 +3,7 @@ import os
 import csv
 from decimal import Decimal
 from rich.progress import track
+from datetime import datetime
 
 import _misc
 import _read_osm
@@ -39,8 +40,8 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
             query = 'SELECT mountain_id FROM Trails WHERE trail_id = ?'
             params = (trail['id'],)
             conflict_mountain = cur.execute(query, params).fetchone()[0]
-            name, id = trail['name'], trail['id']
-            print(f'\n{name} {id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Trail.')
+            name, trail_id = trail['name'], trail['id']
+            print(f'\n{name} {trail_id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Trail.')
 
             query = 'SELECT trail_count from Mountains WHERE mountain_id = ?'
             old_trail_count = cur.execute(query, (mountain_id,)).fetchone()[0]
@@ -53,8 +54,12 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         trail['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in trail['nodes']]
         for i, node in enumerate(trail['nodes']):
-            cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
-                VALUES ({}, {}, 1, "{}", "{}")'.format(i, trail['id'], str(node['lat']), str(node['lon'])))
+            try:
+                cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
+                    VALUES ({}, {}, 1, "{}", "{}")'.format(i, trail['id'], str(node['lat']), str(node['lon'])))
+            except sqlite3.IntegrityError as e:
+                name, trail_id = trail['name'], trail['id']
+                print(f'\n{name} {trail_id} {i} is conflicting.')
 
     for lift in lifts:
         try:
@@ -64,8 +69,8 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
             query = 'SELECT mountain_id FROM Lifts WHERE lift_id = ?'
             params = (lift['id'],)
             conflict_mountain = cur.execute(query, params).fetchone()[0]
-            name, id = lift['name'], lift['id']
-            print(f'\n{name} {id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Lift.')
+            name, lift_id = lift['name'], lift['id']
+            print(f'\n{name} {lift_id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Lift.')
 
             query = 'SELECT lift_count from Mountains WHERE mountain_id = ?'
             old_lift_count = cur.execute(query, (mountain_id,)).fetchone()[0]
@@ -77,8 +82,12 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         lift['nodes'] = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in lift['nodes']]
         for i, node in enumerate(lift['nodes']):
-            cur.execute('INSERT INTO LiftPoints (ind, lift_id, lat, lon) \
-                VALUES ({}, {}, "{}", "{}")'.format(i, lift['id'], node['lat'], node['lon']))
+            try:
+                cur.execute('INSERT INTO LiftPoints (ind, lift_id, lat, lon) \
+                    VALUES ({}, {}, "{}", "{}")'.format(i, lift['id'], node['lat'], node['lon']))
+            except sqlite3.IntegrityError as e:
+                name, lift_id = lift['name'], lift['id']
+                print(f'\n{name} {lift_id} {i} is conflicting.')
 
     # calculate elevation and slope for each point
     print('Processing Trails')
@@ -202,6 +211,16 @@ def calc_mountain_stats(cur, mountain_id: int, mountain_name: str) -> None:
     params = (int(_misc.get_vert(elevations)), round(difficulty, 1), round(beginner_friendliness, 1), round(center_lat, 8), round(center_lon, 8), mountain_id)
     cur.execute(query, params)
 
+    query = 'SELECT COUNT(*) FROM Trails WHERE mountain_id = ?'
+    params = (mountain_id,)
+
+    manual_trail_count = cur.execute(query, params).fetchone()[0]
+
+    query = 'UPDATE Mountains SET trail_count = ? WHERE mountain_id = ?'
+    params = (manual_trail_count, mountain_id)
+
+    cur.execute(query, params)
+
 
 def add_weather_stats(cur, mountain_id: int, mountain_name: str):
     # weather stats, all of them represent season totals
@@ -229,11 +248,11 @@ def cull_connectors(mountain_id):
     query = 'SELECT trail_id FROM Trails WHERE name = "" AND length < 100 AND mountain_id = ?'
     trail_ids = conn.execute(query, (mountain_id,)).fetchall()
 
-    for trail_id in trail_ids:
-        delete_trail(mountain_id, trail_id[0])
-
     query = 'SELECT trail_count from Mountains WHERE mountain_id = ?'
     old_trail_count = conn.execute(query, (mountain_id,)).fetchone()[0]
+
+    for trail_id in trail_ids:
+        delete_trail(mountain_id, trail_id[0])
     
     query = 'UPDATE Mountains SET trail_count = ? WHERE mountain_id = ?'
     conn.execute(query, (old_trail_count - len(trail_ids), mountain_id))
@@ -318,7 +337,7 @@ def _add_resort(name: str) -> str:
     return state
 
 
-def refresh_resort(name: str, state: str) -> str:
+def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> str:
     cur, db = db_connect()
 
     try:
@@ -330,6 +349,14 @@ def refresh_resort(name: str, state: str) -> str:
 
     delete_trails_and_lifts(name, state)
     trails, lifts = _read_osm.read_osm(f'{name}.osm')
+
+    if ignore_areas:
+        temp_trails = []
+        for trail in trails:
+            if not trail['area']:
+                temp_trails.append(trail)
+
+        trails = temp_trails
 
     trail_count = len(trails)
     lift_count = len(lifts)
@@ -350,7 +377,27 @@ def refresh_resort(name: str, state: str) -> str:
     params = (trail_count, lift_count, mountain_id)
     cur.execute(query, params)
 
-    weather_modifier = add_weather_stats(cur, mountain_id, name)
+    current_date = [int(x) for x in str(datetime.today().date()).split('-')]
+
+    query = 'SELECT last_updated FROM Mountains WHERE mountain_id = ?'
+    last_updated_date = [int(x) for x in cur.execute(query, (mountain_id,)).fetchone()[0].split('-')]
+
+    need_new_weather = True
+    if current_date[0] == last_updated_date[0]:
+        # if the year is the same, ski season is at least mostly over, and the data includes the latest season
+        if current_date[1] >= 4 and last_updated_date[1] >= 4:
+            need_new_weather = False
+    if current_date[0] - last_updated_date[0] == 1:
+        # if the year is off by 1, but the current season is still in progress, and the data was refreshed last season
+        if current_date[1] < 4 and last_updated_date[1] >= 4:
+            need_new_weather = False
+
+    if need_new_weather:
+        weather_modifier = add_weather_stats(cur, mountain_id, name)
+    else:
+        query = 'SELECT avg_icy_days, avg_snow, avg_rain FROM Mountains WHERE mountain_id = ?'
+        weather_data = cur.execute(query, (mountain_id,)).fetchone()
+        weather_modifier = _misc.get_weather_modifier({'icy_days': weather_data[0], 'snow': weather_data[1], 'rain': weather_data[2]})
 
     add_trails(cur, mountain_id, trails, lifts, weather_modifier)
 

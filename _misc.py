@@ -8,7 +8,7 @@ from math import degrees, atan, atan2
 from os.path import exists
 from rich.progress import track
 import os
-import datetime
+from datetime import datetime
 
 
 def get_center_coordinates(filename: str):
@@ -546,40 +546,46 @@ def get_weather_modifier(weather_dict: dict):
     to other resorts. Each weather value contributes up to 2 degrees of difficulty.
     A resort that is 2 SD harder than the mean for a given metric gets the full two points.
 
-    The statistical values for each metric are as follows (Updated 2023-03-14):
+    The statistical values for each metric are as follows (Updated 2023-12-28):
     Metric       | Mean              | Standard Deviation
-    avg_icy_days | 41.65448028673834 | 18.562479199958606     
-    avg_snow     | 66.0301792114695  | 44.399707758856174     
-    avg_rain     | 4.908637992831541 | 4.573835469799186     
+    avg_icy_days | 40.13571428571428 | 18.81610659373872     
+    avg_snow     | 79.67810714285716 | 61.38204737243106     
+    avg_rain     | 4.711321428571425 | 4.6343473924412     
 
     As such, the range of non-outlier are:
     Metric       | Acceptable Values
-    avg_icy_days | 4.53 - 78.77
-    avg_snow     | 0 - 154.83     
-    avg_rain     | 0 - 14.05
+    avg_icy_days | 2.50 - 77.78
+    avg_snow     | 0 - 202.44    
+    avg_rain     | 0 - 13.97
     '''
     modifier = 0
 
-    if weather_dict['icy_days'] > 78.77:
-        weather_dict['icy_days'] = 78.77
+    min_icy_days = 2.5
+    max_icy_days = 77.78
 
-    if weather_dict['icy_days'] < 4.53:
-        weather_dict['icy_days'] = 4.53
+    max_snow = 202.44
+    max_rain = 13.97
 
-    if weather_dict['rain'] > 14.05:
-        weather_dict['rain'] = 14.05
+    if weather_dict['icy_days'] > max_icy_days:
+        weather_dict['icy_days'] = max_icy_days
 
-    if weather_dict['snow'] > 154.83:
-        weather_dict['snow'] = 154.83
+    if weather_dict['icy_days'] < min_icy_days:
+        weather_dict['icy_days'] = min_icy_days
+
+    if weather_dict['rain'] > max_rain:
+        weather_dict['rain'] = max_rain
+
+    if weather_dict['snow'] > max_snow:
+        weather_dict['snow'] = max_snow
 
     # Icy days - note the adjustment for both ends of the range being valid outliers
-    modifier += ((weather_dict['icy_days'] - 4.53) / (78.77 - 4.53)) * 2
+    modifier += ((weather_dict['icy_days'] - min_icy_days) / (max_icy_days - min_icy_days)) * 2
 
     # Rain
-    modifier += (weather_dict['rain'] / 14.05) * 2
+    modifier += (weather_dict['rain'] / max_rain) * 2
 
     # Snow - note that since higher = better conditions, the percentage needs to be inverted
-    modifier += (1 - (weather_dict['snow'] / 154.83)) * 2
+    modifier += (1 - (weather_dict['snow'] / max_snow)) * 2
 
     return modifier
 
@@ -587,4 +593,4 @@ def get_weather_modifier(weather_dict: dict):
 def last_modified_date(path_to_file):
     stat = os.stat(path_to_file)
     epoch = stat.st_mtime
-    return datetime.datetime.fromtimestamp(epoch).date()
+    return datetime.fromtimestamp(epoch).date()

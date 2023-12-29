@@ -89,8 +89,8 @@ def process_trails(ways: list(dict())) -> tuple():
                 if way['gladed'] != False:
                     way['gladed'] = True
                 way['area'] = True
-            if 'public_transport' in tag:
-                if 'platform' in tag['public_transport']:
+            if 'public transport' in tag:
+                if 'platform' in tag['public transport']:
                     way['type'] = None
                     way['valid'] = False
             if 'name' in tag:
@@ -103,12 +103,20 @@ def process_trails(ways: list(dict())) -> tuple():
             if 'disused' in tag:
                 way['type'] = None
                 way['valid'] = False
+            if 'abandoned' in tag:
+                way['type'] = None
+                way['valid'] = False
 
         if way['type'] != None and way['valid']:
             if way['name'] == None or way['name'] == '':
                 way['name'] = ''
                 print(
                     'Way #{} has no name. Please add a name.'.format(way['id']))
+            way['name'] = way['name'].replace(' amp ', ' & ')
+            way['name'] = way['name'].replace(' quot ', ' " ')
+            way['name'] = way['name'].replace(' lt ', ' < ')
+            way['name'] = way['name'].replace(' gt ', ' > ')
+
             if way['type'] == 'trail':
                 if way['gladed'] == None:
                     way['gladed'] = False
@@ -169,10 +177,6 @@ def merge_trails(trails):
                     common_traits += 1
                 if previously_seen_dicts[j]['area'] == trail['area']:
                     common_traits += 1
-                if trail['name'] == 'Moon Shadow':
-                    print(common_traits)
-                    print(trail['id'])
-                    print(previously_seen_dicts[j]['id'])
                 if common_traits == 5:
                     # check if previously seen trail connects to top of current trail
                     if previously_seen_dicts[j]['nodes'][-1]['lat'] == trail['nodes'][0]['lat'] and previously_seen_dicts[j]['nodes'][-1]['lon'] == trail['nodes'][0]['lon']:

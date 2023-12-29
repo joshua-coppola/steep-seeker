@@ -23,8 +23,8 @@ def bulk_add_resorts() -> None:
             add_resort(item.split('.')[0])
 
 
-def refresh_resort(name: str, state: str) -> None:
-    return_state = db.refresh_resort(name, state)
+def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> None:
+    return_state = db.refresh_resort(name, state, ignore_areas)
     if state == return_state:
         print('Creating Map')
         maps.create_map(name, state)
@@ -209,12 +209,18 @@ def repl() -> None:
         if operation == 3:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
-            refresh_resort(name, state)
+            areas = input('\nIgnore Areas (Y/N): ')
+            if areas.lower() == 'y':
+                areas == False
+            else: 
+                areas == True
+            refresh_resort(name, state, areas)
 
         if operation == 4:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
-            refresh_resort_from_osm(name, state)
+            extra_area = float(input('Enter Addition Search Area Ratio (0 is no change, 1 is double both dimensions): '))
+            refresh_resort_from_osm(name, state, extra_area)
 
         if operation == 5:
             bulk_refresh_resorts()
@@ -256,12 +262,17 @@ def repl() -> None:
         if operation == 13:
             name = input('\nEnter Resort Name: ')
             state = input('\nEnter State: ')
-            item_id = input('\nEnter OSM ID')
-            mountain_id = db.get_mountain_id(name, state)
-            db.delete_trail(mountain_id, item)
-            db.delete_lift(mountain_id, item)
-            maps.create_map(name, state)
-            maps.create_thumbnail(name, state)
+            keep_going = True
+            while keep_going:
+                item_id = input('\nEnter OSM ID (Enter Nothing to Finish): ')
+                if item_id == '':
+                    keep_going = False
+                    break
+                mountain_id = db.get_mountain_id(name, state)
+                db.delete_trail(mountain_id, item_id)
+                db.delete_lift(mountain_id, item_id)
+                maps.create_map(name, state)
+                maps.create_thumbnail(name, state)
 
         if operation == 14:
             name = input('\nEnter Resort Name: ')
