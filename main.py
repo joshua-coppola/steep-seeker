@@ -211,10 +211,9 @@ def repl() -> None:
             state = input('\nEnter State: ')
             areas = input('\nIgnore Areas (Y/N): ')
             if areas.lower() == 'y':
-                areas == False
+                refresh_resort(name, state, True)
             else: 
-                areas == True
-            refresh_resort(name, state, areas)
+                refresh_resort(name, state)
 
         if operation == 4:
             name = input('\nEnter Resort Name: ')

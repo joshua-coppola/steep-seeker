@@ -56,15 +56,15 @@ class Trail:
 
         self.mountain_id = trail_dict['mountain_id']
         self.name = trail_dict['name']
-        if trail_dict['area'] == 'True':
+        if trail_dict['area'] == 1 or trail_dict['area'] == 'True':
             self.area = True
         else:
             self.area = False
-        if trail_dict['gladed'] == 'True':
+        if trail_dict['gladed'] == 1 or trail_dict['gladed'] == 'True':
             self.gladed = True
         else:
             self.gladed = False
-        if trail_dict['ungroomed'] == 'True':
+        if trail_dict['ungroomed'] == 1 or trail_dict['ungroomed'] == 'True':
             self.ungroomed = True
         else:
             self.ungroomed = False

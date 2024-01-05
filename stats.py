@@ -22,9 +22,9 @@ print('Ungroomed: 2.5pts')
 
 def trail_rating(pitch: float, gladed: str, ungroomed: str, weather_modifier: float) -> 'str':
     pitch += (weather_modifier / 6) * 6.5
-    if gladed == 'True':
+    if gladed == True:
         pitch += 5.5
-    if ungroomed == 'True':
+    if ungroomed == True:
         pitch += 2.5
     # 0-16 degrees: green
     if pitch < 18:
@@ -116,7 +116,7 @@ plt.title('All Trails')
 #plt.show()
 
 gladed_pitch = {}
-for gladed in ['True', 'False']:
+for gladed in [True, False]:
     query = f'SELECT AVG({steepest_pitch}) FROM Trails WHERE gladed= ?'
     params = (gladed,)
 
@@ -126,7 +126,7 @@ gladed_pitch['Difference'] = gladed_pitch['True'] - gladed_pitch['False']
 print_dict(gladed_pitch, ['Gladed', 'Average Pitch'])
 
 gladed_sd = {}
-for gladed in ['True', 'False']:
+for gladed in [True, False]:
     query = f'SELECT AVG({steepest_pitch} * {steepest_pitch}) - (AVG({steepest_pitch}) * AVG({steepest_pitch})) FROM Trails WHERE gladed = ?'
     params = (gladed,)
 
@@ -146,7 +146,7 @@ plt.title('Gladed Trails')
 for official_rating in ['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme', 'freeride']:
     print(official_rating)
     ungroomed_pitch = {}
-    for ungroomed in ['True', 'False']:
+    for ungroomed in [True, False]:
         query = f'SELECT AVG({steepest_pitch}) FROM Trails WHERE ungroomed= ? AND official_rating = ?'
         params = (ungroomed, official_rating)
 

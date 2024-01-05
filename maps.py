@@ -140,16 +140,16 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
     line_width = max(min(fig.get_size_inches()[0] / 3, 2), .4)
 
     # lifts
-    for lift in mountain_info.lifts():
+    for lift_obj in mountain_info.lifts():
 
-        lift_class = Lift(lift['lift_id'])
+        lift = Lift(lift_obj['lift_id'])
         if x_data == 'lat':
-            x = lift_class.lat()
-            y = lift_class.lon()
+            x = lift.lat()
+            y = lift.lon()
 
         if x_data == 'lon':
-            x = lift_class.lon()
-            y = lift_class.lat()
+            x = lift.lon()
+            y = lift.lat()
 
         x = [j * lat_mirror for j in x]
         y = [k * lon_mirror for k in y]
@@ -158,78 +158,77 @@ def populate_map(mountain_info, with_labels: bool = True, debug_mode: bool = Fal
 
         if with_labels:
             point, angle, label_length = get_label_placement(
-                x, y, lift['length'], len(lift['name']))
+                x, y, lift.length, len(lift.name))
             if point == 0 and angle == 0:
                 continue
             # Check that label is shorter than trail
-            label_text = lift['name']
+            label_text = lift.name
             if label_text == '' and debug_mode:
-                label_text = lift['lift_id']
-            if label_length < lift['length'] or debug_mode:
+                label_text = lift.lift_id
+            if label_length < lift.length or debug_mode:
                 plt.text(x[point], y[point], label_text, {'color': 'grey', 'size': 2, 'rotation': angle}, ha='center',
                          backgroundcolor='white', va='center', bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none'))
 
     # trails
-    for trail in mountain_info.trails():
-
-        trail_class = Trail(trail['trail_id'])
+    for trail_obj in mountain_info.trails():
+        trail = Trail(trail_obj['trail_id'])
         if x_data == 'lat':
-            x = trail_class.lat()
-            y = trail_class.lon()
+            x = trail.lat()
+            y = trail.lon()
 
         if x_data == 'lon':
-            x = trail_class.lon()
-            y = trail_class.lat()
+            x = trail.lon()
+            y = trail.lat()
         
         x = [j * lat_mirror for j in x]
         y = [k * lon_mirror for k in y]
 
-        if debug_mode and trail['area']:
+        if debug_mode and trail.area:
             if x_data == 'lat':
-                debug_x = trail_class.lat(visible=False)
-                debug_y = trail_class.lon(visible=False)
+                debug_x = trail.lat(visible=False)
+                debug_y = trail.lon(visible=False)
 
             if x_data == 'lon':
-                debug_x = trail_class.lon(visible=False)
-                debug_y = trail_class.lat(visible=False)
+                debug_x = trail.lon(visible=False)
+                debug_y = trail.lat(visible=False)
             
             debug_x = [j * lat_mirror for j in debug_x]
             debug_y = [k * lon_mirror for k in debug_y]
 
-        color = _misc.trail_color(trail['difficulty'])
+        color = _misc.trail_color(trail.difficulty)
 
         # place lines
-        if trail['area'] == 'True':
-            if trail['gladed'] == 'True':
+        if trail.area == True:
+            if trail.gladed == True:
                 plt.fill(x, y, alpha=.1, fc=color)
                 plt.fill(x, y, ec=color, fc='none',
                          linestyle='dashed', lw=line_width)
-            if trail['gladed'] == 'False':
+            if trail.gladed == False:
                 plt.fill(x, y, alpha=.1, fc=color)
                 plt.fill(x, y, ec=color, fc='none', lw=line_width)
             if debug_mode:
-                if trail['gladed'] == 'True':
+                if trail.gladed == True:
                     plt.plot(debug_x, debug_y, c=color, linestyle='dashed', lw=line_width)
-                if trail['gladed'] == 'False':
+                if trail.gladed == False:
                     plt.plot(debug_x, debug_y, c=color, lw=line_width)
-        if trail['area'] == 'False':
-            if trail['gladed'] == 'True':
+        if trail.area == False:
+            if trail.gladed == True:
                 plt.plot(x, y, c=color, linestyle='dashed', lw=line_width)
-            if trail['gladed'] == 'False':
+            if trail.gladed == False:
                 plt.plot(x, y, c=color, lw=line_width)
 
         # add label names
         if with_labels:
             label_text = '{} {:.1f}{}'.format(
-                trail['name'].strip(), trail['steepest_30m'], u'\N{DEGREE SIGN}')
+                trail.name.strip(), trail.steepest_30m, u'\N{DEGREE SIGN}')
             point, angle, label_length = get_label_placement(
-                x, y, trail['length'], len(label_text))
+                x, y, trail.length, len(label_text))
             if point == 0 and angle == 0 and not debug_mode:
                 continue
             # Check that label is shorter than trail
-            if label_length < trail['length'] or debug_mode:
-                if trail['name'].strip() == '' and debug_mode:
-                    label_text = trail['trail_id']
+            if label_length < trail.length or debug_mode:
+                if trail.name.strip() == '' and debug_mode:
+                    label_text = trail.trail_id
                 # improves contrast
                 if color == 'gold':
                     color = 'black'
@@ -250,15 +249,19 @@ def find_map_size(mountain_info) -> dict():
             INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?'
     lift_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
 
-    # change in latitude (km)
-    x_length = hs.haversine((max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]), (min(
-        trail_extremes[1], lift_extremes[1]), trail_extremes[2]), unit=hs.Unit.KILOMETERS)
-
-    # change in longitude (km)
-    y_length = hs.haversine((trail_extremes[0], max(trail_extremes[2], lift_extremes[2])), (
-        trail_extremes[0], min(trail_extremes[3], lift_extremes[3])), unit=hs.Unit.KILOMETERS)
-
     conn.close()
+
+    try:
+        # change in latitude (km)
+        x_length = hs.haversine((max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]), (min(
+            trail_extremes[1], lift_extremes[1]), trail_extremes[2]), unit=hs.Unit.KILOMETERS)
+
+        # change in longitude (km)
+        y_length = hs.haversine((trail_extremes[0], max(trail_extremes[2], lift_extremes[2])), (
+            trail_extremes[0], min(trail_extremes[3], lift_extremes[3])), unit=hs.Unit.KILOMETERS)
+    except:
+        x_length = hs.haversine((trail_extremes[0], trail_extremes[2]), (trail_extremes[1], trail_extremes[2]), unit=hs.Unit.KILOMETERS)
+        y_length = hs.haversine((trail_extremes[0], trail_extremes[2]), (trail_extremes[0], trail_extremes[3]), unit=hs.Unit.KILOMETERS)
 
     # rotate map to look correct
     if 's' in mountain_info.direction or 'n' in mountain_info.direction:

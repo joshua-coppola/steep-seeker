@@ -34,8 +34,11 @@ def reset_db() -> None:
 def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()), weather_modifier: float) -> None:
     for trail in trails:
         try:
-            cur.execute('INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
-                VALUES ({}, {}, "{}", "{}", "{}", "{}", "{}")'.format(trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['ungroomed'], trail['official_rating']))
+            query = 'INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
+                VALUES (?, ?, ?, ?, ?, ?, ?)'
+            params = (trail['id'], mountain_id, trail['name'], trail['area'], trail['gladed'], trail['ungroomed'], trail['official_rating'])
+            
+            cur.execute(query, params)
         except sqlite3.IntegrityError as e:
             query = 'SELECT mountain_id FROM Trails WHERE trail_id = ?'
             params = (trail['id'],)
@@ -55,16 +58,20 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
             Decimal(x['lon']), 8)} for x in trail['nodes']]
         for i, node in enumerate(trail['nodes']):
             try:
-                cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
-                    VALUES ({}, {}, 1, "{}", "{}")'.format(i, trail['id'], str(node['lat']), str(node['lon'])))
+                query = 'INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) VALUES (?, ?, ?, ?, ?)'
+                params = (i, trail['id'], 1, str(node['lat']), str(node['lon']))
+
+                cur.execute(query, params)
             except sqlite3.IntegrityError as e:
                 name, trail_id = trail['name'], trail['id']
-                print(f'\n{name} {trail_id} {i} is conflicting.')
+                print(f'{name} {trail_id} {i} is conflicting.')
 
     for lift in lifts:
         try:
-            cur.execute('INSERT INTO Lifts (lift_id, mountain_id, name) \
-                VALUES ({}, {}, "{}")'.format(lift['id'], mountain_id, lift['name']))
+            query = 'INSERT INTO Lifts (lift_id, mountain_id, name) VALUES (?, ?, ?)'
+            params = (lift['id'], mountain_id, lift['name'])
+            
+            cur.execute(query, params)
         except sqlite3.IntegrityError as e:
             query = 'SELECT mountain_id FROM Lifts WHERE lift_id = ?'
             params = (lift['id'],)
@@ -83,11 +90,13 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
             Decimal(x['lon']), 8)} for x in lift['nodes']]
         for i, node in enumerate(lift['nodes']):
             try:
-                cur.execute('INSERT INTO LiftPoints (ind, lift_id, lat, lon) \
-                    VALUES ({}, {}, "{}", "{}")'.format(i, lift['id'], node['lat'], node['lon']))
+                query = 'INSERT INTO LiftPoints (ind, lift_id, lat, lon) VALUES (?, ?, ?, ?)'
+                params = (i, lift['id'], str(node['lat']), str(node['lon']))
+
+                cur.execute(query, params)
             except sqlite3.IntegrityError as e:
                 name, lift_id = lift['name'], lift['id']
-                print(f'\n{name} {lift_id} {i} is conflicting.')
+                print(f'{name} {lift_id} {i} is conflicting.')
 
     # calculate elevation and slope for each point
     print('Processing Trails')
@@ -108,7 +117,7 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
 
     # process areas
     trail_ids = cur.execute(
-        'SELECT trail_id FROM Trails WHERE area = "True" AND steepest_30m IS NULL').fetchall()
+        'SELECT trail_id FROM Trails WHERE area IS TRUE AND steepest_30m IS NULL').fetchall()
 
     for trail_id in trail_ids:
         nodes = cur.execute(
@@ -119,8 +128,18 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         centerline_nodes = [{'lat': round(Decimal(x['lat']), 8), 'lon':round(
             Decimal(x['lon']), 8)} for x in centerline_nodes]
         for i, node in enumerate(centerline_nodes):
-            cur.execute('INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) \
-                VALUES ({}, {}, 0, "{}", "{}")'.format(i, trail_id[0], node['lat'], node['lon']))
+            try:
+                query = 'INSERT INTO TrailPoints (ind, trail_id, for_display, lat, lon) VALUES (?, ?, ?, ?, ?)'
+                params = (i, trail_id[0], 0, str(node['lat']), str(node['lon']))
+
+                cur.execute(query, params)
+            except sqlite3.IntegrityError as e:
+                name, out_trail_id = trail['name'], trail['id']
+                #print(f'\n{name} {out_trail_id} {i} is conflicting.')
+
+        query = 'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = ?'
+        params = (trail_id[0], 0)
+        nodes = cur.execute(query, params).fetchall()
 
     print('Processing Areas')
     add_elevation(cur, 'TrailPoints')
@@ -141,10 +160,12 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
         area = cur.execute(
             'SELECT area FROM Trails WHERE trail_id = ?', (trail_id)).fetchone()[0]
         for_display = 1
-        if area == 'True':
+        if area == 1:
             for_display = 0
-        nodes = cur.execute(
-            f'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = {for_display}', (trail_id)).fetchall()
+
+        query = 'SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = ?'
+        params = (trail_id[0], for_display)
+        nodes = cur.execute(query, params).fetchall()
 
         pitch_30 = _misc.get_steep_pitch(nodes, 30)
         pitch_50 = _misc.get_steep_pitch(nodes, 50)
@@ -159,12 +180,12 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
 
         gladed = cur.execute(
             'SELECT gladed FROM Trails WHERE trail_id = ?', (trail_id)).fetchone()[0]
-        if gladed == 'True':
+        if gladed == 1:
             difficulty += 5.5
 
         ungroomed = cur.execute(
             'SELECT ungroomed FROM Trails WHERE trail_id = ?', (trail_id)).fetchone()[0]
-        if ungroomed == 'True':
+        if ungroomed == 1:
             difficulty += 2.5
 
         difficulty = round(difficulty, 1)
@@ -289,11 +310,6 @@ def _add_resort(name: str) -> str:
         db.close()
         return None
 
-    if lift_count == 0:
-        print('No lifts found, exiting')
-        db.close()
-        return None
-
     cur.execute(f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
         VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})')
 
@@ -311,10 +327,10 @@ def _add_resort(name: str) -> str:
 
     trail_points = []
     for trail_id in trail_ids:
-        if trail_id[1] == 'True':
+        if trail_id[1] == 1:
             trail_points.append(cur.execute(
                 f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 0").fetchall())
-        if trail_id[1] == 'False':
+        if trail_id[1] == 0:
             trail_points.append(cur.execute(
                 f"SELECT lat, lon FROM TrailPoints WHERE trail_id = {trail_id[0]} AND for_display = 1").fetchall())
 
@@ -351,6 +367,7 @@ def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> str:
     trails, lifts = _read_osm.read_osm(f'{name}.osm')
 
     if ignore_areas:
+        print('\nRemoving Areas')
         temp_trails = []
         for trail in trails:
             if not trail['area']:
@@ -363,11 +380,6 @@ def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> str:
 
     if trail_count == 0:
         print('No trails found, exiting')
-        db.close()
-        return None
-
-    if lift_count == 0:
-        print('No lifts found, exiting')
         db.close()
         return None
 
