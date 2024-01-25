@@ -29,7 +29,7 @@ def process_trails(ways: list(dict())) -> tuple():
                 way['official_rating'] = tag['piste difficulty']
                 way['type'] = 'trail'
             if 'piste type' in tag:
-                if tag['piste type'] == 'downhill' or tag['piste type'] == 'traverse':
+                if tag['piste type'] == 'downhill' or tag['piste type'] == 'traverse' or tag['piste type'] == 'snow park':
                     way['type'] = 'trail'
                 elif tag['piste type'] == 'yes':
                     print('Way #{} ({}) is marked as piste type "yes". Please make more specific.'.format(

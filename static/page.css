@@ -12,6 +12,11 @@ nav {
     display: flex;
     align-items: center;
     line-height: 1.25rem;
+    background-color: var(--color-background);
+}
+
+.home-div {
+    float: left;
 }
 
 #home-link {
@@ -30,6 +35,7 @@ nav {
 
 .nav-list {
     display: flex;
+    margin-top: 8px;
 }
 .nav-list li {
     margin-right: 16px;
@@ -129,13 +135,38 @@ p.copy {
     background-color: var(--color-accent-light);
 }
 
-@media screen and (max-width: 700px) {
+.hamburger {
+    display: none;
+}
+
+@media screen and (max-width: 760px) {
+    nav {
+        z-index: 9;
+        background-color: var(--color-background);
+    }
     #home-link {
         margin-right: 16px;
+        top: 1.2rem;
+    }
+
+    .top-bar {
+        display: grid;
+        width: 100%;
+        z-index: 10;
+        background-color: var(--color-background);
     }
 
     .nav-div {
         width: 100%;
+        display: none;
+    }
+
+    .hamburger {
+        display: block;
+        position: absolute;
+        right: 0;
+        top: 0;
+        padding: 1.2rem;
     }
 
     .nav-list {
@@ -143,6 +174,10 @@ p.copy {
         float: none;
         display: block;
         text-align: center;
+    }
+
+    .nav-list li {
+        margin-left: 16px;
     }
 
     .button {

@@ -8,16 +8,36 @@
 
 {% block body %}
 <nav>
-    <div class="home-div"><a id="home-link" href="/"><img alt="Steep Seeker Logo" height="50" width="50" src="/logo.svg" />Steep Seeker</a></div>
-    <div class="nav-div"><ul class="nav-list">
-        {% for link in nav_links %}
-        <li><div class="button"><a href="{{link.to}}" {% if active_page == link.page %} class="button-cta" {% else %} class="button-cta2" {% endif %}>
-                {{link.title}}
-            </a></div></li>
-        {% endfor %}
-    </ul></div>
-    <span style="flex-grow: 1"></span>
+    <div class="top-bar">
+        <div class="home-div">
+            <a id="home-link" href="/"><img alt="Steep Seeker Logo" height="50" width="50" src="/logo.svg" />Steep Seeker</a>
+        </div>
+        <a href="javascript:void(0);" class="hamburger" onclick="myFunction()">
+            <img alt="Hamburger Menu" height="24" width="24" src="/hamburger-menu.svg">
+        </a>
+        <div class="nav-div" id="nav-div">
+            <ul class="nav-list">
+                {% for link in nav_links %}
+                <li><div class="button"><a href="{{link.to}}" {% if active_page == link.page %} class="button-cta" {% else %} class="button-cta2" {% endif %}>
+                        {{link.title}}
+                    </a></div></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
     {# <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button> #}
+    <script>
+        /* Toggle between showing and hiding the navigation menu links when the user clicks on the hamburger menu / bar icon */
+        function myFunction() {
+            var x = document.getElementById("nav-div");
+            if (x.style.display === "block") {
+                x.style.display = "none";
+            } else {
+                x.style.display = "block";
+            }
+        } 
+    </script>
 </nav>
 
 <main>

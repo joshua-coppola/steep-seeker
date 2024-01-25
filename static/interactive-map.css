@@ -180,9 +180,3 @@ h3 {
         left: 0px;
     }
 }
-
-@media screen and (max-width: 700px) {
-    #map {
-        top: 220px
-    }
-}

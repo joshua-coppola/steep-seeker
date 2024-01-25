@@ -198,13 +198,3 @@ main > * {
         left: 0px;
     }
 }
-
-@media screen and (max-width: 700px) {
-    .zoom-buttons {
-        top: 170px
-    }
-
-    #map {
-        padding-top: 220px
-    }
-}
