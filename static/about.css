@@ -78,6 +78,16 @@ main {
     text-align: center;
 }
 
+.bullets {
+    list-style-type: disc;
+    margin-bottom: 2rem;
+}
+
+.bullets li {
+    margin-bottom: .5rem;
+    margin-left: 3rem;
+}
+
 @media screen and (max-width: 800px) {
     .blurb {
         display: flex;

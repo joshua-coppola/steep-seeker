@@ -33,14 +33,19 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 ### Overall
 
 - [x] Add mobile support
+    - [x] Improve nav bar with collapsible hamburger menu
 - [ ] Add footer
 - [ ] Improve comments on code
+- [ ] Add hover animations to buttons
 
 ### Python
 
 - [x] Add mountain, trail, and lift classes
 - [x] Add weather data to difficulty ratings
 - [x] Add type hinting to functions
+- [ ] Add private ski areas
+- [ ] Add and store more chairlift information (seats, speed, vert, etc.)
+- [ ] Investigate adding a length of pitch component to difficulty
 
 ### Landing Page
 
@@ -48,7 +53,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 ### Search
 
-- Reasonably complete
+- [ ] Add missing settings from desktop to mobile
 
 ### Mountain Rankings
 
@@ -63,7 +68,20 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 ### Maps
 
 - [ ] 3d maps
-- [ ] Leaflet / interactive maps
+- [x] Leaflet / interactive maps
+    - [ ] Add Map Rotation
+    - [ ] Add elevation profile on click
+    - [ ] Color each section of a trail based on pitch
+    - [ ] Show icon for nearby mountains
+    - [ ] Improve toggle button between map modes
+    - [ ] Allow user to click on trail name in list and highlight trail on map
+    - [ ] Improve readability of trail information
+
+### Stats Page
+
+- [ ] Add Stats page
+    - [ ] Trail / Resort Stats from stats.py file
+    - [ ] Site traffic
 
 ### Management
 
@@ -80,8 +98,12 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 ### Mountains with no trails/lifts (not a complete list)
 
 - Barker Mountain
-- China Peak
 - Coppervale
 - Hidden Valley, OH
 - Paoli Peaks
+- Labrador, NY
+- Song, NY
+- Swain, NY
+- Titus, NY
+- Mt Waterman, CA
   
