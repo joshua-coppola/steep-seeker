@@ -88,6 +88,10 @@ main {
     margin-left: 3rem;
 }
 
+.center {
+    text-align: center;
+}
+
 @media screen and (max-width: 800px) {
     .blurb {
         display: flex;
