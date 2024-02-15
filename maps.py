@@ -57,7 +57,7 @@ def get_label_placement(x: list(), y: list(), length: float, name_length: int) -
         return (0, 0, 0)
     point_count = len(x)
     average_point_gap = length / point_count
-    letter_size = 10 / average_point_gap
+    letter_size = 22 / average_point_gap
     label_length = average_point_gap * name_length * letter_size
     label_length_in_points = int(label_length / average_point_gap)
 
@@ -68,7 +68,7 @@ def get_label_placement(x: list(), y: list(), length: float, name_length: int) -
 
     for i, _ in enumerate(x):
         valid = False
-        if average_point_gap * i > label_length / 2.1:
+        if average_point_gap * i > label_length / 2:
             if average_point_gap * (point_count - i) > label_length / 2:
                 valid = True
         if i == 0:

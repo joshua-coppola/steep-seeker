@@ -154,15 +154,18 @@ h3 {
 
 .map-button {
     position: absolute;
-    left: 424px;
-    bottom: 8px;
-    font-weight: bold;
-    height: 2.4rem;
-    border-radius: 4px;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-background);
+    left: 416px;
+    bottom: 0px;
     font-size: 1.2rem;
-    padding: .4rem;
+}
+
+.map-button a {
+    color: white;
+    text-decoration: none;
+}
+
+.map-button a:hover {
+    opacity: 1;
 }
 
 

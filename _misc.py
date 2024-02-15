@@ -49,7 +49,10 @@ def find_state(filename: str) -> str:
     # Uses Open Street Maps Nominatim API to determine which state the resort is in
     url = f'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={lat}&lon={lon}'
 
-    response = get(url)
+    headers = {'User-Agent': 'steepseeker'}
+
+
+    response = get(url, headers = headers)
     if response.status_code == 200:
         address = json.loads(response.content)['address']
         if address['country_code'] != 'us':
