@@ -123,12 +123,15 @@ Trail Rankings
 
     <div class="links">
         {% if 'prev' in pages %}
-        <a href="{{pages.prev}}">← Previous Page</a>
-        <span style="width: 50px;"></span>
+        <div class="column-left">
+            <a class="button-cta2" href="{{pages.prev}}">&#x25C0; Previous Page</a>
+        </div>
         {% endif %}
 
         {% if 'next' in pages %}
-        <a href="{{pages.next}}">Next Page →</a>
+        <div class="column-right">
+            <a class="button-cta2" href="{{pages.next}}">Next Page &#x25B6;</a>
+        </div>
         {% endif %}
     </div>
 
@@ -507,12 +510,15 @@ Trail Rankings
 
     <div class="links">
         {% if 'prev' in pages %}
-        <a href="{{pages.prev}}">← Previous Page</a>
-        <span style="width: 50px;"></span>
+        <div class="column-left">
+            <a class="button-cta2" href="{{pages.prev}}">&#x25C0; Previous Page</a>
+        </div>
         {% endif %}
 
         {% if 'next' in pages %}
-        <a href="{{pages.next}}">Next Page →</a>
+        <div class="column-right">
+            <a class="button-cta2" href="{{pages.next}}">Next Page &#x25B6;</a>
+        </div>
         {% endif %}
     </div>
 </section>

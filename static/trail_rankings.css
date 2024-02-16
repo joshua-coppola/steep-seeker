@@ -49,7 +49,11 @@ main {
 
 .links {
     display: flex;
-    align-items: center;
+    flex-direction: row;
+}
+
+.column-left {
+    padding-right: 1rem;
 }
 
 table {
