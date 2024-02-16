@@ -34,16 +34,20 @@ Search
             <option value="trail_count-asc">Trail Count &#x25b2;</option>
             <option value="trail_count-desc">Trail Count &#x25bc;</option>
         </select>
-        <input id="submit" type="submit" value="Search" />
+        <input class="button-cta" id="submit" type="submit" value="Search" />
     </form>
 
     <div class="links">
         {% if 'prev' in pages %}
-        <a href="{{pages.prev}}">← Previous Page</a>
+        <div class="column-left">
+            <a class="button-cta2" href="{{pages.prev}}">&#x25C0; Previous Page</a>
+        </div>
         {% endif %}
-        <span style="flex-grow: 1"></span>
+
         {% if 'next' in pages %}
-        <a href="{{pages.next}}">Next Page →</a>
+        <div class="column-right">
+            <a class="button-cta2" href="{{pages.next}}">Next Page &#x25B6;</a>
+        </div>
         {% endif %}
     </div>
 
@@ -90,11 +94,15 @@ Search
 
     <div class="links">
         {% if 'prev' in pages %}
-        <a href="{{pages.prev}}">← Previous Page</a>
+        <div class="column-left">
+            <a class="button-cta2" href="{{pages.prev}}">&#x25C0; Previous Page</a>
+        </div>
         {% endif %}
-        <span style="flex-grow: 1"></span>
+
         {% if 'next' in pages %}
-        <a href="{{pages.next}}">Next Page →</a>
+        <div class="column-right">
+            <a class="button-cta2" href="{{pages.next}}">Next Page &#x25B6;</a>
+        </div>
         {% endif %}
     </div>
 </section>

@@ -64,12 +64,15 @@ main {
     font-size: 1.2rem;
 }
 .search-form #submit {
-    background-color: var(--color-accent);
     color: white;
     border: none;
 }
 .search-form #sort {
     background-color: transparent;
+}
+
+.column-left {
+    padding-right: 1rem;
 }
 
 #sidebar {
