@@ -19,6 +19,9 @@ Explore Resorts
 <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
 </script>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+
 <link href="/explore.css" rel="stylesheet" />
 {% endblock pagehead %}
 
@@ -69,6 +72,8 @@ Explore Resorts
     map.on('almost:click', function (e) {
         e.layer.openPopup();
     });
+
+    L.control.locate().addTo(map);
 </script>
 
 </section>

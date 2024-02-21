@@ -112,6 +112,7 @@ p.copy {
     border-radius: 4px;
     text-decoration: none;
     font-weight: bold;
+    border-width: 0;
 }
 .button-cta:hover {
     opacity: 1;
@@ -127,6 +128,7 @@ p.copy {
     border-radius: 4px;
     text-decoration: none;
     font-weight: bold;
+    border-width: 0;
 }
 
 .button-cta2:hover {

@@ -20,6 +20,10 @@
 </script>
 
 <link href="/interactive-map.css" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+
 {% endblock pagehead %}
 
 {% block content %}
@@ -149,6 +153,8 @@
         map.on('almost:click', function (e) {
             e.layer.openPopup();
         });
+
+        L.control.locate().addTo(map);
 
     </script>
 </main>
