@@ -26,6 +26,8 @@
 
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 
+<script src="/leaflet.textpath.js"></script>
+
 {% endblock pagehead %}
 
 {% block content %}
@@ -113,6 +115,7 @@
             // does this feature have a property named popupContent?
             if (feature.properties && feature.properties.popupContent) {
                 layer.bindPopup(feature.properties.popupContent);
+                layer.setText(feature.properties.label, {offset: -5, center: true, orientation: feature.properties.orientation});
             }
         }
 

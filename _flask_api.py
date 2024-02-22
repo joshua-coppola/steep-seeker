@@ -5,7 +5,7 @@ from flask_wtf import FlaskForm
 from flask_sitemapper import Sitemapper
 import os
 import geojson
-from math import sqrt
+from math import sqrt, degrees, atan2
 
 from data.secret import secret
 
@@ -330,6 +330,23 @@ def explore():
 
 @app.route('/interactive-map/<string:state>/<string:name>')
 def interactive_map(state, name):
+    def get_orientation(lon_points, lat_points):
+        midpoint = int(len(lon_points) / 2)
+        dx = lon_points[max(midpoint - 5, 0)] - lon_points[min(midpoint + 5, (midpoint * 2) - 1)]
+        dy = lat_points[max(midpoint - 5, 0)] - lat_points[min(midpoint + 5, (midpoint * 2) - 1)]
+        ang = degrees(atan2(dy, dx))
+        orientation = 0
+        if abs(ang) < 90 and not trail.area and mountain.direction == 's':
+            orientation = 180
+        if abs(ang) > 90 and not trail.area and mountain.direction == 'n':
+            orientation = 180
+        if ang > 0 and not trail.area and mountain.direction == 'w':
+            orientation = 180
+        if ang < 0 and not trail.area and mountain.direction == 'e':
+            orientation = 180
+
+        return orientation
+
     debug_mode = False
     debug = request.args.get('debug')
     if debug == 'true':
@@ -373,8 +390,16 @@ def interactive_map(state, name):
             popup_content += f'<p>1000m Pitch: {trail.steepest_1000m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_1000m)}"></span>'
         if debug_mode:
             popup_content += f'<p>Trail ID: {trail.trail_id}</p>'
-        
+    
         feature['properties']['popupContent'] = popup_content
+        feature['properties']['label'] = f'{trail.name}'
+        
+        lon_points = trail.lon()
+        lat_points = trail.lat()
+
+        orientation = get_orientation(lon_points, lat_points)
+        
+        feature['properties']['orientation'] = orientation
         feature['properties']['color'] = _misc.trail_color(trail.difficulty)
         feature['properties']['gladed'] = str(trail.gladed)
 
@@ -392,6 +417,13 @@ def interactive_map(state, name):
         if debug_mode:
             popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
         feature['properties']['popupContent'] = popup_content
+        feature['properties']['label'] = f'{lift.name}'
+        
+        lon_points = lift.lon()
+        lat_points = lift.lat()
+
+        orientation = get_orientation(lon_points, lat_points)
+        feature['properties']['orientation'] = orientation
         feature['properties']['color'] = 'grey'
 
         geojson['features'].append(feature)
