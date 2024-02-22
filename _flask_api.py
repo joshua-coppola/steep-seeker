@@ -396,8 +396,6 @@ def interactive_map(state, name):
 
         geojson['features'].append(feature)
 
-    mountain_dict = {'lat': mountain.lat, 'lon': mountain.lon}
-
     return render_template('interactive_map.jinja', nav_links=nav_links, active_page='map', geojson=geojson, mountain=mountain, trails=trails, lifts=lifts)
 
     

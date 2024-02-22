@@ -13,6 +13,7 @@ class Mountain:
         self.difficulty = None
         self.beginner_friendliness = None
         self.last_updated = None
+        self.bearing = None
 
         if self.state != None:
             self._sync()
@@ -21,6 +22,15 @@ class Mountain:
             value = db._add_resort(self.name)
             if value:
                 self._sync()
+
+        if self.direction == 'n':
+            self.bearing = 180
+        if self.direction == 'e':
+            self.bearing = 270
+        if self.direction == 's':
+            self.bearing = 0
+        if self.direction == 'w':
+            self.bearing = 90
 
     def _sync(self):
         mountain_dict = db._get_mountain_dict(self.name, self.state)

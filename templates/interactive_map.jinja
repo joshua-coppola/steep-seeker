@@ -24,6 +24,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
 
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+
 {% endblock pagehead %}
 
 {% block content %}
@@ -95,15 +97,16 @@
     <script>
         trails = {{geojson}}
 
-        var map = L.map('map').setView([{{mountain.lat}},{{mountain.lon}}], 13);
-
-        //L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        //    maxZoom: 19,
-        //    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        //}).addTo(map);
+        var map = L.map('map', {rotate: true,
+                                rotateControl: {
+					                closeOnZeroBearing: false,
+				                },
+				                touchRotate: true,
+                                bearing: {{mountain.bearing}},
+        }).setView([{{mountain.lat}},{{mountain.lon}}], 13);
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Data: OSM, USGS. Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+            attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
         }).addTo(map);
 
         function onEachFeature(feature, layer) {
