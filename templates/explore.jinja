@@ -52,6 +52,7 @@ Explore Resorts
     }
 
     geojson_features = L.geoJSON(locations, {onEachFeature: onEachFeature}).addTo(map);
+    map.fitBounds(geojson_features.getBounds());
 
     var legend = L.control({ position: "bottomright" });
 

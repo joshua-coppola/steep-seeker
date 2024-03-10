@@ -57,6 +57,9 @@ def find_state(filename: str) -> str:
         address = json.loads(response.content)['address']
         if address['country_code'] != 'us':
             print('Resort not located in United States. Unsupported region detected.')
+            override = input('Continue anyway? Y/N: ')
+            if override.lower() == 'y':
+                return address['ISO3166-2-lvl4'].split('-')[1]
             return None
         # if location is in USA, return state abbreviation
         return address['ISO3166-2-lvl4'].split('-')[1]
@@ -177,6 +180,8 @@ def get_elevation(nodes: list(tuple())) -> list(tuple()):
     elevation = []
     last_called = time.time()
     url = 'https://api.opentopodata.org/v1/ned10m?locations={}'
+    # global elevation data
+    # url = 'https://api.opentopodata.org/v1/mapzen?locations={}'
 
     for node_list in hundred_node_lists:
         piped_coords = ''

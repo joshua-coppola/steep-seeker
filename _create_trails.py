@@ -20,6 +20,9 @@ def process_trails(ways: list(dict())) -> tuple():
             # name
             if 'name' in tag:
                 way['name'] = tag['name']
+                if 'tubing' in way['name'] or 'Tubing' in way['name']:
+                    way['type'] = None
+                    way['valid'] = False
 
             if 'piste name' in tag:
                 way['name'] = tag['piste name']
