@@ -1,0 +1,19 @@
+{% extends "management.jinja" %}
+
+{% block title %}
+Add Resort
+{% endblock title %}
+
+{% block pagehead %}
+{% endblock pagehead %}
+
+{% block insideContent %}
+    <form id="search-form" class="search-form">
+        <select>
+        {% for resort in resorts %}
+            <option value="{{resort}}">{{resort}}</option>
+        {% endfor %}
+        </select>
+        <input class="button-cta" id="submit" type="submit" value="Add" />
+    </form>
+{% endblock insideContent %}

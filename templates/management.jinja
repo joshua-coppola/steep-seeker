@@ -1,0 +1,24 @@
+{% extends "page_base.jinja" %}
+{% block title %}
+Management Panel
+{% endblock title %}
+
+{% block pagehead %}
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+    <h1>Management Panel</h1>
+
+    <ul class="nav-list">
+        {% for link in management_links %}
+        <li><div class="button"><a href="{{link.to}}" {% if active_page == link.title %} class="button-cta" {% else %} class="button-cta2" {% endif %}>
+                        {{link.title}}
+                    </a></div></li>
+        {% endfor %}
+    </ul>
+
+    {% block insideContent %}
+    {% endblock insideContent %}
+</section>
+{% endblock content %}

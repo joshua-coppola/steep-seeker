@@ -1,7 +1,7 @@
-{% extends "page_base.jinja" %}
+{% extends "management.jinja" %}
 
 {% block title %}
-{{mountain.name}} - Trail Map
+Edit Resort
 {% endblock title %}
 
 {% block pagehead %}
@@ -19,7 +19,7 @@
 <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
 </script>
 
-<link href="/interactive-map.css" rel="stylesheet" />
+<link href="/management-edit-resort.css" rel="stylesheet" />
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
@@ -30,72 +30,18 @@
 
 {% endblock pagehead %}
 
-{% block content %}
-<main>
-    <div class="map-pane mountain-details">
-        <div class="mountain-title">
-            <h1>{{mountain.name}}</h1>
-            <span class="mountain-location">{{mountain.state}}</span>
-        </div>
-        <div class="mountain-section">
-            <h2>Overview</h2>
-            <ul>
-                <li>Trail Count: {{mountain.trail_count}}</li>
-                <li>Lift Count: {{mountain.lift_count}}</li>
-                <li>Vertical: {{mountain.vertical}} ft</li>
-                <li>Difficulty: {{mountain.difficulty}}</li>
-                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
-                <li>Last Updated: {{mountain.last_updated}}</li>
-            </ul>
-        </div>
-        <div class="mountain-section">
-            <h2>Trails - Sorted by Difficulty</h2>
-            <ul>
-                <li><span class="icon gladed"></span>Gladed</li>
-                <li><span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>Ungroomed/Moguls</li>
-                {% for trail in trails %}
-                {% if not '' == trail.name %}
-                <li>
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}° - {{trail.name}}
-                                    {% if trail.gladed == True %}
-                                    <span> </span><span class="icon gladed"></span>
-                                    {% endif %}
-                                    {% if trail.ungroomed == True %}
-                                    <span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>
-                                    {% endif %}
-                </li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="mountain-section">
-            <h2>Lifts</h2>
-            <ul>
-                {% for lift in lifts %}
-                {% if not '' == lift.name %}
-                <li>{{lift.name}} - {{lift.length}} ft</li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
+{% block insideContent %}
+    <form id="search-form" class="search-form">
+        <select id="search" name="q" type="search">
+            <option value="" disabled selected>Select Resort</option>
+            {% for resort in resorts %}
+            <option value="{{resort}}">{{resort}}</option>
+            {% endfor %}
+        </select>
+        <input class="button-cta" id="submit" type="submit" value="Search" />
+    </form>
+    <h2>{{mountain.name}}</h2>
     <div id='map'></div>
-    <div class="map-switch">
-        <button class="button-cta2 map-button" id="static"><a href="/map/{{mountain.state}}/{{mountain.name}}">Static Map</a></button>
-    </div>
     <script>
         let trails = {{geojson}};
 
@@ -184,5 +130,8 @@
         L.control.locate().addTo(map);
 
     </script>
-</main>
-{% endblock content%}
+{% endblock insideContent %}
+
+{% block postbody %}
+<script src="/management-edit-resort.js"></script>
+{% endblock postbody %}

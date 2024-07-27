@@ -15,6 +15,10 @@ class Mountain:
         self.last_updated = None
         self.bearing = None
 
+        # Allow an empty mountain object if name is passed as None
+        if self.name == None:
+            return
+
         if self.state != None:
             self._sync()
 

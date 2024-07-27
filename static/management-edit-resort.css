@@ -1,0 +1,91 @@
+body {
+    background-color: var(--color-map-background);
+}
+
+nav {
+    background-color: white;
+    width: 100vw;
+    position:absolute;
+    z-index: 1;
+}
+
+#map {
+    position: fixed;
+    top: 416px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2;
+}
+
+main {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+main > * {
+    pointer-events: all;
+}
+
+.icon.gladed{
+    margin-left: 1ch
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+
+.leaflet-popup-content p {
+    margin: 0;
+    margin-top: .2rem;
+    font-size: 1rem;
+    color: var(--color-secondary);
+}
+
+.leaflet-popup-content .icon {
+    margin: 0;
+    margin-left: .5rem;
+}
+
+.legend {
+    padding: 6px 8px;
+    background: white;
+    line-height: 24px;
+}
+
+.legend span {
+    text-align: left;
+    bottom: 3px;
+    font-size: 1.2rem;
+}
+
+.legend i {
+    width: 1.2rem;
+    height: 1.2rem;
+    float: left;
+    margin: 0 8px 0 0;
+}
+
+.legend i.icon {
+    background-size: 1rem;
+    background-color: rgba(255, 255, 255, 1);
+}
+
+@media screen and (max-width: 500px) {
+    .legend span {
+        font-size: .8rem;
+    }
+
+    .legend i {
+        width: .8rem;
+    }
+
+    .legend i.icon {
+        background-size: .8rem;
+    }
+}

@@ -12,35 +12,6 @@ Rankings
 <section id="content">
     <h1>Mountain Rankings</h1>
 
-    <p class="detail">
-        {% if sort == "beginner" %}
-        The Beginner Friendliness ranking is a weighted average of the easiest trails at each resort. It shows how easy
-        it would be to learn to ski on these trails.
-        The color denotes what the easiest trails at a mountain are rated. The longer the bar, the easier the learning
-        terrain is.
-        {% endif %}
-        {% if sort == "difficulty"%}
-        The Difficulty ranking is a weighted average of the hardest trails at each resort. It shows how much of a
-        challenge the mountain will present to advanced skiers.
-        The color denotes how challenging the hardest trails at a mountain are. The longer the bar, the harder the
-        advanced trails at the resort. Expect the toughest trails at a resort to have pitches (in degrees) that are
-        very similar to the difficulty score.
-        {% endif %}
-    </p>
-
-    <p class="detail">
-        {% if sort == "beginner" %}
-        The Beginner Friendliness scale is from 0-30, where 0 is a resort with no trails even resembling a good
-        place to learn. The best resorts for beginners have a wide variety of easy terrain, and their scores will
-        be high to reflect that.
-        {% endif %}
-        {% if sort == "difficulty"%}
-        The Difficulty scale is roughly from 0-60, where a mountain scoring highly presents extremely difficult terrain.
-        Technically, the max possible score is ~100, but that would require a mix of terrible weather and deadly cliffs. 
-        The steepest terrain is primarily in the west, and as such western resorts dominate the top of the Difficulty list.
-        {% endif %}
-    </p>
-
     <ul class="ranking-sort">
         {% if sort == "difficulty" %}
         {% if order == "desc" %}
@@ -143,6 +114,35 @@ Rankings
         <li><a class="button-cta">West</a></li>
         {% endif %}
     </ul>
+
+    <p class="detail">
+        {% if sort == "beginner" %}
+        The Beginner Friendliness ranking is a weighted average of the easiest trails at each resort. It shows how easy
+        it would be to learn to ski on these trails.
+        The color denotes what the easiest trails at a mountain are rated. The longer the bar, the easier the learning
+        terrain is.
+        {% endif %}
+        {% if sort == "difficulty"%}
+        The Difficulty ranking is a weighted average of the hardest trails at each resort. It shows how much of a
+        challenge the mountain will present to advanced skiers.
+        The color denotes how challenging the hardest trails at a mountain are. The longer the bar, the harder the
+        advanced trails at the resort. Expect the toughest trails at a resort to have pitches (in degrees) that are
+        very similar to the difficulty score.
+        {% endif %}
+    </p>
+
+    <p class="detail">
+        {% if sort == "beginner" %}
+        The Beginner Friendliness scale is from 0-30, where 0 is a resort with no trails even resembling a good
+        place to learn. The best resorts for beginners have a wide variety of easy terrain, and their scores will
+        be high to reflect that.
+        {% endif %}
+        {% if sort == "difficulty"%}
+        The Difficulty scale is roughly from 0-60, where a mountain scoring highly presents extremely difficult terrain.
+        Technically, the max possible score is ~100, but that would require a mix of terrible weather and deadly cliffs. 
+        The steepest terrain is primarily in the west, and as such western resorts dominate the top of the Difficulty list.
+        {% endif %}
+    </p>
 
     <div class="legend">
         <ul>
