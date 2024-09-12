@@ -119,6 +119,7 @@ def rename_resort(old_name: str, state: str, new_name: str) -> None:
         os.rename(f'static/maps/{state}/{old_name}.svg', f'static/maps/{state}/{new_name}.svg')
     if os.path.exists(f'static/thumbnails/{state}/{old_name}.svg'):
         os.rename(f'static/thumbnails/{state}/{old_name}.svg', f'static/thumbnails/{state}/{new_name}.svg')
+    maps.create_map(new_name, state)
 
 
 def delete_all_resorts() -> None:
@@ -251,7 +252,6 @@ def repl() -> None:
             state = input('\nEnter State: ')
             new_name = input('\nEnter New Resort Name: ')
             rename_resort(old_name, state, new_name)
-            maps.create_map(new_name, state)
 
         if operation == 12:
             name = input('\nEnter Resort Name: ')
@@ -280,6 +280,3 @@ def repl() -> None:
 
         if operation == 15:
             _flask_api.app.run(host='0.0.0.0', port=5000, debug=False)
-
-
-repl()
