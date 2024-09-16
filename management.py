@@ -57,9 +57,33 @@ def management_edit_resort():
     geojson = {'type':'FeatureCollection', 'features':[]}
     
     q = request.args.get('q')
-    rename = request.args.get('rename')
     if q:
+        rename = request.args.get('rename')
+        full_refresh = request.args.get('full_refresh')
+        stats_refresh = request.args.get('map_refresh')
+        map_refresh = request.args.get('map_refresh')
+        ignore_areas = request.args.get('ignore_areas')
+        size_increase = request.args.get('size_increase')
+
+        if size_increase:
+            size_increase = float(size_increase)
+
+        if not ignore_areas:
+            ignore_areas = False
+
         name, state = q.split(', ')
+
+        if full_refresh:
+            print(type(size_increase))
+            print(size_increase)
+            main.refresh_resort_from_osm(name, state, size_increase)
+        else:
+            if stats_refresh:
+                main.refresh_resort(name, state, ignore_areas)
+            if map_refresh:
+                main.maps.create_map(name, state)
+                main.maps.create_thumbnail(name, state)
+        
         
         mountain = Mountain(name, state)
 

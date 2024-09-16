@@ -40,7 +40,34 @@ Edit Resort
         </select>
         <input class="button-cta" id="submit" type="submit" value="Search" />
     </form>
-    <h2>{{mountain.name}}</h2>
+    <h2>{{mountain.name}}, {{mountain.state}}</h2>
+    <ul>
+        <li>Trail Count: {{mountain.trail_count}}</li>
+        <li>Lift Count: {{mountain.lift_count}}</li>
+        <li>Vertical: {{mountain.vertical}} ft</li>
+        <li>Difficulty: {{mountain.difficulty}}</li>
+        <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
+        <li>Last Updated: {{mountain.last_updated}}</li>
+    </ul>
+    <form id="refresh" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+        <input type="checkbox" id="stats" name="stats_refresh" value=True>
+        <label for="stats">Stats</label>
+        <input type="checkbox" id="maps" name="map_refresh" value=True>
+        <label for="map">Map</label>
+        <input type="checkbox" id="full" name="full_refresh" value=True>
+        <label for="full">Full Refresh</label><br>
+        <input type="checkbox" id="areas" name="ignore_areas" value=True>
+        <label for="areas">Ignore Areas</label>
+        <input type="number" value="0" id="map_size" name="size_increase" step=".1" min="0">
+        <label for="map_size">Additional Area</label><br>
+        <input class="button-cta" id="submit" type="submit" value="Refresh" />
+    </form>
+    <form id="rename" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+        <input id="rename" name="rename" type="search" placeholder="New Resort Name" />
+        <input class="button-cta" id="submit" type="submit" value="Rename" />
+    </form>
     <div id='map'></div>
     <script>
         let trails = {{geojson}};

@@ -1,5 +1,6 @@
 body {
     background-color: var(--color-map-background);
+    overflow-y: scroll;
 }
 
 nav {
@@ -9,13 +10,12 @@ nav {
     z-index: 1;
 }
 
+#content > * {
+    margin-bottom: 16px;
+}
+
 #map {
-    position: fixed;
-    top: 416px;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    z-index: 2;
+    height: 300px;
 }
 
 main {
