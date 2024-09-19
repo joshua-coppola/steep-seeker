@@ -147,6 +147,14 @@ def move_all_osm_files(source_dir: str) -> None:
             os.rename(source_file, dest_file)
 
 
+def delete_item(resort_name, state, item_id) -> None:
+    mountain_id = db.get_mountain_id(resort_name, state)
+    db.delete_trail(mountain_id, item_id)
+    db.delete_lift(mountain_id, item_id)
+    maps.create_map(resort_name, state)
+    maps.create_thumbnail(resort_name, state)
+
+
 def prune_objects(resort_name: str, state: str, prune_id_list: list(), debug_mode: bool=True) -> None:
     mountain_id = db.get_mountain_id(resort_name, state)
     for item in prune_id_list:

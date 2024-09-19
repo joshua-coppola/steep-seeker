@@ -21,7 +21,6 @@ class managementButton:
 options = []
 options.append(managementButton('Add Resort', '/management-add-resort'))
 options.append(managementButton('Edit Resort', '/management-edit-resort'))
-options.append(managementButton('Delete Resort', '/management-delete-resort'))
 
 @api.app.route('/management')
 def management():
@@ -57,6 +56,13 @@ def management_edit_resort():
     geojson = {'type':'FeatureCollection', 'features':[]}
     
     q = request.args.get('q')
+    delete_resort = request.args.get('delete_resort')
+
+    if delete_resort == 'DELETE': 
+        name, state = q.split(', ')
+        main.delete_resort(name, state)
+        q = None
+
     if q:
         rename = request.args.get('rename')
         full_refresh = request.args.get('full_refresh')
@@ -64,6 +70,8 @@ def management_edit_resort():
         map_refresh = request.args.get('map_refresh')
         ignore_areas = request.args.get('ignore_areas')
         size_increase = request.args.get('size_increase')
+        rotate = request.args.get('rotate')
+        delete = request.args.get('delete')
 
         if size_increase:
             size_increase = float(size_increase)
@@ -83,7 +91,13 @@ def management_edit_resort():
             if map_refresh:
                 main.maps.create_map(name, state)
                 main.maps.create_thumbnail(name, state)
+
+        if rotate:
+            main.rotate_map_clockwise(name, state)
+
         
+        if delete:
+            main.delete_item(name, state, delete)
         
         mountain = Mountain(name, state)
 
@@ -124,7 +138,10 @@ def management_edit_resort():
                 popup_content += f'<p>500m Pitch: {trail.steepest_500m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_500m)}"></span>'
             if trail.steepest_1000m:
                 popup_content += f'<p>1000m Pitch: {trail.steepest_1000m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_1000m)}"></span>'
-            popup_content += f'<p>Trail ID: {trail.trail_id}</p>'
+            popup_content += '<form id="delete" class="search-form">'
+            popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
+            popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{trail.trail_id}">'
+            popup_content += '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
         
             feature['properties']['popupContent'] = popup_content
             feature['properties']['label'] = f'{trail.name}'
@@ -150,6 +167,10 @@ def management_edit_resort():
             feature['geometry']['coordinates'] = coords
             popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
             popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
+            popup_content += '<form id="delete" class="search-form">'
+            popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
+            popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{lift.lift_id}">'
+            popup_content += '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
             feature['properties']['popupContent'] = popup_content
             feature['properties']['label'] = f'{lift.name}'
             

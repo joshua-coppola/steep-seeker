@@ -56,9 +56,11 @@ Edit Resort
         <input type="checkbox" id="maps" name="map_refresh" value=True>
         <label for="map">Map</label>
         <input type="checkbox" id="full" name="full_refresh" value=True>
-        <label for="full">Full Refresh</label><br>
+        <label for="full">Full Refresh</label>
         <input type="checkbox" id="areas" name="ignore_areas" value=True>
-        <label for="areas">Ignore Areas</label>
+        <label for="areas">Ignore Areas</label><br>
+        <input type="checkbox" id="rotate" name="rotate" value=True>
+        <label for="rotate">&#8635; Rotate Map</label>
         <input type="number" value="0" id="map_size" name="size_increase" step=".1" min="0">
         <label for="map_size">Additional Area</label><br>
         <input class="button-cta" id="submit" type="submit" value="Refresh" />
@@ -69,6 +71,11 @@ Edit Resort
         <input class="button-cta" id="submit" type="submit" value="Rename" />
     </form>
     <div id='map'></div>
+    <form id="delete_resort" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+        <input id="confirmation" name="delete_resort" type="search" placeholder="Type 'DELETE' to confirm" />
+        <input class="button-cta" id="submit" type="submit" value="Delete Resort" />
+    </form>
     <script>
         let trails = {{geojson}};
 
