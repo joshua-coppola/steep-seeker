@@ -82,8 +82,6 @@ def management_edit_resort():
         name, state = q.split(', ')
 
         if full_refresh:
-            print(type(size_increase))
-            print(size_increase)
             main.refresh_resort_from_osm(name, state, size_increase)
         else:
             if stats_refresh:
@@ -166,7 +164,13 @@ def management_edit_resort():
             coords = [list(element) for element in coords]
             feature['geometry']['coordinates'] = coords
             popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
-            popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
+            popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
+            if lift.occupancy:
+                popup_content += f'<p>Occupancy: {lift.occupancy} people</p>'
+            if lift.bubble:
+                popup_content += f'<p>&#x2705; Bubble</p>'
+            if lift.heated:
+                popup_content += f'<p>&#x2705;Heated</p>'
             popup_content += '<form id="delete" class="search-form">'
             popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
             popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{lift.lift_id}">'

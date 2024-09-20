@@ -12,6 +12,12 @@ def process_trails(ways: list(dict())) -> tuple():
             'gladed': None,
             'ungroomed': False,
             'area': None,
+            'occupancy': None,
+            'capacity': None,
+            'duration': None,
+            'detachable': None,
+            'bubble': None,
+            'heated': None,
             'type': None,
             'valid': True,
             'nodes': unprocessed_way['nodes']
@@ -73,6 +79,45 @@ def process_trails(ways: list(dict())) -> tuple():
                 if 'backcountry' in tag['piste grooming'] or 'mogul' in tag['piste grooming'] or 'no' in tag['piste grooming']:
                     way['ungroomed'] = True
 
+            # lift tags
+            if 'aerialway occupancy' in tag:
+                way['occupancy'] = int(tag['aerialway occupancy'])
+
+            if 'aerialway capacity' in tag:
+                way['capacity'] = int(tag['aerialway capacity'])
+                if way['capacity'] < 100:
+                    way['capacity'] = None
+
+            if 'aerialway duration' in tag:
+                way['duration'] = tag['aerialway duration']
+                if ' ' in way['duration']:
+                    minutes, seconds = way['duration'].split(' ')
+                    minutes = int(minutes)
+                    seconds = int(seconds)
+                    if seconds >= 30:
+                        minutes += 1
+                    way['duration'] = minutes
+                way['duration'] = int(way['duration'])
+
+            if 'aerialway detachable' in tag:
+                if tag['aerialway detachable'] == 'yes':
+                    way['detachable'] = True
+                else:
+                    way['detachable'] = False
+
+            if 'aerialway bubble' in tag:
+                if tag['aerialway bubble'] == 'yes':
+                    way['bubble'] = True
+                else:
+                    way['bubble'] = False
+
+            if 'aerialway heated' in tag:
+                if tag['aerialway heated'] == 'yes':
+                    way['heated'] = True
+                else:
+                    way['heated'] = False
+                    
+
             # exceptions
             if 'mtb scale imba' in tag:
                 way['type'] = None
@@ -131,7 +176,7 @@ def process_trails(ways: list(dict())) -> tuple():
                     'id', 'name', 'official_rating', 'gladed', 'ungroomed', 'area', 'nodes']})
             if way['type'] == 'lift':
                 lifts.append({key: way[key]
-                             for key in ['id', 'name', 'nodes']})
+                             for key in ['id', 'name', 'occupancy', 'capacity', 'duration', 'detachable', 'bubble', 'heated', 'nodes']})
 
     trails = merge_trails(trails)
 

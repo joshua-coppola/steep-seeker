@@ -414,6 +414,13 @@ def interactive_map(state, name):
         coords = [list(element) for element in coords]
         feature['geometry']['coordinates'] = coords
         popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
+        popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
+        if lift.occupancy:
+            popup_content += f'<p>Occupancy: {lift.occupancy} people</p>'
+        if lift.bubble:
+            popup_content += f'<p>&#x2705; Bubble</p>'
+        if lift.heated:
+            popup_content += f'<p>&#x2705;Heated</p>'
         if debug_mode:
             popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
         feature['properties']['popupContent'] = popup_content

@@ -68,8 +68,9 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
 
     for lift in lifts:
         try:
-            query = 'INSERT INTO Lifts (lift_id, mountain_id, name) VALUES (?, ?, ?)'
-            params = (lift['id'], mountain_id, lift['name'])
+            query = 'INSERT INTO Lifts (lift_id, mountain_id, name, occupancy, capacity, duration, detachable, bubble, heated) \
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            params = (lift['id'], mountain_id, lift['name'], lift['occupancy'], lift['capacity'], lift['duration'], lift['detachable'], lift['bubble'], lift['heated'])
             
             cur.execute(query, params)
         except sqlite3.IntegrityError as e:
@@ -201,11 +202,12 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
 
     for lift_id in lifts_to_be_computed:
         nodes = cur.execute(
-            'SELECT lat, lon FROM LiftPoints WHERE lift_id = ?', (lift_id)).fetchall()
+            'SELECT lat, lon, elevation FROM LiftPoints WHERE lift_id = ?', (lift_id)).fetchall()
         length = int(_misc.trail_length(nodes))
+        vert = int(_misc.get_vert(nodes))
 
         cur.execute(
-            f'UPDATE Lifts SET length = {length} WHERE lift_id = ?', (lift_id))
+            f'UPDATE Lifts SET length = {length}, vertical_rise = {vert} WHERE lift_id = ?', (lift_id))
 
 
 def calc_mountain_stats(cur, mountain_id: int, mountain_name: str) -> None:

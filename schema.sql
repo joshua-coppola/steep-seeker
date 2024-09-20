@@ -54,6 +54,13 @@ CREATE TABLE "Lifts"
     "mountain_id" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "length" REAL,
+    "vertical_rise" REAL,
+    "occupancy": INTEGER,
+    "capacity": INTEGER,
+    "duration": REAL,
+    "detachable": BOOLEAN,
+    "bubble": BOOLEAN,
+    "heated": BOOLEAN,
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 

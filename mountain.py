@@ -114,6 +114,31 @@ class Lift:
         self.mountain_id = lift_dict['mountain_id']
         self.name = lift_dict['name']
         self.length = int(float(lift_dict['length']) * 100 / (2.54 * 12))
+        self.vertical = int(float(lift_dict['vertical_rise']) * 100 / (2.54 * 12))
+        if lift_dict['occupancy']:
+            self.occupancy = int(lift_dict['occupancy'])
+        else:
+            self.occupancy = None
+        if lift_dict['capacity']:
+            self.capacity = int(lift_dict['capacity'])
+        else:
+            self.capacity = None
+        if lift_dict['duration']:
+            self.duration = float(lift_dict['duration'])
+        else:
+            self.duration = None
+        if lift_dict['detachable'] == 1 or lift_dict['detachable'] == 'True':
+            self.detachable = True
+        else:
+            self.detachable = False
+        if lift_dict['bubble'] == 1 or lift_dict['bubble'] == 'True':
+            self.bubble = True
+        else:
+            self.bubble = False
+        if lift_dict['heated'] == 1 or lift_dict['heated'] == 'True':
+            self.heated = True
+        else:
+            self.heated = False
 
     def lat(self):
         if self.mountain_id:
