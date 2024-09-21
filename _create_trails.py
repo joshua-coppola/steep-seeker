@@ -91,13 +91,17 @@ def process_trails(ways: list(dict())) -> tuple():
             if 'aerialway duration' in tag:
                 way['duration'] = tag['aerialway duration']
                 if ' ' in way['duration']:
-                    minutes, seconds = way['duration'].split(' ')
+                    time = way['duration'].split(' ')
+                    if len(time) == 2:
+                        minutes = time[0]
+                        seconds = time[1]
+                    elif len(time) == 3 and time[0] == '0':
+                        minutes = time[1]
+                        seconds = time[2]
                     minutes = int(minutes)
                     seconds = int(seconds)
-                    if seconds >= 30:
-                        minutes += 1
-                    way['duration'] = minutes
-                way['duration'] = int(way['duration'])
+                    way['duration'] = round(minutes + (seconds / 60), 1)
+                way['duration'] = float(way['duration'])
 
             if 'aerialway detachable' in tag:
                 if tag['aerialway detachable'] == 'yes':

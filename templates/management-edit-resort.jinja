@@ -40,6 +40,10 @@ Edit Resort
         </select>
         <input class="button-cta" id="submit" type="submit" value="Search" />
     </form>
+    <form id="next_mountain" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{next_mountain}}">
+        <input class="button-cta" id="next" type="submit" value="Next Resort">
+    </form>
     <h2>{{mountain.name}}, {{mountain.state}}</h2>
     <ul>
         <li>Trail Count: {{mountain.trail_count}}</li>

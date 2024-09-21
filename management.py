@@ -56,15 +56,17 @@ def management_edit_resort():
     geojson = {'type':'FeatureCollection', 'features':[]}
     
     q = request.args.get('q')
+    if q:
+        name, state = q.split(', ')
+
     delete_resort = request.args.get('delete_resort')
+    rename = request.args.get('rename')
 
     if delete_resort == 'DELETE': 
-        name, state = q.split(', ')
         main.delete_resort(name, state)
         q = None
 
     if q:
-        rename = request.args.get('rename')
         full_refresh = request.args.get('full_refresh')
         stats_refresh = request.args.get('map_refresh')
         map_refresh = request.args.get('map_refresh')
@@ -72,14 +74,13 @@ def management_edit_resort():
         size_increase = request.args.get('size_increase')
         rotate = request.args.get('rotate')
         delete = request.args.get('delete')
+        trail_id = request.args.get('trail_id')
 
         if size_increase:
             size_increase = float(size_increase)
 
         if not ignore_areas:
             ignore_areas = False
-
-        name, state = q.split(', ')
 
         if full_refresh:
             main.refresh_resort_from_osm(name, state, size_increase)
@@ -93,7 +94,21 @@ def management_edit_resort():
         if rotate:
             main.rotate_map_clockwise(name, state)
 
-        
+        if trail_id:
+            gladed = request.args.get('gladed')
+            ungroomed = request.args.get('ungroomed')
+            area = request.args.get('area')
+
+            if not gladed:
+                gladed = False
+            if not ungroomed:
+                ungroomed = False
+            if not area:
+                area = False
+
+            database.change_trail_stats(name, state, trail_id, gladed, ungroomed, area)
+
+
         if delete:
             main.delete_item(name, state, delete)
         
@@ -136,6 +151,30 @@ def management_edit_resort():
                 popup_content += f'<p>500m Pitch: {trail.steepest_500m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_500m)}"></span>'
             if trail.steepest_1000m:
                 popup_content += f'<p>1000m Pitch: {trail.steepest_1000m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_1000m)}"></span>'
+            
+            popup_content += '<form id="update_tags" class="search-form">'
+            popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
+            popup_content += f'<input type="hidden" name="trail_id" id="trail_id" value="{trail.trail_id}">'
+            if trail.gladed:
+                checked = 'checked'
+            else:
+                checked = ''
+            popup_content += f'<input type="checkbox" id="gladed" name="gladed" value=True {checked}>'
+            popup_content += '<label for="gladed">Gladed</label>'
+            if trail.ungroomed:
+                checked = 'checked'
+            else:
+                checked = ''
+            popup_content += f'<input type="checkbox" id="ungroomed" name="ungroomed" value=True {checked}>'
+            popup_content += '<label for="ungroomed">Ungroomed</label>'
+            if trail.area:
+                checked = 'checked'
+            else:
+                checked = ''
+            popup_content += f'<input type="checkbox" id="area" name="area" value=True {checked}>'
+            popup_content += '<label for="area">Area</label><br>'
+            popup_content += '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
+
             popup_content += '<form id="delete" class="search-form">'
             popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
             popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{trail.trail_id}">'
@@ -186,13 +225,20 @@ def management_edit_resort():
             feature['properties']['color'] = 'grey'
 
             geojson['features'].append(feature)
+
+        mountains = database.get_mountains()
+        mountains_output = sorted([f'{name}, {state}' for name, state in mountains])
+        mountain_index = mountains_output.index(f'{mountain.name}, {mountain.state}')
     if not q:
         mountain = Mountain(None, None)
         mountain.name = ''
+        mountain_index = -1
 
     mountains = database.get_mountains()
     mountains_output = sorted([f'{name}, {state}' for name, state in mountains])
+    
+    next_mountain = mountains_output[mountain_index + 1]
 
-    return render_template('management-edit-resort.jinja', nav_links=api.nav_links, management_links=options, active_page='Edit Resort', resorts=mountains_output, mountain=mountain, geojson=geojson)
+    return render_template('management-edit-resort.jinja', nav_links=api.nav_links, management_links=options, active_page='Edit Resort', resorts=mountains_output, mountain=mountain, geojson=geojson, next_mountain=next_mountain)
 
 api.app.run(host='0.0.0.0', port=5000, debug=False)

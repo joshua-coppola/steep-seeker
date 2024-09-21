@@ -701,6 +701,45 @@ def rename_resort(old_name: str, state: str, new_name: str) -> None:
     db.commit()
     db.close()
 
+def change_trail_stats(resort_name: str, state: str, trail_id: int, gladed: bool, ungroomed: bool, area: bool) -> None:
+    mountain_id = get_mountain_id(resort_name, state)
+
+    cur, db = db_connect()
+
+    difficulty_modifier = 0
+    trail_dict = _get_trail_dict(trail_id)
+    
+    if trail_dict['gladed'] == 1 or trail_dict['gladed'] == 'True':
+        difficulty_modifier += 5.5
+    if trail_dict['ungroomed'] == 1 or trail_dict['ungroomed'] == 'True':
+        difficulty_modifier += 2.5
+
+    weather_modifier = trail_dict['difficulty'] - trail_dict['steepest_30m'] - difficulty_modifier
+
+    new_difficulty_modifier = 0
+    if gladed:
+        new_difficulty_modifier += 5.5
+    if ungroomed:
+        new_difficulty_modifier += 2.5
+
+    difficulty = new_difficulty_modifier + weather_modifier + trail_dict['steepest_30m']
+
+    query = 'UPDATE Trails SET gladed = ?, ungroomed = ?, area = ?, difficulty = ? WHERE trail_id = ?'
+    params = (gladed, ungroomed, area, difficulty, trail_id)
+
+    cur.execute(query, params)
+
+    trail_difficulty = cur.execute(
+        f'SELECT difficulty FROM Trails WHERE mountain_id = {mountain_id} ORDER BY difficulty DESC').fetchall()
+    difficulty, beginner_friendliness = _misc.mountain_rating(trail_difficulty)
+    
+    cur.execute(
+        f'UPDATE Mountains SET difficulty = {round(difficulty, 1)}, \
+            beginner_friendliness = {round(beginner_friendliness, 1)} WHERE mountain_id = {mountain_id}')
+    
+    db.commit()
+    db.close()
+
 
 def get_mountain_name(mountain_id: int, cur = None) -> str:
     if cur == None:

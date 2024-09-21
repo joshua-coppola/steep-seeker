@@ -113,8 +113,14 @@ class Lift:
 
         self.mountain_id = lift_dict['mountain_id']
         self.name = lift_dict['name']
-        self.length = int(float(lift_dict['length']) * 100 / (2.54 * 12))
-        self.vertical = int(float(lift_dict['vertical_rise']) * 100 / (2.54 * 12))
+        if lift_dict['length']:
+            self.length = int(float(lift_dict['length']) * 100 / (2.54 * 12))
+        else:
+            self.length = None
+        if lift_dict['vertical_rise']:
+            self.vertical = int(float(lift_dict['vertical_rise']) * 100 / (2.54 * 12))
+        else:
+            self.vertical = 0
         if lift_dict['occupancy']:
             self.occupancy = int(lift_dict['occupancy'])
         else:
