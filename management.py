@@ -236,6 +236,9 @@ def management_edit_resort():
 
     mountains = database.get_mountains()
     mountains_output = sorted([f'{name}, {state}' for name, state in mountains])
+
+    if mountain_index == len(mountains_output) - 1:
+        mountain_index = -1
     
     next_mountain = mountains_output[mountain_index + 1]
 
