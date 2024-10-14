@@ -137,7 +137,16 @@ def management_edit_resort():
                 coords.append(coords[0])
                 coords = [coords]
             feature['geometry']['coordinates'] = coords
-            popup_content = f'<h3>{trail.name}</h3><p>Rating: {trail.difficulty}<span class="icon difficulty-{_misc.trail_color(trail.difficulty)}"></span></p>'
+            if trail.gladed:
+                gladed = '<i class="icon gladed"></i>'
+            else:
+                gladed = ''
+            if trail.ungroomed:
+                ungroomed = '<span>&nbsp;&nbsp;</span><i class="icon ungroomed"></i>'
+            else:
+                ungroomed = ''
+            popup_content = f'<h3>{trail.name}{gladed}{ungroomed}</h3>'
+            popup_content += f'<p>Rating: {trail.difficulty}<span class="icon difficulty-{_misc.trail_color(trail.difficulty)}"></span></p>'
             popup_content += f'<p>Length: {trail.length} ft</p><p>Vertical Drop: {trail.vertical} ft</p>'
             if trail.steepest_30m:
                 popup_content += f'<p>30m Pitch: {trail.steepest_30m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_30m)}"></span>'
