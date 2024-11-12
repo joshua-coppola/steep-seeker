@@ -1,0 +1,213 @@
+{% extends "page_base.jinja" %}
+
+{% block title %}
+Lift Rankings
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/trail_rankings.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<section id="content">
+
+    <h1>Lift Rankings</h1>
+
+    <ul class="ranking-sort">
+        {% if region == "usa" %}
+        <li><a class="button-cta">USA</a></li>
+        <li><a class="button-cta2" href="/lift-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "northeast" %}
+        <li><a class="button-cta2" href="/lift-rankings?region=usa">USA</a>
+        </li>
+        <li><a class="button-cta">Northeast</a></li>
+        <li><a class="button-cta2" href="/lift-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "southeast" %}
+        <li><a class="button-cta2" href="/lift-rankings?region=usa">USA</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a class="button-cta">Southeast</a></li>
+        <li><a class="button-cta2" href="/lift-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "midwest" %}
+        <li><a class="button-cta2" href="/lift-rankings?region=usa">USA</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a class="button-cta">Midwest</a></li>
+        <li><a class="button-cta2" href="/lift-rankings?region=west">West</a>
+        </li>
+        {% endif %}
+        {% if region == "west" %}
+        <li><a class="button-cta2" href="/lift-rankings?region=usa">USA</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=northeast">Northeast</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=southeast">Southeast</a>
+        </li>
+        <li><a class="button-cta2" href="/lift-rankings?region=midwest">Midwest</a>
+        </li>
+        <li><a class="button-cta">West</a></li>
+        {% endif %}
+    </ul>
+    <ul class="ranking-sort mobile">
+        {% if sort_by == "vertical"%}
+        <li><a class="button-cta">Vertical Drop</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=vertical">Vertical Drop</a></li>
+        {% endif %}
+        {% if sort_by == "length"%}
+        <li><a class="button-cta">Length</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=length">Length</a></li>
+        {% endif %}
+        {% if sort_by == "occupancy"%}
+        <li><a class="button-cta">Occupancy</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=occupancy">Occupancy</a></li>
+        {% endif %}
+        {% if sort_by == "duration"%}
+        <li><a class="button-cta">Ride Time</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=duration">Ride Time</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="links">
+        {% if 'prev' in pages %}
+        <div class="column-left">
+            <a class="button-cta2" href="{{pages.prev}}">&#x25C0; Previous Page</a>
+        </div>
+        {% endif %}
+
+        {% if 'next' in pages %}
+        <div class="column-right">
+            <a class="button-cta2" href="{{pages.next}}">Next Page &#x25B6;</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="trail-table desktop">
+        <table>
+            <tr>
+                <th>Lift Name</th>
+                <th>Resort</th>
+                <th>State</th>
+                {% if sort_by == "vertical"%}
+                <th><a class="active">Vertical</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=vertical">Vertical</a></th>
+                {% endif %}
+                {% if sort_by == "length"%}
+                <th><a class="active">Length</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=length">Length</a></th>
+                {% endif %}
+                {% if sort_by == "occupancy"%}
+                <th><a class="active">Occupancy</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=occupancy">Occupancy</a></th>
+                {% endif %}
+                {% if sort_by == "duration"%}
+                <th><a class="active">Ride Time</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=duration">Ride Time</a></th>
+                {% endif %}
+            </tr>
+            {% for lift in lifts %}
+            {% if not '' == lift.name %}
+            <tr>
+                <td>
+                    <p>{{pages.offset + loop.index}}. <a href="/map/{{lift.state}}/{{lift.resort_name}}">
+                            {{lift.name}}
+                        </a></p>
+                </td>
+                <td><a href="/map/{{lift.state}}/{{lift.resort_name}}">{{lift.resort_name}}</a></td>
+                <td>{{lift.state}}</td>
+                <td>{{lift.vertical}}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+
+        </table>
+    </div>
+
+    <div class="trail-table mobile">
+        {% for lift in lifts %}
+        {% if not '' == lift.name %}
+        <div class="header">
+            <table class="header">
+                <tr>
+                    <td>
+                        <p>{{pages.offset + loop.index}}. <a href="/map/{{lift.state}}/{{lift.resort_name}}">
+                                {{lift.name}}, {{lift.resort_name}} ({{lift.state}})
+                            </a></p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <table>
+            <tr>
+                <td>Vertical</td>
+                <td>
+                    <p>{{lift.vertical}} ft</p>
+                </td>
+            </tr>
+            <tr>
+                <td>Length</td>
+                <td>
+                    <p>{{lift.legth}} ft</p>
+                </td>
+            </tr>
+            <tr>
+                <td>Occupancy</td>
+                <td>
+                    <p>{{lift.occupancy}}</p>
+                </td>
+            </tr>
+            <tr>
+                <td>Ride Time</td>
+                <td>
+                    <p>{{lift.duration}} ft</p>
+                </td>
+            </tr>
+        </table>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="links">
+        {% if 'prev' in pages %}
+        <div class="column-left">
+            <a class="button-cta2" href="{{pages.prev}}">&#x25C0; Previous Page</a>
+        </div>
+        {% endif %}
+
+        {% if 'next' in pages %}
+        <div class="column-right">
+            <a class="button-cta2" href="{{pages.next}}">Next Page &#x25B6;</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock content %}
