@@ -34,6 +34,7 @@ nav_links.append(navigationLink('Explore', 'explore', '/explore'))
 nav_links.append(navigationLink('Mountain Rankings', 'rankings',
                                 '/rankings?sort=difficulty&order=desc&region=usa'))
 nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rankings?region=usa'))
+nav_links.append(navigationLink('Lift Rankings', 'lift_rankings', '/lift-rankings?region=usa'))
 
 
 @sitemap.include()
@@ -259,6 +260,75 @@ def trail_rankings():
         urlBase = urlBase[0:-1]
     pages['first'] = f'/trail-rankings?region={region}&limit={limit}'
     return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages, sort_by=sort_by)
+
+
+@sitemap.include()
+@app.route('/lift-rankings')
+def lift_rankings():
+    search_string = ''
+    region = request.args.get('region')
+    if not region:
+        region = 'usa'
+    search_string += f'region={region}&'
+    page = request.args.get('page')
+    if not page:
+        page = 1
+    limit = request.args.get('limit')
+    if not limit:
+        limit = 50
+    search_string += f'limit={limit}&'
+    sort_by = request.args.get('sort')
+    if not sort_by:
+        sort_by = 'vertical_rise'
+    if not sort_by in ['vertical_rise','length', 'occupancy', 'duration']:
+        sort_by = 'vertical_rise'
+    search_string += f'sort={sort_by}&'
+
+    if len(search_string) > 0 and search_string[-1] == '&':
+        search_string = search_string[0:-1]
+    
+    page = int(page)
+    limit = int(limit)
+    offset = limit * (page - 1)
+    
+    conn = database.dict_cursor()
+
+    if region == 'usa':
+        query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
+        lifts = conn.execute(query, (limit, offset)).fetchall()
+    else:
+        query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
+        lifts = conn.execute(query, (region, limit, offset)).fetchall()
+
+    conn.close()
+
+    for i, lift in enumerate(lifts):
+        lifts[i] = Lift(lift['lift_id'])
+
+    conn = database.tuple_cursor()
+
+    query = 'SELECT COUNT(*) FROM Lifts'
+    total_lift_count = int(conn.execute(query).fetchall()[0][0])
+
+    conn.close()
+
+    pages = {}
+    if total_lift_count > limit and (limit * page) < total_lift_count:
+        urlBase = f'/lift-rankings?page={page + 1}&{search_string}'
+        if len(urlBase) > 0 and urlBase[-1] == '&':
+            urlBase = urlBase[0:-1]
+        pages['next'] = urlBase
+    if offset != 0:
+        urlBase = f'/lift-rankings?page={page - 1}&{search_string}'
+        if len(urlBase) > 0 and urlBase[-1] == '&':
+            urlBase = urlBase[0:-1]
+        pages['prev'] = urlBase
+    pages['offset'] = offset
+    urlBase = f'/lift-rankings?page=1&{search_string}'
+    if len(urlBase) > 0 and urlBase[-1] == '&':
+        urlBase = urlBase[0:-1]
+    pages['first'] = f'/lift-rankings?region={region}&limit={limit}'
+    return render_template('lift_rankings.jinja', nav_links=nav_links, active_page='lift_rankings', lifts=lifts, region=region, pages=pages, sort_by=sort_by)
 
 @sitemap.include(url_variables=database._get_mountains())
 @app.route('/map/<string:state>/<string:name>')

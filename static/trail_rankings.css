@@ -90,13 +90,13 @@ tr a.active {
     color: var(--color-accent);
 }
 
-@media screen and (min-width: 901px) {
+@media screen and (min-width: 1001px) {
     .mobile {
         display: none;
     }
 }
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 1000px) {
     h1 {
         padding-top: 32px;
     }

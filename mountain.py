@@ -112,6 +112,7 @@ class Lift:
         lift_dict = db._get_lift_dict(self.lift_id)
 
         self.mountain_id = lift_dict['mountain_id']
+        self.resort_name, self.state = db.get_mountain_name(self.mountain_id)
         self.name = lift_dict['name']
         if lift_dict['length']:
             self.length = int(float(lift_dict['length']) * 100 / (2.54 * 12))

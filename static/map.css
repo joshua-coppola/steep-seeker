@@ -194,17 +194,12 @@ main > * {
         left: 0px;
     }
 
-    .map-button {
-        left: 0px;
-    }
-}
-
-@media screen and (max-width: 760px) {
-    .map-button {
+    .zoom-button {
         width: auto;
     }
 
-    .zoom-button {
+    .map-button {
+        left: 0px;
         width: auto;
     }
 }

@@ -176,13 +176,12 @@ h3 {
     .map-button {
         left: 0px;
     }
-}
 
-@media screen and (max-width: 760px) {
     .map-button {
         width: auto;
     }
 }
+
 
 @media screen and (max-width: 500px) {
     .legend span {

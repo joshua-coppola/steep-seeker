@@ -71,10 +71,10 @@ Lift Rankings
         {% endif %}
     </ul>
     <ul class="ranking-sort mobile">
-        {% if sort_by == "vertical"%}
-        <li><a class="button-cta">Vertical Drop</a></li>
+        {% if sort_by == "vertical_rise"%}
+        <li><a class="button-cta">Vertical Rise</a></li>
         {% else %}
-        <li><a class="button-cta2" href="{{pages.first}}&sort=vertical">Vertical Drop</a></li>
+        <li><a class="button-cta2" href="{{pages.first}}&sort=vertical_rise">Vertical Rise</a></li>
         {% endif %}
         {% if sort_by == "length"%}
         <li><a class="button-cta">Length</a></li>
@@ -113,10 +113,10 @@ Lift Rankings
                 <th>Lift Name</th>
                 <th>Resort</th>
                 <th>State</th>
-                {% if sort_by == "vertical"%}
-                <th><a class="active">Vertical</a></th>
+                {% if sort_by == "vertical_rise"%}
+                <th><a class="active">Vertical Rise</a></th>
                 {% else %}
-                <th><a href="{{pages.first}}&sort=vertical">Vertical</a></th>
+                <th><a href="{{pages.first}}&sort=vertical_rise">Vertical Rise</a></th>
                 {% endif %}
                 {% if sort_by == "length"%}
                 <th><a class="active">Length</a></th>
@@ -144,7 +144,18 @@ Lift Rankings
                 </td>
                 <td><a href="/map/{{lift.state}}/{{lift.resort_name}}">{{lift.resort_name}}</a></td>
                 <td>{{lift.state}}</td>
-                <td>{{lift.vertical}}</td>
+                <td>{{lift.vertical}} ft</td>
+                <td>{{lift.length}} ft</td>
+                {% if lift.occupancy %}
+                <td>{{lift.occupancy}}</td>
+                {% else %}
+                <td></td>
+                {% endif%}
+                {% if lift.duration %}
+                <td>{{lift.duration}} min</td>
+                {% else %}
+                <td></td>
+                {% endif%}
             </tr>
             {% endif %}
             {% endfor %}
@@ -168,7 +179,7 @@ Lift Rankings
         </div>
         <table>
             <tr>
-                <td>Vertical</td>
+                <td>Vertical Rise</td>
                 <td>
                     <p>{{lift.vertical}} ft</p>
                 </td>
@@ -176,21 +187,25 @@ Lift Rankings
             <tr>
                 <td>Length</td>
                 <td>
-                    <p>{{lift.legth}} ft</p>
+                    <p>{{lift.length}} ft</p>
                 </td>
             </tr>
+            {% if lift.occupancy %}
             <tr>
                 <td>Occupancy</td>
                 <td>
                     <p>{{lift.occupancy}}</p>
                 </td>
             </tr>
+            {% endif %}
+            {% if lift.duration %}
             <tr>
                 <td>Ride Time</td>
                 <td>
-                    <p>{{lift.duration}} ft</p>
+                    <p>{{lift.duration}} min</p>
                 </td>
             </tr>
+            {% endif %}
         </table>
         {% endif %}
         {% endfor %}
