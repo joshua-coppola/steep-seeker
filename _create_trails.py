@@ -158,6 +158,9 @@ def process_trails(ways: list(dict())) -> tuple():
             if 'abandoned' in tag:
                 way['type'] = None
                 way['valid'] = False
+            if 'proposed' in tag:
+                way['type'] = None
+                way['valid'] = False
 
         if way['type'] != None and way['valid']:
             if way['name'] == None or way['name'] == '':

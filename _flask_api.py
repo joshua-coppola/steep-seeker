@@ -10,6 +10,7 @@ from math import sqrt, degrees, atan2
 from data.secret import secret
 
 import db as database
+import user_db
 import _misc
 from mountain import Mountain, Trail, Lift
 
@@ -40,18 +41,21 @@ nav_links.append(navigationLink('Lift Rankings', 'lift_rankings', '/lift-ranking
 @sitemap.include()
 @app.route('/')
 def index():
+    user_db.add_log(request.remote_addr, '/', '/')
     return render_template('index.jinja', nav_links=nav_links, active_page='index')
 
 
 @sitemap.include()
 @app.route('/about')
 def about():
+    user_db.add_log(request.remote_addr, '/about', '/about')
     return render_template('about.jinja', nav_links=nav_links, active_page='about')
 
 
 @sitemap.include()
 @app.route('/search')
 def search():
+    user_db.add_log(request.remote_addr, '/search', '/search', request.args)
     # parsing query string for database search
     search_string = ''
     q = request.args.get('q')
@@ -160,6 +164,7 @@ def search():
 @sitemap.include()
 @app.route('/rankings')
 def rankings():
+    user_db.add_log(request.remote_addr, '/rankings', '/rankings', request.args)
     sort = request.args.get('sort')
     if not sort:
         sort = 'difficulty'
@@ -196,6 +201,7 @@ def rankings():
 @sitemap.include()
 @app.route('/trail-rankings')
 def trail_rankings():
+    user_db.add_log(request.remote_addr, '/trail-rankings', '/trail-rankings', request.args)
     search_string = ''
     region = request.args.get('region')
     if not region:
@@ -265,6 +271,7 @@ def trail_rankings():
 @sitemap.include()
 @app.route('/lift-rankings')
 def lift_rankings():
+    user_db.add_log(request.remote_addr, '/lift-rankings', '/lift-rankings', request.args)
     search_string = ''
     region = request.args.get('region')
     if not region:
@@ -333,6 +340,7 @@ def lift_rankings():
 @sitemap.include(url_variables=database._get_mountains())
 @app.route('/map/<string:state>/<string:name>')
 def map(state, name):
+    user_db.add_log(request.remote_addr, '/map', f'/map/{state}/{name}')
     mountain = Mountain(name, state)
 
     trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
@@ -358,6 +366,7 @@ def mountaindata(state, name):
 @sitemap.include()
 @app.route('/explore')
 def explore():
+    user_db.add_log(request.remote_addr, '/explore', '/explore')
     mountains = database.get_mountains()
 
     geojson = {'type':'FeatureCollection', 'features':[]}
@@ -400,6 +409,7 @@ def explore():
 
 @app.route('/interactive-map/<string:state>/<string:name>')
 def interactive_map(state, name):
+    user_db.add_log(request.remote_addr, '/interactive-map', f'/interactive-map/{state}/{name}')
     def get_orientation(lon_points, lat_points):
         midpoint = int(len(lon_points) / 2)
         dx = lon_points[max(midpoint - 5, 0)] - lon_points[min(midpoint + 5, (midpoint * 2) - 1)]

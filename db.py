@@ -14,10 +14,12 @@ def db_connect() -> tuple():
     cur = db.cursor()
     return (cur, db)
 
+
 def dict_cursor():
     conn = sqlite3.connect('data/db.db')
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def tuple_cursor():
     conn = sqlite3.connect('data/db.db')
