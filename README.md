@@ -36,7 +36,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
     - [x] Improve nav bar with collapsible hamburger menu
 - [ ] Add footer
 - [ ] Improve comments on code
-- [ ] Add hover animations to buttons
+- [x] Add hover animations to buttons
 
 ### Python
 
@@ -44,7 +44,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 - [x] Add weather data to difficulty ratings
 - [x] Add type hinting to functions
 - [ ] Add private ski areas
-- [ ] Add and store more chairlift information (seats, speed, vert, etc.)
+- [x] Add and store more chairlift information (seats, speed, vert, etc.)
 - [ ] Investigate adding a length of pitch component to difficulty
 
 ### Landing Page
@@ -69,11 +69,11 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 - [ ] 3d maps
 - [x] Leaflet / interactive maps
-    - [ ] Add Map Rotation
+    - [x] Add Map Rotation
     - [ ] Add elevation profile on click
     - [ ] Color each section of a trail based on pitch
     - [ ] Show icon for nearby mountains
-    - [ ] Improve toggle button between map modes
+    - [x] Improve toggle button between map modes
     - [ ] Allow user to click on trail name in list and highlight trail on map
     - [ ] Improve readability of trail information
 
@@ -85,7 +85,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 ### Management
 
-- [ ] Create management page
+- [x] Create management page
 - [ ] Add logins
 
 ### Maps to fix
