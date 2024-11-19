@@ -24,6 +24,8 @@ def add_log(ip: str, page_category: str, page_visited: str, parameters: dict() =
         parameters = str(dict(parameters))
         if len(parameters) == 2:
             parameters = None
+    else:
+        parameters = None
     timestamp = datetime.now()
     
     conn = tuple_cursor()
