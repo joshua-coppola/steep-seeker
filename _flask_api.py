@@ -1,8 +1,7 @@
 import sys
 import sqlite3
-from flask import Flask, render_template, json, redirect, url_for, request, flash, session, request
+from flask import Flask, render_template, json, redirect, url_for, request, flash, session, request, Response
 from flask_wtf import FlaskForm
-from flask_sitemapper import Sitemapper
 import os
 import geojson
 from math import sqrt, degrees, atan2
@@ -21,12 +20,9 @@ class navigationLink:
         self.page = page
         self.to = to
 
-sitemap = Sitemapper()
 
 app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = secret
-
-sitemap.init_app(app)
 
 nav_links = []
 nav_links.append(navigationLink('About', 'about', '/about'))
@@ -38,21 +34,18 @@ nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rank
 nav_links.append(navigationLink('Lift Rankings', 'lift_rankings', '/lift-rankings?region=usa'))
 
 
-@sitemap.include()
 @app.route('/')
 def index():
     user_db.add_log(request.remote_addr, '/', '/')
     return render_template('index.jinja', nav_links=nav_links, active_page='index')
 
 
-@sitemap.include()
 @app.route('/about')
 def about():
     user_db.add_log(request.remote_addr, '/about', '/about')
     return render_template('about.jinja', nav_links=nav_links, active_page='about')
 
 
-@sitemap.include()
 @app.route('/search')
 def search():
     user_db.add_log(request.remote_addr, '/search', '/search', request.args)
@@ -161,7 +154,6 @@ def search():
     return render_template('search.jinja', nav_links=nav_links, active_page='search', mountains=mountains, pages=pages)
 
 
-@sitemap.include()
 @app.route('/rankings')
 def rankings():
     user_db.add_log(request.remote_addr, '/rankings', '/rankings', request.args)
@@ -198,7 +190,6 @@ def rankings():
     return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains, sort=sort, order=order, region=region)
 
 
-@sitemap.include()
 @app.route('/trail-rankings')
 def trail_rankings():
     user_db.add_log(request.remote_addr, '/trail-rankings', '/trail-rankings', request.args)
@@ -268,7 +259,6 @@ def trail_rankings():
     return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages, sort_by=sort_by)
 
 
-@sitemap.include()
 @app.route('/lift-rankings')
 def lift_rankings():
     user_db.add_log(request.remote_addr, '/lift-rankings', '/lift-rankings', request.args)
@@ -337,7 +327,6 @@ def lift_rankings():
     pages['first'] = f'/lift-rankings?region={region}&limit={limit}'
     return render_template('lift_rankings.jinja', nav_links=nav_links, active_page='lift_rankings', lifts=lifts, region=region, pages=pages, sort_by=sort_by)
 
-@sitemap.include(url_variables=database._get_mountains())
 @app.route('/map/<string:state>/<string:name>')
 def map(state, name):
     user_db.add_log(request.remote_addr, '/map', f'/map/{state}/{name}')
@@ -363,7 +352,6 @@ def mountaindata(state, name):
     return jsonstring
 
 
-@sitemap.include()
 @app.route('/explore')
 def explore():
     user_db.add_log(request.remote_addr, '/explore', '/explore')
@@ -527,7 +515,19 @@ def interactive_map(state, name):
     return render_template('interactive_map.jinja', nav_links=nav_links, active_page='map', geojson=geojson, mountain=mountain, trails=trails, lifts=lifts)
 
     
-
 @app.route('/sitemap.xml')
 def site_map():
-    return sitemap.generate()
+    xml = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    footer = '</urlset>'
+    url = '<url><loc>https://steepseeker.com/{path}</loc><changefreq>monthly</changefreq><priority>{priority}</priority></url>'
+    static_page_list = ['', 'about', 'search', 'explore', 'rankings', 'trail_rankings', 'lift_rankings']
+    static_page_priority = [1, .6, .7, .8, .9, .9, .8]
+    dynamic_page_list = ['map', 'interactive-map']
+    dynamic_page_priority = .3
+    for page, priority in zip(static_page_list, static_page_priority):
+        xml += url.format(path=page, priority=priority)
+    for page in dynamic_page_list:
+        for mountain in database.get_mountains():
+            xml += url.format(path=page + '/' + mountain[1] + '/' + mountain[0], priority=dynamic_page_priority)
+    xml += footer
+    return Response(xml, mimetype='text/xml')
