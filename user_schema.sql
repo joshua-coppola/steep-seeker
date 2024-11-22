@@ -9,3 +9,9 @@ CREATE TABLE "Log"
     "parameters" TEXT,
     PRIMARY KEY ("timestamp", "ip")
 )
+
+CREATE INDEX "Ip"
+ON "Log"("ip")
+
+CREATE INDEX "PageCategory"
+ON "Log"("page_category")
