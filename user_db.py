@@ -2,13 +2,13 @@ import sqlite3
 from datetime import datetime
 
 def dict_cursor():
-    conn = sqlite3.connect('data/user_db.db')
+    conn = sqlite3.connect('data/user_db.db', detect_types=sqlite3.PARSE_DECLTYPES)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def tuple_cursor():
-    conn = sqlite3.connect('data/user_db.db')
+    conn = sqlite3.connect('data/user_db.db', detect_types=sqlite3.PARSE_DECLTYPES)
     return conn
 
 

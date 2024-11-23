@@ -17,12 +17,16 @@ main > * {
     top: 76px;
     left: 16px;
     right: 16px;
-    bottom: 0px;
+    bottom: 32px;
 }
 
 h3 {
     font-size: 1.5rem;
 
+}
+
+footer {
+    position: fixed;
 }
 
 .leaflet-popup-content p {

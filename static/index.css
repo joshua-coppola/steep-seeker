@@ -1,3 +1,7 @@
+footer {
+    position: fixed;
+}
+
 #content {
     display: flex;
     flex-wrap: wrap;

@@ -19,7 +19,7 @@ sudo apt install python3-pip
 Once pip is installed, the next step is the project's dependencies, which can be install with:
 
 ```bash
-pip install rich flask flask_wtf flask-sitemapper matplotlib haversine requests
+pip install rich flask flask_wtf matplotlib haversine requests
 ```
 
 Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to add necessary directories and your secret file.
@@ -34,7 +34,7 @@ To run the website on localhost, execute the file called `app.py` with `python3 
 
 - [x] Add mobile support
     - [x] Improve nav bar with collapsible hamburger menu
-- [ ] Add footer
+- [x] Add footer
 - [ ] Improve comments on code
 - [x] Add hover animations to buttons
 
