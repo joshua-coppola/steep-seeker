@@ -147,7 +147,15 @@ Lift Rankings
                 <td>{{lift.vertical}} ft</td>
                 <td>{{lift.length}} ft</td>
                 {% if lift.occupancy %}
-                <td>{{lift.occupancy}}</td>
+                    {% if lift.occupancy <= 4 %}
+                    <td>
+                        {% for i in range(lift.occupancy)%}
+                        <span class="icon person"></span>
+                        {% endfor %}
+                    </td>
+                    {% else %}
+                    <td class="occupancy">{{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span></td>
+                    {% endif%}
                 {% else %}
                 <td></td>
                 {% endif%}
