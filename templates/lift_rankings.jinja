@@ -154,7 +154,9 @@ Lift Rankings
                         {% endfor %}
                     </td>
                     {% else %}
-                    <td class="occupancy">{{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span></td>
+                    <td class="occupancy">
+                        {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
+                    </td>
                     {% endif%}
                 {% else %}
                 <td></td>
@@ -178,44 +180,56 @@ Lift Rankings
             <table class="header">
                 <tr>
                     <td>
-                        <p>{{pages.offset + loop.index}}. <a href="/map/{{lift.state}}/{{lift.resort_name}}">
+                        {{pages.offset + loop.index}}. <a href="/map/{{lift.state}}/{{lift.resort_name}}">
                                 {{lift.name}}, {{lift.resort_name}} ({{lift.state}})
-                            </a></p>
+                            </a>
                     </td>
                 </tr>
             </table>
         </div>
         <table>
             <tr>
-                <td>Vertical Rise</td>
-                <td>
-                    <p>{{lift.vertical}} ft</p>
+                <td style="width:50%">Vertical Rise</td>
+                <td style="width:50%">
+                    {{lift.vertical}} ft
                 </td>
             </tr>
             <tr>
                 <td>Length</td>
                 <td>
-                    <p>{{lift.length}} ft</p>
+                    {{lift.length}} ft
                 </td>
             </tr>
-            {% if lift.occupancy %}
             <tr>
                 <td>Occupancy</td>
-                <td>
-                    <p>{{lift.occupancy}}</p>
-                </td>
+                {% if lift.occupancy %}
+                    {% if lift.occupancy <= 4 %}
+                    <td>
+                        {% for i in range(lift.occupancy)%}
+                        <span class="icon person"></span>
+                        {% endfor %}
+                    </td>
+                    {% else %}
+                    <td class="occupancy">
+                        {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
+                    </td>
+                    {% endif %}
+                {% else %}
+                <td>--</td>
+                {% endif %}
             </tr>
-            {% endif %}
-            {% if lift.duration %}
+            {% endif%}
             <tr>
                 <td>Ride Time</td>
                 <td>
-                    <p>{{lift.duration}} min</p>
+                {% if lift.duration %}
+                {{lift.duration}} min
+                {% else %}
+                --
+                {% endif %}
                 </td>
             </tr>
-            {% endif %}
         </table>
-        {% endif %}
         {% endfor %}
     </div>
 
