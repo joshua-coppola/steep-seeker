@@ -59,6 +59,7 @@ footer {
     margin-right: 16px;
     display: flex;
     align-items: center;
+    margin-left: 7px;
 }
 
 #home-link img{
@@ -75,6 +76,14 @@ footer {
 .nav-list a {
     color: white;
     text-decoration: none;
+}
+
+.nav-list .button {
+    white-space: nowrap;
+}
+
+.hamburger {
+    display: none;
 }
 
 /* COMMON STUFF */
@@ -132,10 +141,6 @@ p.copy {
     color: var(--color-tertiary);
 }
 
-.nav-list .button {
-    white-space: nowrap;
-}
-
 .button-cta {
     display: inline-block;
     padding: 8px;
@@ -169,9 +174,6 @@ p.copy {
     background-color: var(--color-accent-light);
 }
 
-.hamburger {
-    display: none;
-}
 
 @media screen and (max-width: 900px) {
     nav {
@@ -180,7 +182,6 @@ p.copy {
     }
     #home-link {
         margin-right: 16px;
-        top: 1.2rem;
     }
 
     .top-bar {
@@ -195,12 +196,17 @@ p.copy {
         display: none;
     }
 
+    .home-div {
+        display: flex;
+        justify-content: space-between;
+    }
+
     .hamburger {
         display: block;
-        position: absolute;
         right: 0;
         top: 0;
-        padding: 1.2rem;
+        padding-top: 13px;
+        padding-right: 13px;
     }
 
     .nav-list {

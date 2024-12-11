@@ -277,7 +277,7 @@ def lift_rankings():
     sort_by = request.args.get('sort')
     if not sort_by:
         sort_by = 'vertical_rise'
-    if not sort_by in ['vertical_rise','length', 'occupancy', 'duration']:
+    if not sort_by in ['vertical_rise','length', 'occupancy', 'bubble', 'heated']:
         sort_by = 'vertical_rise'
     search_string += f'sort={sort_by}&'
 

@@ -115,8 +115,8 @@ def process_trails(ways: list(dict())) -> tuple():
                 else:
                     way['bubble'] = False
 
-            if 'aerialway heated' in tag:
-                if tag['aerialway heated'] == 'yes':
+            if 'aerialway heating' in tag:
+                if tag['aerialway heating'] == 'yes':
                     way['heated'] = True
                 else:
                     way['heated'] = False

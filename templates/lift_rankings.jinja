@@ -86,11 +86,6 @@ Lift Rankings
         {% else %}
         <li><a class="button-cta2" href="{{pages.first}}&sort=occupancy">Occupancy</a></li>
         {% endif %}
-        {% if sort_by == "duration"%}
-        <li><a class="button-cta">Ride Time</a></li>
-        {% else %}
-        <li><a class="button-cta2" href="{{pages.first}}&sort=duration">Ride Time</a></li>
-        {% endif %}
     </ul>
 
     <div class="links">
@@ -128,12 +123,11 @@ Lift Rankings
                 {% else %}
                 <th><a href="{{pages.first}}&sort=occupancy">Occupancy</a></th>
                 {% endif %}
-                {% if sort_by == "duration"%}
-                <th><a class="active">Ride Time</a></th>
+                {% if sort_by == "bubble"%}
+                <th><a class="active">Bubble</a></th>
                 {% else %}
-                <th><a href="{{pages.first}}&sort=duration">Ride Time</a></th>
+                <th><a href="{{pages.first}}&sort=bubble">Bubble</a></th>
                 {% endif %}
-            </tr>
             {% for lift in lifts %}
             {% if not '' == lift.name %}
             <tr>
@@ -161,11 +155,13 @@ Lift Rankings
                 {% else %}
                 <td></td>
                 {% endif%}
-                {% if lift.duration %}
-                <td>{{lift.duration}} min</td>
+                <td>
+                {% if lift.bubble %}
+                    Yes
                 {% else %}
-                <td></td>
-                {% endif%}
+                    No
+                {% endif %}
+                </td>
             </tr>
             {% endif %}
             {% endfor %}
@@ -218,17 +214,17 @@ Lift Rankings
                 <td>--</td>
                 {% endif %}
             </tr>
-            {% endif%}
             <tr>
-                <td>Ride Time</td>
+                <td>Bubble</td>
                 <td>
-                {% if lift.duration %}
-                {{lift.duration}} min
+                {% if lift.bubble %}
+                    Yes
                 {% else %}
-                --
+                    No
                 {% endif %}
                 </td>
             </tr>
+        {% endif%}
         </table>
         {% endfor %}
     </div>
