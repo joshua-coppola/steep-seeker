@@ -74,6 +74,58 @@ Edit Resort
         <input id="rename" name="rename" type="search" placeholder="New Resort Name" />
         <input class="button-cta" id="submit" type="submit" value="Rename" />
     </form>
+    <form id="pass" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+        {% if "Epic" in mountain.season_passes %}
+        <input type="checkbox" id="epic" name="epic" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="epic" name="epic" value="True">
+        {% endif %}
+        <label for="epic">Epic</label>
+        {% if "Ikon" in mountain.season_passes %}
+        <input type="checkbox" id="ikon" name="ikon" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="ikon" name="ikon" value="True">
+        {% endif%}
+        <label for="ikon">Ikon</label>
+        {% if "Mountain Collective" in mountain.season_passes %}
+        <input type="checkbox" id="mountain_collective" name="mountain_collective" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="mountain_collective" name="mountain_collective" value="True">
+        {% endif%}
+        <label for="mountain_collective">Mountain Collective</label>
+        {% if "Indy" in mountain.season_passes %}
+        <input type="checkbox" id="indy" name="indy" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="indy" name="indy" value="True">
+        {% endif%}
+        <label for="indy">Indy</label><br>
+        {% if "Cooper" in mountain.season_passes %}
+        <input type="checkbox" id="cooper" name="cooper" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="cooper" name="cooper" value="True">
+        {% endif%}
+        <label for="cooper">Cooper</label>
+        {% if "Powder Alliance" in mountain.season_passes %}
+        <input type="checkbox" id="powder_alliance" name="powder_alliance" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="powder_alliance" name="powder_alliance" value="True">
+        {% endif%}
+        <label for="powder_alliance">Powder Alliance</label>
+        {% if "Freedom Pass" in mountain.season_passes %}
+        <input type="checkbox" id="freedom_pass" name="freedom_pass" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="freedom_pass" name="freedom_pass" value="True">
+        {% endif%}
+        <label for="freedom_pass">Freedom Pass</label><br>
+        {% if "Powder Pass" in mountain.season_passes %}
+        <input type="checkbox" id="powder_pass" name="powder_pass" value="True" checked>
+        {% else %}
+        <input type="checkbox" id="powder_pass" name="powder_pass" value="True">
+        {% endif%}
+        <label for="powder_pass">Powder Pass</label>
+        <input class="button-cta" id="submit" type="submit" value="Update" />
+    </form>
     <div id='map'></div>
     <form id="delete_resort" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">

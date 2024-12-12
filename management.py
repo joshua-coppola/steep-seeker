@@ -68,13 +68,43 @@ def management_edit_resort():
 
     if q:
         full_refresh = request.args.get('full_refresh')
-        stats_refresh = request.args.get('map_refresh')
+        stats_refresh = request.args.get('stats_refresh')
         map_refresh = request.args.get('map_refresh')
         ignore_areas = request.args.get('ignore_areas')
         size_increase = request.args.get('size_increase')
         rotate = request.args.get('rotate')
         delete = request.args.get('delete')
         trail_id = request.args.get('trail_id')
+
+        pass_list = []
+        epic = request.args.get('epic')
+        if epic:
+            pass_list.append('Epic')
+        ikon = request.args.get('ikon')
+        if ikon:
+            pass_list.append('Ikon')
+        mountain_collective = request.args.get('mountain_collective')
+        if mountain_collective:
+            pass_list.append('Mountain Collective')
+        indy = request.args.get('indy')
+        if indy:
+            pass_list.append('Indy')
+        cooper = request.args.get('cooper')
+        if cooper:
+            pass_list.append('Cooper')
+        powder_alliance = request.args.get('powder_alliance')
+        if powder_alliance:
+            pass_list.append('Powder Alliance')
+        freedom_pass = request.args.get('freedom_pass')
+        if freedom_pass:
+            pass_list.append('Freedom Pass')
+        powder_pass = request.args.get('powder_pass')
+        if powder_pass:
+            pass_list.append('Powder Pass')
+
+        if len(pass_list) > 0:
+            database._set_mountain_season_passes(name, state, ','.join(pass_list))
+
 
         if size_increase:
             size_increase = float(size_increase)

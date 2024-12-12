@@ -7,6 +7,7 @@ class Mountain:
         self.state = state
         self.region = None
         self.direction = None
+        self.season_passes = None
         self.trail_count = None
         self.lift_count = None
         self.vertical = None
@@ -50,6 +51,10 @@ class Mountain:
         self.lat = mountain_dict['lat']
         self.lon = mountain_dict['lon']
         self.last_updated = mountain_dict['last_updated']
+        if mountain_dict['season_passes']:
+            self.season_passes = mountain_dict['season_passes'].split(',')
+        else:
+            self.season_passes = []
         return
 
     def trails(self):

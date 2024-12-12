@@ -8,6 +8,7 @@ CREATE TABLE "Mountains"
     "state" TEXT NOT NULL,
     "region" TEXT NOT NULL,
     "direction" TEXT,
+    "season_passes" TEXT,
     "trail_count" INTEGER NOT NULL,
     "lift_count" INTEGER NOT NULL,
     "vertical" INTEGER,
@@ -81,10 +82,10 @@ CREATE TABLE "TrailPoints"
 );
 
 CREATE INDEX "TrailCoordinates"
-ON "TrailPoints"("lat", "lon")
+ON "TrailPoints"("lat", "lon");
 
 CREATE INDEX "TrailId"
-ON "TrailPoints"("trail_id")
+ON "TrailPoints"("trail_id");
 
 
 DROP TABLE IF EXISTS LiftPoints;
@@ -101,10 +102,10 @@ CREATE TABLE "LiftPoints"
 );
 
 CREATE INDEX "LiftCoordinates"
-ON "LiftPoints"("lat", "lon")
+ON "LiftPoints"("lat", "lon");
 
 CREATE INDEX "LiftId"
-ON "LiftPoints"("lift_id")
+ON "LiftPoints"("lift_id");
 
 DROP TABLE IF EXISTS CachedPoints;
 
