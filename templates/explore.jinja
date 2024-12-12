@@ -38,20 +38,29 @@ Explore Resorts
     }).addTo(map);
 
     function onEachFeature(feature, layer) {
-        // does this feature have a property named popupContent?
         if (feature.properties && feature.properties.popupContent) {
-            var mountainIcon = L.icon({
-                iconUrl:      feature.properties.icon,
-                iconSize:     [100 * feature.properties.size, 61 * feature.properties.size], // size of the icon
-                iconAnchor:   [50 * feature.properties.size, 30 * feature.properties.size], // point of the icon which will correspond to marker's location
-                popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-            });
-            layer.bindPopup(feature.properties.popupContent);
-            layer.setIcon(mountainIcon)
+            var mountainIcon = L.divIcon({
+                className: 'mountain-icon',
+                html: `
+                    <div>
+                        <img src="${feature.properties.icon}" 
+                            style="width:${100 * feature.properties.size}px;height:auto;" />
+                        <div class="mountain-icon">
+                            ${feature.properties.name}
+                        </div>
+                    </div>
+                `,
+                iconSize: [100 * feature.properties.size, 61 * feature.properties.size],
+                iconAnchor: [50 * feature.properties.size, 30 * feature.properties.size],
+                popupAnchor: [0, 0]
+            })
+            // Create a custom marker with text below the icon
+            L.marker(layer.getLatLng(), {icon: mountainIcon}).bindPopup(feature.properties.popupContent).addTo(map);
         }
     }
 
-    geojson_features = L.geoJSON(locations, {onEachFeature: onEachFeature}).addTo(map);
+
+    geojson_features = L.geoJSON(locations, {onEachFeature: onEachFeature});
     map.fitBounds(geojson_features.getBounds());
 
     var legend = L.control({ position: "bottomright" });
