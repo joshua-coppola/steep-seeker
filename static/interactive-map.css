@@ -122,6 +122,12 @@ h3 {
     margin-left: .5rem;
 }
 
+.icon.person{
+    font-size: 1rem;
+    margin-left: 0;
+    margin-right: .5rem
+}
+
 .legend {
     padding: 6px 8px;
     background: white;

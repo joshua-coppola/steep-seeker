@@ -490,10 +490,18 @@ def interactive_map(state, name):
         coords = list(zip(lift.lon(), lift.lat()))
         coords = [list(element) for element in coords]
         feature['geometry']['coordinates'] = coords
-        popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
-        popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
+        popup_content = f'<h3>{lift.name}</h3>'
         if lift.occupancy:
-            popup_content += f'<p>Occupancy: {lift.occupancy} people</p>'
+            if lift.occupancy <= 4:
+                popup_content += '<p>'
+                for i in range(lift.occupancy):
+                    popup_content += '<span class="icon person"></span>'
+                popup_content += '</p>'
+            else:
+                popup_content += '<p class="occupancy">'
+                popup_content += f'{lift.occupancy}<span class="small-spacer"></span><span class="icon person"></span></p>'
+        popup_content += f'<p>Length: {lift.length} ft</p>'
+        popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
         if lift.bubble:
             popup_content += f'<p>&#x2705; Bubble</p>'
         if lift.heated:

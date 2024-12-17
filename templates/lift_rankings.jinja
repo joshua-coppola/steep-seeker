@@ -143,7 +143,7 @@ Lift Rankings
                 {% if lift.occupancy %}
                     {% if lift.occupancy <= 4 %}
                     <td>
-                        {% for i in range(lift.occupancy)%}
+                        {% for i in range(lift.occupancy) %}
                         <span class="icon person"></span>
                         {% endfor %}
                     </td>
@@ -151,7 +151,7 @@ Lift Rankings
                     <td class="occupancy">
                         {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
                     </td>
-                    {% endif%}
+                    {% endif %}
                 {% else %}
                 <td></td>
                 {% endif%}
