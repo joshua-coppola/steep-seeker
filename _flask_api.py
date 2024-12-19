@@ -107,7 +107,7 @@ def search():
 
     if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
-    
+
     page = int(page)
     limit = int(limit)
     offset = limit * (int(page) - 1)
@@ -175,7 +175,7 @@ def rankings():
         sort_by = 'difficulty'
     if not order in ['asc', 'desc']:
         order = 'desc'
-    
+
     if region == 'usa':
         query = f'SELECT name, state FROM Mountains ORDER BY {sort_by} {order}'
         mountains = conn.execute(query).fetchall()
@@ -214,11 +214,11 @@ def trail_rankings():
 
     if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
-    
+
     page = int(page)
     limit = int(limit)
     offset = limit * (page - 1)
-    
+
     conn = database.dict_cursor()
 
     if region == 'usa':
@@ -283,11 +283,11 @@ def lift_rankings():
 
     if len(search_string) > 0 and search_string[-1] == '&':
         search_string = search_string[0:-1]
-    
+
     page = int(page)
     limit = int(limit)
     offset = limit * (page - 1)
-    
+
     conn = database.dict_cursor()
 
     if region == 'usa':
@@ -333,7 +333,7 @@ def map(state, name):
     mountain = Mountain(name, state)
 
     trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
-    
+
     lifts = [Lift(lift['lift_id']) for lift in mountain.lifts()]
 
     return render_template('map.jinja', nav_links=nav_links, active_page='map', mountain=mountain, trails=trails, lifts=lifts)
@@ -386,12 +386,16 @@ def explore():
             beginner_color = 'royalblue'
         if mountain.beginner_friendliness > 12:
             beginner_color = 'green'
-        
 
-        feature['properties']['popupContent'] = f'<h3>{href}</h3><p>Vertical: {mountain.vertical} ft</p><p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
-        feature['properties']['icon'] = f'mountain_{difficulty_color}.png'
+
+        feature['properties']['popupContent'] = f'<h3>{href}</h3>'
+        if mountain.season_passes:
+            for season_pass in mountain.season_passes:
+                feature['properties']['popupContent'] += f'<img src="icons/{season_pass}.png" class="pass-icon"/>'
+        feature['properties']['popupContent'] += f'<p>Vertical: {mountain.vertical} ft</p><p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+        feature['properties']['icon'] = f'icons/mountain_{difficulty_color}.png'
         geojson['features'].append(feature)
-        
+
     return render_template('explore.jinja', nav_links=nav_links, active_page='explore', geojson=geojson)
 
 
@@ -423,9 +427,9 @@ def interactive_map(state, name):
     mountain = Mountain(name, state)
 
     trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
-    
+
     lifts = [Lift(lift['lift_id']) for lift in mountain.lifts()]
-    
+
     geojson = {'type':'FeatureCollection', 'features':[]}
 
     for trail in trails:
@@ -467,15 +471,15 @@ def interactive_map(state, name):
             popup_content += f'<p>1000m Pitch: {trail.steepest_1000m}' + u'\N{DEGREE SIGN}' + f'<span class="icon difficulty-{_misc.trail_color(trail.steepest_1000m)}"></span>'
         if debug_mode:
             popup_content += f'<p>Trail ID: {trail.trail_id}</p>'
-    
+
         feature['properties']['popupContent'] = popup_content
         feature['properties']['label'] = f'{trail.name}'
-        
+
         lon_points = trail.lon()
         lat_points = trail.lat()
 
         orientation = get_orientation(lon_points, lat_points)
-        
+
         feature['properties']['orientation'] = orientation
         feature['properties']['color'] = _misc.trail_color(trail.difficulty)
         feature['properties']['gladed'] = str(trail.gladed)
@@ -510,7 +514,7 @@ def interactive_map(state, name):
             popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
         feature['properties']['popupContent'] = popup_content
         feature['properties']['label'] = f'{lift.name}'
-        
+
         lon_points = lift.lon()
         lat_points = lift.lat()
 
@@ -522,7 +526,7 @@ def interactive_map(state, name):
 
     return render_template('interactive_map.jinja', nav_links=nav_links, active_page='map', geojson=geojson, mountain=mountain, trails=trails, lifts=lifts)
 
-    
+
 @app.route('/sitemap.xml')
 def site_map():
     xml = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'

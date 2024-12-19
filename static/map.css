@@ -179,6 +179,12 @@ main > * {
     margin-left: 1ch
 }
 
+.pass-icon {
+    width: 2rem;
+    height: 2rem;
+    margin-right: .5rem;
+}
+
 
 @media screen and (max-width: 900px) {
     .mountain-details {

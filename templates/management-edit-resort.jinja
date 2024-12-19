@@ -112,18 +112,18 @@ Edit Resort
         <input type="checkbox" id="powder_alliance" name="powder_alliance" value="True">
         {% endif%}
         <label for="powder_alliance">Powder Alliance</label>
-        {% if mountain.season_passes and "Freedom Pass" in mountain.season_passes %}
-        <input type="checkbox" id="freedom_pass" name="freedom_pass" value="True" checked>
+        {% if mountain.season_passes and "Freedom" in mountain.season_passes %}
+        <input type="checkbox" id="freedom" name="freedom" value="True" checked>
         {% else %}
-        <input type="checkbox" id="freedom_pass" name="freedom_pass" value="True">
+        <input type="checkbox" id="freedom" name="freedom" value="True">
         {% endif%}
-        <label for="freedom_pass">Freedom Pass</label><br>
-        {% if mountain.season_passes and "Powder Pass" in mountain.season_passes %}
-        <input type="checkbox" id="powder_pass" name="powder_pass" value="True" checked>
+        <label for="freedom">Freedom</label><br>
+        {% if mountain.season_passes and "Power" in mountain.season_passes %}
+        <input type="checkbox" id="power" name="power" value="True" checked>
         {% else %}
-        <input type="checkbox" id="powder_pass" name="powder_pass" value="True">
+        <input type="checkbox" id="power" name="power" value="True">
         {% endif%}
-        <label for="powder_pass">Powder Pass</label>
+        <label for="power">Power</label>
         <input class="button-cta" id="submit" type="submit" value="Update" />
     </form>
     <div id='map'></div>

@@ -95,12 +95,12 @@ def management_edit_resort():
         powder_alliance = request.args.get('powder_alliance')
         if powder_alliance:
             pass_list.append('Powder Alliance')
-        freedom_pass = request.args.get('freedom_pass')
+        freedom_pass = request.args.get('freedom')
         if freedom_pass:
-            pass_list.append('Freedom Pass')
-        powder_pass = request.args.get('powder_pass')
+            pass_list.append('Freedom')
+        powder_pass = request.args.get('power')
         if powder_pass:
-            pass_list.append('Powder Pass')
+            pass_list.append('Power')
 
         if len(pass_list) > 0:
             database._set_mountain_season_passes(name, state, ','.join(pass_list))

@@ -40,6 +40,11 @@
         <div class="mountain-section">
             <h2>Overview</h2>
             <ul>
+                {% if mountain.season_passes %}
+                {% for season_pass in mountain.season_passes %}
+                <li><img alt="{{season_pass}}" src="/icons/{{season_pass}}.png" class="pass-icon"/>{{season_pass}}</li>
+                {% endfor %}
+                {% endif %}
                 <li>Trail Count: {{mountain.trail_count}}</li>
                 <li>Lift Count: {{mountain.lift_count}}</li>
                 <li>Vertical: {{mountain.vertical}} ft</li>
