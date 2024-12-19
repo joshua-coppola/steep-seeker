@@ -27,7 +27,7 @@ app.config['SECRET_KEY'] = secret
 nav_links = []
 nav_links.append(navigationLink('About', 'about', '/about'))
 nav_links.append(navigationLink('Search', 'search', '/search'))
-nav_links.append(navigationLink('Explore', 'explore', '/explore'))
+nav_links.append(navigationLink('Explore Map', 'explore_map', '/explore-map'))
 nav_links.append(navigationLink('Mountain Rankings', 'rankings',
                                 '/rankings?sort=difficulty&order=desc&region=usa'))
 nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rankings?region=usa'))
@@ -352,8 +352,8 @@ def mountaindata(state, name):
     return jsonstring
 
 
-@app.route('/explore')
-def explore():
+@app.route('/explore-map')
+def explore_map():
     user_db.add_log(request.remote_addr, '/explore', '/explore')
     mountains = database.get_mountains()
 
@@ -396,7 +396,7 @@ def explore():
         feature['properties']['icon'] = f'icons/mountain_{difficulty_color}.png'
         geojson['features'].append(feature)
 
-    return render_template('explore.jinja', nav_links=nav_links, active_page='explore', geojson=geojson)
+    return render_template('explore_map.jinja', nav_links=nav_links, active_page='explore', geojson=geojson)
 
 
 @app.route('/interactive-map/<string:state>/<string:name>')

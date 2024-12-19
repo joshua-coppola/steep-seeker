@@ -20,6 +20,7 @@
             <h2>Overview</h2>
             <ul>
                 {% if mountain.season_passes %}
+                <li>Passes:</li>
                 {% for season_pass in mountain.season_passes %}
                 <li><img alt="{{season_pass}}" src="/icons/{{season_pass}}.png" class="pass-icon"/>{{season_pass}}</li>
                 {% endfor %}
