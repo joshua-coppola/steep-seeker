@@ -1,3 +1,5 @@
+from math import degrees, atan
+
 import db
 
 class Mountain:
@@ -127,6 +129,8 @@ class Lift:
             self.vertical = int(float(lift_dict['vertical_rise']) * 100 / (2.54 * 12))
         else:
             self.vertical = 0
+        if self.length and self.vertical:
+            self.pitch = round(abs(degrees(atan(self.vertical / self.length))), 1)
         if lift_dict['occupancy']:
             self.occupancy = int(lift_dict['occupancy'])
         else:

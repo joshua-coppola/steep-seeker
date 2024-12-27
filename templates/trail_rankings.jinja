@@ -77,6 +77,11 @@ Trail Rankings
         {% endif %}
     </ul>
     <ul class="ranking-sort mobile">
+        {% if sort_by == "difficulty"%}
+        <li><a class="button-cta">Difficulty</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=difficulty">Difficulty</a></li>
+        {% endif %}
         {% if sort_by == "steepest_30m"%}
         <li><a class="button-cta">30m Pitch</a></li>
         {% else %}

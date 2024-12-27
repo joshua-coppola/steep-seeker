@@ -81,10 +81,20 @@ Lift Rankings
         {% else %}
         <li><a class="button-cta2" href="{{pages.first}}&sort=length">Length</a></li>
         {% endif %}
+        {% if sort_by == "vertical_rise / Lifts.length"%}
+        <li><a class="button-cta">Average Pitch</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=pitch">Average Pitch</a></li>
+        {% endif %}
         {% if sort_by == "occupancy"%}
         <li><a class="button-cta">Occupancy</a></li>
         {% else %}
         <li><a class="button-cta2" href="{{pages.first}}&sort=occupancy">Occupancy</a></li>
+        {% endif %}
+        {% if sort_by == "bubble"%}
+        <li><a class="button-cta">Bubble</a></li>
+        {% else %}
+        <li><a class="button-cta2" href="{{pages.first}}&sort=bubble">Bubble</a></li>
         {% endif %}
     </ul>
 
@@ -118,6 +128,11 @@ Lift Rankings
                 {% else %}
                 <th><a href="{{pages.first}}&sort=length">Length</a></th>
                 {% endif %}
+                {% if sort_by == "vertical_rise / Lifts.length"%}
+                <th><a class="active">Average Pitch</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=pitch">Average Pitch</a></th>
+                {% endif %}
                 {% if sort_by == "occupancy"%}
                 <th><a class="active">Occupancy</a></th>
                 {% else %}
@@ -140,6 +155,7 @@ Lift Rankings
                 <td>{{lift.state}}</td>
                 <td>{{lift.vertical}} ft</td>
                 <td>{{lift.length}} ft</td>
+                <td>{{lift.pitch}}°</td>
                 {% if lift.occupancy %}
                     {% if lift.occupancy <= 4 %}
                     <td>
@@ -194,6 +210,12 @@ Lift Rankings
                 <td>Length</td>
                 <td>
                     {{lift.length}} ft
+                </td>
+            </tr>
+            <tr>
+                <td>Average Pitch</td>
+                <td>
+                    {{lift.pitch}}°
                 </td>
             </tr>
             <tr>

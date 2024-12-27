@@ -277,7 +277,7 @@ def lift_rankings():
     sort_by = request.args.get('sort')
     if not sort_by:
         sort_by = 'vertical_rise'
-    if not sort_by in ['vertical_rise','length', 'occupancy', 'bubble', 'heated']:
+    if not sort_by in ['vertical_rise','length', 'pitch', 'occupancy', 'bubble', 'heated']:
         sort_by = 'vertical_rise'
     search_string += f'sort={sort_by}&'
 
@@ -289,6 +289,9 @@ def lift_rankings():
     offset = limit * (page - 1)
 
     conn = database.dict_cursor()
+
+    if sort_by == 'pitch':
+        sort_by = 'vertical_rise / Lifts.length'
 
     if region == 'usa':
         query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
@@ -506,6 +509,7 @@ def interactive_map(state, name):
                 popup_content += f'{lift.occupancy}<span class="small-spacer"></span><span class="icon person"></span></p>'
         popup_content += f'<p>Length: {lift.length} ft</p>'
         popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
+        popup_content += f'<p>Average Pitch: {lift.pitch}°</p>'
         if lift.bubble:
             popup_content += f'<p>&#x2705; Bubble</p>'
         if lift.heated:
@@ -525,6 +529,11 @@ def interactive_map(state, name):
         geojson['features'].append(feature)
 
     return render_template('interactive_map.jinja', nav_links=nav_links, active_page='map', geojson=geojson, mountain=mountain, trails=trails, lifts=lifts)
+
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('privacy_policy.jinja', nav_links=nav_links)
 
 
 @app.route('/sitemap.xml')
