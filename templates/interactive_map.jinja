@@ -54,6 +54,7 @@
                 <li>Last Updated: {{mountain.last_updated}}</li>
             </ul>
         </div>
+        <div id="ezoic-pub-ad-placeholder-301"></div>
         <div class="mountain-section">
             <h2>Trails - Sorted by Difficulty</h2>
             <ul>
@@ -87,6 +88,7 @@
                 {% endfor %}
             </ul>
         </div>
+        <div id="ezoic-pub-ad-placeholder-302"></div>
         <div class="mountain-section">
             <h2>Lifts</h2>
             <ul>
@@ -97,6 +99,7 @@
                 {% endfor %}
             </ul>
         </div>
+        <div id="ezoic-pub-ad-placeholder-303"></div>
     </div>
     <div id='map'></div>
     <div class="map-switch">
@@ -189,6 +192,12 @@
 
         L.control.locate().addTo(map);
 
+    </script>
+    
+    <script>
+        ezstandalone.cmd.push(function() {
+            ezstandalone.showAds(301, 302, 303)
+        });
     </script>
 </main>
 {% endblock content%}

@@ -13,6 +13,11 @@ Lift Rankings
 
     <h1>Lift Rankings</h1>
 
+    <p class="detail">
+        Filter lifts by region, and sort to find what lifts are the longest, or which lift 
+        would be best to lap to get the most vertical if you sort by steepest pitch. 
+    </p>
+
     <ul class="ranking-sort">
         {% if region == "usa" %}
         <li><a class="button-cta">USA</a></li>
@@ -97,6 +102,8 @@ Lift Rankings
         <li><a class="button-cta2" href="{{pages.first}}&sort=bubble">Bubble</a></li>
         {% endif %}
     </ul>
+
+    <div id="ezoic-pub-ad-placeholder-501"></div>
 
     <div class="links">
         {% if 'prev' in pages %}
@@ -264,5 +271,13 @@ Lift Rankings
         </div>
         {% endif %}
     </div>
+    <div id="ezoic-pub-ad-placeholder-502"></div>
 </section>
+<div id="ezoic-pub-ad-placeholder-503"></div>
+
+<script>
+    ezstandalone.cmd.push(function() {
+        ezstandalone.showAds(501, 502, 503)
+    });
+</script>
 {% endblock content %}

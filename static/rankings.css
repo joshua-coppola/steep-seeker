@@ -79,6 +79,10 @@ main {
     color:black
 }
 
+.rankings .bar-div {
+    width: 100%;
+}
+
 .links {
     display: flex;
     align-items: center;

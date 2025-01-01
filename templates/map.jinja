@@ -33,6 +33,7 @@
                 <li>Last Updated: {{mountain.last_updated}}</li>
             </ul>
         </div>
+        <div id="ezoic-pub-ad-placeholder-401"></div>
         <div class="mountain-section">
             <h2>Trails - Sorted by Difficulty</h2>
             <ul>
@@ -66,6 +67,7 @@
                 {% endfor %}
             </ul>
         </div>
+        <div id="ezoic-pub-ad-placeholder-402"></div>
         <div class="mountain-section">
             <h2>Lifts</h2>
             <ul>
@@ -76,6 +78,7 @@
                 {% endfor %}
             </ul>
         </div>
+        <div id="ezoic-pub-ad-placeholder-403"></div>
     </div>
 
     <div id="zoom">
@@ -102,4 +105,10 @@
 {#<script src="/panzoom.js"></script>#}
 <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 <script src="/map.js"></script>
+
+<script>
+    ezstandalone.cmd.push(function() {
+        ezstandalone.showAds(401, 402, 403)
+    });
+</script>
 {% endblock postbody %}

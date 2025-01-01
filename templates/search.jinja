@@ -16,6 +16,7 @@ Search
     <h2>Filters</h2>
 
     <form id="filters"></form>
+    <div id="ezoic-pub-ad-placeholder-801"></div>
 </section>
 
 <section id="content">
@@ -36,6 +37,8 @@ Search
         </select>
         <input class="button-cta" id="submit" type="submit" value="Search" />
     </form>
+
+    <div id="ezoic-pub-ad-placeholder-802"></div>
 
     <div class="links">
         {% if 'prev' in pages %}
@@ -90,6 +93,9 @@ Search
             <a class="map-link" href="/map/{{mountain.state}}/{{mountain.name}}">View map</a>
         </li>
         {% endfor %}
+        {% if not mountains %}
+        <p>No results found. Please double check spelling, and keep in mind that only US mountains are in the system.</p>
+        {% endif%}
     </ul>
 
     <div class="links">
@@ -105,9 +111,16 @@ Search
         </div>
         {% endif %}
     </div>
+
+    <div id="ezoic-pub-ad-placeholder-803"></div>
 </section>
 {% endblock content %}
 
 {% block postbody %}
 <script src="/search.js"></script>
+<script>
+    ezstandalone.cmd.push(function() {
+        ezstandalone.showAds(801, 802, 803)
+    });
+</script>
 {% endblock postbody %}
