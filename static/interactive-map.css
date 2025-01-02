@@ -175,7 +175,7 @@ h3 {
 }
 
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 950px) {
     .mountain-details {
         visibility: hidden;
         width: 0px;
@@ -186,7 +186,12 @@ h3 {
     }
 
     .map-button {
-        left: 0px;
+        right: 0px;
+        left: auto;
+        top: 28px;
+        bottom: auto;
+        width: auto;
+        font-size: 1rem;
     }
 
     .map-button {
