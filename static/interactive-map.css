@@ -154,8 +154,8 @@ h3 {
 
 .map-button {
     position: absolute;
-    left: 416px;
-    bottom: 0px;
+    right: 0px;
+    top: 28px;
     font-size: 1.2rem;
 }
 
@@ -187,9 +187,6 @@ h3 {
 
     .map-button {
         right: 0px;
-        left: auto;
-        top: 28px;
-        bottom: auto;
         width: auto;
         font-size: 1rem;
     }
