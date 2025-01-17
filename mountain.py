@@ -111,6 +111,11 @@ class Trail:
             return db._get_trail_points(self.trail_id, 'lon', visible)
         return None
 
+    def elevation(self, visible: bool = True):
+        if self.mountain_id:
+            return db._get_trail_points(self.trail_id, 'elevation', visible)
+        return None
+
 
 class Lift:
     def __init__(self, lift_id: int):
@@ -164,4 +169,9 @@ class Lift:
     def lon(self):
         if self.mountain_id:
             return db._get_lift_points(self.lift_id, 'lon')
+        return None
+
+    def elevation(self):
+        if self.mountain_id:
+            return db._get_lift_points(self.lift_id, 'elevation')
         return None

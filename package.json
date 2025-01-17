@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "leaflet.heightgraph": "^1.4.0"
+  }
+}

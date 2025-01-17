@@ -28,6 +28,11 @@
 
 <script src="/leaflet.textpath.js"></script>
 
+<link rel="stylesheet" href="/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.css"/>
+<script type="text/javascript" src="/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.js"></script>
+
+<script type="text/javascript" src="/mappings.js"></script>
+
 {% endblock pagehead %}
 
 {% block content %}
@@ -112,7 +117,7 @@
         <button class="button-cta2 map-button" id="static"><a href="/map/{{mountain.state}}/{{mountain.name}}">Static Map</a></button>
     </div>
     <script>
-        let trails = {{geojson}};
+        let trails = {{geojson}}
 
         var mouseOver = true;
         if (Object.keys(trails.features).length > 200) {
@@ -130,6 +135,19 @@
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
+        }).addTo(map);
+
+        const hg = L.control.heightgraph({
+            mappings: colorMappings,
+            graphStyle: {
+                opacity: 0.8,
+                'fill-opacity': 0.5,
+                'stroke-width': '2px'
+            },
+            expandControls: true,
+            highlightStyle: {
+                color: "purple"
+            }
         }).addTo(map);
 
         function onEachFeature(feature, layer) {
@@ -151,10 +169,55 @@
             return {color: feature.properties.color, weight: 4}
         }
 
+        // Function to handle Heightgraph updates
+        function addHeightGraphData(layer) {
+            // Add elevation data for the clicked trail
+            if(layer.feature.geometry.type == "LineString"){
+                let elevation = [];
+                let slope = [];
+
+                layer.feature.geometry.coordinates.forEach((coord, index) => {
+                    elevation_row = layer.feature.geometry.supplemental[index][0];
+                    elevation.push([coord[0], coord[1], elevation_row])
+                    slope_row = layer.feature.geometry.supplemental[index][1];
+                    slope.push([coord[0], coord[1], slope_row])
+                });
+                
+                const json_feature = [{
+                    "type": "FeatureCollection",
+                    "features": [{
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": elevation,
+                        },
+                        "properties": {
+                            "attributeType": layer.feature.properties.color
+                        }
+                    }],
+                    "properties": {
+                        "Creator": "steepseeker.com",
+                        "records": 1,
+                        "summary": "steepness",
+                        "label": "Steepness"
+                    }
+                }];
+                hg.addData(json_feature);
+            }
+            else {
+                hg.addData({})
+            }
+        }
         
         function addTrails() {
             geojson_features = L.geoJSON(trails, {onEachFeature: onEachFeature, style: style}).addTo(map);
             map.almostOver.addLayer(geojson_features);
+
+            geojson_features.eachLayer(function (layer) {
+                layer.on("click", function () {
+                    addHeightGraphData(layer);
+                });
+            });
         }
 
         addTrails();
@@ -178,6 +241,10 @@
 
         map.on('almost:click', function (e) {
             e.layer.openPopup();
+            const clickedLayer = e.layer; // The clicked trail layer
+            if (clickedLayer) {
+                addHeightGraphData(clickedLayer);
+            }
         });
 
         var legend = L.control({ position: "bottomright" });

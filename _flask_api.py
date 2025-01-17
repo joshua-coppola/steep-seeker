@@ -433,7 +433,7 @@ def interactive_map(state, name):
 
     lifts = [Lift(lift['lift_id']) for lift in mountain.lifts()]
 
-    geojson = {'type':'FeatureCollection', 'features':[]}
+    geojson = {'type':'FeatureCollection', 'features':[], 'properties':{'summary':'elevation'} }
 
     for trail in trails:
         geom_type = 'LineString'
@@ -443,12 +443,16 @@ def interactive_map(state, name):
                 'properties':{},
                 'geometry':{'type': geom_type,
                             'coordinates':[]}}
-        coords = list(zip(trail.lon(), trail.lat()))
-        coords = [list(element) for element in coords]
+        trail_points = list(zip(trail.lat(), trail.lon(), trail.elevation()))
+        trail_points = _misc.get_slope(trail_points)
+        coords = [[element[1], element[0]] for element in trail_points]
+        elevation_and_slope = [[element[2], element[3]] for element in trail_points]
+
         if trail.area:
             coords.append(coords[0])
             coords = [coords]
         feature['geometry']['coordinates'] = coords
+        feature['geometry']['supplemental'] = elevation_and_slope
         if trail.gladed:
             gladed = '<i class="icon gladed"></i>'
         else:
@@ -486,6 +490,7 @@ def interactive_map(state, name):
         feature['properties']['orientation'] = orientation
         feature['properties']['color'] = _misc.trail_color(trail.difficulty)
         feature['properties']['gladed'] = str(trail.gladed)
+        feature['properties']['attributeType'] = 0
 
         geojson['features'].append(feature)
 
@@ -494,9 +499,14 @@ def interactive_map(state, name):
                 'properties':{},
                 'geometry':{'type': 'LineString',
                             'coordinates':[]}}
-        coords = list(zip(lift.lon(), lift.lat()))
-        coords = [list(element) for element in coords]
+
+        lift_points = list(zip(lift.lat(), lift.lon(), lift.elevation()))
+        lift_points = _misc.get_slope(lift_points)
+        coords = [[element[1], element[0]] for element in lift_points]
+        elevation_and_slope = [[element[2], element[3]] for element in lift_points]
+
         feature['geometry']['coordinates'] = coords
+        feature['geometry']['supplemental'] = elevation_and_slope
         popup_content = f'<h3>{lift.name}</h3>'
         if lift.occupancy:
             if lift.occupancy <= 4:
