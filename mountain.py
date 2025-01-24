@@ -111,9 +111,11 @@ class Trail:
             return db._get_trail_points(self.trail_id, 'lon', visible)
         return None
 
-    def elevation(self, visible: bool = True):
-        if self.mountain_id:
+    def elevation(self, visible: bool = True, round_to_int = False):
+        if self.mountain_id and not round_to_int:
             return db._get_trail_points(self.trail_id, 'elevation', visible)
+        if self.mountain_id and round_to_int:
+            return list(map(int, db._get_trail_points(self.trail_id, 'elevation', visible)))
         return None
 
 
@@ -171,7 +173,9 @@ class Lift:
             return db._get_lift_points(self.lift_id, 'lon')
         return None
 
-    def elevation(self):
-        if self.mountain_id:
+    def elevation(self, round_to_int = False):
+        if self.mountain_id and not round_to_int:
             return db._get_lift_points(self.lift_id, 'elevation')
+        if self.mountain_id and round_to_int:
+            return list(map(int, db._get_lift_points(self.lift_id, 'elevation')))
         return None

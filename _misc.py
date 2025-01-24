@@ -335,19 +335,19 @@ def mountain_rating(nodes: list()) -> tuple:
 
 
 def trail_color(difficulty: float) -> str:
-    # 0-16 degrees: green
+    # 0-18 degrees: green
     if difficulty < 18:
         return 'green'
-    # 16-23 degrees: blue
+    # 18-27 degrees: blue
     if difficulty < 27:
         return 'royalblue'
-    # 23-32 degrees: black
+    # 27-36 degrees: black
     if difficulty < 36:
         return 'black'
-    # 32-45 degrees: red
+    # 36-47 degrees: red
     elif difficulty < 47:
         return 'red'
-    # >45 degrees: yellow
+    # >47 degrees: yellow
     else:
         return 'gold'
 

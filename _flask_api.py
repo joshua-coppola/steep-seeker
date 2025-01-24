@@ -36,19 +36,16 @@ nav_links.append(navigationLink('Lift Rankings', 'lift_rankings', '/lift-ranking
 
 @app.route('/')
 def index():
-    user_db.add_log(request.remote_addr, '/', '/')
     return render_template('index.jinja', nav_links=nav_links, active_page='index')
 
 
 @app.route('/about')
 def about():
-    user_db.add_log(request.remote_addr, '/about', '/about')
     return render_template('about.jinja', nav_links=nav_links, active_page='about')
 
 
 @app.route('/search')
 def search():
-    user_db.add_log(request.remote_addr, '/search', '/search', request.args)
     # parsing query string for database search
     search_string = ''
     q = request.args.get('q')
@@ -156,7 +153,6 @@ def search():
 
 @app.route('/rankings')
 def rankings():
-    user_db.add_log(request.remote_addr, '/rankings', '/rankings', request.args)
     sort = request.args.get('sort')
     if not sort:
         sort = 'difficulty'
@@ -192,7 +188,6 @@ def rankings():
 
 @app.route('/trail-rankings')
 def trail_rankings():
-    user_db.add_log(request.remote_addr, '/trail-rankings', '/trail-rankings', request.args)
     search_string = ''
     region = request.args.get('region')
     if not region:
@@ -261,7 +256,6 @@ def trail_rankings():
 
 @app.route('/lift-rankings')
 def lift_rankings():
-    user_db.add_log(request.remote_addr, '/lift-rankings', '/lift-rankings', request.args)
     search_string = ''
     region = request.args.get('region')
     if not region:
@@ -332,7 +326,6 @@ def lift_rankings():
 
 @app.route('/map/<string:state>/<string:name>')
 def map(state, name):
-    user_db.add_log(request.remote_addr, '/map', f'/map/{state}/{name}')
     mountain = Mountain(name, state)
 
     trails = [Trail(trail['trail_id']) for trail in mountain.trails()]
@@ -357,7 +350,6 @@ def mountaindata(state, name):
 
 @app.route('/explore-map')
 def explore_map():
-    user_db.add_log(request.remote_addr, '/explore', '/explore')
     mountains = database.get_mountains()
 
     geojson = {'type':'FeatureCollection', 'features':[]}
@@ -404,7 +396,6 @@ def explore_map():
 
 @app.route('/interactive-map/<string:state>/<string:name>')
 def interactive_map(state, name):
-    user_db.add_log(request.remote_addr, '/interactive-map', f'/interactive-map/{state}/{name}')
     def get_orientation(lon_points, lat_points):
         midpoint = int(len(lon_points) / 2)
         dx = lon_points[max(midpoint - 5, 0)] - lon_points[min(midpoint + 5, (midpoint * 2) - 1)]
@@ -443,16 +434,14 @@ def interactive_map(state, name):
                 'properties':{},
                 'geometry':{'type': geom_type,
                             'coordinates':[]}}
-        trail_points = list(zip(trail.lat(), trail.lon(), trail.elevation()))
+        trail_points = list(zip(trail.lat(), trail.lon(), trail.elevation(round_to_int = True)))
         trail_points = _misc.get_slope(trail_points)
-        coords = [[element[1], element[0]] for element in trail_points]
-        elevation_and_slope = [[element[2], element[3]] for element in trail_points]
+        coords = [[element[1], element[0], element[2], element[3]] for element in trail_points]
 
         if trail.area:
             coords.append(coords[0])
             coords = [coords]
         feature['geometry']['coordinates'] = coords
-        feature['geometry']['supplemental'] = elevation_and_slope
         if trail.gladed:
             gladed = '<i class="icon gladed"></i>'
         else:
@@ -490,9 +479,12 @@ def interactive_map(state, name):
         feature['properties']['orientation'] = orientation
         feature['properties']['color'] = _misc.trail_color(trail.difficulty)
         feature['properties']['gladed'] = str(trail.gladed)
-        feature['properties']['attributeType'] = 0
+        feature['properties']['difficulty_modifier'] = trail.difficulty - trail.steepest_30m
 
         geojson['features'].append(feature)
+
+    whole_resort_modifier = trails[0].difficulty - trails[0].steepest_30m - (trails[0].gladed * 5.5) - (trails[0].ungroomed * 2.5)
+    print(whole_resort_modifier)
 
     for lift in lifts:
         feature = {'type':'Feature',
@@ -500,13 +492,11 @@ def interactive_map(state, name):
                 'geometry':{'type': 'LineString',
                             'coordinates':[]}}
 
-        lift_points = list(zip(lift.lat(), lift.lon(), lift.elevation()))
+        lift_points = list(zip(lift.lat(), lift.lon(), lift.elevation(round_to_int = True)))
         lift_points = _misc.get_slope(lift_points)
-        coords = [[element[1], element[0]] for element in lift_points]
-        elevation_and_slope = [[element[2], element[3]] for element in lift_points]
+        coords = [[element[1], element[0], element[2], element[3]] for element in lift_points]
 
         feature['geometry']['coordinates'] = coords
-        feature['geometry']['supplemental'] = elevation_and_slope
         popup_content = f'<h3>{lift.name}</h3>'
         if lift.occupancy:
             if lift.occupancy <= 4:
@@ -523,7 +513,7 @@ def interactive_map(state, name):
         if lift.bubble:
             popup_content += f'<p>&#x2705; Bubble</p>'
         if lift.heated:
-            popup_content += f'<p>&#x2705;Heated</p>'
+            popup_content += f'<p>&#x2705; Heated</p>'
         if debug_mode:
             popup_content += f'<p>Lift ID: {lift.lift_id}</p>'
         feature['properties']['popupContent'] = popup_content
@@ -535,6 +525,7 @@ def interactive_map(state, name):
         orientation = get_orientation(lon_points, lat_points)
         feature['properties']['orientation'] = orientation
         feature['properties']['color'] = 'grey'
+        feature['properties']['difficulty_modifier'] = whole_resort_modifier
 
         geojson['features'].append(feature)
 

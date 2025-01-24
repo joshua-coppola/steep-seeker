@@ -169,40 +169,102 @@
             return {color: feature.properties.color, weight: 4}
         }
 
+        function point_color(point) {
+            if(point < 18){
+                return "green";
+            };
+            if(point < 27){
+                return "royalblue";
+            };
+            if(point < 36){
+                return "black";
+            };
+            if(point < 47){
+                return "red";
+            };
+            return "gold";
+        }
+
+        function create_height_graph_json(coordinates, modifier, label) {
+            let colors = []
+            coordinates.forEach((coord) => {
+                colors.push(point_color(coord[3] + modifier))
+            });
+
+            console.log(colors)
+
+            length_of_current_color = 0;
+            for(var i = 1; i < colors.length; i++){
+                length_of_current_color++;
+                if(colors[i - 1] != colors[i]){
+                    if(length_of_current_color == 1){
+                        colors[i - 1] = colors[i];
+                    }
+                    else {
+                        console.log(length_of_current_color);
+                        console.log(colors[i - 1]);
+                        length_of_current_color = 0;  
+                    }
+                }
+            };
+
+            let output_feature = {
+                "type": "FeatureCollection",
+                "features": [],
+                "properties": {
+                    "Creator": "steepseeker.com",
+                    "records": 0,
+                    "summary": label
+                }
+            };
+            
+            let current_points = []
+            for(var j = 1; j < colors.length; j++){
+                current_points.push(coordinates[j])
+                if(colors[j - 1] != colors[j]){
+                    let partial_feature = {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": current_points
+                        },
+                        "properties": {
+                            "attributeType": colors[j - 1]
+                        }
+                    };
+                    output_feature.features.push(partial_feature);
+                    current_points = [coordinates[j]];
+                }
+            };
+
+            let partial_feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": current_points
+                },
+                "properties": {
+                    "attributeType": colors[colors.length - 1]
+                }
+            };
+            output_feature.features.push(partial_feature);
+            output_feature.properties.records = output_feature.features.length;
+
+            console.log(output_feature);
+            return output_feature;
+        }
+
         // Function to handle Heightgraph updates
         function addHeightGraphData(layer) {
             // Add elevation data for the clicked trail
             if(layer.feature.geometry.type == "LineString"){
-                let elevation = [];
-                let slope = [];
-
-                layer.feature.geometry.coordinates.forEach((coord, index) => {
-                    elevation_row = layer.feature.geometry.supplemental[index][0];
-                    elevation.push([coord[0], coord[1], elevation_row])
-                    slope_row = layer.feature.geometry.supplemental[index][1];
-                    slope.push([coord[0], coord[1], slope_row])
-                });
+                let difficulty_modifier = layer.feature.properties.difficulty_modifier;
+                let coordinates = layer.feature.geometry.coordinates;
+                let json_data = [];
+                json_data.push(create_height_graph_json(coordinates, difficulty_modifier, "Difficulty"));
+                json_data.push(create_height_graph_json(coordinates, 0, "Steepness"));
                 
-                const json_feature = [{
-                    "type": "FeatureCollection",
-                    "features": [{
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": elevation,
-                        },
-                        "properties": {
-                            "attributeType": layer.feature.properties.color
-                        }
-                    }],
-                    "properties": {
-                        "Creator": "steepseeker.com",
-                        "records": 1,
-                        "summary": "steepness",
-                        "label": "Steepness"
-                    }
-                }];
-                hg.addData(json_feature);
+                hg.addData(json_data);
             }
             else {
                 hg.addData({})
