@@ -145,8 +145,23 @@
                 'stroke-width': '2px'
             },
             expandControls: true,
+            expand: false,
+            position: "bottomleft",
             highlightStyle: {
                 color: "purple"
+            },
+            translation: {
+                distance: "Distance",
+                elevation: "Elevation",
+                segment_length: "Segment Length",
+                type: "Rating",
+                legend: "Legend"
+            },
+            margins: {
+                top: 10,
+                right: 30,
+                bottom: 55,
+                left: 60
             }
         }).addTo(map);
 
@@ -191,8 +206,6 @@
                 colors.push(point_color(coord[3] + modifier))
             });
 
-            console.log(colors)
-
             length_of_current_color = 0;
             for(var i = 1; i < colors.length; i++){
                 length_of_current_color++;
@@ -201,8 +214,6 @@
                         colors[i - 1] = colors[i];
                     }
                     else {
-                        console.log(length_of_current_color);
-                        console.log(colors[i - 1]);
                         length_of_current_color = 0;  
                     }
                 }
@@ -250,7 +261,6 @@
             output_feature.features.push(partial_feature);
             output_feature.properties.records = output_feature.features.length;
 
-            console.log(output_feature);
             return output_feature;
         }
 

@@ -434,9 +434,9 @@ def interactive_map(state, name):
                 'properties':{},
                 'geometry':{'type': geom_type,
                             'coordinates':[]}}
-        trail_points = list(zip(trail.lat(), trail.lon(), trail.elevation(round_to_int = True)))
+        trail_points = list(zip(trail.lat(), trail.lon(), trail.elevation()))
         trail_points = _misc.get_slope(trail_points)
-        coords = [[element[1], element[0], element[2], element[3]] for element in trail_points]
+        coords = [[element[1], element[0], int(float(element[2]) * 100 / (2.54 * 12)), element[3]] for element in trail_points]
 
         if trail.area:
             coords.append(coords[0])
@@ -484,7 +484,6 @@ def interactive_map(state, name):
         geojson['features'].append(feature)
 
     whole_resort_modifier = trails[0].difficulty - trails[0].steepest_30m - (trails[0].gladed * 5.5) - (trails[0].ungroomed * 2.5)
-    print(whole_resort_modifier)
 
     for lift in lifts:
         feature = {'type':'Feature',
@@ -492,9 +491,9 @@ def interactive_map(state, name):
                 'geometry':{'type': 'LineString',
                             'coordinates':[]}}
 
-        lift_points = list(zip(lift.lat(), lift.lon(), lift.elevation(round_to_int = True)))
+        lift_points = list(zip(lift.lat(), lift.lon(), lift.elevation()))
         lift_points = _misc.get_slope(lift_points)
-        coords = [[element[1], element[0], element[2], element[3]] for element in lift_points]
+        coords = [[element[1], element[0], int(float(element[2]) * 100 / (2.54 * 12)), element[3]] for element in lift_points]
 
         feature['geometry']['coordinates'] = coords
         popup_content = f'<h3>{lift.name}</h3>'
