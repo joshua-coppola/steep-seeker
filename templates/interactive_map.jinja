@@ -200,10 +200,46 @@
             return "gold";
         }
 
+        function point_pitch(point){
+            if(point < 9){
+                return "0-9";
+            };
+            if(point < 18){
+                return "9-18";
+            };
+            if(point < 23){
+                return "18-23";
+            };
+            if(point < 27){
+                return "23-27";
+            };
+            if(point < 32){
+                return "27-32";
+            };
+            if(point < 36){
+                return "32-36";
+            };
+            if(point < 42){
+                return "36-42";
+            };
+            if(point < 47){
+                return "42-47";
+            };
+            if(point < 55){
+                return "47-55";
+            };
+            return "55+";
+        }
+
         function create_height_graph_json(coordinates, modifier, label) {
             let colors = []
             coordinates.forEach((coord) => {
-                colors.push(point_color(coord[3] + modifier))
+                if(label == "Difficulty"){
+                    colors.push(point_color(coord[3] + modifier))
+                }
+                if(label == "Steepness"){
+                    colors.push(point_pitch(coord[3] + modifier))
+                }
             });
 
             length_of_current_color = 0;

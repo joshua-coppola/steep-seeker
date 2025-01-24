@@ -1,28 +1,44 @@
 const colorMappings = {
     Steepness: {
-        'green': {
-            text: '0°-18°',
+        '0-9': {
+            text: '0°-9°',
+            color: '#00e600'
+        },
+        '9-18': {
+            text: '9°-18°',
             color: 'green'
         },
-        'royalblue': {
-            text: '18°-27°',
+        '18-23': {
+            text: '18°-23°',
+            color: '#91a8ee'
+        },
+        '23-27': {
+            text: '23°-27°',
             color: 'royalblue'
         },
-        'black': {
-            text: '27°-36°',
+        '27-32': {
+            text: '27°-32°',
+            color: '#333333'
+        },
+        '32-36': {
+            text: '32°-36°',
             color: 'black'
         },
-        'red': {
-            text: '36°-47°',
+        '36-42': {
+            text: '36°-42°',
+            color: '#ff6666'
+        },
+        '42-47': {
+            text: '42°-47°',
             color: 'red'
         },
-        'gold': {
-            text: '47°+',
-            color: 'gold'
+        '47-55': {
+            text: '47°-55°',
+            color: '#ffe866'
         },
-        'grey': {
-            text: 'Chairlift',
-            color: 'grey'
+        '55+': {
+            text: '55°+',
+            color: 'gold'
         }
     },
     Difficulty: {
@@ -46,9 +62,5 @@ const colorMappings = {
             text: 'Extreme',
             color: 'gold'
         },
-        'grey': {
-            text: 'Chairlift',
-            color: 'grey'
-        }
     }
 };
