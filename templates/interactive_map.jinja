@@ -137,6 +137,34 @@
             attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
         }).addTo(map);
 
+        let heightgraph_width = 800;
+        let position = "bottomleft";
+        
+        function getWidth() {
+            return Math.max(
+                document.body.scrollWidth,
+                document.documentElement.scrollWidth,
+                document.body.offsetWidth,
+                document.documentElement.offsetWidth,
+                document.documentElement.clientWidth
+            );
+        }
+
+        let window_width = getWidth();
+        if(window_width < 1400) {
+            heightgraph_width = window_width - 632;
+        }
+        if(window_width <=  950){
+            heightgraph_width = window_width - 216;
+        }
+        if(window_width <= 500){
+            heightgraph_width = window_width - 52;
+            position = "bottomright";
+        }
+        
+
+        console.log(getWidth());
+
         const hg = L.control.heightgraph({
             mappings: colorMappings,
             graphStyle: {
@@ -146,7 +174,8 @@
             },
             expandControls: true,
             expand: false,
-            position: "bottomleft",
+            position: position,
+            width: heightgraph_width,
             highlightStyle: {
                 color: "purple"
             },

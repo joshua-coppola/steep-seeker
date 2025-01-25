@@ -175,12 +175,16 @@ h3 {
 }
 
 .legend-hover {
-    font-size: 1rem;
+    font-size: .8rem;
+    font-weight: bold;
 }
 
 #selectionText {
-    font-size: 1rem;
+    font-size: .8rem;
+    font-weight: bold;
 }
+
+
 
 
 @media screen and (max-width: 950px) {
