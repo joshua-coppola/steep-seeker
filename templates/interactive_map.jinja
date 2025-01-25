@@ -1,7 +1,7 @@
 {% extends "page_base.jinja" %}
 
 {% block title %}
-{{mountain.name}} - Trail Map
+{{mountain.name}} - Interactive Trail Map
 {% endblock title %}
 
 {% block pagehead %}
@@ -96,7 +96,7 @@
             </ul>
         </div>
         <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
-        <div id="ezoic-pub-ad-placeholder-124"></div>
+        <div id="ezoic-pub-ad-placeholder-125"></div>
         <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
         <div class="mountain-section">
             <h2>Lifts</h2>
@@ -109,7 +109,7 @@
             </ul>
         </div>
         <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
-        <div id="ezoic-pub-ad-placeholder-124"></div>
+        <div id="ezoic-pub-ad-placeholder-126"></div>
         <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
     </div>
     <div id='map'></div>
@@ -161,9 +161,6 @@
             heightgraph_width = window_width - 52;
             position = "bottomright";
         }
-        
-
-        console.log(getWidth());
 
         const hg = L.control.heightgraph({
             mappings: colorMappings,

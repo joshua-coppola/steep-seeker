@@ -14,7 +14,7 @@ nav {
     top: 76px;
     left: 432px;
     right: 16px;
-    bottom: 16px;
+    bottom: 116px;
     z-index: -1;
 }
 
@@ -51,7 +51,7 @@ main > * {
 .mountain-details {
     position: absolute;
     top: 28px;
-    bottom: 0px;
+    bottom: 100px;
     left: 0;
     width: 400px;
     height: auto;
