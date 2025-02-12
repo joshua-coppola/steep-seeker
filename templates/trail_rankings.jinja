@@ -13,12 +13,6 @@ Trail Rankings - Find the Hardest Trails in the USA
 
     <h1>Trail Rankings</h1>
 
-    <p class="detail">
-        The trails can be filtered by their region within the US, and sorted by the length of the steepest pitch.
-        Keep in mind that trail difficulties are calculated using the 30 meter pitch value, as well as other factors
-        not shown here.
-    </p>
-
     <ul class="ranking-sort">
         {% if region == "usa" %}
         <li><a class="button-cta">USA</a></li>
@@ -113,6 +107,12 @@ Trail Rankings - Find the Hardest Trails in the USA
         <li><a class="button-cta2" href="{{pages.first}}&sort=steepest_1000m">1000m Pitch</a></li>
         {% endif %}
     </ul>
+
+    <p class="detail">
+        The trails can be filtered by their region within the US, and sorted by the length of the steepest pitch.
+        Keep in mind that trail difficulties are calculated using the 30 meter pitch value, as well as other factors
+        not shown here.
+    </p>
 
     <div class="legend">
         <ul>

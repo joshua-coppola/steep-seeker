@@ -138,6 +138,7 @@
         }).addTo(map);
 
         let heightgraph_width = 800;
+        let heightgraph_height = 280;
         let position = "bottomleft";
         
         function getWidth() {
@@ -159,8 +160,10 @@
         }
         if(window_width <= 500){
             heightgraph_width = window_width - 52;
+            heightgraph_height = 200;
             position = "bottomright";
         }
+
 
         const hg = L.control.heightgraph({
             mappings: colorMappings,
@@ -173,6 +176,7 @@
             expand: false,
             position: position,
             width: heightgraph_width,
+            height: heightgraph_height,
             highlightStyle: {
                 color: "purple"
             },
