@@ -19,7 +19,8 @@ CREATE TABLE "Mountains"
     "avg_rain" REAL,
     "lat" DECIMAL(9,6),
     "lon" DECIMAL(9,6),
-    "last_updated" TIMESTAMP
+    "last_updated" TIMESTAMP,
+    "url" TEXT
 );
 
 

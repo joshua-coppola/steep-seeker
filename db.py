@@ -879,7 +879,7 @@ def _set_last_updated(name: str, state: str):
     conn.close()
 
 
-def _set_mountain_season_passes(name: str, state:str, passes:str):
+def _set_mountain_season_passes(name: str, state: str, passes: str):
     with tuple_cursor() as conn:
         query = 'UPDATE Mountains SET season_passes = ? WHERE name = ? AND state = ?'
         params = (passes, name, state)
@@ -887,4 +887,13 @@ def _set_mountain_season_passes(name: str, state:str, passes:str):
         conn.execute(query, params)
 
         conn.commit()
- 
+
+
+def _set_url(name: str, state: str, url: str):
+    with tuple_cursor() as conn:
+        query = 'UPDATE Mountains SET url = ? WHERE name = ? AND state = ?'
+        params = (url, name, state)
+
+        conn.execute(query, params)
+
+        conn.commit()

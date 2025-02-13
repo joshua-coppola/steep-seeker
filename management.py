@@ -75,6 +75,7 @@ def management_edit_resort():
         rotate = request.args.get('rotate')
         delete = request.args.get('delete')
         trail_id = request.args.get('trail_id')
+        url = request.args.get('url')
 
         pass_list = []
         epic = request.args.get('epic')
@@ -141,6 +142,9 @@ def management_edit_resort():
 
         if delete:
             main.delete_item(name, state, delete)
+
+        if url:
+            database._set_url(name, state, url)
         
         mountain = Mountain(name, state)
 
@@ -161,8 +165,10 @@ def management_edit_resort():
                     'properties':{},
                     'geometry':{'type': geom_type,
                                 'coordinates':[]}}
-            coords = list(zip(trail.lon(), trail.lat()))
-            coords = [list(element) for element in coords]
+            trail_points = list(zip(trail.lat(), trail.lon(), trail.elevation()))
+            trail_points = _misc.get_slope(trail_points)
+            coords = [[element[1], element[0], int(float(element[2]) * 100 / (2.54 * 12)), element[3]] for element in trail_points]
+
             if trail.area:
                 coords.append(coords[0])
                 coords = [coords]
@@ -230,16 +236,21 @@ def management_edit_resort():
             feature['properties']['orientation'] = orientation
             feature['properties']['color'] = _misc.trail_color(trail.difficulty)
             feature['properties']['gladed'] = str(trail.gladed)
+            feature['properties']['difficulty_modifier'] = trail.difficulty - trail.steepest_30m
 
             geojson['features'].append(feature)
+
+        whole_resort_modifier = trails[0].difficulty - trails[0].steepest_30m - (trails[0].gladed * 5.5) - (trails[0].ungroomed * 2.5)
 
         for lift in lifts:
             feature = {'type':'Feature',
                     'properties':{},
                     'geometry':{'type': 'LineString',
                                 'coordinates':[]}}
-            coords = list(zip(lift.lon(), lift.lat()))
-            coords = [list(element) for element in coords]
+            lift_points = list(zip(lift.lat(), lift.lon(), lift.elevation()))
+            lift_points = _misc.get_slope(lift_points)
+            coords = [[element[1], element[0], int(float(element[2]) * 100 / (2.54 * 12)), element[3]] for element in lift_points]
+
             feature['geometry']['coordinates'] = coords
             popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
             popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
@@ -262,6 +273,7 @@ def management_edit_resort():
             orientation = get_label_orientation(lon_points, lat_points)
             feature['properties']['orientation'] = orientation
             feature['properties']['color'] = 'grey'
+            feature['properties']['difficulty_modifier'] = whole_resort_modifier
 
             geojson['features'].append(feature)
 

@@ -57,7 +57,10 @@ class Mountain:
             self.season_passes = mountain_dict['season_passes'].split(',')
         else:
             self.season_passes = []
-        return
+        if mountain_dict['url']:
+            self.url = mountain_dict['url']
+        else:
+            self.url = ''
 
     def trails(self):
         if self.mountain_id:

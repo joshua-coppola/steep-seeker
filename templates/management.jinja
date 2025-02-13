@@ -7,7 +7,7 @@ Management Panel
 {% endblock pagehead %}
 
 {% block content %}
-<section id="content">
+<div class="map-pane mountain-details">
     <h1>Management Panel</h1>
 
     <ul class="nav-list">
@@ -18,7 +18,7 @@ Management Panel
         {% endfor %}
     </ul>
 
-    {% block insideContent %}
-    {% endblock insideContent %}
-</section>
+{% block insideContent %}
+{% endblock insideContent %}
+</div>
 {% endblock content %}

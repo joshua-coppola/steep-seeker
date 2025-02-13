@@ -19,6 +19,7 @@ Edit Resort
 <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
 </script>
 
+<link href="/interactive-map.css" rel="stylesheet" />
 <link href="/management-edit-resort.css" rel="stylesheet" />
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
@@ -27,6 +28,12 @@ Edit Resort
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 
 <script src="/leaflet.textpath.js"></script>
+
+<link rel="stylesheet" href="/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.css"/>
+<script type="text/javascript" src="/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.js"></script>
+
+<script type="text/javascript" src="/mappings.js"></script>
+<script type="text/javascript" src="/interactive-map.js"></script>
 
 {% endblock pagehead %}
 
@@ -52,27 +59,47 @@ Edit Resort
         <li>Difficulty: {{mountain.difficulty}}</li>
         <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
         <li>Last Updated: {{mountain.last_updated}}</li>
+        <li><a href="{{mountain.url}}">{{mountain.url}}</a></li>
     </ul>
     <form id="refresh" class="search-form">
-        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
-        <input type="checkbox" id="stats" name="stats_refresh" value=True>
-        <label for="stats">Stats</label>
-        <input type="checkbox" id="maps" name="map_refresh" value=True>
-        <label for="map">Map</label>
-        <input type="checkbox" id="full" name="full_refresh" value=True>
-        <label for="full">Full Refresh</label>
-        <input type="checkbox" id="areas" name="ignore_areas" value=True>
-        <label for="areas">Ignore Areas</label><br>
-        <input type="checkbox" id="rotate" name="rotate" value=True>
-        <label for="rotate">&#8635; Rotate Map</label>
+        <ul>
+        <li>
+            <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+            <input type="checkbox" id="stats" name="stats_refresh" value=True>
+            <label for="stats">Stats</label>
+        </li>
+        <li>
+            <input type="checkbox" id="maps" name="map_refresh" value=True>
+            <label for="map">Map</label>
+        </li>
+        <li>
+            <input type="checkbox" id="full" name="full_refresh" value=True>
+            <label for="full">Full Refresh</label>
+        </li>
+        <li>
+            <input type="checkbox" id="areas" name="ignore_areas" value=True>
+            <label for="areas">Ignore Areas</label>
+        </li>
+        <li>
+            <input type="checkbox" id="rotate" name="rotate" value=True>
+            <label for="rotate">&#8635; Rotate Map</label>
+        </li>
+        <li>
         <input type="number" value="0" id="map_size" name="size_increase" step=".1" min="0">
-        <label for="map_size">Additional Area</label><br>
+        <label for="map_size">Additional Area</label>
+        </li>
+        </ul>
         <input class="button-cta" id="submit" type="submit" value="Refresh" />
     </form>
     <form id="rename" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
         <input id="rename" name="rename" type="search" placeholder="New Resort Name" />
         <input class="button-cta" id="submit" type="submit" value="Rename" />
+    </form>
+    <form id="change_url" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+        <input id="url" name="url" type="search" placeholder="New Resort URL" />
+        <input class="button-cta" id="submit" type="submit" value="Change URL" />
     </form>
     <form id="pass" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
@@ -133,92 +160,24 @@ Edit Resort
         <input class="button-cta" id="submit" type="submit" value="Delete Resort" />
     </form>
     <script>
-        let trails = {{geojson}};
+        let trails = {{geojson}}
 
         var mouseOver = true;
         if (Object.keys(trails.features).length > 200) {
             mouseOver = false;
         }
 
-        var map = L.map('map', {rotate: true,
-                                rotateControl: {
-					                closeOnZeroBearing: false,
-				                },
-				                touchRotate: false,
-                                bearing: {{mountain.bearing}},
-                                almostOnMouseMove: mouseOver,
+        var map = L.map('map', {
+            rotate: true,
+            rotateControl: {
+                closeOnZeroBearing: false,
+            },
+            touchRotate: false,
+            bearing: {{mountain.bearing}},
+            almostOnMouseMove: mouseOver,
         }).setView([{{mountain.lat}},{{mountain.lon}}], 13);
 
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
-        }).addTo(map);
-
-        function onEachFeature(feature, layer) {
-            // does this feature have a property named popupContent?
-            if (feature.properties && feature.properties.popupContent) {
-                layer.bindPopup(feature.properties.popupContent);
-                if (map.getZoom() > 14) {
-                    layer.setText(feature.properties.label, {offset: -5, center: true, orientation: feature.properties.orientation});
-                }
-            }
-        }
-
-        function style(feature) {
-            if (feature.properties.gladed) {
-                if (feature.properties.gladed == 'True') {
-                    return {color: feature.properties.color, weight: 4, dashArray: '5,10'}
-                }
-            }
-            return {color: feature.properties.color, weight: 4}
-        }
-
-        
-        function addTrails() {
-            geojson_features = L.geoJSON(trails, {onEachFeature: onEachFeature, style: style}).addTo(map);
-            map.almostOver.addLayer(geojson_features);
-        }
-
-        addTrails();
-        map.fitBounds(geojson_features.getBounds());
-        
-        // whenever the zoom level changes, remove the layer and re-add it to 
-        // force the style to update based on the current map scale
-        map.on('zoomend', function(){
-            geojson_features.removeFrom(map);
-            geojson_features.removeFrom(map.almostOver);
-            addTrails();
-        });
-
-        map.on('almost:over', function (e) {
-            e.layer.setStyle({weight: 10, opacity: .7});
-        });
-
-        map.on('almost:out', function (e){
-            e.layer.setStyle({weight: 4, opacity: 1});
-        });
-
-        map.on('almost:click', function (e) {
-            e.layer.openPopup();
-        });
-
-        var legend = L.control({ position: "bottomright" });
-
-        legend.onAdd = function(map) {
-        var div = L.DomUtil.create("div", "legend");
-            div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
-            div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
-            div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
-            div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
-            div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
-            div.innerHTML += '<span>- - - Gladed</span><br>';
-            return div;
-        };
-
-        legend.addTo(map);
-
-
-        L.control.locate().addTo(map);
-
+        run_map(trails, map);
     </script>
 {% endblock insideContent %}
 
