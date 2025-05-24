@@ -38,7 +38,11 @@
 
 {% block content %}
 <main>
-    <div class="map-pane mountain-details">
+    <a href="javascript:void(0);" class="button-cta2 map-button" id="hideButton">
+        <img alt="Mountain Details" height="24" width="24" src="/icons/mountain_black.png">
+        <img alt="Mountain Details" height="24" width="24" src="/hamburger-menu-light.svg">
+    </a>
+    <div class="map-pane mountain-details" id="mountain-details">
         <div class="mountain-title">
             <h1>{{mountain.name}}</h1>
             <span class="mountain-location">{{mountain.state}}</span>
@@ -118,6 +122,16 @@
         <button class="button-cta2 map-button" id="static"><a href="/map/{{mountain.state}}/{{mountain.name}}">Static Map</a></button>
     </div>
     <script>
+        document.getElementById("hideButton").addEventListener("click", function() {
+            var x = document.getElementById("mountain-details");
+            if (x.checkVisibility()) {
+                x.style.display = "none";
+            } else {
+                x.style.display = "block";
+                
+            }
+        });
+
         let trails = {{geojson}}
 
         var mouseOver = true;
@@ -135,7 +149,8 @@
             almostOnMouseMove: mouseOver,
         }).setView([{{mountain.lat}},{{mountain.lon}}], 13);
 
-        run_map(trails, map);
+        run_map(trails, map); 
+
     </script>
 </main>
 {% endblock content%}

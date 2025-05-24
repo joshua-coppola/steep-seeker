@@ -10,11 +10,12 @@ cur, db = database.db_connect()
 def print_dict(dic: dict(), title: str) -> None:
     max_len_col_1 = len(title[0])
     for key, value in dic.items():
+        key = str(key)
         if len(key) > max_len_col_1:
             max_len_col_1 = len(key)
     print(f"\n{title[0]}{' ' * (max_len_col_1 - len(title[0]))} | {title[1]}")
     for key, value in dic.items():
-        print(f"{key}{' ' * (max_len_col_1 - len(key))} | {value}")
+        print(f"{key}{' ' * (max_len_col_1 - len(str(key)))} | {value}")
 
 print('Weather: 6pts')
 print('Gladed: 5.5pts')
@@ -122,7 +123,7 @@ for gladed in [True, False]:
 
     gladed_pitch[gladed] = cur.execute(query, params).fetchall()[0][0]
 
-gladed_pitch['Difference'] = gladed_pitch['True'] - gladed_pitch['False']
+gladed_pitch['Difference'] = gladed_pitch[True] - gladed_pitch[False]
 print_dict(gladed_pitch, ['Gladed', 'Average Pitch'])
 
 gladed_sd = {}
