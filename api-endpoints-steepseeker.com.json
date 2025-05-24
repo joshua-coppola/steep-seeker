@@ -1,0 +1,268 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Cloudflare Learned Schema for steepseeker.com",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://steepseeker.com"
+    }
+  ],
+  "components": {},
+  "paths": {
+    "/privacy-policy": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/rankings": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/map/{state}/{mountain}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mountain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/interactive-map/{state}/{mountain}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mountain",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/about": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/trail-rankings": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/sitemap.xml": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/explore-map": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/lift-rankings": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/maps/{state}/{mountain}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mountain",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^.*\\.svg$"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/thumbnails/{state}/{mountain}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mountain",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^.*\\.svg$"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/{var}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "var",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^.*\\.(svg|png|ico|css|txt|js)$"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/node_modules/leaflet.heightgraph/dist/{var}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "var",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
+    "/node_modules/leaflet.heightgraph/dist/img/{var}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "var",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    }
+  }
+}
