@@ -19,7 +19,7 @@ sudo apt install python3-pip
 Once pip is installed, the next step is the project's dependencies, which can be install with:
 
 ```bash
-pip install rich flask flask_wtf matplotlib haversine requests
+pip install -r requirements.txt
 ```
 
 Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to add necessary directories and your secret file.
