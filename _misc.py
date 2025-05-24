@@ -27,7 +27,7 @@ def get_center_coordinates(filename: str):
         if "<bounds" in line:
             loc = line
 
-    if loc == None:
+    if loc is None:
         print("Malformed OSM file. No bounds defined.")
         return None
 
@@ -341,11 +341,10 @@ def get_elevation(nodes: list(tuple())) -> list(tuple()):
     return nodes
 
 
-def divide_chunks(l: list, n: int) -> list:
-
+def divide_chunks(full_list: list, n: int) -> list:
     # looping till length l
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+    for i in range(0, len(full_list), n):
+        yield full_list[i : i + n]
 
 
 def get_slope(nodes: list(tuple())) -> list(tuple()):
@@ -672,9 +671,9 @@ def process_weather(weather_list: list):
         if int(date[1]) in [1, 2, 3, 12]:
             invalid = False
             for value in row.keys():
-                if row[value] == None:
+                if row[value] is None:
                     invalid = True
-            if invalid == True:
+            if invalid:
                 continue
             winter_list.append(row)
 

@@ -75,7 +75,7 @@ def process_trails(ways: list(dict())) -> tuple():
 
             # gladed
             if "gladed" in tag:
-                if tag["gladed"] == "yes" and way["gladed"] != False:
+                if tag["gladed"] == "yes" and way["gladed"]:
                     way["gladed"] = True
                 if tag["gladed"] == "no":
                     way["gladed"] = False
@@ -161,7 +161,7 @@ def process_trails(ways: list(dict())) -> tuple():
                     way["type"] = None
                     way["valid"] = False
             if "leaf type" in tag:
-                if way["gladed"] != False:
+                if way["gladed"]:
                     way["gladed"] = True
                 way["area"] = True
             if "public transport" in tag:
@@ -185,8 +185,8 @@ def process_trails(ways: list(dict())) -> tuple():
                 way["type"] = None
                 way["valid"] = False
 
-        if way["type"] != None and way["valid"]:
-            if way["name"] == None or way["name"] == "":
+        if way["type"] is not None and way["valid"]:
+            if way["name"] is None or way["name"] == "":
                 way["name"] = ""
                 print("Way #{} has no name. Please add a name.".format(way["id"]))
             way["name"] = way["name"].replace(" amp ", " & ")
@@ -195,11 +195,11 @@ def process_trails(ways: list(dict())) -> tuple():
             way["name"] = way["name"].replace(" gt ", " > ")
 
             if way["type"] == "trail":
-                if way["gladed"] == None:
+                if way["gladed"] is None:
                     way["gladed"] = False
-                if way["area"] == None:
+                if way["area"] is None:
                     way["area"] = False
-                if way["gladed"] == True:
+                if way["gladed"]:
                     way["ungroomed"] = False
                 trails.append(
                     {
@@ -272,7 +272,7 @@ def merge_trails(trails):
         if trail["name"] in previously_seen_names:
             indices = find_indices(previously_seen_names, trail["name"])
             for j in indices:
-                if previously_seen_dicts[j] == None:
+                if previously_seen_dicts[j] is None:
                     continue
                 common_traits = 1
                 if (
@@ -325,7 +325,7 @@ def merge_trails(trails):
 
     output_trails = []
     for trail in previously_seen_dicts:
-        if trail != None:
+        if trail is not None:
             output_trails.append(trail)
 
     return output_trails

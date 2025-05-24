@@ -20,13 +20,13 @@ class Mountain:
         self.bearing = None
 
         # Allow an empty mountain object if name is passed as None
-        if self.name == None:
+        if self.name is None:
             return
 
-        if self.state != None:
+        if self.state is not None:
             self._sync()
 
-        if self.state == None:
+        if self.state is None:
             value = db._add_resort(self.name)
             if value:
                 self._sync()
@@ -145,7 +145,7 @@ class Lift:
             self.vertical = int(float(lift_dict["vertical_rise"]) * 100 / (2.54 * 12))
         else:
             self.vertical = 0
-        if self.length and self.vertical != None:
+        if self.length and self.vertical is not None:
             self.pitch = round(abs(degrees(atan(self.vertical / self.length))), 1)
         if lift_dict["occupancy"]:
             self.occupancy = int(lift_dict["occupancy"])

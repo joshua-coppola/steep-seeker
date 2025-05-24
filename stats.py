@@ -1,4 +1,3 @@
-import sqlite3
 from math import sqrt
 import matplotlib.pyplot as plt
 
@@ -28,9 +27,9 @@ def trail_rating(
     pitch: float, gladed: str, ungroomed: str, weather_modifier: float
 ) -> "str":
     pitch += (weather_modifier / 6) * 6.5
-    if gladed == True:
+    if gladed:
         pitch += 5.5
-    if ungroomed == True:
+    if ungroomed:
         pitch += 2.5
     # 0-16 degrees: green
     if pitch < 18:
@@ -64,7 +63,6 @@ def convert_to_numeric(rating: str) -> int:
 
 
 def compute_accuracy(all_trails: list(tuple())) -> None:
-
     trail_accuracy = []
     for trail in all_trails:
         weather_modifier = get_weather_data(trail[4])
@@ -91,17 +89,17 @@ def compute_accuracy(all_trails: list(tuple())) -> None:
             continue
         try:
             miss_dict[f"{numeric_official}->{numeric_computed}"] += 1
-        except:
+        except KeyError:
             miss_dict[f"{numeric_official}->{numeric_computed}"] = 1
 
     print(
-        f"\n{round((count_correct/ (len(trail_accuracy) - count_invalid))*100, 3)}% Correct"
+        f"\n{round((count_correct / (len(trail_accuracy) - count_invalid)) * 100, 3)}% Correct"
     )
     print(
-        f"{round((count_within_1/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 1 rating"
+        f"{round((count_within_1 / (len(trail_accuracy) - count_invalid)) * 100, 3)}% Within 1 rating"
     )
     print(
-        f"{round((count_within_2/ (len(trail_accuracy) - count_invalid))*100, 3)}% Within 2 ratings"
+        f"{round((count_within_2 / (len(trail_accuracy) - count_invalid)) * 100, 3)}% Within 2 ratings"
     )
     print_dict(miss_dict, ["Official->Calc", "Count"])
 
@@ -183,7 +181,7 @@ for official_rating in [
             ungroomed_pitch["True"] - ungroomed_pitch["False"]
         )
         print_dict(ungroomed_pitch, ["Ungroomed", "Average Pitch"])
-    except:
+    except KeyError:
         continue
 
 

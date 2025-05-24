@@ -64,7 +64,7 @@ def read_xml_string(string: str) -> str:
     words = string.split('"')
     for i, word in enumerate(words):
         # skips every other word
-        if not "=" in word:
+        if "=" not in word:
             continue
         # sets up the 'class' header to identify the type of object
         if i == 0:

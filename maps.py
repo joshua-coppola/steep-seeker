@@ -4,7 +4,6 @@ import haversine as hs
 from math import degrees, atan2
 from os.path import exists
 from os import makedirs
-from rich.progress import track
 
 import _misc
 import db
@@ -100,8 +99,7 @@ def get_label_placement(
     for i, _ in enumerate(angle_list):
         if valid_list[i]:
             slice = angle_list[
-                i
-                - int(label_length_in_points / 2) : i
+                i - int(label_length_in_points / 2) : i
                 + int(label_length_in_points / 2)
             ]
             if len(slice) == 0:
@@ -166,7 +164,6 @@ def populate_map(
 
     # lifts
     for lift_obj in mountain_info.lifts():
-
         lift = Lift(lift_obj["lift_id"])
         if x_data == "lat":
             x = lift.lat()
@@ -232,24 +229,24 @@ def populate_map(
         color = _misc.trail_color(trail.difficulty)
 
         # place lines
-        if trail.area == True:
-            if trail.gladed == True:
+        if trail.area:
+            if trail.gladed:
                 plt.fill(x, y, alpha=0.1, fc=color)
                 plt.fill(x, y, ec=color, fc="none", linestyle="dashed", lw=line_width)
-            if trail.gladed == False:
+            if not trail.gladed:
                 plt.fill(x, y, alpha=0.1, fc=color)
                 plt.fill(x, y, ec=color, fc="none", lw=line_width)
             if debug_mode:
-                if trail.gladed == True:
+                if trail.gladed:
                     plt.plot(
                         debug_x, debug_y, c=color, linestyle="dashed", lw=line_width
                     )
-                if trail.gladed == False:
+                if not trail.gladed:
                     plt.plot(debug_x, debug_y, c=color, lw=line_width)
-        if trail.area == False:
-            if trail.gladed == True:
+        if not trail.area:
+            if trail.gladed:
                 plt.plot(x, y, c=color, linestyle="dashed", lw=line_width)
-            if trail.gladed == False:
+            if not trail.gladed:
                 plt.plot(x, y, c=color, lw=line_width)
 
         # add label names
@@ -410,7 +407,7 @@ def create_thumbnail(resort_name: str, state: str) -> None:
     x_length = x_length / divisor
     y_length = y_length / divisor
 
-    plt.subplots(figsize=(x_length * 2, ((y_length * 2))))
+    plt.subplots(figsize=(x_length * 2, (y_length * 2)))
 
     plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
     plt.axis("off")

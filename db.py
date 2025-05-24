@@ -2,7 +2,6 @@ import sqlite3
 import os
 import csv
 from decimal import Decimal
-from rich.progress import track
 from datetime import datetime
 
 import _misc
@@ -50,8 +49,10 @@ def add_trails(
             continue
 
         try:
-            query = "INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
+            query = (
+                "INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            )
             params = (
                 trail["id"],
                 mountain_id,
@@ -63,7 +64,7 @@ def add_trails(
             )
 
             cur.execute(query, params)
-        except sqlite3.IntegrityError as e:
+        except sqlite3.IntegrityError:
             query = "SELECT mountain_id FROM Trails WHERE trail_id = ?"
             params = (trail["id"],)
             conflict_mountain = cur.execute(query, params).fetchone()[0]
@@ -90,7 +91,7 @@ def add_trails(
                 params = (i, trail["id"], 1, str(node["lat"]), str(node["lon"]))
 
                 cur.execute(query, params)
-            except sqlite3.IntegrityError as e:
+            except sqlite3.IntegrityError:
                 name, trail_id = trail["name"], trail["id"]
                 print(f"{name} {trail_id} {i} is conflicting.")
 
@@ -100,8 +101,10 @@ def add_trails(
             continue
 
         try:
-            query = "INSERT INTO Lifts (lift_id, mountain_id, name, occupancy, capacity, duration, detachable, bubble, heated) \
+            query = (
+                "INSERT INTO Lifts (lift_id, mountain_id, name, occupancy, capacity, duration, detachable, bubble, heated) \
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )
             params = (
                 lift["id"],
                 mountain_id,
@@ -113,9 +116,8 @@ def add_trails(
                 lift["bubble"],
                 lift["heated"],
             )
-
             cur.execute(query, params)
-        except sqlite3.IntegrityError as e:
+        except sqlite3.IntegrityError:
             query = "SELECT mountain_id FROM Lifts WHERE lift_id = ?"
             params = (lift["id"],)
             conflict_mountain = cur.execute(query, params).fetchone()[0]
@@ -123,7 +125,6 @@ def add_trails(
             print(
                 f"\n{name} {lift_id} is already part of {get_mountain_name(conflict_mountain, cur)}. Skipping Lift."
             )
-
             query = "SELECT lift_count from Mountains WHERE mountain_id = ?"
             old_lift_count = cur.execute(query, (mountain_id,)).fetchone()[0]
 
@@ -141,7 +142,7 @@ def add_trails(
                 params = (i, lift["id"], str(node["lat"]), str(node["lon"]))
 
                 cur.execute(query, params)
-            except sqlite3.IntegrityError as e:
+            except sqlite3.IntegrityError:
                 name, lift_id = lift["name"], lift["id"]
                 print(f"{name} {lift_id} {i} is conflicting.")
 
@@ -186,9 +187,9 @@ def add_trails(
                 params = (i, trail_id[0], 0, str(node["lat"]), str(node["lon"]))
 
                 cur.execute(query, params)
-            except sqlite3.IntegrityError as e:
+            except sqlite3.IntegrityError:
                 name, out_trail_id = trail["name"], trail["id"]
-                # print(f'\n{name} {out_trail_id} {i} is conflicting.')
+                print(f"\n{name} {out_trail_id} {i} is conflicting.")
 
         query = "SELECT lat, lon, elevation FROM TrailPoints WHERE trail_id = ? AND for_display = ?"
         params = (trail_id[0], 0)
@@ -281,11 +282,11 @@ def calc_mountain_stats(cur, mountain_id: int, mountain_name: str) -> None:
 
     query = "SELECT lat FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)"
     lat = cur.execute(query, (mountain_id,)).fetchall()
-    lat_fixed = [l[0] for l in lat]
+    lat_fixed = [point[0] for point in lat]
 
     query = "SELECT lon FROM TrailPoints NATURAL JOIN (SELECT trail_id FROM Trails WHERE mountain_id = ?)"
     lon = cur.execute(query, (mountain_id,)).fetchall()
-    lon_fixed = [l[0] for l in lon]
+    lon_fixed = [point[0] for point in lon]
 
     center_lat = sum(lat_fixed) / len(lat_fixed)
     center_lon = sum(lon_fixed) / len(lon_fixed)
@@ -366,7 +367,7 @@ def _add_resort(name: str) -> str:
 
     state = _misc.find_state(f"{name}.osm")
 
-    if state == None:
+    if state is None:
         return None
 
     query = "SELECT COUNT(*) FROM Mountains WHERE name = ? AND state = ?"
@@ -389,8 +390,10 @@ def _add_resort(name: str) -> str:
         db.close()
         return None
 
-    cur.execute(f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
-        VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})')
+    cur.execute(
+        f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
+        VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})'
+    )
 
     mountain_id = get_mountain_id(name, state, cur)
 
@@ -588,8 +591,10 @@ def delete_trail(mountain_id: int, trail_id: int) -> None:
     cur.execute(f"DELETE FROM TrailPoints WHERE trail_id = {trail_id}")
     cur.execute(f"DELETE FROM Trails WHERE trail_id = {trail_id}")
 
-    elevations = cur.execute(f"SELECT elevation FROM TrailPoints NATURAL JOIN \
-        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})").fetchall()
+    elevations = cur.execute(
+        f"SELECT elevation FROM TrailPoints NATURAL JOIN \
+        (SELECT trail_id FROM Trails WHERE mountain_id = {mountain_id})"
+    ).fetchall()
 
     trail_difficulty = cur.execute(
         f"SELECT difficulty FROM Trails WHERE mountain_id = {mountain_id} ORDER BY difficulty DESC"
@@ -665,7 +670,7 @@ def fill_cache() -> None:
 
 
 def get_mountain_id(name: str, state: str, cur=None) -> int:
-    if cur == None:
+    if cur is None:
         cur, db = db_connect()
 
     query = "SELECT mountain_id FROM Mountains WHERE name = ? AND state = ?"
@@ -677,7 +682,7 @@ def get_mountain_id(name: str, state: str, cur=None) -> int:
 
 def get_mountains(state=None) -> list(tuple()):
     cur, db = db_connect()
-    if state == None:
+    if state is None:
         mountains = cur.execute("SELECT name, state FROM Mountains").fetchall()
     else:
         query = "SELECT name, state FROM Mountains WHERE state = ?"
@@ -871,7 +876,7 @@ def change_trail_stats(
 
 
 def get_mountain_name(mountain_id: int, cur=None) -> str:
-    if cur == None:
+    if cur is None:
         cur, db = db_connect()
 
     query = "SELECT name, state FROM Mountains WHERE mountain_id = ?"

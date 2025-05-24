@@ -13,7 +13,7 @@ from flask import (
 )
 from flask_wtf import FlaskForm
 import os
-from math import sqrt, degrees, atan2
+from math import degrees, atan2
 
 import _flask_api as api
 import db as database
@@ -45,7 +45,7 @@ def management():
     )
 
 
-@api.app.route("/management-add-resort", methods=["GET", "POST"])
+@api.app.route("/management-add-resort")
 def management_add_resort():
     available_resorts = []
     for item in os.listdir("data/osm"):
@@ -132,6 +132,7 @@ def management_edit_resort():
         size_increase = request.args.get("size_increase")
         rotate = request.args.get("rotate")
         delete = request.args.get("delete")
+<<<<<<< HEAD
         blacklist = request.args.get("blacklist")
         trail_id = request.args.get("trail_id")
         url = request.args.get("url")
@@ -385,9 +386,9 @@ def management_edit_resort():
             if lift.occupancy:
                 popup_content += f"<p>Occupancy: {lift.occupancy} people</p>"
             if lift.bubble:
-                popup_content += f"<p>&#x2705; Bubble</p>"
+                popup_content += "<p>&#x2705; Bubble</p>"
             if lift.heated:
-                popup_content += f"<p>&#x2705;Heated</p>"
+                popup_content += "<p>&#x2705;Heated</p>"
             popup_content += '<form id="delete" class="search-form">'
             popup_content += (
                 f'<input type="hidden" name="q" id="q" value="{name}, {state}">'

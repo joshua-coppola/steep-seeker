@@ -11,7 +11,7 @@ import _misc
 
 def add_resort(name: str) -> None:
     state = db._add_resort(name)
-    if state != None:
+    if state is not None:
         print("Creating Map")
         maps.create_map(name, state)
         maps.create_thumbnail(name, state)

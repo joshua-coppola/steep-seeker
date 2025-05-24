@@ -21,7 +21,6 @@ import random
 from data.secret import secret
 
 import db as database
-import user_db
 import _misc
 from mountain import Mountain, Trail, Lift
 
@@ -89,7 +88,7 @@ def search():
     q = request.args.get("q")
     if q and q != "%%":
         q = f"%{q.strip()}%"
-        search_string = f'{search_string}q={q.replace("%", "")}&'
+        search_string = f"{search_string}q={q.replace('%', '')}&"
     else:
         q = "%%"
     page = request.args.get("page")
@@ -147,7 +146,7 @@ def search():
     limit = int(limit)
     offset = limit * (int(page) - 1)
 
-    if not sort in [
+    if sort not in [
         "name",
         "trail_count",
         "lift_count",
@@ -157,7 +156,7 @@ def search():
     ]:
         sort = "name"
 
-    if not order in ["asc", "desc"]:
+    if order not in ["asc", "desc"]:
         order = "asc"
 
     conn = database.dict_cursor()
@@ -216,6 +215,7 @@ def rankings():
     state = request.args.get("state")
     if state == "None":
         state = None
+
     # converts query string info into SQL
     conn = database.dict_cursor()
 
@@ -223,7 +223,7 @@ def rankings():
         sort_by = "beginner_friendliness"
     else:
         sort_by = "difficulty"
-    if not order in ["asc", "desc"]:
+    if order not in ["asc", "desc"]:
         order = "desc"
 
     if not state:
@@ -276,7 +276,7 @@ def trail_rankings():
     sort_by = request.args.get("sort")
     if not sort_by:
         sort_by = "difficulty"
-    if not sort_by in [
+    if sort_by not in [
         "difficulty",
         "steepest_30m",
         "steepest_50m",
@@ -371,7 +371,7 @@ def lift_rankings():
     sort_by = request.args.get("sort")
     if not sort_by:
         sort_by = "vertical_rise"
-    if not sort_by in [
+    if sort_by not in [
         "vertical_rise",
         "length",
         "pitch",
@@ -436,6 +436,7 @@ def lift_rankings():
 
     if sort_by == "vertical_rise / Lifts.length":
         sort_by = "pitch"
+
     return render_template(
         "lift_rankings.jinja",
         nav_links=nav_links,
@@ -446,7 +447,6 @@ def lift_rankings():
         pages=pages,
         sort_by=sort_by,
     )
-
 
 @app.route("/map/<string:state>/<string:name>")
 def map(state, name):
@@ -708,9 +708,9 @@ def interactive_map(state, name):
         popup_content += f"<p>Vertical Rise: {lift.vertical} ft</p>"
         popup_content += f"<p>Average Pitch: {lift.pitch}°</p>"
         if lift.bubble:
-            popup_content += f"<p>&#x2705; Bubble</p>"
+            popup_content += "<p>&#x2705; Bubble</p>"
         if lift.heated:
-            popup_content += f"<p>&#x2705; Heated</p>"
+            popup_content += "<p>&#x2705; Heated</p>"
         if debug_mode:
             popup_content += f"<p>Lift ID: {lift.lift_id}</p>"
         feature["properties"]["popupContent"] = popup_content
