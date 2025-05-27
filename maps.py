@@ -113,17 +113,17 @@ def get_label_placement(
     if point == 0:
         dx = dy = 0
     if point != 0:
-        try:
-            dx = (
-                x[point + int(label_length_in_points / 2)]
-                - x[point - int(label_length_in_points / 2)]
-            )
-            dy = (
-                y[point + int(label_length_in_points / 2)]
-                - y[point - int(label_length_in_points / 2)]
-            )
-        except:
+        half = int(label_length_in_points / 2)
+        low = point - half
+        high = point + half
+
+        # Check that indices are within bounds
+        if low < 0 or high >= len(x) or high >= len(y):
             return (0, 0, 0)
+
+        dx = x[high] - x[low]
+        dy = y[high] - y[low]
+
     angle = degrees(atan2(dy, dx))
     if angle < -90:
         angle += 180
@@ -279,43 +279,46 @@ def populate_map(
 def find_map_size(mountain_info) -> dict():
     conn = db.tuple_cursor()
 
-    query = "SELECT MAX(TrailPoints.lat), MIN(TrailPoints.lat), MAX(TrailPoints.lon), MIN(TrailPoints.lon) FROM Mountains \
-            INNER JOIN Trails ON Mountains.mountain_id=Trails.mountain_id \
-            INNER JOIN TrailPoints ON Trails.trail_id=TrailPoints.trail_id WHERE Trails.mountain_id = ?"
-    trail_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
+    query_trails = """
+        SELECT MAX(TrailPoints.lat), MIN(TrailPoints.lat),
+            MAX(TrailPoints.lon), MIN(TrailPoints.lon)
+        FROM Mountains
+        INNER JOIN Trails ON Mountains.mountain_id = Trails.mountain_id
+        INNER JOIN TrailPoints ON Trails.trail_id = TrailPoints.trail_id
+        WHERE Trails.mountain_id = ?
+    """
+    trail_extremes = conn.execute(query_trails, (mountain_info.mountain_id,)).fetchone()
 
-    query = "SELECT MAX(LiftPoints.lat), MIN(LiftPoints.lat), MAX(LiftPoints.lon), MIN(LiftPoints.lon) FROM Mountains \
-            INNER JOIN Lifts ON Mountains.mountain_id=Lifts.mountain_id \
-            INNER JOIN LiftPoints ON Lifts.lift_id=LiftPoints.lift_id WHERE Lifts.mountain_id = ?"
-    lift_extremes = conn.execute(query, (mountain_info.mountain_id,)).fetchone()
+    query_lifts = """
+        SELECT MAX(LiftPoints.lat), MIN(LiftPoints.lat),
+            MAX(LiftPoints.lon), MIN(LiftPoints.lon)
+        FROM Mountains
+        INNER JOIN Lifts ON Mountains.mountain_id = Lifts.mountain_id
+        INNER JOIN LiftPoints ON Lifts.lift_id = LiftPoints.lift_id
+        WHERE Lifts.mountain_id = ?
+    """
+    lift_extremes = conn.execute(query_lifts, (mountain_info.mountain_id,)).fetchone()
 
     conn.close()
 
+    # Unpack or default to trail_extremes values
     try:
-        # change in latitude (km)
-        x_length = hs.haversine(
-            (max(trail_extremes[0], lift_extremes[0]), trail_extremes[2]),
-            (min(trail_extremes[1], lift_extremes[1]), trail_extremes[2]),
-            unit=hs.Unit.KILOMETERS,
-        )
+        max_lat = max(filter(None, [trail_extremes[0], lift_extremes[0]]))
+        min_lat = min(filter(None, [trail_extremes[1], lift_extremes[1]]))
+        max_lon = max(filter(None, [trail_extremes[2], lift_extremes[2]]))
+        min_lon = min(filter(None, [trail_extremes[3], lift_extremes[3]]))
+    except (TypeError, ValueError):
+        # fallback to trail_extremes only
+        max_lat, min_lat = trail_extremes[0], trail_extremes[1]
+        max_lon, min_lon = trail_extremes[2], trail_extremes[3]
 
-        # change in longitude (km)
-        y_length = hs.haversine(
-            (trail_extremes[0], max(trail_extremes[2], lift_extremes[2])),
-            (trail_extremes[0], min(trail_extremes[3], lift_extremes[3])),
-            unit=hs.Unit.KILOMETERS,
-        )
-    except:
-        x_length = hs.haversine(
-            (trail_extremes[0], trail_extremes[2]),
-            (trail_extremes[1], trail_extremes[2]),
-            unit=hs.Unit.KILOMETERS,
-        )
-        y_length = hs.haversine(
-            (trail_extremes[0], trail_extremes[2]),
-            (trail_extremes[0], trail_extremes[3]),
-            unit=hs.Unit.KILOMETERS,
-        )
+    # Compute distances
+    x_length = hs.haversine(
+        (max_lat, max_lon), (min_lat, max_lon), unit=hs.Unit.KILOMETERS
+    )
+    y_length = hs.haversine(
+        (max_lat, max_lon), (max_lat, min_lon), unit=hs.Unit.KILOMETERS
+    )
 
     # rotate map to look correct
     if "s" in mountain_info.direction or "n" in mountain_info.direction:

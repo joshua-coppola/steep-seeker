@@ -1,6 +1,6 @@
 import re
 from os.path import exists
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from requests.api import get
 
 import _create_trails
@@ -35,8 +35,8 @@ def read_osm(filename: str) -> tuple():
                 parsed["lat"] = round(Decimal(parsed["lat"]), 8)
                 parsed["lon"] = round(Decimal(parsed["lon"]), 8)
                 nodes[parsed["id"]] = {key: parsed[key] for key in ["lat", "lon"]}
-            except:
-                print(f"Malformed node: {line}")
+            except (KeyError, InvalidOperation, TypeError, ValueError) as e:
+                print(f"Malformed node: {line} ({e})")
 
         # way processing -- converts list of node ids into coordinates
         if "way" == parsed["class"]:

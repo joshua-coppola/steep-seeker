@@ -438,12 +438,14 @@ def _add_resort(name: str) -> str:
 def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> str:
     cur, db = db_connect()
 
-    try:
-        os.rename(f"data/osm/{state}/{name}.osm", f"data/osm/{name}.osm")
-    except:
-        if not os.path.exists(f"data/osm/{name}.osm"):
-            print("OSM file not found")
-            return None
+    if os.path.exists(f"data/osm/{name}.osm"):
+        try:
+            os.rename(f"data/osm/{state}/{name}.osm", f"data/osm/{name}.osm")
+        except (PermissionError, IsADirectoryError, OSError) as e:
+            print(f"OSM file could not be moved. \n{e}")
+    else:
+        print("OSM file not found")
+        return None
 
     delete_trails_and_lifts(name, state)
     trails, lifts = _read_osm.read_osm(f"{name}.osm")
@@ -634,18 +636,11 @@ def fill_cache() -> None:
             csv_contents = csv.reader(csv_file)
             next(csv_contents)
             for line in csv_contents:
-                try:
-                    cur.execute(
-                        f"INSERT INTO CachedPoints (lat, lon, elevation) VALUES ({line[2]}, {line[3]}, {line[4]})"
-                    )
-                except:
-                    count = cur.execute(
-                        f"SELECT COUNT(*) FROM CachedPoints WHERE lat = {line[2]} AND lon = {line[3]}"
-                    ).fetchall()[0][0]
-                    if count > 0:
-                        continue
-                    else:
-                        return -1
+                cur.execute(
+                    "INSERT OR IGNORE INTO CachedPoints (lat, lon, elevation) VALUES (?, ?, ?)",
+                    (line[2], line[3], line[4]),
+                )
+
     db.commit()
     db.close()
 
@@ -722,18 +717,10 @@ def add_elevation(cur, table: str) -> None:
     cur.executemany(query, uncached_elevation_nodes)
 
     for node in uncached_elevation_nodes:
-        try:
-            query = "INSERT INTO CachedPoints (elevation, lat, lon) VALUES (?, ?, ?)"
-            cur.execute(query, node)
-        except:
-            count = cur.execute(
-                f"SELECT COUNT(*) FROM CachedPoints WHERE lat = {node[1]} AND lon = {node[2]}"
-            ).fetchall()[0][0]
-            if count > 0:
-                continue
-            else:
-                print("Error encountered when inserting points into CachedPoints table")
-                return -1
+        cur.execute(
+            "INSERT OR IGNORE INTO CachedPoints (elevation, lat, lon) VALUES (?, ?, ?)",
+            node,
+        )
 
 
 def rotate_clockwise(name: str, state: str) -> None:
