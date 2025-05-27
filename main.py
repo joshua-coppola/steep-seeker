@@ -216,7 +216,7 @@ def repl() -> None:
         operation = input("Enter value: ")
         try:
             operation = int(operation)
-        except:
+        except ValueError:
             valid = False
             continue
 
