@@ -10,6 +10,8 @@ from rich.progress import track
 import os
 from datetime import datetime
 
+from classes.states import State
+
 
 def get_center_coordinates(filename: str):
     # Check if file exists
@@ -43,7 +45,7 @@ def get_center_coordinates(filename: str):
     return (lat, lon)
 
 
-def find_state(filename: str) -> str:
+def find_state(filename: str) -> State:
     lat, lon = get_center_coordinates(filename)
 
     # Uses Open Street Maps Nominatim API to determine which state the resort is in
@@ -56,211 +58,17 @@ def find_state(filename: str) -> str:
     response = get(url, headers=headers)
     if response.status_code == 200:
         address = json.loads(response.content)["address"]
-        if address["country_code"] != "us":
-            print("Resort not located in United States. Unsupported region detected.")
-            override = input("Continue anyway? Y/N: ")
-            if override.lower() == "y":
-                return address["ISO3166-2-lvl4"].split("-")[1]
+        if address["country_code"] == "us":
+            # if location is in USA, return state abbreviation
+            return State(address["ISO3166-2-lvl4"].split("-")[1])
+        else:
+            print("Resort not in USA, Invalid Location")
             return None
-        # if location is in USA, return state abbreviation
-        return address["ISO3166-2-lvl4"].split("-")[1]
     else:
         print("State API call failed with code:")
         print(response.status_code)
         print(response.content)
         return None
-
-
-def assign_region(state: str) -> str:
-    """
-    Takes a 2 letter state code and outputs its region
-
-    #### Arguments:
-
-    - state - US state abbreviations
-
-    #### Returns:
-
-    - region - 'northeast', 'southeast', 'midwest', or 'west'
-    """
-    northeast = ["ME", "NH", "VT", "NY", "MA", "RI", "CT", "PA", "NJ"]
-    southeast = [
-        "MD",
-        "DE",
-        "VA",
-        "WV",
-        "KY",
-        "TN",
-        "NC",
-        "SC",
-        "GA",
-        "FL",
-        "AL",
-        "MS",
-        "LA",
-        "AR",
-    ]
-    midwest = [
-        "ND",
-        "SD",
-        "MN",
-        "WI",
-        "MI",
-        "OH",
-        "IN",
-        "IL",
-        "IA",
-        "NE",
-        "KS",
-        "MO",
-        "OK",
-        "TX",
-    ]
-    west = [
-        "NM",
-        "AZ",
-        "CA",
-        "NV",
-        "UT",
-        "CO",
-        "WY",
-        "ID",
-        "OR",
-        "WA",
-        "MT",
-        "AK",
-        "HI",
-    ]
-
-    if len(state.split()) > 1:
-        state = state.split()[0]
-
-    if state in northeast:
-        return "northeast"
-
-    if state in southeast:
-        return "southeast"
-
-    if state in midwest:
-        return "midwest"
-
-    if state in west:
-        return "west"
-    return None
-
-
-def convert_state_abbrev_to_name(state_abbrev: str) -> str:
-    # Define a dictionary that maps state abbreviations to state names
-    state_abbrevs_to_names = {
-        "AL": "Alabama",
-        "AK": "Alaska",
-        "AZ": "Arizona",
-        "AR": "Arkansas",
-        "CA": "California",
-        "CO": "Colorado",
-        "CT": "Connecticut",
-        "DE": "Delaware",
-        "FL": "Florida",
-        "GA": "Georgia",
-        "HI": "Hawaii",
-        "ID": "Idaho",
-        "IL": "Illinois",
-        "IN": "Indiana",
-        "IA": "Iowa",
-        "KS": "Kansas",
-        "KY": "Kentucky",
-        "LA": "Louisiana",
-        "ME": "Maine",
-        "MD": "Maryland",
-        "MA": "Massachusetts",
-        "MI": "Michigan",
-        "MN": "Minnesota",
-        "MS": "Mississippi",
-        "MO": "Missouri",
-        "MT": "Montana",
-        "NE": "Nebraska",
-        "NV": "Nevada",
-        "NH": "New Hampshire",
-        "NJ": "New Jersey",
-        "NM": "New Mexico",
-        "NY": "New York",
-        "NC": "North Carolina",
-        "ND": "North Dakota",
-        "OH": "Ohio",
-        "OK": "Oklahoma",
-        "OR": "Oregon",
-        "PA": "Pennsylvania",
-        "RI": "Rhode Island",
-        "SC": "South Carolina",
-        "SD": "South Dakota",
-        "TN": "Tennessee",
-        "TX": "Texas",
-        "UT": "Utah",
-        "VT": "Vermont",
-        "VA": "Virginia",
-        "WA": "Washington",
-        "WV": "West Virginia",
-        "WI": "Wisconsin",
-        "WY": "Wyoming",
-    }
-    return state_abbrevs_to_names[state_abbrev]
-
-
-def convert_state_name_to_abbrev(state_name):
-    # Define a dictionary that maps state names to state abbreviations
-    state_names_to_abbrevs = {
-        "Alabama": "AL",
-        "Alaska": "AK",
-        "Arizona": "AZ",
-        "Arkansas": "AR",
-        "California": "CA",
-        "Colorado": "CO",
-        "Connecticut": "CT",
-        "Delaware": "DE",
-        "Florida": "FL",
-        "Georgia": "GA",
-        "Hawaii": "HI",
-        "Idaho": "ID",
-        "Illinois": "IL",
-        "Indiana": "IN",
-        "Iowa": "IA",
-        "Kansas": "KS",
-        "Kentucky": "KY",
-        "Louisiana": "LA",
-        "Maine": "ME",
-        "Maryland": "MD",
-        "Massachusetts": "MA",
-        "Michigan": "MI",
-        "Minnesota": "MN",
-        "Mississippi": "MS",
-        "Missouri": "MO",
-        "Montana": "MT",
-        "Nebraska": "NE",
-        "Nevada": "NV",
-        "New Hampshire": "NH",
-        "New Jersey": "NJ",
-        "New Mexico": "NM",
-        "New York": "NY",
-        "North Carolina": "NC",
-        "North Dakota": "ND",
-        "Ohio": "OH",
-        "Oklahoma": "OK",
-        "Oregon": "OR",
-        "Pennsylvania": "PA",
-        "Rhode Island": "RI",
-        "South Carolina": "SC",
-        "South Dakota": "SD",
-        "Tennessee": "TN",
-        "Texas": "TX",
-        "Utah": "UT",
-        "Vermont": "VT",
-        "Virginia": "VA",
-        "Washington": "WA",
-        "West Virginia": "WV",
-        "Wisconsin": "WI",
-        "Wyoming": "WY",
-    }
-    return state_names_to_abbrevs[state_name]
 
 
 def fill_point_gaps(nodes: list(dict())) -> list(dict()):

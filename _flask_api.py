@@ -12,6 +12,7 @@ from data.secret import secret
 import db as database
 import _misc
 from mountain import Mountain, Trail, Lift
+from classes.states import State
 
 
 class navigationLink:
@@ -88,8 +89,8 @@ def search():
         location = "%%"
     else:
         try:
-            location = _misc.convert_state_name_to_abbrev(location.title().strip())
-        except:
+            location = State.from_name(location).value
+        except ValueError:
             pass
         search_string = f"{search_string}location={location}&"
     trailsmin = request.args.get("trailsmin")

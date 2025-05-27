@@ -1,8 +1,9 @@
 from enum import Enum
 from typing import Self
 
+
 class State(Enum):
-    ALABAMA = "AL" 
+    ALABAMA = "AL"
     ALASKA = "AK"
     ARIZONA = "AZ"
     ARKANSAS = "AR"
@@ -58,7 +59,6 @@ class State(Enum):
             return State[name.upper().replace(" ", "_")]
         except KeyError:
             raise ValueError(f"Unknown state name: {name}")
-
 
 
 class Region(Enum):

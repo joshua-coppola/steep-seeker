@@ -7,6 +7,8 @@ from datetime import datetime
 import _misc
 import _read_osm
 
+from classes.states import Region
+
 
 def db_connect() -> tuple():
     db = sqlite3.connect("data/db.db")
@@ -361,7 +363,7 @@ def _add_resort(name: str) -> str:
         return None
 
     query = "SELECT COUNT(*) FROM Mountains WHERE name = ? AND state = ?"
-    params = (name, state)
+    params = (name, state.value)
     resort_exists = cur.execute(query, params).fetchall()[0][0]
 
     if resort_exists > 0:
@@ -371,7 +373,7 @@ def _add_resort(name: str) -> str:
 
     trails, lifts = _read_osm.read_osm(f"{name}.osm")
 
-    region = _misc.assign_region(state)
+    region = Region.get_region(state)
     trail_count = len(trails)
     lift_count = len(lifts)
 
@@ -382,10 +384,10 @@ def _add_resort(name: str) -> str:
 
     cur.execute(
         f'INSERT INTO Mountains (name, state, region, trail_count, lift_count) \
-        VALUES ("{name}", "{state}", "{region}", {trail_count}, {lift_count})'
+        VALUES ("{name}", "{state.value}", "{region.name.lower()}", {trail_count}, {lift_count})'
     )
 
-    mountain_id = get_mountain_id(name, state, cur)
+    mountain_id = get_mountain_id(name, state.value, cur)
 
     weather_modifier = add_weather_stats(cur, mountain_id, name)
 
@@ -420,17 +422,17 @@ def _add_resort(name: str) -> str:
     )
 
     # move file once processed into the right folder for the state
-    if not os.path.exists(f"data/osm/{state}"):
-        os.makedirs(f"data/osm/{state}")
-    os.rename(f"data/osm/{name}.osm", f"data/osm/{state}/{name}.osm")
+    if not os.path.exists(f"data/osm/{state.value}"):
+        os.makedirs(f"data/osm/{state.value}")
+    os.rename(f"data/osm/{name}.osm", f"data/osm/{state.value}/{name}.osm")
 
     db.commit()
     db.close()
 
     cull_connectors(mountain_id)
-    _set_last_updated(name, state)
+    _set_last_updated(name, state.value)
 
-    return state
+    return state.value
 
 
 def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> str:
