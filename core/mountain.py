@@ -1,6 +1,6 @@
 from math import degrees, atan
 
-import db
+import core.db as db
 
 
 class Mountain:

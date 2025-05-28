@@ -4,10 +4,10 @@ import csv
 from decimal import Decimal
 from datetime import datetime
 
-import _misc
-import _read_osm
 
-from classes.states import Region
+from core.support.states import Region
+import core._misc as _misc
+import core._read_osm as _read_osm
 
 
 def db_connect() -> tuple():

@@ -1,12 +1,12 @@
 import os
 from rich.progress import track
 
-import db
-import maps
-from mountain import Mountain
-import _flask_api
-import _read_osm
-import _misc
+from core.mountain import Mountain
+import core._flask_api as _flask_api
+import core.maps as maps
+import core.db as db
+import core._misc as _misc
+import core._read_osm as _read_osm
 
 
 def add_resort(name: str) -> None:

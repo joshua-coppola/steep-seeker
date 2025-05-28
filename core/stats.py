@@ -1,8 +1,8 @@
 from math import sqrt
 import matplotlib.pyplot as plt
 
-import db as database
-import _misc
+import core.db as database
+import core._misc as _misc
 
 cur, db = database.db_connect()
 

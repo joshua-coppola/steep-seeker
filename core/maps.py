@@ -5,9 +5,9 @@ from math import degrees, atan2
 from os.path import exists
 from os import makedirs
 
-import _misc
-import db
-from mountain import Mountain, Trail, Lift
+from core.mountain import Mountain, Trail, Lift
+import core.db as db
+import core._misc as _misc
 
 mpl.use("svg")
 
