@@ -23,7 +23,11 @@ from data.secret import secret
 import core.db as database
 import core._misc as _misc
 from core.mountain import Mountain, Trail, Lift
+<<<<<<< HEAD
 from core.datamodels.state import State
+=======
+from core.support.states import State
+>>>>>>> 76b2c8a (wrote rough draft of new OSM parser)
 
 
 class navigationLink:

@@ -30,7 +30,6 @@ class OSMProcessor:
         self.nodes = osm_handler.nodes
         self.ways = osm_handler.ways
         self.relations = osm_handler.relations
-
         self.mountain_id = mountain_id
         if not self.mountain_id:
             # generate a UUID based on the latiude/longitude and name of the mountain
