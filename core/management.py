@@ -5,11 +5,11 @@ from flask import (
 import os
 from math import degrees, atan2
 
-import _flask_api as api
-import db as database
-import _misc
-from mountain import Mountain, Trail, Lift
-import main
+import core._flask_api as api
+import core.db as database
+import core._misc as _misc
+import core.main as main
+from core.mountain import Mountain, Trail, Lift
 
 api.nav_links.append(api.navigationLink("Management", "management", "/management"))
 

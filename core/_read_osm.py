@@ -3,7 +3,7 @@ from os.path import exists
 from decimal import Decimal, InvalidOperation
 from requests.api import get
 
-import _create_trails
+import core._create_trails as _create_trails
 
 
 def read_osm(filename: str) -> tuple():

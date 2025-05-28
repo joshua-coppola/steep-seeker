@@ -9,10 +9,10 @@ from math import degrees, atan2
 
 from data.secret import secret
 
-import db as database
-import _misc
-from mountain import Mountain, Trail, Lift
-from classes.states import State
+import core.db as database
+import core._misc as _misc
+from core.mountain import Mountain, Trail, Lift
+from core.support.states import State
 
 
 class navigationLink:
@@ -23,7 +23,10 @@ class navigationLink:
 
 
 app = Flask(
-    __name__, static_url_path="", static_folder="static", template_folder="templates"
+    __name__,
+    static_url_path="",
+    static_folder="../static",
+    template_folder="../templates",
 )
 app.config["SECRET_KEY"] = secret
 
