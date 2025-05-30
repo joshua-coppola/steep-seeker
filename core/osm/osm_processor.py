@@ -39,11 +39,14 @@ class OSMProcessor:
                 continue
 
             # Extract name
+
             name = tags.get("name") or tags.get("piste:name")
             if name:
                 if any(substr in name.lower() for substr in invalid_name_substrings):
                     continue
                 trail["name"] = name
+            else:
+                trail["name"] = ""
 
             # Official rating
             trail["official_rating"] = tags.get("piste:difficulty")
@@ -95,6 +98,8 @@ class OSMProcessor:
             "no",
         }
 
+        excluded_tags = {"disused", "abandoned", "proposed"}
+
         for way_id, way_values in self.ways.items():
             tags = way_values.get("tags", {})
             lift = {
@@ -104,6 +109,9 @@ class OSMProcessor:
             }
 
             # Check Validity
+            if excluded_tags.intersection(tags):
+                continue
+
             if "aerialway" not in tags:
                 continue
             lift_type = tags.get("aerialway")
@@ -113,8 +121,13 @@ class OSMProcessor:
 
             lift["type"] = lift_type
 
-            lift["occupancy"] = tags.get("aerialway:occupancy")
-            capacity = tags.get("aerialway:capactiy")
+            occupancy = tags.get("aerialway:occupancy")
+            if occupancy:
+                occupancy = int(occupancy)
+            lift["occupancy"] = occupancy
+            capacity = tags.get("aerialway:capacity")
+            if capacity:
+                capacity = int(capacity)
             # if hourly capacity is unrealisticly low,
             # assume that it is mixed up with occupancy
             if capacity and capacity < 150:
@@ -140,6 +153,6 @@ class OSMProcessor:
             else:
                 lift["heating"] = False
 
-            lifts.append(lifts)
+            lifts.append(lift)
 
         return lifts
