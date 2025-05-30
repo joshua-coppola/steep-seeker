@@ -1,4 +1,4 @@
-from support.states import State, Region
+from core.support.states import State, Region
 
 
 def test_state():
