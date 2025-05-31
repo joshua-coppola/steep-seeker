@@ -1,6 +1,7 @@
 from core.osm.osm_reader import OSMHandler
+from core.osm.trail_parser import identify_trails, identify_lifts
 
-## Todo: add relations support, merge trail support, unit tests
+## Todo: merge trail support
 
 
 class OSMProcessor:
@@ -12,147 +13,64 @@ class OSMProcessor:
         self.ways = osm_handler.ways
         self.relations = osm_handler.relations
 
-    def identify_trails(self):
-        trails = []
+        trail_dict = identify_trails(self.ways, self.relations)
+        self.trails = trail_dict["trails"]
+        self.trail_relations = trail_dict["relations"]
 
-        valid_types = {"downhill", "traverse", "snow_park", "yes"}
-        invalid_name_substrings = ["tubing", "closed", "bike trail"]
-        excluded_tags = {"disused", "abandoned", "proposed"}
-        invalid_grooming = {"skating", "scooter"}
-        ungroomed_grooming = {"backcountry", "mogul", "no"}
+        lift_dict = identify_lifts(self.ways)
+        self.lifts = lift_dict["lifts"]
 
-        for way_id, way_values in self.ways.items():
-            tags = way_values.get("tags", {})
-            trail = {"id": way_id, "nodes": way_values.get("nodes")}
+        self.deduplicate_trails()
 
-            # Validation: skip invalid piste types
-            piste_type = tags.get("piste:type")
-            if piste_type not in valid_types:
+    def deduplicate_trails(self):
+        for relation_id, relation_value in self.trail_relations.items():
+            if len(relation_value.get("members")) == 1:
                 continue
 
-            # Skip irrelevant features
-            if (
-                "mtb:scale:imba" in tags
-                or tags.get("landuse") == "grass"
-                or excluded_tags.intersection(tags)
-            ):
-                continue
-
-            # Extract name
-
-            name = tags.get("name") or tags.get("piste:name")
-            if name:
-                if any(substr in name.lower() for substr in invalid_name_substrings):
-                    continue
-                trail["name"] = name
-            else:
-                trail["name"] = ""
-
-            # Official rating
-            trail["official_rating"] = tags.get("piste:difficulty")
-
-            # Gladed and area detection
-            natural = tags.get("natural", "")
-            leaf_type = "leaf:type" in tags
-
-            if tags.get("gladed") == "yes" or "wood" in natural or leaf_type:
-                trail["gladed"] = True
-            else:
-                trail["gladed"] = False
-
-            if "wood" in natural or leaf_type or tags.get("area") == "yes":
-                trail["area"] = True
-            else:
-                trail["area"] = False
-
-            # Ungroomed
-            grooming = tags.get("piste:grooming", "")
-            if any(g in grooming for g in invalid_grooming):
-                continue
-            elif any(g in grooming for g in ungroomed_grooming):
-                trail["ungroomed"] = True
-            else:
-                trail["ungroomed"] = False
-
-            # Park
-            trail["park"] = piste_type == "snow_park" or "piste:halfpipe" in tags.get(
-                "man_made", ""
-            )
-
-            trails.append(trail)
-
-        return trails
-
-    def identify_lifts(self):
-        lifts = []
-
-        invalid_types = {
-            "goods",
-            "station",
-            "zip line",
-            "explosive",
-            "abandoned",
-            "pylon",
-            "disused",
-            "proposed",
-            "no",
-        }
-
-        excluded_tags = {"disused", "abandoned", "proposed"}
-
-        for way_id, way_values in self.ways.items():
-            tags = way_values.get("tags", {})
-            lift = {
-                "id": way_id,
-                "nodes": way_values.get("nodes"),
-                "name": tags.get("name"),
+            trail_info = {
+                "id": [],
+                "nodes": [],
+                "name": [],
+                "official_rating": [],
+                "gladed": [],
+                "area": [],
+                "ungroomed": [],
+                "park": [],
             }
+            for way_id in relation_value.get("members"):
+                way = self.trails[way_id]
+                for key in trail_info.keys():
+                    if key == "id":
+                        trail_info[key].append(way_id)
+                    else:
+                        trail_info[key].append(way[key])
 
-            # Check Validity
-            if excluded_tags.intersection(tags):
+            same_values = 0
+            for key in trail_info.keys():
+                if key == "nodes" or key == "id":
+                    continue
+                if len(set(trail_info[key])) == 1:
+                    same_values += 1
+
+            if not same_values == 6:
                 continue
 
-            if "aerialway" not in tags:
+            to_be_merged = [trail_info["id"][0]]
+            for i in range(len(trail_info["nodes"]) - 1):
+                if trail_info["nodes"][i][-1] == trail_info["nodes"][i + 1][0]:
+                    to_be_merged.append(trail_info["id"][i + 1])
+
+            if len(to_be_merged) == 1:
                 continue
-            lift_type = tags.get("aerialway")
 
-            if lift_type in invalid_types:
-                continue
+            merged_nodes = []
+            for way_id in to_be_merged:
+                merged_nodes += self.trails[way_id]["nodes"]
 
-            lift["type"] = lift_type
+            merged_nodes = list(dict.fromkeys(merged_nodes))
+            keeper_id = to_be_merged[0]
 
-            occupancy = tags.get("aerialway:occupancy")
-            if occupancy:
-                occupancy = int(occupancy)
-            lift["occupancy"] = occupancy
-            capacity = tags.get("aerialway:capacity")
-            if capacity:
-                capacity = int(capacity)
-            # if hourly capacity is unrealisticly low,
-            # assume that it is mixed up with occupancy
-            if capacity and capacity < 150:
-                lift["occupancy"] = capacity
-                capacity = None
-            lift["capacity"] = capacity
+            self.trails[keeper_id]["nodes"] = merged_nodes
 
-            if (
-                tags.get("aerialway:detatchable") == "yes"
-                or "express" in lift["name"].lower()
-            ):
-                lift["detatchable"] = True
-            else:
-                lift["detatchable"] = False
-
-            if tags.get("aerialway:bubble") == "yes":
-                lift["bubble"] = True
-            else:
-                lift["bubble"] = False
-
-            if tags.get("aerialway:heating") == "yes":
-                lift["heating"] = True
-            else:
-                lift["heating"] = False
-
-            lifts.append(lift)
-
-        return lifts
+            for way_id in to_be_merged[1:]:
+                del self.trails[way_id]
