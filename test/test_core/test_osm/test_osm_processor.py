@@ -8,7 +8,7 @@ def test_OSMProcessor():
     assert len(osm_processor.ways) == 829
     assert len(osm_processor.relations) == 17
 
-    assert len(osm_processor.trails) == 179
-    assert len(osm_processor.trail_relations) == 7
+    assert len(osm_processor.trails) == 159
+    assert len(osm_processor.trail_relations) == 1
 
     assert len(osm_processor.lifts) == 20

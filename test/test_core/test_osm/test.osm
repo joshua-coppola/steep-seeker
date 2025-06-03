@@ -20448,7 +20448,7 @@
     <tag k="aerialway" v="chair_lift"/>
     <tag k="aerialway:capacity" v="650"/>
     <tag k="aerialway:detatchable" v="yes"/>
-    <tag k="name" v="VALID"/>
+    <tag k="name" v="VALID1"/>
   </way>
   <way id="44077717" version="8" timestamp="2022-07-11T21:34:35Z" changeset="123492621" uid="1901922" user="mblaz95">
     <nd ref="560252332"/>
@@ -22233,7 +22233,7 @@
     <nd ref="2630140274"/>
     <nd ref="2630140275"/>
     <nd ref="5420230849"/>
-    <tag k="name" v="VALID"/>
+    <tag k="name" v="VALID2"/>
     <tag k="piste:difficulty" v="easy"/>
     <tag k="piste:type" v="downhill"/>
     <tag k="leaf_type" v="mixed"/>
@@ -22242,7 +22242,7 @@
     <nd ref="2630140274"/>
     <nd ref="2630140275"/>
     <nd ref="5420230849"/>
-    <tag k="name" v="VALID"/>
+    <tag k="name" v="VALID3"/>
     <tag k="piste:difficulty" v="easy"/>
     <tag k="piste:type" v="downhill"/>
     <tag k="natural" v="wood"/>
@@ -22251,7 +22251,7 @@
     <nd ref="2630140274"/>
     <nd ref="2630140275"/>
     <nd ref="5420230849"/>
-    <tag k="name" v="VALID"/>
+    <tag k="name" v="VALID4"/>
     <tag k="piste:difficulty" v="easy"/>
     <tag k="piste:type" v="downhill"/>
     <tag k="area" v="yes"/>
@@ -22260,7 +22260,7 @@
     <nd ref="2630140274"/>
     <nd ref="2630140275"/>
     <nd ref="5420230849"/>
-    <tag k="name" v="VALID"/>
+    <tag k="name" v="VALID5"/>
     <tag k="piste:difficulty" v="easy"/>
     <tag k="piste:type" v="snow_park"/>
   </way>
@@ -22268,7 +22268,7 @@
     <nd ref="2630140274"/>
     <nd ref="2630140275"/>
     <nd ref="5420230849"/>
-    <tag k="name" v="VALID"/>
+    <tag k="name" v="VALID6"/>
     <tag k="piste:difficulty" v="easy"/>
     <tag k="piste:type" v="downhill"/>
     <tag k="man_made" v="piste:halfpipe"/>
