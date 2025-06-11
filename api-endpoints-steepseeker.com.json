@@ -7,6 +7,9 @@
   "servers": [
     {
       "url": "https://steepseeker.com"
+    },
+    {
+      "url": "https://www.steepseeker.com"
     }
   ],
   "components": {},
@@ -265,4 +268,4 @@
       }
     }
   }
-}
+} 

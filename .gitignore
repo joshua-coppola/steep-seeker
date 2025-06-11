@@ -11,3 +11,6 @@ static/thumbnails
 #ignore all outside libraries
 static/js_libraries
 static/node_modules
+
+#ignore test files
+test.py
