@@ -1,7 +1,10 @@
+import shapely
+
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
 
-## Todo: merge trail support
+
+## Todo: create get trail, lift support with shapely, handle multiline relations
 
 
 class OSMProcessor:
@@ -29,7 +32,7 @@ class OSMProcessor:
         self.flatten_relations()
         self.merge_trails()
 
-    def flatten_relations(self):
+    def flatten_relations(self) -> None:
         """
         Converts any relationships that can be represented as a single line
         into a single trail, then removes the relationship. Updates the
@@ -117,7 +120,7 @@ class OSMProcessor:
         for id in merged_relation_ids:
             del self.trail_relations[id]
 
-    def merge_trails(self):
+    def merge_trails(self) -> None:
         """
         Merges any trails that have the same metadata and have an overlapping
         start/end point. Updates the self.trails object with the new trail list.
@@ -167,3 +170,50 @@ class OSMProcessor:
                 complete_trails[trail_id] = trail_value
 
         self.trails = complete_trails
+
+    def get_trails(self):
+        trail_objects = {}
+        for trail_id in self.trails:
+            trail = self.trails[trail_id]
+            nodes = trail["nodes"]
+            node_array = []
+            for node in nodes:
+                point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
+                node_array.append(point)
+
+            if not trail["area"]:
+                trail_points = shapely.LineString(node_array)
+            else:
+                trail_points = shapely.Polygon(node_array)
+
+            trail_objects[trail_id] = {}
+            trail_objects[trail_id]["geometry"] = trail_points
+
+            for key in trail.keys():
+                if key == "nodes":
+                    continue
+                trail_objects[trail_id][key] = trail[key]
+
+        return trail_objects
+
+    def get_lifts(self):
+        lift_objects = {}
+        for lift_id in self.lifts:
+            lift = self.lifts[lift_id]
+            nodes = lift["nodes"]
+            node_array = []
+            for node in nodes:
+                point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
+                node_array.append(point)
+
+            lift_points = shapely.LineString(node_array)
+
+            lift_objects[lift_id] = {}
+            lift_objects[lift_id]["geometry"] = lift_points
+
+            for key in lift.keys():
+                if key == "nodes":
+                    continue
+                lift_objects[lift_id][key] = lift[key]
+
+        return lift_objects
