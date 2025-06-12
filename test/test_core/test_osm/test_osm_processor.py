@@ -20,7 +20,7 @@ def test_get_trails():
     trails = osm_processor.get_trails()
 
     assert len(trails) == 159
-    assert len(str(trails["w10"]["geometry"])) == 98
+    assert len(str(trails["w10"].geometry)) == 98
 
 
 def test_get_lifts():
@@ -29,4 +29,4 @@ def test_get_lifts():
     lifts = osm_processor.get_lifts()
 
     assert len(lifts) == 20
-    assert len(str(lifts["w113"]["geometry"])) == 55
+    assert len(str(lifts["w113"].geometry)) == 55

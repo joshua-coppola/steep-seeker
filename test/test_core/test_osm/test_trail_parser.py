@@ -48,7 +48,7 @@ def test_identify_lifts():
         "id": [],
         "nodes": [],
         "name": [],
-        "type": [],
+        "lift_type": [],
         "occupancy": [],
         "capacity": [],
         "detatchable": [],
@@ -65,7 +65,7 @@ def test_identify_lifts():
     node_lengths = [len(nodes) for nodes in lift_info["nodes"]]
     assert sum(node_lengths) == 227
 
-    assert len(set(lift_info["type"])) == 3
+    assert len(set(lift_info["lift_type"])) == 3
 
     occupancy_nums = [
         occupancy if occupancy else 0 for occupancy in lift_info["occupancy"]
