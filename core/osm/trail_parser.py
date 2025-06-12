@@ -132,7 +132,7 @@ def identify_lifts(ways):
         if lift_type in invalid_types:
             continue
 
-        lift["type"] = lift_type
+        lift["lift_type"] = lift_type
 
         occupancy = tags.get("aerialway:occupancy")
         if occupancy:

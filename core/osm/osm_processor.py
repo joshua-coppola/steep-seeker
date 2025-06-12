@@ -2,9 +2,10 @@ import shapely
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
+from core.support.mountain import Trail, Lift
 
 
-## Todo: create get trail, lift support with shapely, handle multiline relations
+## Todo: handle multiline relations
 
 
 class OSMProcessor:
@@ -172,6 +173,13 @@ class OSMProcessor:
         self.trails = complete_trails
 
     def get_trails(self):
+        """
+        Transforms the trails dict into a standardized format for the rest of
+        SteepSeeker. This takes the form of removing references to nodes and
+        instead using a Shapely geometery and using the Trail class for each
+        trail in the dict. Returns a dict of Trail objects where the dict keys
+        are the trail IDs.
+        """
         trail_objects = {}
         for trail_id in self.trails:
             trail = self.trails[trail_id]
@@ -186,17 +194,27 @@ class OSMProcessor:
             else:
                 trail_points = shapely.Polygon(node_array)
 
-            trail_objects[trail_id] = {}
-            trail_objects[trail_id]["geometry"] = trail_points
+            trail_dict = {}
+            trail_dict["geometry"] = trail_points
 
             for key in trail.keys():
                 if key == "nodes":
                     continue
-                trail_objects[trail_id][key] = trail[key]
+                trail_dict[key] = trail[key]
+
+            trail = Trail(**trail_dict)
+            trail_objects[trail_id] = trail
 
         return trail_objects
 
     def get_lifts(self):
+        """
+        Transforms the lifts dict into a standardized format for the rest of
+        SteepSeeker. This takes the form of removing references to nodes and
+        instead using a Shapely geometery and using the Lift class for each
+        lift in the dict. Returns a dict of Lift objects where the dict keys
+        are the lift IDs.
+        """
         lift_objects = {}
         for lift_id in self.lifts:
             lift = self.lifts[lift_id]
@@ -208,12 +226,15 @@ class OSMProcessor:
 
             lift_points = shapely.LineString(node_array)
 
-            lift_objects[lift_id] = {}
-            lift_objects[lift_id]["geometry"] = lift_points
+            lift_dict = {}
+            lift_dict["geometry"] = lift_points
 
             for key in lift.keys():
                 if key == "nodes":
                     continue
-                lift_objects[lift_id][key] = lift[key]
+                lift_dict[key] = lift[key]
+
+            lift = Lift(**lift_dict)
+            lift_objects[lift_id] = lift
 
         return lift_objects
