@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Self, Optional
 from datetime import datetime
 
@@ -53,6 +53,10 @@ class Mountain:
         return "TODO"
 
     def to_db(self) -> None:
+        # check that all fields have been populated before saving
+        missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
+        if len(missing_fields) > 0:
+            raise ValueError(f"The following fields are missing: {missing_fields}")
         """
         Updates DB record with the values in the dataclass
         """
@@ -89,6 +93,10 @@ class Trail:
         return "TODO"
 
     def to_db(self) -> None:
+        # check that all fields have been populated before saving
+        missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
+        if len(missing_fields) > 0:
+            raise ValueError(f"The following fields are missing: {missing_fields}")
         """
         Updates DB record with the values in the dataclass
         """
@@ -124,6 +132,10 @@ class Lift:
         return "TODO"
 
     def to_db(self) -> None:
+        # check that all fields have been populated before saving
+        missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
+        if len(missing_fields) > 0:
+            raise ValueError(f"The following fields are missing: {missing_fields}")
         """
         Updates DB record with the values in the dataclass
         """
