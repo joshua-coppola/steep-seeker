@@ -89,6 +89,13 @@ def test_mountain_from_db():
 def test_mountain_to_db(mountain):
     assert mountain.to_db() == "TODO"
 
+    mountain.name = None
+
+    with pytest.raises(Exception) as exc_info:
+        mountain.to_db()
+
+    assert "fields are missing" in str(exc_info)
+
 
 def test_trail(trail):
     assert trail.geometry == LineString([[1, 1], [0, 0]])
@@ -103,6 +110,17 @@ def test_trail_from_db():
 
 
 def test_trail_to_db(trail):
+    with pytest.raises(Exception) as exc_info:
+        trail.to_db()
+
+    assert "fields are missing" in str(exc_info)
+
+    trail.length = 1
+    trail.vertical = 1
+    trail.difficulty = 1
+    trail.max_slope = 1
+    trail.average_slope = 1
+
     assert trail.to_db() == "TODO"
 
 
@@ -119,4 +137,13 @@ def test_lift_from_db():
 
 
 def test_lift_to_db(lift):
+    with pytest.raises(Exception) as exc_info:
+        lift.to_db()
+
+    assert "fields are missing" in str(exc_info)
+
+    lift.length = 1
+    lift.vertical = 1
+    lift.average_slope = 1
+
     assert lift.to_db() == "TODO"
