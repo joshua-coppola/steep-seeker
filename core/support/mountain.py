@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from shapely import LineString, Polygon
 from typing import Self, Optional
 from datetime import datetime
 
@@ -69,13 +68,19 @@ class Trail:
     """
 
     id: str
-    geometry: LineString | Polygon
+    mountain_id: int
+    geometry: str
     name: str
     official_rating: str
     gladed: bool
     area: bool
     ungroomed: bool
     park: bool
+    length: Optional[float] = None
+    vertical: Optional[float] = None
+    difficulty: Optional[float] = None
+    max_slope: Optional[float] = None
+    average_slope: Optional[float] = None
 
     def from_db(id: str) -> Self:
         """
@@ -99,7 +104,8 @@ class Lift:
     """
 
     id: str
-    geometry: LineString
+    mountain_id: int
+    geometry: str
     name: str
     lift_type: str
     occupancy: int
@@ -107,6 +113,9 @@ class Lift:
     detatchable: bool
     bubble: bool
     heating: bool
+    length: Optional[float] = None
+    vertical: Optional[float] = None
+    average_slope: Optional[float] = None
 
     def from_db(id: str) -> Self:
         """

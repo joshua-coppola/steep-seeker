@@ -28,6 +28,7 @@ def mountain():
 def trail():
     trail_dict = {
         "id": "w1000",
+        "mountain_id": 1,
         "geometry": LineString([[1, 1], [0, 0]]),
         "name": "Test",
         "official_rating": "Expert",
@@ -44,6 +45,7 @@ def trail():
 def lift():
     lift_dict = {
         "id": "w1001",
+        "mountain_id": 1,
         "geometry": LineString([[1, 1], [0, 0]]),
         "name": "Test",
         "lift_type": "chair_lift",

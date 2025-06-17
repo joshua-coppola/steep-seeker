@@ -1,4 +1,5 @@
 import shapely
+import uuid
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
@@ -15,13 +16,27 @@ class OSMProcessor:
     The trails and lifts are stored in dicts of the same name.
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, mountain_id: int = None):
         osm_handler = OSMHandler()
         osm_handler.apply_file(filename)
 
         self.nodes = osm_handler.nodes
         self.ways = osm_handler.ways
         self.relations = osm_handler.relations
+
+        self.mountain_id = mountain_id
+        if not self.mountain_id:
+            # generate a UUID based on the latiude/longitude and name of the mountain
+            node = self.nodes[next(iter(self.nodes))]
+            mountain_name = filename.split("/")[-1].split(".osm")[0]
+
+            # multiply the lat/lon by 10 so it is slightly more percise than rounding
+            # to the nearest int without being easily shifted by a slighly different
+            # first node
+            identifier = (
+                f"{(int(node['lon'] * 10), int(node['lat'] * 10))} {mountain_name}"
+            )
+            self.mountain_id = uuid.uuid3(uuid.NAMESPACE_OID, identifier)
 
         trail_dict = identify_trails(self.ways, self.relations)
         self.trails = trail_dict["trails"]
@@ -176,7 +191,7 @@ class OSMProcessor:
         """
         Transforms the trails dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
-        instead using a Shapely geometery and using the Trail class for each
+        instead using a geojson string and using the Trail class for each
         trail in the dict. Returns a dict of Trail objects where the dict keys
         are the trail IDs.
         """
@@ -195,7 +210,8 @@ class OSMProcessor:
                 trail_points = shapely.Polygon(node_array)
 
             trail_dict = {}
-            trail_dict["geometry"] = trail_points
+            trail_dict["geometry"] = shapely.to_geojson(trail_points)
+            trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():
                 if key == "nodes":
@@ -211,7 +227,7 @@ class OSMProcessor:
         """
         Transforms the lifts dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
-        instead using a Shapely geometery and using the Lift class for each
+        instead using a geojson string and using the Lift class for each
         lift in the dict. Returns a dict of Lift objects where the dict keys
         are the lift IDs.
         """
@@ -227,7 +243,8 @@ class OSMProcessor:
             lift_points = shapely.LineString(node_array)
 
             lift_dict = {}
-            lift_dict["geometry"] = lift_points
+            lift_dict["geometry"] = shapely.to_geojson(lift_points)
+            lift_dict["mountain_id"] = self.mountain_id
 
             for key in lift.keys():
                 if key == "nodes":
