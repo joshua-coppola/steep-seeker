@@ -1,62 +1,8 @@
-from core.support.mountain import Mountain, Trail, Lift
-from core.support.states import State, Region
+from core.support.mountain import Mountain
+from core.support.states import Region
 
-from shapely import LineString
 from datetime import datetime
 import pytest
-
-
-@pytest.fixture
-def mountain():
-    mountain_dict = {
-        "id": 1,
-        "name": "Test",
-        "state": State("VT"),
-        "direction": "n",
-        "season_passes": ["Epic", "Ikon"],
-        "trail_count": 42,
-        "lift_count": 0,
-        "vertical": 1024,
-        "difficulty": 89,
-        "beginner_friendliness": 1,
-    }
-
-    return Mountain(**mountain_dict)
-
-
-@pytest.fixture
-def trail():
-    trail_dict = {
-        "id": "w1000",
-        "mountain_id": 1,
-        "geometry": LineString([[1, 1], [0, 0]]),
-        "name": "Test",
-        "official_rating": "Expert",
-        "gladed": True,
-        "area": False,
-        "ungroomed": False,
-        "park": False,
-    }
-
-    return Trail(**trail_dict)
-
-
-@pytest.fixture
-def lift():
-    lift_dict = {
-        "id": "w1001",
-        "mountain_id": 1,
-        "geometry": LineString([[1, 1], [0, 0]]),
-        "name": "Test",
-        "lift_type": "chair_lift",
-        "occupancy": 4,
-        "capacity": 1200,
-        "detatchable": False,
-        "bubble": False,
-        "heating": False,
-    }
-
-    return Lift(**lift_dict)
 
 
 def test_mountain(mountain):
@@ -78,6 +24,21 @@ def test_mountain_bearing(mountain):
     assert "Invalid direction value:" in exc_info.value.args[0]
 
 
+def test_mountain_trail_count(mountain):
+    assert mountain.trail_count() == 1
+
+
+def test_mountain_lift_count(mountain):
+    assert mountain.lift_count() == 1
+
+
+def test_mountain_add_trail(mountain, trail):
+    trail.id = "w1002"
+
+    mountain.add_trail(trail)
+    assert mountain.trail_count() == 2
+
+
 def test_mountain_from_db():
     id = "w1000"
 
@@ -95,55 +56,3 @@ def test_mountain_to_db(mountain):
         mountain.to_db()
 
     assert "fields are missing" in str(exc_info)
-
-
-def test_trail(trail):
-    assert trail.geometry == LineString([[1, 1], [0, 0]])
-
-
-def test_trail_from_db():
-    id = "w1000"
-
-    trail = Trail.from_db(id)
-
-    assert trail == "TODO"
-
-
-def test_trail_to_db(trail):
-    with pytest.raises(Exception) as exc_info:
-        trail.to_db()
-
-    assert "fields are missing" in str(exc_info)
-
-    trail.length = 1
-    trail.vertical = 1
-    trail.difficulty = 1
-    trail.max_slope = 1
-    trail.average_slope = 1
-
-    assert trail.to_db() == "TODO"
-
-
-def test_lift(lift):
-    assert lift.geometry == LineString([[1, 1], [0, 0]])
-
-
-def test_lift_from_db():
-    id = "w1000"
-
-    lift = Lift.from_db(id)
-
-    assert lift == "TODO"
-
-
-def test_lift_to_db(lift):
-    with pytest.raises(Exception) as exc_info:
-        lift.to_db()
-
-    assert "fields are missing" in str(exc_info)
-
-    lift.length = 1
-    lift.vertical = 1
-    lift.average_slope = 1
-
-    assert lift.to_db() == "TODO"
