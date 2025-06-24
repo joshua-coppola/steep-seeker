@@ -1,9 +1,13 @@
-from dataclasses import dataclass
-from shapely import LineString, Polygon
+from dataclasses import dataclass, fields, field
 from typing import Self, Optional
 from datetime import datetime
 
-from core.support.states import State, Region
+from core.enum.state import State
+from core.enum.region import Region
+from core.enum.season_pass import Season_Pass
+from core.support.trail import Trail
+from core.support.lift import Lift
+from core.osm.osm_processor import OSMProcessor
 
 
 @dataclass
@@ -18,13 +22,13 @@ class Mountain:
     name: str
     state: State
     direction: str
-    season_passes: list
-    trail_count: int
-    lift_count: int
-    vertical: int
-    difficulty: float
-    beginner_friendliness: float
+    season_passes: list[Season_Pass]
+    vertical: Optional[int] = None
+    difficulty: Optional[float] = None
+    beginner_friendliness: Optional[float] = None
     last_updated: Optional[datetime] = datetime.now()
+    trails: Optional[dict] = field(default_factory=dict)
+    lifts: Optional[dict] = field(default_factory=dict)
 
     def region(self) -> Region:
         """
@@ -47,6 +51,30 @@ class Mountain:
             return 90
         raise ValueError(f"Invalid direction value: {self.direction}")
 
+    def trail_count(self) -> int:
+        """
+        Returns the number of trails associated with the Mountain
+        """
+        return len(self.trails)
+
+    def lift_count(self) -> int:
+        """
+        Returns the number of lifts associated with the Mountain
+        """
+        return len(self.lifts)
+
+    def add_trail(self, trail: Trail) -> None:
+        """
+        Inserts a new trail into trails dict
+        """
+        self.trails[trail.id] = Trail
+
+    def add_lift(self, lift: Lift) -> None:
+        """
+        Inserts a new trail into lifts dict
+        """
+        self.lifts[lift.id] = Lift
+
     def from_db(id: str) -> Self:
         """
         Gets mountain data from database and returns a Mountain object
@@ -57,65 +85,25 @@ class Mountain:
         """
         Updates DB record with the values in the dataclass
         """
+        # check that all fields have been populated before saving
+        missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
+        if len(missing_fields) > 0:
+            raise ValueError(f"The following fields are missing: {missing_fields}")
         return "TODO"
 
-
-@dataclass
-class Trail:
-    """
-    Trail dataclass that contains all information about a specific trail.
-    An existing trail can be loaded from the DB with from_db, and a new
-    or updated trail can be saved back to the DB with to_db.
-    """
-
-    id: str
-    geometry: LineString | Polygon
-    name: str
-    official_rating: str
-    gladed: bool
-    area: bool
-    ungroomed: bool
-    park: bool
-
-    def from_db(id: str) -> Self:
+    def from_osm(filename: str, season_passes: list[Season_Pass]) -> Self:
         """
-        Gets trail data from database and returns a Trail object
+        Gets mountain data from the provided OSM file and returns a
+        Mountain object
         """
-        return "TODO"
+        processor = OSMProcessor(filename)
 
-    def to_db(self) -> None:
-        """
-        Updates DB record with the values in the dataclass
-        """
-        return "TODO"
+        mountain = Mountain(
+            id=processor.mountain_id,
+            name=filename.split("/")[-1].split(".osm")[0],
+            state=processor.get_state(),
+            direction=processor.get_direction(),
+            season_passes=season_passes,
+        )
 
-
-@dataclass
-class Lift:
-    """
-    Lift dataclass that contains all information about a specific lift.
-    An existing lift can be loaded from the DB with from_db, and a new
-    or updated lift can be saved back to the DB with to_db.
-    """
-
-    id: str
-    geometry: LineString
-    name: str
-    lift_type: str
-    occupancy: int
-    capacity: int
-    detatchable: bool
-    bubble: bool
-    heating: bool
-
-    def from_db(id: str) -> Self:
-        """
-        Gets lift data from database and returns a Lift object
-        """
-        return "TODO"
-
-    def to_db(self) -> None:
-        """
-        Updates DB record with the values in the dataclass
-        """
-        return "TODO"
+        return mountain

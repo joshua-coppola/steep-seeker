@@ -1,8 +1,13 @@
 import shapely
+import uuid
+from united_states import UnitedStates
+from math import degrees, atan2
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
-from core.support.mountain import Trail, Lift
+from core.support.trail import Trail
+from core.support.lift import Lift
+from core.enum.state import State
 
 
 ## Todo: handle multiline relations
@@ -15,13 +20,27 @@ class OSMProcessor:
     The trails and lifts are stored in dicts of the same name.
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, mountain_id: int = None):
         osm_handler = OSMHandler()
         osm_handler.apply_file(filename)
 
         self.nodes = osm_handler.nodes
         self.ways = osm_handler.ways
         self.relations = osm_handler.relations
+
+        self.mountain_id = mountain_id
+        if not self.mountain_id:
+            # generate a UUID based on the latiude/longitude and name of the mountain
+            node = self.nodes[next(iter(self.nodes))]
+            mountain_name = filename.split("/")[-1].split(".osm")[0]
+
+            # multiply the lat/lon by 10 so it is slightly more percise than rounding
+            # to the nearest int without being easily shifted by a slighly different
+            # first node
+            identifier = (
+                f"{(int(node['lon'] * 10), int(node['lat'] * 10))} {mountain_name}"
+            )
+            self.mountain_id = uuid.uuid3(uuid.NAMESPACE_OID, identifier)
 
         trail_dict = identify_trails(self.ways, self.relations)
         self.trails = trail_dict["trails"]
@@ -172,11 +191,11 @@ class OSMProcessor:
 
         self.trails = complete_trails
 
-    def get_trails(self):
+    def get_trails(self) -> dict:
         """
         Transforms the trails dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
-        instead using a Shapely geometery and using the Trail class for each
+        instead using a geojson string and using the Trail class for each
         trail in the dict. Returns a dict of Trail objects where the dict keys
         are the trail IDs.
         """
@@ -195,7 +214,8 @@ class OSMProcessor:
                 trail_points = shapely.Polygon(node_array)
 
             trail_dict = {}
-            trail_dict["geometry"] = trail_points
+            trail_dict["geometry"] = shapely.to_geojson(trail_points)
+            trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():
                 if key == "nodes":
@@ -207,11 +227,11 @@ class OSMProcessor:
 
         return trail_objects
 
-    def get_lifts(self):
+    def get_lifts(self) -> dict:
         """
         Transforms the lifts dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
-        instead using a Shapely geometery and using the Lift class for each
+        instead using a geojson string and using the Lift class for each
         lift in the dict. Returns a dict of Lift objects where the dict keys
         are the lift IDs.
         """
@@ -227,7 +247,8 @@ class OSMProcessor:
             lift_points = shapely.LineString(node_array)
 
             lift_dict = {}
-            lift_dict["geometry"] = lift_points
+            lift_dict["geometry"] = shapely.to_geojson(lift_points)
+            lift_dict["mountain_id"] = self.mountain_id
 
             for key in lift.keys():
                 if key == "nodes":
@@ -238,3 +259,59 @@ class OSMProcessor:
             lift_objects[lift_id] = lift
 
         return lift_objects
+
+    def get_state(self) -> State:
+        """
+        Gets the US State that the OSM file is in. Finds the center of the
+        nodes then returns that State
+        """
+        if not self.nodes:
+            raise ValueError("No nodes found")
+
+        node_array = [
+            shapely.Point(node["lon"], node["lat"]) for node in self.nodes.values()
+        ]
+
+        center = shapely.MultiPoint(node_array).centroid
+
+        us = UnitedStates()
+        state_info = us.from_coords(center.y, center.x)
+
+        if state_info:
+            return State(state_info[0].abbr)
+        else:
+            raise ValueError("No US State found")
+
+    def get_direction(self) -> str:
+        """
+        Gets cardinal direction that most trails
+        follow. Will be one of the following: n,s,e,w
+        """
+        headings = []
+
+        for trail in self.trails.values():
+            start_id = trail["nodes"][0]
+            end_id = trail["nodes"][-1]
+
+            start_node = self.nodes[start_id]
+            end_node = self.nodes[end_id]
+
+            dx = start_node["lon"] - end_node["lon"]
+            dy = start_node["lat"] - end_node["lat"]
+
+            headings.append(degrees(atan2(dx, dy)))
+
+        if not headings:
+            return None  # or raise an error if appropriate
+
+        avg_heading = sum(headings) / len(headings)
+
+        abs_heading = abs(avg_heading)
+        if abs_heading < 45:
+            return "n"
+        elif abs_heading > 135:
+            return "s"
+        elif avg_heading > 0:
+            return "e"
+        else:
+            return "w"
