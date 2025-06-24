@@ -1,6 +1,7 @@
 from dataclasses import dataclass, fields, field
 from typing import Self, Optional
 from datetime import datetime
+from shapely import Point
 
 from core.enum.state import State
 from core.enum.region import Region
@@ -22,6 +23,7 @@ class Mountain:
     name: str
     state: State
     direction: str
+    coordinates: Point
     season_passes: list[Season_Pass]
     vertical: Optional[int] = None
     difficulty: Optional[float] = None
@@ -103,6 +105,7 @@ class Mountain:
             name=filename.split("/")[-1].split(".osm")[0],
             state=processor.get_state(),
             direction=processor.get_direction(),
+            coordinates=processor.get_center(),
             season_passes=season_passes,
         )
 

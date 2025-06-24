@@ -1,10 +1,11 @@
 import pytest
-from shapely import LineString
+from shapely import LineString, Point
 
 from core.support.mountain import Mountain
 from core.support.trail import Trail
 from core.support.lift import Lift
 from core.enum.state import State
+from core.enum.season_pass import Season_Pass
 
 
 @pytest.fixture
@@ -12,9 +13,10 @@ def mountain(trail, lift):
     mountain_dict = {
         "id": 1,
         "name": "Test",
-        "state": State("VT"),
+        "state": State.VERMONT,
         "direction": "n",
-        "season_passes": ["Epic", "Ikon"],
+        "coordinates": Point(1, 1),
+        "season_passes": [Season_Pass.EPIC, Season_Pass.IKON],
         "vertical": 1024,
         "difficulty": 89,
         "beginner_friendliness": 1,

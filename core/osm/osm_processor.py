@@ -260,19 +260,32 @@ class OSMProcessor:
 
         return lift_objects
 
+    def get_center(self) -> shapely.Point:
+        """
+        Calculates the centroid of the mountain from all trail points
+        and returns a shapely Point
+        """
+        if not self.nodes:
+            raise ValueError("No nodes found")
+
+        node_array = []
+        for trail_id in self.trails:
+            trail = self.trails[trail_id]
+            nodes = trail["nodes"]
+
+            node_array += [
+                shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
+                for node in nodes
+            ]
+
+        return shapely.MultiPoint(node_array).centroid
+
     def get_state(self) -> State:
         """
         Gets the US State that the OSM file is in. Finds the center of the
         nodes then returns that State
         """
-        if not self.nodes:
-            raise ValueError("No nodes found")
-
-        node_array = [
-            shapely.Point(node["lon"], node["lat"]) for node in self.nodes.values()
-        ]
-
-        center = shapely.MultiPoint(node_array).centroid
+        center = self.get_center()
 
         us = UnitedStates()
         state_info = us.from_coords(center.y, center.x)
