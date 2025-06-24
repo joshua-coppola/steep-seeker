@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from core.osm.osm_processor import OSMProcessor
-from core.support.states import State
+from core.enum.state import State
 
 
 def test_OSMProcessor():

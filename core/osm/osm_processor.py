@@ -7,7 +7,7 @@ from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
 from core.support.trail import Trail
 from core.support.lift import Lift
-from core.support.states import State
+from core.enum.state import State
 
 
 ## Todo: handle multiline relations

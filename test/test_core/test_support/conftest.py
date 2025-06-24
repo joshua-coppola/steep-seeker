@@ -4,7 +4,7 @@ from shapely import LineString
 from core.support.mountain import Mountain
 from core.support.trail import Trail
 from core.support.lift import Lift
-from core.support.states import State
+from core.enum.state import State
 
 
 @pytest.fixture
