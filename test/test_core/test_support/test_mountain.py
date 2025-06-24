@@ -3,7 +3,9 @@ from uuid import UUID
 import pytest
 
 from core.support.mountain import Mountain
-from core.support.states import State, Region
+from core.enum.state import State
+from core.enum.region import Region
+from core.enum.season_pass import Season_Pass
 
 
 def test_mountain(mountain):
@@ -60,8 +62,8 @@ def test_mountain_to_db(mountain):
 
 
 def test_mountain_from_osm(osm_file):
-    season_passes = ["Epic", "Ikon"]
-    mountain = Mountain.from_osm(osm_file, ["Epic", "Ikon"])
+    season_passes = [Season_Pass.EPIC, Season_Pass.IKON]
+    mountain = Mountain.from_osm(osm_file, season_passes)
 
     assert mountain.id == UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
     assert mountain.name == "test"

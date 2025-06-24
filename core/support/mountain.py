@@ -2,7 +2,9 @@ from dataclasses import dataclass, fields, field
 from typing import Self, Optional
 from datetime import datetime
 
-from core.support.states import State, Region
+from core.enum.state import State
+from core.enum.region import Region
+from core.enum.season_pass import Season_Pass
 from core.support.trail import Trail
 from core.support.lift import Lift
 from core.osm.osm_processor import OSMProcessor
@@ -20,7 +22,7 @@ class Mountain:
     name: str
     state: State
     direction: str
-    season_passes: list
+    season_passes: list[Season_Pass]
     vertical: Optional[int] = None
     difficulty: Optional[float] = None
     beginner_friendliness: Optional[float] = None
@@ -89,7 +91,7 @@ class Mountain:
             raise ValueError(f"The following fields are missing: {missing_fields}")
         return "TODO"
 
-    def from_osm(filename: str, season_passes: list[str]) -> Self:
+    def from_osm(filename: str, season_passes: list[Season_Pass]) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
         Mountain object

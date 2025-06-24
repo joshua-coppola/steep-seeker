@@ -1,4 +1,4 @@
-from core.support.states import State, Region
+from core.enum.state import State
 
 
 def test_state():
@@ -21,20 +21,6 @@ def test_state():
 
     try:
         State(invalid_abbreviation_string)
-        assert False
-    except ValueError:
-        assert True
-
-
-def test_region():
-    state = State.VIRGINIA
-    state_string = "Virginia"
-
-    assert Region.get_region(state) == Region.SOUTHEAST
-
-    # should fail
-    try:
-        Region.get_region(state_string)
         assert False
     except ValueError:
         assert True
