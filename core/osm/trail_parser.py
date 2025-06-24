@@ -13,6 +13,7 @@ def identify_trails(ways, relations):
 
     for way_id, way_values in ways.items():
         tags = way_values.get("tags", {})
+
         trail = {"id": way_id, "nodes": way_values.get("nodes")}
 
         # Validation: skip invalid piste types

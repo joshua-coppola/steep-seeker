@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from core.osm.osm_processor import OSMProcessor
+from core.support.states import State
 
 
 def test_OSMProcessor():
@@ -33,3 +34,19 @@ def test_get_lifts():
 
     assert len(lifts) == 20
     assert len(lifts["w113"].geometry) == 83
+
+
+def test_get_state():
+    osm_processor = OSMProcessor("test/test_core/test_osm/test.osm")
+
+    state = osm_processor.get_state()
+
+    assert state == State("VT")
+
+
+def test_get_direction(osm_file):
+    osm_processor = OSMProcessor(osm_file)
+
+    direction = osm_processor.get_direction()
+
+    assert direction == "w"

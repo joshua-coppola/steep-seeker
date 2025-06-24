@@ -5,6 +5,7 @@ from datetime import datetime
 from core.support.states import State, Region
 from core.support.trail import Trail
 from core.support.lift import Lift
+from core.osm.osm_processor import OSMProcessor
 
 
 @dataclass
@@ -79,11 +80,28 @@ class Mountain:
         return "TODO"
 
     def to_db(self) -> None:
+        """
+        Updates DB record with the values in the dataclass
+        """
         # check that all fields have been populated before saving
         missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
-        """
-        Updates DB record with the values in the dataclass
-        """
         return "TODO"
+
+    def from_osm(filename: str, season_passes: list[str]) -> Self:
+        """
+        Gets mountain data from the provided OSM file and returns a
+        Mountain object
+        """
+        processor = OSMProcessor(filename)
+
+        mountain = Mountain(
+            id=processor.mountain_id,
+            name=filename.split("/")[-1].split(".osm")[0],
+            state=processor.get_state(),
+            direction=processor.get_direction(),
+            season_passes=season_passes,
+        )
+
+        return mountain

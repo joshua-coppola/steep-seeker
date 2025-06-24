@@ -28,6 +28,17 @@ If you are exporting data from a previous install, it can be found in the `data`
 
 To run the website on localhost, execute the file called `app.py` with `python3 app.py`. If the port specified in the `app.py` file is less than 5000, sudo is required.
 
+## Development
+
+To update reqirements.txt, run:
+
+```bash
+pipreqs --savepath=requirements.in
+pip-compile
+```
+
+Currently, the package `these-united-states==1.2.0.24` is missed by pipreqs and should be manually added to requirements.in before running `pip-compile`
+
 ## Status
 
 ### Overall

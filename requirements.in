@@ -1,0 +1,9 @@
+Flask==3.1.1
+haversine==2.9.0
+matplotlib==3.10.3
+osmium==4.0.2
+pytest==8.3.5
+Requests==2.32.4
+rich==14.0.0
+Shapely==2.1.1
+these-united-states==1.2.0.24

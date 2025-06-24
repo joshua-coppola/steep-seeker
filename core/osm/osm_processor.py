@@ -1,9 +1,13 @@
 import shapely
 import uuid
+from united_states import UnitedStates
+from math import degrees, atan2
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
-from core.support.mountain import Trail, Lift
+from core.support.trail import Trail
+from core.support.lift import Lift
+from core.support.states import State
 
 
 ## Todo: handle multiline relations
@@ -187,7 +191,7 @@ class OSMProcessor:
 
         self.trails = complete_trails
 
-    def get_trails(self):
+    def get_trails(self) -> dict:
         """
         Transforms the trails dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -223,7 +227,7 @@ class OSMProcessor:
 
         return trail_objects
 
-    def get_lifts(self):
+    def get_lifts(self) -> dict:
         """
         Transforms the lifts dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -255,3 +259,59 @@ class OSMProcessor:
             lift_objects[lift_id] = lift
 
         return lift_objects
+
+    def get_state(self) -> State:
+        """
+        Gets the US State that the OSM file is in. Finds the center of the
+        nodes then returns that State
+        """
+        if not self.nodes:
+            raise ValueError("No nodes found")
+
+        node_array = [
+            shapely.Point(node["lon"], node["lat"]) for node in self.nodes.values()
+        ]
+
+        center = shapely.MultiPoint(node_array).centroid
+
+        us = UnitedStates()
+        state_info = us.from_coords(center.y, center.x)
+
+        if state_info:
+            return State(state_info[0].abbr)
+        else:
+            raise ValueError("No US State found")
+
+    def get_direction(self) -> str:
+        """
+        Gets cardinal direction that most trails
+        follow. Will be one of the following: n,s,e,w
+        """
+        headings = []
+
+        for trail in self.trails.values():
+            start_id = trail["nodes"][0]
+            end_id = trail["nodes"][-1]
+
+            start_node = self.nodes[start_id]
+            end_node = self.nodes[end_id]
+
+            dx = start_node["lon"] - end_node["lon"]
+            dy = start_node["lat"] - end_node["lat"]
+
+            headings.append(degrees(atan2(dx, dy)))
+
+        if not headings:
+            return None  # or raise an error if appropriate
+
+        avg_heading = sum(headings) / len(headings)
+
+        abs_heading = abs(avg_heading)
+        if abs_heading < 45:
+            return "n"
+        elif abs_heading > 135:
+            return "s"
+        elif avg_heading > 0:
+            return "e"
+        else:
+            return "w"
