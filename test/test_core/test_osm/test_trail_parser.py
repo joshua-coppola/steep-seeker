@@ -2,8 +2,8 @@ from core.osm.osm_processor import OSMProcessor
 from core.osm.trail_parser import identify_trails, identify_lifts
 
 
-def test_identify_trails():
-    osm_processor = OSMProcessor("test/test_core/test_osm/test.osm")
+def test_identify_trails(osm_file):
+    osm_processor = OSMProcessor(osm_file)
 
     trails = identify_trails(osm_processor.ways, osm_processor.relations)
 
@@ -37,8 +37,8 @@ def test_identify_trails():
     assert sum(trail_info["park"]) == 3
 
 
-def test_identify_lifts():
-    osm_processor = OSMProcessor("test/test_core/test_osm/test.osm")
+def test_identify_lifts(osm_file):
+    osm_processor = OSMProcessor(osm_file)
 
     lifts = identify_lifts(osm_processor.ways)
 
