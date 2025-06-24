@@ -31,11 +31,11 @@ class Lift:
         return "TODO"
 
     def to_db(self) -> None:
+        """
+        Updates DB record with the values in the dataclass
+        """
         # check that all fields have been populated before saving
         missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
-        """
-        Updates DB record with the values in the dataclass
-        """
         return "TODO"

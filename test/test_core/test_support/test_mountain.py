@@ -1,8 +1,9 @@
-from core.support.mountain import Mountain
-from core.support.states import Region
-
 from datetime import datetime
+from uuid import UUID
 import pytest
+
+from core.support.mountain import Mountain
+from core.support.states import State, Region
 
 
 def test_mountain(mountain):
@@ -56,3 +57,14 @@ def test_mountain_to_db(mountain):
         mountain.to_db()
 
     assert "fields are missing" in str(exc_info)
+
+
+def test_mountain_from_osm(osm_file):
+    season_passes = ["Epic", "Ikon"]
+    mountain = Mountain.from_osm(osm_file, ["Epic", "Ikon"])
+
+    assert mountain.id == UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
+    assert mountain.name == "test"
+    assert mountain.state == State("VT")
+    assert mountain.direction == "w"
+    assert mountain.season_passes == season_passes
