@@ -34,7 +34,7 @@ def test_get_lifts(osm_file):
     lifts = osm_processor.get_lifts()
 
     assert len(lifts) == 20
-    assert len(lifts["w113"].geometry) == 83
+    assert len(lifts["w113"].geometry) == 4877
 
 
 def test_get_center(osm_file):

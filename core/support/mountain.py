@@ -1,5 +1,5 @@
 from dataclasses import dataclass, fields, field
-from typing import Self, Optional
+from typing import Self, Optional, Dict
 from datetime import datetime
 from shapely import Point
 
@@ -29,8 +29,8 @@ class Mountain:
     difficulty: Optional[float] = None
     beginner_friendliness: Optional[float] = None
     last_updated: Optional[datetime] = datetime.now()
-    trails: Optional[dict] = field(default_factory=dict)
-    lifts: Optional[dict] = field(default_factory=dict)
+    trails: Optional[Dict[str, Trail]] = field(default_factory=dict)
+    lifts: Optional[Dict[str, Lift]] = field(default_factory=dict)
 
     def region(self) -> Region:
         """
