@@ -1,12 +1,15 @@
 import shapely
+import shapely.ops
 import uuid
 from united_states import UnitedStates
 from math import degrees, atan2
+from typing import Dict
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
 from core.support.trail import Trail
 from core.support.lift import Lift
+from core.support.utils import space_line_points_evenly
 from core.enum.state import State
 
 
@@ -191,7 +194,7 @@ class OSMProcessor:
 
         self.trails = complete_trails
 
-    def get_trails(self) -> dict:
+    def get_trails(self) -> Dict[str, Trail]:
         """
         Transforms the trails dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -209,12 +212,12 @@ class OSMProcessor:
                 node_array.append(point)
 
             if not trail["area"]:
-                trail_points = shapely.LineString(node_array)
+                geometry = space_line_points_evenly(shapely.LineString(node_array))
             else:
-                trail_points = shapely.Polygon(node_array)
+                geometry = shapely.Polygon(node_array)
 
             trail_dict = {}
-            trail_dict["geometry"] = shapely.to_geojson(trail_points)
+            trail_dict["geometry"] = shapely.to_geojson(geometry)
             trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():
@@ -227,7 +230,7 @@ class OSMProcessor:
 
         return trail_objects
 
-    def get_lifts(self) -> dict:
+    def get_lifts(self) -> Dict[str, Lift]:
         """
         Transforms the lifts dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -244,10 +247,10 @@ class OSMProcessor:
                 point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
                 node_array.append(point)
 
-            lift_points = shapely.LineString(node_array)
+            geometry = space_line_points_evenly(shapely.LineString(node_array))
 
             lift_dict = {}
-            lift_dict["geometry"] = shapely.to_geojson(lift_points)
+            lift_dict["geometry"] = shapely.to_geojson(geometry)
             lift_dict["mountain_id"] = self.mountain_id
 
             for key in lift.keys():
