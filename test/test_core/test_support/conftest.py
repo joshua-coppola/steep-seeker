@@ -4,8 +4,8 @@ from shapely import LineString, Point
 from core.support.mountain import Mountain
 from core.support.trail import Trail
 from core.support.lift import Lift
-from core.enum.state import State
-from core.enum.season_pass import Season_Pass
+from core.datamodels.state import State
+from core.datamodels.season_pass import Season_Pass
 
 
 @pytest.fixture
@@ -17,9 +17,13 @@ def mountain(trail, lift):
         "direction": "n",
         "coordinates": Point(1, 1),
         "season_passes": [Season_Pass.EPIC, Season_Pass.IKON],
+        "url": "https://test.com",
         "vertical": 1024,
         "difficulty": 89,
         "beginner_friendliness": 1,
+        "avg_icy_days": 25,
+        "avg_snow": 150,
+        "avg_rain": 10,
         "trails": {"w1000": trail},
         "lifts": {"w1001": lift},
     }

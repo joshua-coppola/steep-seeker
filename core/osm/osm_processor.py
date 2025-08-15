@@ -10,7 +10,7 @@ from core.osm.trail_parser import identify_trails, identify_lifts
 from core.support.trail import Trail
 from core.support.lift import Lift
 from core.support.utils import space_line_points_evenly
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 ## Todo: handle multiline relations

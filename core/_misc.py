@@ -10,7 +10,7 @@ from rich.progress import track
 import os
 from datetime import datetime
 
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 def get_center_coordinates(filename: str):

@@ -2,7 +2,10 @@ import sqlite3
 from contextlib import contextmanager
 
 DATABASE_PATH = "data/new_db.db"
-DATABASE_INIT_SQL = "data/new_db.sql"
+DATABASE_INIT_SQL = "config/new_db.sql"
+
+CACHE_DB_PATH = "data/cache_db.db"
+CACHE_DB_INIT_SQL = "config/cache_db.sql"
 
 
 @contextmanager
@@ -16,7 +19,7 @@ def cursor(db_path: str = DATABASE_PATH, dict_cursor: bool = True):
         conn.row_factory = sqlite3.Row
 
     try:
-        yield conn.cursor()
+        yield conn
         conn.commit()
     finally:
         conn.close()

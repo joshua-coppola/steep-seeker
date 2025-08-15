@@ -12,7 +12,7 @@ from data.secret import secret
 import core.db as database
 import core._misc as _misc
 from core.mountain import Mountain, Trail, Lift
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 class navigationLink:

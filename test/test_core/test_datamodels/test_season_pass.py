@@ -1,6 +1,6 @@
 import pytest
 
-from core.enum.season_pass import Season_Pass
+from core.datamodels.season_pass import Season_Pass
 
 
 def test_season_pass():
