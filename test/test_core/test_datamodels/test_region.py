@@ -1,5 +1,5 @@
-from core.enum.state import State
-from core.enum.region import Region
+from core.datamodels.state import State
+from core.datamodels.region import Region
 
 
 def test_region():

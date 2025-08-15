@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Self
 
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 class Region(Enum):

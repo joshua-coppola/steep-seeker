@@ -5,7 +5,7 @@ from decimal import Decimal
 from datetime import datetime
 
 
-from core.enum.region import Region
+from core.datamodels.region import Region
 import core._misc as _misc
 import core._read_osm as _read_osm
 

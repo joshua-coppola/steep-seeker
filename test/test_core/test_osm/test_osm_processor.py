@@ -2,7 +2,7 @@ from uuid import UUID
 from shapely import Point
 
 from core.osm.osm_processor import OSMProcessor
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 def test_OSMProcessor(osm_file):

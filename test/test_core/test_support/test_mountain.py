@@ -3,9 +3,10 @@ from uuid import UUID
 import pytest
 
 from core.support.mountain import Mountain
-from core.enum.state import State
-from core.enum.region import Region
-from core.enum.season_pass import Season_Pass
+from core.datamodels.state import State
+from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
+from core.connectors.database import cursor
 
 
 def test_mountain(mountain):
@@ -50,8 +51,34 @@ def test_mountain_from_db():
     assert mountain == "TODO"
 
 
-def test_mountain_to_db(mountain):
-    assert mountain.to_db() == "TODO"
+def test_mountain_to_db(mountain, db_path):
+    mountain.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        sql_query = "SELECT * FROM Mountains"
+
+        result = cur.execute(sql_query).fetchall()
+
+        assert len(result) == 1
+
+        expected_result = {
+            "mountain_id": 1,
+            "name": "Test",
+            "state": "VT",
+            "direction": "n",
+            "coordinates": "POINT (1 1)",
+            "season_passes": None,
+            "vertical": None,
+            "difficulty": None,
+            "beginner_friendliness": None,
+            "average_icy_days": None,
+            "average_snow": None,
+            "average_rain": None,
+            "last_updated": None,
+            "url": None,
+        }
+
+        assert dict(result[0]) == expected_result
 
     mountain.name = None
 
