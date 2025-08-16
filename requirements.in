@@ -1,9 +1,12 @@
 Flask==3.1.1
 haversine==2.9.0
-matplotlib==3.10.3
+matplotlib==3.10.5
 osmium==4.0.2
+pyproj==3.7.2
 pytest==8.3.5
 Requests==2.32.4
-rich==14.0.0
+rich==14.1.0
 Shapely==2.1.1
+pipreqs==0.5.0
+pip-tools==7.5.0
 these-united-states==1.2.0.24

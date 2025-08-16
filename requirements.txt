@@ -4,18 +4,46 @@
 #
 #    pip-compile
 #
+asttokens==3.0.0
+    # via stack-data
+attrs==25.3.0
+    # via
+    #   jsonschema
+    #   referencing
+backcall==0.2.0
+    # via ipython
+beautifulsoup4==4.13.4
+    # via nbconvert
+bleach[css]==6.2.0
+    # via nbconvert
 blinker==1.9.0
     # via flask
+build==1.3.0
+    # via pip-tools
 certifi==2025.6.15
-    # via requests
+    # via
+    #   pyproj
+    #   requests
 charset-normalizer==3.4.2
     # via requests
 click==8.2.1
-    # via flask
+    # via
+    #   flask
+    #   pip-tools
 contourpy==1.3.2
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
+decorator==5.2.1
+    # via ipython
+defusedxml==0.7.1
+    # via nbconvert
+docopt==0.6.2
+    # via pipreqs
+executing==2.2.0
+    # via stack-data
+fastjsonschema==2.21.2
+    # via nbformat
 flask==3.1.1
     # via -r requirements.in
 fonttools==4.58.4
@@ -26,10 +54,30 @@ idna==3.10
     # via requests
 iniconfig==2.1.0
     # via pytest
+ipython==8.12.3
+    # via pipreqs
 itsdangerous==2.2.0
     # via flask
+jedi==0.19.2
+    # via ipython
 jinja2==3.1.6
-    # via flask
+    # via
+    #   flask
+    #   nbconvert
+jsonschema==4.25.0
+    # via nbformat
+jsonschema-specifications==2025.4.1
+    # via jsonschema
+jupyter-client==8.6.3
+    # via nbclient
+jupyter-core==5.8.1
+    # via
+    #   jupyter-client
+    #   nbclient
+    #   nbconvert
+    #   nbformat
+jupyterlab-pygments==0.3.0
+    # via nbconvert
 kiwisolver==1.4.8
     # via matplotlib
 markdown-it-py==3.0.0
@@ -38,11 +86,24 @@ markupsafe==3.0.2
     # via
     #   flask
     #   jinja2
+    #   nbconvert
     #   werkzeug
-matplotlib==3.10.3
+matplotlib==3.10.5
     # via -r requirements.in
+matplotlib-inline==0.1.7
+    # via ipython
 mdurl==0.1.2
     # via markdown-it-py
+mistune==3.1.3
+    # via nbconvert
+nbclient==0.10.2
+    # via nbconvert
+nbconvert==7.16.6
+    # via pipreqs
+nbformat==5.10.4
+    # via
+    #   nbclient
+    #   nbconvert
 numpy==2.3.0
     # via
     #   contourpy
@@ -52,35 +113,114 @@ osmium==4.0.2
     # via -r requirements.in
 packaging==25.0
     # via
+    #   build
     #   matplotlib
+    #   nbconvert
     #   pytest
+pandocfilters==1.5.1
+    # via nbconvert
+parso==0.8.4
+    # via jedi
+pexpect==4.9.0
+    # via ipython
+pickleshare==0.7.5
+    # via ipython
 pillow==11.2.1
     # via matplotlib
+pip-tools==7.5.0
+    # via -r requirements.in
+pipreqs==0.5.0
+    # via -r requirements.in
+platformdirs==4.3.8
+    # via jupyter-core
 pluggy==1.6.0
     # via pytest
+prompt-toolkit==3.0.51
+    # via ipython
+ptyprocess==0.7.0
+    # via pexpect
+pure-eval==0.2.3
+    # via stack-data
 pygments==2.19.1
-    # via rich
+    # via
+    #   ipython
+    #   nbconvert
+    #   rich
 pyparsing==3.2.3
     # via matplotlib
+pyproj==3.7.2
+    # via -r requirements.in
+pyproject-hooks==1.2.0
+    # via
+    #   build
+    #   pip-tools
 pyshp==2.3.1
     # via these-united-states
 pytest==8.3.5
     # via -r requirements.in
 python-dateutil==2.9.0.post0
-    # via matplotlib
+    # via
+    #   jupyter-client
+    #   matplotlib
+pyzmq==27.0.1
+    # via jupyter-client
+referencing==0.36.2
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.32.4
     # via
     #   -r requirements.in
     #   osmium
-rich==14.0.0
+    #   yarg
+rich==14.1.0
     # via -r requirements.in
+rpds-py==0.27.0
+    # via
+    #   jsonschema
+    #   referencing
 shapely==2.1.1
     # via -r requirements.in
 six==1.17.0
     # via python-dateutil
+soupsieve==2.7
+    # via beautifulsoup4
+stack-data==0.6.3
+    # via ipython
 these-united-states==1.2.0.24
     # via -r requirements.in
+tinycss2==1.4.0
+    # via bleach
+tornado==6.5.2
+    # via jupyter-client
+traitlets==5.14.3
+    # via
+    #   ipython
+    #   jupyter-client
+    #   jupyter-core
+    #   matplotlib-inline
+    #   nbclient
+    #   nbconvert
+    #   nbformat
+typing-extensions==4.14.1
+    # via
+    #   beautifulsoup4
+    #   referencing
 urllib3==2.5.0
     # via requests
+wcwidth==0.2.13
+    # via prompt-toolkit
+webencodings==0.5.1
+    # via
+    #   bleach
+    #   tinycss2
 werkzeug==3.1.3
     # via flask
+wheel==0.45.1
+    # via pip-tools
+yarg==0.1.9
+    # via pipreqs
+
+# The following packages are considered to be unsafe in a requirements file:
+# pip
+# setuptools
