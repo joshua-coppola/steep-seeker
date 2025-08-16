@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 import pytest
+from datetime import datetime
 
 from core.support.mountain import Mountain
 from core.datamodels.state import State
@@ -10,7 +11,7 @@ from core.connectors.database import cursor
 
 
 def test_mountain(mountain):
-    assert mountain.last_updated.date() == datetime.now().date()
+    assert mountain.last_updated.date() == datetime(2000, 2, 5, 12, 30, 5).date()
 
 
 def test_mountain_region(mountain):
@@ -67,15 +68,15 @@ def test_mountain_to_db(mountain, db_path):
             "state": "VT",
             "direction": "n",
             "coordinates": "POINT (1 1)",
-            "season_passes": None,
-            "vertical": None,
-            "difficulty": None,
-            "beginner_friendliness": None,
-            "average_icy_days": None,
-            "average_snow": None,
-            "average_rain": None,
-            "last_updated": None,
-            "url": None,
+            "season_passes": "[<Season_Pass.EPIC: 'Epic'>, <Season_Pass.IKON: 'Ikon'>]",
+            "vertical": 1024,
+            "difficulty": 89.0,
+            "beginner_friendliness": 1.0,
+            "average_icy_days": 25.0,
+            "average_snow": 150.0,
+            "average_rain": 10.0,
+            "last_updated": str(datetime(2000, 2, 5, 12, 30, 5)),
+            "url": "https://test.com",
         }
 
         assert dict(result[0]) == expected_result
