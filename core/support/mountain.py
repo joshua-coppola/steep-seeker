@@ -105,14 +105,32 @@ class Mountain:
                     {MountainTable.name},
                     {MountainTable.state},
                     {MountainTable.direction},
-                    {MountainTable.coordinates}
+                    {MountainTable.coordinates},
+                    {MountainTable.season_passes},
+                    {MountainTable.vertical},
+                    {MountainTable.difficulty},
+                    {MountainTable.beginner_friendliness},
+                    {MountainTable.average_icy_days},
+                    {MountainTable.average_snow},
+                    {MountainTable.average_rain},
+                    {MountainTable.last_updated},
+                    {MountainTable.url}
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(mountain_id) DO UPDATE SET
-                    name = excluded.name,
-                    state = excluded.state,
-                    direction = excluded.direction,
-                    {MountainTable.coordinates} = excluded.{MountainTable.coordinates}
+                    {MountainTable.name} = excluded.{MountainTable.name},
+                    {MountainTable.state} = excluded.{MountainTable.state},
+                    {MountainTable.direction} = excluded.{MountainTable.direction},
+                    {MountainTable.coordinates} = excluded.{MountainTable.coordinates},
+                    {MountainTable.season_passes} = excluded.{MountainTable.season_passes},
+                    {MountainTable.vertical} = excluded.{MountainTable.vertical},
+                    {MountainTable.difficulty} = excluded.{MountainTable.difficulty},
+                    {MountainTable.beginner_friendliness} = excluded.{MountainTable.beginner_friendliness},
+                    {MountainTable.average_icy_days} = excluded.{MountainTable.average_icy_days},
+                    {MountainTable.average_snow} = excluded.{MountainTable.average_snow},
+                    {MountainTable.average_rain} = excluded.{MountainTable.average_rain},
+                    {MountainTable.last_updated} = excluded.{MountainTable.last_updated},
+                    {MountainTable.url} = excluded.{MountainTable.url}
             """
             params = (
                 self.id,
@@ -120,6 +138,15 @@ class Mountain:
                 self.state.value,
                 self.direction,
                 str(self.coordinates),
+                str(self.season_passes),
+                self.vertical,
+                self.difficulty,
+                self.beginner_friendliness,
+                self.avg_icy_days,
+                self.avg_snow,
+                self.avg_rain,
+                self.last_updated,
+                self.url
             )
             cur.execute(query, params)
 

@@ -1,5 +1,6 @@
 import pytest
 from shapely import LineString, Point
+from datetime import datetime
 
 from core.support.mountain import Mountain
 from core.support.trail import Trail
@@ -26,6 +27,7 @@ def mountain(trail, lift):
         "avg_rain": 10,
         "trails": {"w1000": trail},
         "lifts": {"w1001": lift},
+        "last_updated": datetime(2000, 2, 5, 12, 30, 5),
     }
 
     return Mountain(**mountain_dict)
