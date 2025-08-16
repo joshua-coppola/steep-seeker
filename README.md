@@ -37,7 +37,12 @@ pipreqs --savepath=requirements.in
 pip-compile
 ```
 
-Currently, the package `these-united-states==1.2.0.24` is missed by pipreqs and should be manually added to requirements.in before running `pip-compile`
+Before running `pip-compile`, add in the following lines to the `requirements.in` file:
+```txt
+pipreqs==0.5.0
+pip-tools==7.5.0
+these-united-states==1.2.0.24
+```
 
 ## Status
 
