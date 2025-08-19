@@ -1,7 +1,7 @@
 from dataclasses import dataclass, fields, field
-from typing import Self, Optional, Dict
+from typing import Self, Optional, Dict, List
 from datetime import datetime
-from shapely import Point
+from shapely import Point, wkt
 
 from core.datamodels.state import State
 from core.datamodels.region import Region
@@ -26,14 +26,14 @@ class Mountain:
     state: State
     direction: str
     coordinates: Point
-    season_passes: Optional[list[Season_Pass]] = field(default_factory=list)
+    season_passes: Optional[List[Season_Pass]] = field(default_factory=list)
     url: Optional[str] = None
     vertical: Optional[int] = None
     difficulty: Optional[float] = None
     beginner_friendliness: Optional[float] = None
-    avg_icy_days: Optional[float] = None
-    avg_snow: Optional[float] = None
-    avg_rain: Optional[float] = None
+    average_icy_days: Optional[float] = None
+    average_snow: Optional[float] = None
+    average_rain: Optional[float] = None
     last_updated: Optional[datetime] = datetime.now()
     trails: Optional[Dict[str, Trail]] = field(default_factory=dict)
     lifts: Optional[Dict[str, Lift]] = field(default_factory=dict)
@@ -83,11 +83,28 @@ class Mountain:
         """
         self.lifts[lift.id] = Lift
 
-    def from_db(id: str) -> Self:
+    def from_db(mountain_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
         Gets mountain data from database and returns a Mountain object
         """
-        return "TODO"
+        with cursor(db_path=db_path) as cur:
+            query = "SELECT * from Mountains WHERE mountain_id = ?"
+            params = (mountain_id,)
+            result = dict(cur.execute(query, params).fetchone())
+
+        result["id"] = result[MountainTable.mountain_id]
+        del result[MountainTable.mountain_id]
+        result[MountainTable.state] = State(result[MountainTable.state])
+        result[MountainTable.coordinates] = wkt.loads(result[MountainTable.coordinates])
+        result[MountainTable.season_passes] = [
+            Season_Pass(value)
+            for value in result[MountainTable.season_passes].split(",")
+        ]
+        result[MountainTable.last_updated] = datetime.strptime(
+            result[MountainTable.last_updated], "%Y-%m-%d %H:%M:%S"
+        )
+
+        return Mountain(**result)
 
     def to_db(self, db_path: str = DATABASE_PATH) -> None:
         """
@@ -97,6 +114,10 @@ class Mountain:
         missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
+
+        season_passes = ",".join(
+            [season_pass.value for season_pass in self.season_passes]
+        )
 
         with cursor(db_path=db_path) as cur:
             query = f"""
@@ -138,19 +159,19 @@ class Mountain:
                 self.state.value,
                 self.direction,
                 str(self.coordinates),
-                str(self.season_passes),
+                season_passes,
                 self.vertical,
                 self.difficulty,
                 self.beginner_friendliness,
-                self.avg_icy_days,
-                self.avg_snow,
-                self.avg_rain,
+                self.average_icy_days,
+                self.average_snow,
+                self.average_rain,
                 self.last_updated,
-                self.url
+                self.url,
             )
             cur.execute(query, params)
 
-    def from_osm(filename: str, season_passes: list[Season_Pass]) -> Self:
+    def from_osm(filename: str, season_passes: List[Season_Pass]) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
         Mountain object
