@@ -1,5 +1,8 @@
 from dataclasses import dataclass, fields
 from typing import Self, Optional
+from shapely import LineString
+
+from core.connectors.database import DATABASE_PATH
 
 
 @dataclass
@@ -12,7 +15,7 @@ class Lift:
 
     lift_id: str
     mountain_id: int
-    geometry: str
+    geometry: LineString
     name: str
     lift_type: str
     occupancy: int
@@ -24,13 +27,13 @@ class Lift:
     vertical: Optional[float] = None
     average_slope: Optional[float] = None
 
-    def from_db(id: str) -> Self:
+    def from_db(lift_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
         Gets lift data from database and returns a Lift object
         """
         return "TODO"
 
-    def to_db(self) -> None:
+    def to_db(self, db_path: str = DATABASE_PATH) -> None:
         """
         Updates DB record with the values in the dataclass
         """
