@@ -45,6 +45,11 @@ def trail():
         "area": False,
         "ungroomed": False,
         "park": False,
+        "length": 1,
+        "vertical": 1,
+        "difficulty": 1,
+        "max_slope": 1,
+        "average_slope": 1,
     }
 
     return Trail(**trail_dict)

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, fields
 from typing import Self, Optional
-from shapely import LineString, Polygon
+from shapely import LineString, Polygon, wkt
 
 from core.connectors.database import cursor, DATABASE_PATH
 from core.datamodels.database import TrailTable
@@ -29,11 +29,18 @@ class Trail:
     max_slope: Optional[float] = None
     average_slope: Optional[float] = None
 
-    def from_db(id: str) -> Self:
+    def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
         Gets trail data from database and returns a Trail object
         """
-        return "TODO"
+        with cursor(db_path=db_path) as cur:
+            query = "SELECT * from Trails WHERE trail_id = ?"
+            params = (trail_id,)
+            result = dict(cur.execute(query, params).fetchone())
+
+        result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
+
+        return Trail(**result)
 
     def to_db(self, db_path: str = DATABASE_PATH) -> None:
         """
