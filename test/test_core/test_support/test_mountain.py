@@ -1,13 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 import pytest
-from datetime import datetime
 
 from core.support.mountain import Mountain
 from core.datamodels.state import State
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.connectors.database import cursor
+from core.datamodels.database import MountainTable
 
 
 def test_mountain(mountain):
@@ -44,12 +44,55 @@ def test_mountain_add_trail(mountain, trail):
     assert mountain.trail_count() == 2
 
 
-def test_mountain_from_db():
-    id = "w1000"
+def test_mountain_from_db(mountain, db_path):
+    # TODO: handle trails & lifts getting returned
+    mountain.trails = {}
+    mountain.lifts = {}
+    season_passes = ",".join(
+        [season_pass.value for season_pass in mountain.season_passes]
+    )
 
-    mountain = Mountain.from_db(id)
+    with cursor(db_path=db_path) as cur:
+        query = f"""
+            INSERT INTO Mountains (
+                {MountainTable.mountain_id},
+                {MountainTable.name},
+                {MountainTable.state},
+                {MountainTable.direction},
+                {MountainTable.coordinates},
+                {MountainTable.season_passes},
+                {MountainTable.vertical},
+                {MountainTable.difficulty},
+                {MountainTable.beginner_friendliness},
+                {MountainTable.average_icy_days},
+                {MountainTable.average_snow},
+                {MountainTable.average_rain},
+                {MountainTable.last_updated},
+                {MountainTable.url}
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        params = (
+            mountain.id,
+            mountain.name,
+            mountain.state.value,
+            mountain.direction,
+            str(mountain.coordinates),
+            season_passes,
+            mountain.vertical,
+            mountain.difficulty,
+            mountain.beginner_friendliness,
+            mountain.average_icy_days,
+            mountain.average_snow,
+            mountain.average_rain,
+            mountain.last_updated,
+            mountain.url,
+        )
+        cur.execute(query, params)
 
-    assert mountain == "TODO"
+    returned_mountain = Mountain.from_db(mountain.id, db_path)
+
+    assert returned_mountain == mountain
 
 
 def test_mountain_to_db(mountain, db_path):
@@ -68,7 +111,7 @@ def test_mountain_to_db(mountain, db_path):
             "state": "VT",
             "direction": "n",
             "coordinates": "POINT (1 1)",
-            "season_passes": "[<Season_Pass.EPIC: 'Epic'>, <Season_Pass.IKON: 'Ikon'>]",
+            "season_passes": "Epic,Ikon",
             "vertical": 1024,
             "difficulty": 89.0,
             "beginner_friendliness": 1.0,
