@@ -38,7 +38,7 @@ def test_mountain_lift_count(mountain):
 
 
 def test_mountain_add_trail(mountain, trail):
-    trail.id = "w1002"
+    trail.trail_id = "w1002"
 
     mountain.add_trail(trail)
     assert mountain.trail_count() == 2
@@ -73,7 +73,7 @@ def test_mountain_from_db(mountain, db_path):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
-            mountain.id,
+            mountain.mountain_id,
             mountain.name,
             mountain.state.value,
             mountain.direction,
@@ -90,7 +90,7 @@ def test_mountain_from_db(mountain, db_path):
         )
         cur.execute(query, params)
 
-    returned_mountain = Mountain.from_db(mountain.id, db_path)
+    returned_mountain = Mountain.from_db(mountain.mountain_id, db_path)
 
     assert returned_mountain == mountain
 
@@ -127,7 +127,7 @@ def test_mountain_to_db(mountain, db_path):
     mountain.name = None
 
     with pytest.raises(Exception) as exc_info:
-        mountain.to_db()
+        mountain.to_db(db_path=db_path)
 
     assert "fields are missing" in str(exc_info)
 
@@ -136,7 +136,7 @@ def test_mountain_from_osm(osm_file):
     season_passes = [Season_Pass.EPIC, Season_Pass.IKON]
     mountain = Mountain.from_osm(osm_file, season_passes)
 
-    assert mountain.id == UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
+    assert mountain.mountain_id == UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
     assert mountain.name == "test"
     assert mountain.state == State("VT")
     assert mountain.direction == "w"

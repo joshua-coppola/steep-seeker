@@ -10,7 +10,7 @@ class Lift:
     or updated lift can be saved back to the DB with to_db.
     """
 
-    id: str
+    lift_id: str
     mountain_id: int
     geometry: str
     name: str

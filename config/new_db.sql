@@ -24,11 +24,11 @@ DROP TABLE IF EXISTS Trails;
 
 CREATE TABLE "Trails"
 (
-    "trail_id" INTEGER PRIMARY KEY NOT NULL,
+    "trail_id" TEXT PRIMARY KEY NOT NULL,
     "mountain_id" INTEGER NOT NULL,
     "geometry" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "official_rating" REAL,
+    "official_rating" TEXT,
     "gladed" BOOLEAN NOT NULL,
     "area" BOOLEAN NOT NULL,
     "ungroomed" BOOLEAN NOT NULL,

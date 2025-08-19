@@ -21,7 +21,7 @@ class Mountain:
     and a new or updated mountain can be saved back to the DB with to_db.
     """
 
-    id: int
+    mountain_id: int
     name: str
     state: State
     direction: str
@@ -75,13 +75,13 @@ class Mountain:
         """
         Inserts a new trail into trails dict
         """
-        self.trails[trail.id] = Trail
+        self.trails[trail.trail_id] = Trail
 
     def add_lift(self, lift: Lift) -> None:
         """
         Inserts a new trail into lifts dict
         """
-        self.lifts[lift.id] = Lift
+        self.lifts[lift.lift_id] = Lift
 
     def from_db(mountain_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
@@ -92,8 +92,6 @@ class Mountain:
             params = (mountain_id,)
             result = dict(cur.execute(query, params).fetchone())
 
-        result["id"] = result[MountainTable.mountain_id]
-        del result[MountainTable.mountain_id]
         result[MountainTable.state] = State(result[MountainTable.state])
         result[MountainTable.coordinates] = wkt.loads(result[MountainTable.coordinates])
         result[MountainTable.season_passes] = [
@@ -138,7 +136,7 @@ class Mountain:
                     {MountainTable.url}
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(mountain_id) DO UPDATE SET
+                ON CONFLICT({MountainTable.mountain_id}) DO UPDATE SET
                     {MountainTable.name} = excluded.{MountainTable.name},
                     {MountainTable.state} = excluded.{MountainTable.state},
                     {MountainTable.direction} = excluded.{MountainTable.direction},
@@ -154,7 +152,7 @@ class Mountain:
                     {MountainTable.url} = excluded.{MountainTable.url}
             """
             params = (
-                self.id,
+                self.mountain_id,
                 self.name,
                 self.state.value,
                 self.direction,
@@ -179,7 +177,7 @@ class Mountain:
         processor = OSMProcessor(filename)
 
         mountain = Mountain(
-            id=processor.mountain_id,
+            mountain_id=processor.mountain_id,
             name=filename.split("/")[-1].split(".osm")[0],
             state=processor.get_state(),
             direction=processor.get_direction(),

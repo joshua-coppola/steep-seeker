@@ -12,7 +12,7 @@ from core.datamodels.season_pass import Season_Pass
 @pytest.fixture
 def mountain(trail, lift):
     mountain_dict = {
-        "id": 1,
+        "mountain_id": 1,
         "name": "Test",
         "state": State.VERMONT,
         "direction": "n",
@@ -36,7 +36,7 @@ def mountain(trail, lift):
 @pytest.fixture
 def trail():
     trail_dict = {
-        "id": "w1000",
+        "trail_id": "w1000",
         "mountain_id": 1,
         "geometry": LineString([[1, 1], [0, 0]]),
         "name": "Test",
@@ -53,7 +53,7 @@ def trail():
 @pytest.fixture
 def lift():
     lift_dict = {
-        "id": "w1001",
+        "lift_id": "w1001",
         "mountain_id": 1,
         "geometry": LineString([[1, 1], [0, 0]]),
         "name": "Test",
