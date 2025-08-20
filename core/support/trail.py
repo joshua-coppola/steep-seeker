@@ -36,8 +36,12 @@ class Trail:
         with cursor(db_path=db_path) as cur:
             query = "SELECT * from Trails WHERE trail_id = ?"
             params = (trail_id,)
-            result = dict(cur.execute(query, params).fetchone())
+            result = cur.execute(query, params).fetchone()
 
+        if not result:
+            return None
+
+        result = dict(result)
         result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
 
         return Trail(**result)
