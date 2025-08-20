@@ -61,25 +61,38 @@ def test_lift_to_db(lift, db_path):
 
         result = cur.execute(sql_query).fetchall()
 
-        assert len(result) == 1
+    assert len(result) == 1
 
-        expected_result = {
-            "lift_id": "w1001",
-            "mountain_id": 1,
-            "geometry": "LINESTRING (1 1, 0 0)",
-            "name": "Test",
-            "lift_type": "chair_lift",
-            "occupancy": 4,
-            "capacity": 1200,
-            "detachable": 0,
-            "bubble": 0,
-            "heating": 0,
-            "length": 1.0,
-            "vertical": 1.0,
-            "average_slope": 1.0,
-        }
+    expected_result = {
+        LiftTable.lift_id: "w1001",
+        LiftTable.mountain_id: 1,
+        LiftTable.geometry: "LINESTRING (1 1, 0 0)",
+        LiftTable.name: "Test",
+        LiftTable.lift_type: "chair_lift",
+        LiftTable.occupancy: 4,
+        LiftTable.capacity: 1200,
+        LiftTable.detachable: 0,
+        LiftTable.bubble: 0,
+        LiftTable.heating: 0,
+        LiftTable.length: 1.0,
+        LiftTable.vertical: 1.0,
+        LiftTable.average_slope: 1.0,
+    }
 
-        assert dict(result[0]) == expected_result
+    assert dict(result[0]) == expected_result
+
+    lift.capacity = 600
+    expected_result[LiftTable.capacity] = 600
+
+    lift.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        sql_query = "SELECT * FROM Lifts"
+
+        result = cur.execute(sql_query).fetchall()
+
+    assert len(result) == 1
+    assert dict(result[0]) == expected_result
 
     lift.name = None
 

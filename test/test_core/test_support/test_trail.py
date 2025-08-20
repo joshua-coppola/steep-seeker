@@ -64,26 +64,39 @@ def test_trail_to_db(trail, db_path):
 
         result = cur.execute(sql_query).fetchall()
 
-        assert len(result) == 1
+    assert len(result) == 1
 
-        expected_result = {
-            "trail_id": "w1000",
-            "mountain_id": 1,
-            "geometry": "LINESTRING (1 1, 0 0)",
-            "name": "Test",
-            "official_rating": "Expert",
-            "gladed": 1,
-            "area": 0,
-            "ungroomed": 0,
-            "park": 0,
-            "length": 1.0,
-            "vertical": 1.0,
-            "difficulty": 1.0,
-            "max_slope": 1.0,
-            "average_slope": 1.0,
-        }
+    expected_result = {
+        TrailTable.trail_id: "w1000",
+        TrailTable.mountain_id: 1,
+        TrailTable.geometry: "LINESTRING (1 1, 0 0)",
+        TrailTable.name: "Test",
+        TrailTable.official_rating: "Expert",
+        TrailTable.gladed: 1,
+        TrailTable.area: 0,
+        TrailTable.ungroomed: 0,
+        TrailTable.park: 0,
+        TrailTable.length: 1.0,
+        TrailTable.vertical: 1.0,
+        TrailTable.difficulty: 1.0,
+        TrailTable.max_slope: 1.0,
+        TrailTable.average_slope: 1.0,
+    }
 
-        assert dict(result[0]) == expected_result
+    assert dict(result[0]) == expected_result
+
+    trail.difficulty = 0.5
+    expected_result[TrailTable.difficulty] = 0.5
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        sql_query = "SELECT * FROM Trails"
+
+        result = cur.execute(sql_query).fetchall()
+
+    assert len(result) == 1
+    assert dict(result[0]) == expected_result
 
     trail.name = None
 
