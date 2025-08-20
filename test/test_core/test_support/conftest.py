@@ -26,8 +26,8 @@ def mountain(trail, lift):
         MountainTable.average_icy_days: 25,
         MountainTable.average_snow: 150,
         MountainTable.average_rain: 10,
-        "trails": {trail.trail_id: trail},
-        "lifts": {lift.lift_id: lift},
+        MountainTable.trails: {trail.trail_id: trail},
+        MountainTable.lifts: {lift.lift_id: lift},
         MountainTable.last_updated: datetime(2000, 2, 5, 12, 30, 5),
     }
 

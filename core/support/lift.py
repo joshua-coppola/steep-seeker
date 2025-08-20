@@ -42,6 +42,9 @@ class Lift:
 
         result = dict(result)
         result[LiftTable.geometry] = wkt.loads(result[LiftTable.geometry])
+        result[LiftTable.detachable] = bool(result[LiftTable.detachable])
+        result[LiftTable.bubble] = bool(result[LiftTable.bubble])
+        result[LiftTable.heating] = bool(result[LiftTable.heating])
 
         return Lift(**result)
 
