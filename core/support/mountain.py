@@ -6,7 +6,7 @@ from shapely import Point, wkt
 from core.datamodels.state import State
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
-from core.datamodels.database import MountainTable
+from core.datamodels.database import MountainTable, TrailTable, LiftTable
 from core.support.trail import Trail
 from core.support.lift import Lift
 from core.osm.osm_processor import OSMProcessor
@@ -83,7 +83,12 @@ class Mountain:
         """
         self.lifts[lift.lift_id] = Lift
 
-    def from_db(mountain_id: str, db_path: str = DATABASE_PATH) -> Self:
+    def from_db(
+        mountain_id: str,
+        db_path: str = DATABASE_PATH,
+        include_trails: bool = True,
+        include_lifts: bool = True,
+    ) -> Self:
         """
         Gets mountain data from database and returns a Mountain object
         """
@@ -105,6 +110,34 @@ class Mountain:
         result[MountainTable.last_updated] = datetime.strptime(
             result[MountainTable.last_updated], "%Y-%m-%d %H:%M:%S"
         )
+
+        if include_trails:
+            with cursor(db_path=db_path) as cur:
+                query = f"SELECT {TrailTable.trail_id} from Trails WHERE {TrailTable.mountain_id} = ?"
+                params = (mountain_id,)
+                trails_result = cur.execute(query, params).fetchall()
+
+            if trails_result:
+                result[MountainTable.trails] = {
+                    trail[TrailTable.trail_id]: Trail.from_db(
+                        trail[TrailTable.trail_id], db_path=db_path
+                    )
+                    for trail in trails_result
+                }
+
+        if include_lifts:
+            with cursor(db_path=db_path) as cur:
+                query = f"SELECT {LiftTable.lift_id} from Lifts WHERE {LiftTable.mountain_id} = ?"
+                params = (mountain_id,)
+                lifts_result = cur.execute(query, params).fetchall()
+
+            if lifts_result:
+                result[MountainTable.lifts] = {
+                    lift[LiftTable.lift_id]: Lift.from_db(
+                        lift[LiftTable.lift_id], db_path=db_path
+                    )
+                    for lift in lifts_result
+                }
 
         return Mountain(**result)
 
@@ -173,7 +206,13 @@ class Mountain:
             )
             cur.execute(query, params)
 
-    def from_osm(filename: str, season_passes: List[Season_Pass]) -> Self:
+        for trail_id in self.trails:
+            self.trails[trail_id].to_db(db_path)
+
+        for lift_id in self.lifts:
+            self.lifts[lift_id].to_db(db_path)
+
+    def from_osm(filename: str, season_passes: List[Season_Pass], url: str) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
         Mountain object
@@ -187,6 +226,9 @@ class Mountain:
             direction=processor.get_direction(),
             coordinates=processor.get_center(),
             season_passes=season_passes,
+            trails=processor.get_trails(),
+            lifts=processor.get_lifts(),
+            url=url,
         )
 
         return mountain

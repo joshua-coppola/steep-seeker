@@ -43,6 +43,10 @@ class Trail:
 
         result = dict(result)
         result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
+        result[TrailTable.gladed] = bool(result[TrailTable.gladed])
+        result[TrailTable.area] = bool(result[TrailTable.area])
+        result[TrailTable.ungroomed] = bool(result[TrailTable.ungroomed])
+        result[TrailTable.park] = bool(result[TrailTable.park])
 
         return Trail(**result)
 

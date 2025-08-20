@@ -17,6 +17,9 @@ class MountainTable:
     average_rain: str = "average_rain"
     last_updated: str = "last_updated"
     url: str = "url"
+    # Not in SQL, only the python class
+    trails: str = "trails"
+    lifts: str = "lifts"
 
 
 @dataclass
