@@ -108,20 +108,20 @@ def test_mountain_to_db(mountain, db_path):
     assert len(result) == 1
 
     expected_result = {
-        "mountain_id": 1,
-        "name": "Test",
-        "state": "VT",
-        "direction": "n",
-        "coordinates": "POINT (1 1)",
-        "season_passes": "Epic,Ikon",
-        "vertical": 1024,
-        "difficulty": 89.0,
-        "beginner_friendliness": 1.0,
-        "average_icy_days": 25.0,
-        "average_snow": 150.0,
-        "average_rain": 10.0,
-        "last_updated": str(datetime(2000, 2, 5, 12, 30, 5)),
-        "url": "https://test.com",
+        MountainTable.mountain_id: 1,
+        MountainTable.name: "Test",
+        MountainTable.state: "VT",
+        MountainTable.direction: "n",
+        MountainTable.coordinates: "POINT (1 1)",
+        MountainTable.season_passes: "Epic,Ikon",
+        MountainTable.vertical: 1024,
+        MountainTable.difficulty: 89.0,
+        MountainTable.beginner_friendliness: 1.0,
+        MountainTable.average_icy_days: 25.0,
+        MountainTable.average_snow: 150.0,
+        MountainTable.average_rain: 10.0,
+        MountainTable.last_updated: str(datetime(2000, 2, 5, 12, 30, 5)),
+        MountainTable.url: "https://test.com",
     }
 
     assert dict(result[0]) == expected_result
