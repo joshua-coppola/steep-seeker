@@ -10,7 +10,7 @@ from core.osm.trail_parser import identify_trails, identify_lifts
 from core.support.trail import Trail
 from core.support.lift import Lift
 from core.support.utils import space_line_points_evenly
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 ## Todo: handle multiline relations
@@ -217,11 +217,12 @@ class OSMProcessor:
                 geometry = shapely.Polygon(node_array)
 
             trail_dict = {}
+            trail_dict["trail_id"] = trail["id"]
             trail_dict["geometry"] = shapely.to_geojson(geometry)
             trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():
-                if key == "nodes":
+                if key == "nodes" or key == "id":
                     continue
                 trail_dict[key] = trail[key]
 
@@ -250,11 +251,12 @@ class OSMProcessor:
             geometry = space_line_points_evenly(shapely.LineString(node_array))
 
             lift_dict = {}
+            lift_dict["lift_id"] = lift["id"]
             lift_dict["geometry"] = shapely.to_geojson(geometry)
             lift_dict["mountain_id"] = self.mountain_id
 
             for key in lift.keys():
-                if key == "nodes":
+                if key == "nodes" or key == "id":
                     continue
                 lift_dict[key] = lift[key]
 

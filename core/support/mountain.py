@@ -1,14 +1,16 @@
 from dataclasses import dataclass, fields, field
-from typing import Self, Optional, Dict
+from typing import Self, Optional, Dict, List
 from datetime import datetime
-from shapely import Point
+from shapely import Point, wkt
 
-from core.enum.state import State
-from core.enum.region import Region
-from core.enum.season_pass import Season_Pass
+from core.datamodels.state import State
+from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
+from core.datamodels.database import MountainTable, TrailTable, LiftTable
 from core.support.trail import Trail
 from core.support.lift import Lift
 from core.osm.osm_processor import OSMProcessor
+from core.connectors.database import cursor, DATABASE_PATH
 
 
 @dataclass
@@ -19,15 +21,19 @@ class Mountain:
     and a new or updated mountain can be saved back to the DB with to_db.
     """
 
-    id: int
+    mountain_id: int
     name: str
     state: State
     direction: str
     coordinates: Point
-    season_passes: list[Season_Pass]
+    season_passes: Optional[List[Season_Pass]] = field(default_factory=list)
+    url: Optional[str] = None
     vertical: Optional[int] = None
     difficulty: Optional[float] = None
     beginner_friendliness: Optional[float] = None
+    average_icy_days: Optional[float] = None
+    average_snow: Optional[float] = None
+    average_rain: Optional[float] = None
     last_updated: Optional[datetime] = datetime.now()
     trails: Optional[Dict[str, Trail]] = field(default_factory=dict)
     lifts: Optional[Dict[str, Lift]] = field(default_factory=dict)
@@ -69,21 +75,73 @@ class Mountain:
         """
         Inserts a new trail into trails dict
         """
-        self.trails[trail.id] = Trail
+        self.trails[trail.trail_id] = Trail
 
     def add_lift(self, lift: Lift) -> None:
         """
         Inserts a new trail into lifts dict
         """
-        self.lifts[lift.id] = Lift
+        self.lifts[lift.lift_id] = Lift
 
-    def from_db(id: str) -> Self:
+    def from_db(
+        mountain_id: str,
+        db_path: str = DATABASE_PATH,
+        include_trails: bool = True,
+        include_lifts: bool = True,
+    ) -> Self:
         """
         Gets mountain data from database and returns a Mountain object
         """
-        return "TODO"
+        with cursor(db_path=db_path) as cur:
+            query = "SELECT * from Mountains WHERE mountain_id = ?"
+            params = (mountain_id,)
+            result = cur.execute(query, params).fetchone()
 
-    def to_db(self) -> None:
+        if not result:
+            return None
+
+        result = dict(result)
+        result[MountainTable.state] = State(result[MountainTable.state])
+        result[MountainTable.coordinates] = wkt.loads(result[MountainTable.coordinates])
+        result[MountainTable.season_passes] = [
+            Season_Pass(value)
+            for value in result[MountainTable.season_passes].split(",")
+        ]
+        result[MountainTable.last_updated] = datetime.strptime(
+            result[MountainTable.last_updated], "%Y-%m-%d %H:%M:%S"
+        )
+
+        if include_trails:
+            with cursor(db_path=db_path) as cur:
+                query = f"SELECT {TrailTable.trail_id} from Trails WHERE {TrailTable.mountain_id} = ?"
+                params = (mountain_id,)
+                trails_result = cur.execute(query, params).fetchall()
+
+            if trails_result:
+                result[MountainTable.trails] = {
+                    trail[TrailTable.trail_id]: Trail.from_db(
+                        trail[TrailTable.trail_id], db_path=db_path
+                    )
+                    for trail in trails_result
+                }
+
+        if include_lifts:
+            with cursor(db_path=db_path) as cur:
+                query = f"SELECT {LiftTable.lift_id} from Lifts WHERE {LiftTable.mountain_id} = ?"
+                params = (mountain_id,)
+                lifts_result = cur.execute(query, params).fetchall()
+
+            if lifts_result:
+                result[MountainTable.lifts] = {
+                    lift[LiftTable.lift_id]: Lift.from_db(
+                        lift[LiftTable.lift_id], db_path=db_path
+                    )
+                    for lift in lifts_result
+                }
+
+        return Mountain(**result)
+
+    def to_db(self, db_path: str = DATABASE_PATH) -> None:
         """
         Updates DB record with the values in the dataclass
         """
@@ -91,9 +149,70 @@ class Mountain:
         missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
-        return "TODO"
 
-    def from_osm(filename: str, season_passes: list[Season_Pass]) -> Self:
+        season_passes = ",".join(
+            [season_pass.value for season_pass in self.season_passes]
+        )
+
+        with cursor(db_path=db_path) as cur:
+            query = f"""
+                INSERT INTO Mountains (
+                    {MountainTable.mountain_id},
+                    {MountainTable.name},
+                    {MountainTable.state},
+                    {MountainTable.direction},
+                    {MountainTable.coordinates},
+                    {MountainTable.season_passes},
+                    {MountainTable.vertical},
+                    {MountainTable.difficulty},
+                    {MountainTable.beginner_friendliness},
+                    {MountainTable.average_icy_days},
+                    {MountainTable.average_snow},
+                    {MountainTable.average_rain},
+                    {MountainTable.last_updated},
+                    {MountainTable.url}
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT({MountainTable.mountain_id}) DO UPDATE SET
+                    {MountainTable.name} = excluded.{MountainTable.name},
+                    {MountainTable.state} = excluded.{MountainTable.state},
+                    {MountainTable.direction} = excluded.{MountainTable.direction},
+                    {MountainTable.coordinates} = excluded.{MountainTable.coordinates},
+                    {MountainTable.season_passes} = excluded.{MountainTable.season_passes},
+                    {MountainTable.vertical} = excluded.{MountainTable.vertical},
+                    {MountainTable.difficulty} = excluded.{MountainTable.difficulty},
+                    {MountainTable.beginner_friendliness} = excluded.{MountainTable.beginner_friendliness},
+                    {MountainTable.average_icy_days} = excluded.{MountainTable.average_icy_days},
+                    {MountainTable.average_snow} = excluded.{MountainTable.average_snow},
+                    {MountainTable.average_rain} = excluded.{MountainTable.average_rain},
+                    {MountainTable.last_updated} = excluded.{MountainTable.last_updated},
+                    {MountainTable.url} = excluded.{MountainTable.url}
+            """
+            params = (
+                self.mountain_id,
+                self.name,
+                self.state.value,
+                self.direction,
+                str(self.coordinates),
+                season_passes,
+                self.vertical,
+                self.difficulty,
+                self.beginner_friendliness,
+                self.average_icy_days,
+                self.average_snow,
+                self.average_rain,
+                self.last_updated,
+                self.url,
+            )
+            cur.execute(query, params)
+
+        for trail_id in self.trails:
+            self.trails[trail_id].to_db(db_path)
+
+        for lift_id in self.lifts:
+            self.lifts[lift_id].to_db(db_path)
+
+    def from_osm(filename: str, season_passes: List[Season_Pass], url: str) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
         Mountain object
@@ -101,12 +220,15 @@ class Mountain:
         processor = OSMProcessor(filename)
 
         mountain = Mountain(
-            id=processor.mountain_id,
+            mountain_id=processor.mountain_id,
             name=filename.split("/")[-1].split(".osm")[0],
             state=processor.get_state(),
             direction=processor.get_direction(),
             coordinates=processor.get_center(),
             season_passes=season_passes,
+            trails=processor.get_trails(),
+            lifts=processor.get_lifts(),
+            url=url,
         )
 
         return mountain

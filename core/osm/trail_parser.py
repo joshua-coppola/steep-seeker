@@ -150,12 +150,12 @@ def identify_lifts(ways):
         lift["capacity"] = capacity
 
         if (
-            tags.get("aerialway:detatchable") == "yes"
+            tags.get("aerialway:detachable") == "yes"
             or "express" in lift["name"].lower()
         ):
-            lift["detatchable"] = True
+            lift["detachable"] = True
         else:
-            lift["detatchable"] = False
+            lift["detachable"] = False
 
         if tags.get("aerialway:bubble") == "yes":
             lift["bubble"] = True

@@ -1,4 +1,4 @@
-from core.enum.state import State
+from core.datamodels.state import State
 
 
 def test_state():
