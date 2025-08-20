@@ -94,6 +94,8 @@ def test_mountain_from_db(mountain, db_path):
 
     assert returned_mountain == mountain
 
+    assert Mountain.from_db("fake_id", db_path) is None
+
 
 def test_mountain_to_db(mountain, db_path):
     mountain.to_db(db_path=db_path)
@@ -103,26 +105,39 @@ def test_mountain_to_db(mountain, db_path):
 
         result = cur.execute(sql_query).fetchall()
 
-        assert len(result) == 1
+    assert len(result) == 1
 
-        expected_result = {
-            "mountain_id": 1,
-            "name": "Test",
-            "state": "VT",
-            "direction": "n",
-            "coordinates": "POINT (1 1)",
-            "season_passes": "Epic,Ikon",
-            "vertical": 1024,
-            "difficulty": 89.0,
-            "beginner_friendliness": 1.0,
-            "average_icy_days": 25.0,
-            "average_snow": 150.0,
-            "average_rain": 10.0,
-            "last_updated": str(datetime(2000, 2, 5, 12, 30, 5)),
-            "url": "https://test.com",
-        }
+    expected_result = {
+        "mountain_id": 1,
+        "name": "Test",
+        "state": "VT",
+        "direction": "n",
+        "coordinates": "POINT (1 1)",
+        "season_passes": "Epic,Ikon",
+        "vertical": 1024,
+        "difficulty": 89.0,
+        "beginner_friendliness": 1.0,
+        "average_icy_days": 25.0,
+        "average_snow": 150.0,
+        "average_rain": 10.0,
+        "last_updated": str(datetime(2000, 2, 5, 12, 30, 5)),
+        "url": "https://test.com",
+    }
 
-        assert dict(result[0]) == expected_result
+    assert dict(result[0]) == expected_result
+
+    mountain.vertical = 2048
+    expected_result[MountainTable.vertical] = 2048
+
+    mountain.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        sql_query = "SELECT * FROM Mountains"
+
+        result = cur.execute(sql_query).fetchall()
+
+    assert len(result) == 1
+    assert dict(result[0]) == expected_result
 
     mountain.name = None
 

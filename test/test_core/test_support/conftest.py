@@ -47,9 +47,9 @@ def trail():
         "park": False,
         "length": 1,
         "vertical": 1,
-        "difficulty": 1,
-        "max_slope": 1,
-        "average_slope": 1,
+        "difficulty": 1.0,
+        "max_slope": 1.0,
+        "average_slope": 1.0,
     }
 
     return Trail(**trail_dict)
@@ -65,9 +65,12 @@ def lift():
         "lift_type": "chair_lift",
         "occupancy": 4,
         "capacity": 1200,
-        "detatchable": False,
+        "detachable": False,
         "bubble": False,
         "heating": False,
+        "length": 1,
+        "vertical": 1,
+        "average_slope": 1.0,
     }
 
     return Lift(**lift_dict)

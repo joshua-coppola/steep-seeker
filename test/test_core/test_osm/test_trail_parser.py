@@ -51,7 +51,7 @@ def test_identify_lifts(osm_file):
         "lift_type": [],
         "occupancy": [],
         "capacity": [],
-        "detatchable": [],
+        "detachable": [],
         "bubble": [],
         "heating": [],
     }
@@ -75,6 +75,6 @@ def test_identify_lifts(osm_file):
     capacity_nums = [capacity if capacity else 0 for capacity in lift_info["capacity"]]
     assert sum(capacity_nums) == 650
 
-    assert sum(lift_info["detatchable"]) == 5
+    assert sum(lift_info["detachable"]) == 5
     assert sum(lift_info["bubble"]) == 2
     assert sum(lift_info["heating"]) == 1

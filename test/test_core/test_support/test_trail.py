@@ -30,20 +30,6 @@ def test_trail_from_db(trail, db_path):
                 {TrailTable.average_slope}
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
-                {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
-                {TrailTable.geometry} = excluded.{TrailTable.geometry},
-                {TrailTable.name} = excluded.{TrailTable.name},
-                {TrailTable.official_rating} = excluded.{TrailTable.official_rating},
-                {TrailTable.gladed} = excluded.{TrailTable.gladed},
-                {TrailTable.area} = excluded.{TrailTable.area},
-                {TrailTable.ungroomed} = excluded.{TrailTable.ungroomed},
-                {TrailTable.park} = excluded.{TrailTable.park},
-                {TrailTable.length} = excluded.{TrailTable.length},
-                {TrailTable.vertical} = excluded.{TrailTable.vertical},
-                {TrailTable.difficulty} = excluded.{TrailTable.difficulty},
-                {TrailTable.max_slope} = excluded.{TrailTable.max_slope},
-                {TrailTable.average_slope} = excluded.{TrailTable.average_slope}
         """
         params = (
             trail.trail_id,
@@ -66,6 +52,8 @@ def test_trail_from_db(trail, db_path):
     returned_trail = Trail.from_db(trail.trail_id, db_path=db_path)
 
     assert trail == returned_trail
+
+    assert Trail.from_db("fake_id", db_path) is None
 
 
 def test_trail_to_db(trail, db_path):

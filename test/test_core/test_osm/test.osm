@@ -20447,7 +20447,7 @@
     <nd ref="560252322"/>
     <tag k="aerialway" v="chair_lift"/>
     <tag k="aerialway:capacity" v="650"/>
-    <tag k="aerialway:detatchable" v="yes"/>
+    <tag k="aerialway:detachable" v="yes"/>
     <tag k="name" v="VALID1"/>
   </way>
   <way id="44077717" version="8" timestamp="2022-07-11T21:34:35Z" changeset="123492621" uid="1901922" user="mblaz95">

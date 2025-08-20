@@ -46,7 +46,7 @@ DROP TABLE IF EXISTS Lifts;
 
 CREATE TABLE "Lifts"
 (
-    "lift_id" INTEGER PRIMARY KEY NOT NULL,
+    "lift_id" TEXT PRIMARY KEY NOT NULL,
     "mountain_id" INTEGER NOT NULL,
     "geometry" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE "Lifts"
     "capacity" INTEGER NOT NULL,
     "detachable" BOOLEAN NOT NULL,
     "bubble" BOOLEAN NOT NULL,
-    "heated" BOOLEAN NOT NULL,
+    "heating" BOOLEAN NOT NULL,
     "length" REAL,
     "vertical" REAL,
     "average_slope" REAL,

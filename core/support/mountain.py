@@ -90,8 +90,12 @@ class Mountain:
         with cursor(db_path=db_path) as cur:
             query = "SELECT * from Mountains WHERE mountain_id = ?"
             params = (mountain_id,)
-            result = dict(cur.execute(query, params).fetchone())
+            result = cur.execute(query, params).fetchone()
 
+        if not result:
+            return None
+
+        result = dict(result)
         result[MountainTable.state] = State(result[MountainTable.state])
         result[MountainTable.coordinates] = wkt.loads(result[MountainTable.coordinates])
         result[MountainTable.season_passes] = [

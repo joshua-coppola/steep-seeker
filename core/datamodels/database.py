@@ -48,7 +48,7 @@ class LiftTable:
     capacity: str = "capacity"
     detachable: str = "detachable"
     bubble: str = "bubble"
-    heated: str = "heated"
+    heating: str = "heating"
     length: str = "length"
     vertical: str = "vertical"
     average_slope: str = "average_slope"
