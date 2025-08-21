@@ -2,6 +2,7 @@ import shapely
 import shapely.ops
 import pyproj
 from math import ceil
+import numpy as np
 
 
 def space_line_points_evenly(
@@ -31,3 +32,52 @@ def space_line_points_evenly(
     ]
 
     return shapely.LineString(points_geo)
+
+
+def polygon_interior_grid(
+    polygon: shapely.Polygon, spacing_feet: int = 20
+) -> shapely.MultiPoint:
+    """
+    Accepts a Shapely Polygon and returns a grid of points that
+    fall inside the polygon boundry at a set interval defined in feet.
+    """
+    wgs84 = pyproj.CRS("EPSG:4326")
+    albers = pyproj.CRS("EPSG:5070")  # Equal Area projection for contiguous US
+
+    to_meters_proj = pyproj.Transformer.from_proj(wgs84, albers, always_xy=True)
+
+    to_coordinates = pyproj.Transformer.from_proj(albers, wgs84, always_xy=True)
+
+    polygon_proj = shapely.ops.transform(to_meters_proj.transform, polygon)
+
+    minx, miny, maxx, maxy = polygon_proj.bounds
+
+    # Create grid coordinates
+    spacing_meters = spacing_feet / 3.28084
+    x_coords = np.arange(minx, maxx, spacing_meters)
+    y_coords = np.arange(miny, maxy, spacing_meters)
+    X, Y = np.meshgrid(x_coords, y_coords)
+
+    # Flatten into Nx2 array
+    coords = np.column_stack((X.ravel(), Y.ravel()))
+
+    # Build multipoint from all candidate points
+    mp = shapely.MultiPoint(coords)
+
+    # Intersection keeps only points inside polygon
+    inside_proj = polygon_proj.intersection(mp)
+    inside = shapely.ops.transform(to_coordinates.transform, inside_proj)
+
+    # Normalize return type
+    if inside.is_empty:
+        return None
+    elif inside.geom_type == "Point":
+        return shapely.MultiPoint([inside])
+    elif inside.geom_type == "MultiPoint":
+        return inside
+    elif inside.geom_type == "GeometryCollection":
+        # filter only points
+        pts = [g for g in inside.geoms if g.geom_type == "Point"]
+        return shapely.MultiPoint(pts) if pts else None
+    else:
+        raise ValueError(f"Unexpected geometry type: {inside.geom_type}")
