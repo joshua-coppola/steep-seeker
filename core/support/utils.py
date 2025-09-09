@@ -34,6 +34,18 @@ def space_line_points_evenly(
     return shapely.LineString(points_geo)
 
 
+def space_polygon_exterior_points_evenly(
+    polygon: shapely.Polygon, spacing_feet: int = 20
+) -> shapely.Polygon:
+    """
+    Accepts a Shapely Polygon, and evenly spaces out points
+    every 20 feet along the perimeter of the Polygon
+    """
+    line = space_line_points_evenly(polygon.exterior, spacing_feet)
+
+    return shapely.Polygon(line)
+
+
 def polygon_interior_grid(
     polygon: shapely.Polygon, spacing_feet: int = 20
 ) -> shapely.MultiPoint:

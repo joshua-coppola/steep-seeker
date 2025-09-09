@@ -9,7 +9,11 @@ from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
 from core.support.trail import Trail
 from core.support.lift import Lift
-from core.support.utils import space_line_points_evenly
+from core.support.utils import (
+    space_line_points_evenly,
+    space_polygon_exterior_points_evenly,
+    polygon_interior_grid,
+)
 from core.datamodels.state import State
 
 
@@ -213,12 +217,17 @@ class OSMProcessor:
 
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
+                interior_geometry = None
             else:
-                geometry = shapely.Polygon(node_array)
+                geometry = space_polygon_exterior_points_evenly(
+                    shapely.Polygon(node_array)
+                )
+                interior_geometry = shapely.to_geojson(polygon_interior_grid(geometry))
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
             trail_dict["geometry"] = shapely.to_geojson(geometry)
+            trail_dict["interior_geometry"] = interior_geometry
             trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():

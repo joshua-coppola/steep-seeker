@@ -1,6 +1,6 @@
 from dataclasses import dataclass, fields
 from typing import Self, Optional
-from shapely import LineString, Polygon, wkt
+from shapely import wkt
 
 from core.connectors.database import cursor, DATABASE_PATH
 from core.datamodels.database import TrailTable
@@ -16,7 +16,7 @@ class Trail:
 
     trail_id: str
     mountain_id: int
-    geometry: LineString | Polygon
+    geometry: str
     name: str
     official_rating: str
     gladed: bool
@@ -28,6 +28,7 @@ class Trail:
     difficulty: Optional[float] = None
     max_slope: Optional[float] = None
     average_slope: Optional[float] = None
+    interior_geometry: Optional[str] = ""
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
@@ -58,6 +59,9 @@ class Trail:
         missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
+
+        if self.interior_geometry == "" and self.area:
+            raise ValueError("The following fields are missing: interior_geometry")
 
         with cursor(db_path=db_path) as cur:
             query = f"""
