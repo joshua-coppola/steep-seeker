@@ -25,7 +25,7 @@ def test_get_trails(osm_file):
     trails = osm_processor.get_trails()
 
     assert len(trails) == 159
-    assert len(trails["w10"].geometry) == 128
+    assert len(trails["w10"].geometry) == 1420
 
 
 def test_get_lifts(osm_file):
