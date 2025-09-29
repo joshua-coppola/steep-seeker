@@ -15,7 +15,7 @@ class FakeResponse:
 
 def test_get_elevation_success(monkeypatch):
     # Arrange
-    nodes = [(40.0, -105.0), (41.0, -106.0)]
+    nodes = [(-105.0, 40.0), (-106.0, 41.0)]
     fake_results = [
         {"elevation": 1600},
         {"elevation": 1700},
@@ -32,12 +32,12 @@ def test_get_elevation_success(monkeypatch):
 
     # Assert
     assert len(result) == 2
-    assert result[0] == (40.0, -105.0, 1600)
-    assert result[1] == (41.0, -106.0, 1700)
+    assert result[0] == [-105.0, 40.0, 1600]
+    assert result[1] == [-106.0, 41.0, 1700]
 
 
 def test_get_elevation_api_failure(monkeypatch):
-    nodes = [(40.0, -105.0)]
+    nodes = [(-105.0, 40.0)]
 
     def fake_get(url):
         return FakeResponse(status_code=500)

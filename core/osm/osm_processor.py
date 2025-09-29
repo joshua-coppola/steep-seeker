@@ -4,6 +4,8 @@ import uuid
 from united_states import UnitedStates
 from math import degrees, atan2
 from typing import Dict
+import json
+from decimal import Decimal
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
@@ -15,6 +17,7 @@ from core.support.utils import (
     polygon_interior_grid,
 )
 from core.datamodels.state import State
+from core.connectors.api import get_elevation
 
 
 ## Todo: handle multiline relations
@@ -215,18 +218,29 @@ class OSMProcessor:
                 point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
                 node_array.append(point)
 
-            if not trail["area"]:
-                geometry = space_line_points_evenly(shapely.LineString(node_array))
-                interior_geometry = None
-            else:
-                geometry = space_polygon_exterior_points_evenly(
-                    shapely.Polygon(node_array)
-                )
-                interior_geometry = shapely.to_geojson(polygon_interior_grid(geometry))
+            try:
+                if not trail["area"]:
+                    geometry = space_line_points_evenly(shapely.LineString(node_array))
+                    geometry_json = json.loads(shapely.to_geojson(geometry))
+                    geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"]]
+                    geometry_json["coordinates"] = get_elevation(geometry_json["coordinates"])
+                    interior_geometry = None
+                else:
+                    geometry = space_polygon_exterior_points_evenly(
+                        shapely.Polygon(node_array)
+                    )
+                    geometry_json = json.loads(shapely.to_geojson(geometry))
+                    geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"][0]]
+                    #geometry_json["coordinates"] = [get_elevation(geometry_json["coordinates"][0])]
+                    interior_geometry = shapely.to_geojson(polygon_interior_grid(geometry))
+            except:
+                print('failed here')
+
+            #print(geometry_json)
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
-            trail_dict["geometry"] = shapely.to_geojson(geometry)
+            trail_dict["geometry"] = geometry_json
             trail_dict["interior_geometry"] = interior_geometry
             trail_dict["mountain_id"] = self.mountain_id
 

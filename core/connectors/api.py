@@ -7,8 +7,8 @@ def get_elevation(
     nodes: List[Tuple[float, float]], spacing: int = 100
 ) -> Optional[List[Tuple[float, float, float]]]:
     """
-    Takes in a list of (lat, lon) nodes and queries the elevation API to get
-    an elevation for each node. Returns a list of (lat, lon, elevation).
+    Takes in a list of [lon, lat] nodes and queries the elevation API to get
+    an elevation for each node. Returns a list of [lon, lat, elevation].
     """
     if not nodes:
         return []
@@ -24,7 +24,7 @@ def get_elevation(
 
     for chunk in divide_chunks(nodes, spacing):
         # Build location string like "lat,lon|lat,lon|..."
-        coords_str = "|".join(f"{lat},{lon}" for lat, lon in chunk)
+        coords_str = "|".join(f"{lat},{lon}" for lon, lat in chunk)
 
         # Respect 1 req/s rate limit
         elapsed = time.monotonic() - last_called
@@ -40,11 +40,10 @@ def get_elevation(
             )
 
         data = response.json()["results"]
-        print(data)
 
         # Pair back to (lat, lon) from chunk
-        for (lat, lon), entry in zip(chunk, data):
-            results.append((lat, lon, entry["elevation"]))
+        for (lon, lat), entry in zip(chunk, data):
+            results.append([lon, lat, entry["elevation"]])
 
     if len(results) != len(nodes):
         raise ValueError("Mismatch in number of coordinates vs elevation results")
