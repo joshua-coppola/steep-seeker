@@ -76,35 +76,39 @@ def management_edit_resort():
         delete = request.args.get('delete')
         trail_id = request.args.get('trail_id')
         url = request.args.get('url')
+        update_passes = request.args.get('update_passes')
 
-        pass_list = []
-        epic = request.args.get('epic')
-        if epic:
-            pass_list.append('Epic')
-        ikon = request.args.get('ikon')
-        if ikon:
-            pass_list.append('Ikon')
-        mountain_collective = request.args.get('mountain_collective')
-        if mountain_collective:
-            pass_list.append('Mountain Collective')
-        indy = request.args.get('indy')
-        if indy:
-            pass_list.append('Indy')
-        cooper = request.args.get('cooper')
-        if cooper:
-            pass_list.append('Cooper')
-        powder_alliance = request.args.get('powder_alliance')
-        if powder_alliance:
-            pass_list.append('Powder Alliance')
-        freedom_pass = request.args.get('freedom')
-        if freedom_pass:
-            pass_list.append('Freedom')
-        powder_pass = request.args.get('power')
-        if powder_pass:
-            pass_list.append('Power')
+        if update_passes:
+            pass_list = []
+            epic = request.args.get('epic')
+            if epic:
+                pass_list.append('Epic')
+            ikon = request.args.get('ikon')
+            if ikon:
+                pass_list.append('Ikon')
+            mountain_collective = request.args.get('mountain_collective')
+            if mountain_collective:
+                pass_list.append('Mountain Collective')
+            indy = request.args.get('indy')
+            if indy:
+                pass_list.append('Indy')
+            cooper = request.args.get('cooper')
+            if cooper:
+                pass_list.append('Cooper')
+            powder_alliance = request.args.get('powder_alliance')
+            if powder_alliance:
+                pass_list.append('Powder Alliance')
+            freedom_pass = request.args.get('freedom')
+            if freedom_pass:
+                pass_list.append('Freedom')
+            powder_pass = request.args.get('power')
+            if powder_pass:
+                pass_list.append('Power')
 
-        if len(pass_list) > 0:
-            database._set_mountain_season_passes(name, state, ','.join(pass_list))
+            if len(pass_list) > 0:
+                database._set_mountain_season_passes(name, state, ','.join(pass_list))
+            else:
+                database._set_mountain_season_passes(name, state, None)
 
 
         if size_increase:
@@ -182,6 +186,7 @@ def management_edit_resort():
             else:
                 ungroomed = ''
             popup_content = f'<h3>{trail.name}{gladed}{ungroomed}</h3>'
+            popup_content += f'<p>OSM ID: {trail.trail_id}</p>'
             popup_content += f'<p>Rating: {trail.difficulty}<span class="icon difficulty-{_misc.trail_color(trail.difficulty)}"></span></p>'
             popup_content += f'<p>Length: {trail.length} ft</p><p>Vertical Drop: {trail.vertical} ft</p>'
             if trail.steepest_30m:

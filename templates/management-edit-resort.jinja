@@ -103,6 +103,7 @@ Edit Resort
     </form>
     <form id="pass" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state}}">
+        <input type="hidden" name="update_passes" value="True">
         {% if mountain.season_passes and "Epic" in mountain.season_passes %}
         <input type="checkbox" id="epic" name="epic" value="True" checked>
         {% else %}
