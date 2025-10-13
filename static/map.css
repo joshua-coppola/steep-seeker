@@ -168,6 +168,15 @@ main > * {
     opacity: 1;
 }
 
+#url a {
+    color: white;
+    text-decoration: none;
+}
+
+#url a:hover {
+    opacity: 1;
+}
+
 .hover-details {
     position: absolute;
     padding: 8px;

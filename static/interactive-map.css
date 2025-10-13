@@ -168,6 +168,15 @@ h3 {
     opacity: 1;
 }
 
+#url a {
+    color: white;
+    text-decoration: none;
+}
+
+#url a:hover {
+    opacity: 1;
+}
+
 .pass-icon {
     width: 2rem;
     height: 2rem;
