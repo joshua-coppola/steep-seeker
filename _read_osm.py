@@ -97,11 +97,15 @@ def osm_api(bounding_box: str):
     """
     url = f'https://overpass-api.de/api/map?bbox={bounding_box}'
     print('\nFetching OSM file...')
-    response = get(url)
-    if response.status_code == 200:
-        return response.content
-    else:
-        print('OSM API call failed with code:')
-        print(response.status_code)
-        print(response.content)
-        return None
+    for i in range(3):
+        response = get(url)
+        if response.status_code == 200:
+            return response.content
+        # time out error
+        elif response.status_code == 504:
+            continue
+        else:
+            print('OSM API call failed with code:')
+            print(response.status_code)
+            print(response.content)
+            return None

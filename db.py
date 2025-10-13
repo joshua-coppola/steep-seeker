@@ -408,6 +408,8 @@ def refresh_resort(name: str, state: str, ignore_areas: bool = False) -> str:
         if current_date[1] < 4 and last_updated_date[1] >= 4:
             need_new_weather = False
 
+    print(f'Weather Refresh: {need_new_weather}')
+
     if need_new_weather:
         weather_modifier = add_weather_stats(cur, mountain_id, name)
     else:

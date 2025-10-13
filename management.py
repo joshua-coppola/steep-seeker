@@ -245,7 +245,10 @@ def management_edit_resort():
 
             geojson['features'].append(feature)
 
-        whole_resort_modifier = trails[0].difficulty - trails[0].steepest_30m - (trails[0].gladed * 5.5) - (trails[0].ungroomed * 2.5)
+        if len(trails) > 0:
+            whole_resort_modifier = trails[0].difficulty - trails[0].steepest_30m - (trails[0].gladed * 5.5) - (trails[0].ungroomed * 2.5)
+        else:
+            whole_resort_modifier = 0
 
         for lift in lifts:
             feature = {'type':'Feature',
