@@ -162,6 +162,9 @@ def rankings():
     region = request.args.get('region')
     if not region:
         region = 'usa'
+    state = request.args.get('state')
+    if state == 'None':
+        state = None
     # converts query string info into SQL
     conn = database.dict_cursor()
 
@@ -172,18 +175,22 @@ def rankings():
     if not order in ['asc', 'desc']:
         order = 'desc'
 
-    if region == 'usa':
-        query = f'SELECT name, state FROM Mountains ORDER BY {sort_by} {order}'
-        mountains = conn.execute(query).fetchall()
+    if not state:
+        if region == 'usa':
+            query = f'SELECT name, state FROM Mountains ORDER BY {sort_by} {order}'
+            mountains = conn.execute(query).fetchall()
+        else:
+            query = f'SELECT name, state FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}'
+            mountains = conn.execute(query, (region,)).fetchall()
     else:
-        query = f'SELECT name, state FROM Mountains WHERE region = ? ORDER BY {sort_by} {order}'
-        mountains = conn.execute(query, (region,)).fetchall()
+        query = f'SELECT name, state FROM Mountains WHERE state = ? ORDER BY {sort_by} {order}'
+        mountains = conn.execute(query, (state,)).fetchall()
 
     for i, mountain in enumerate(mountains):
         mountains[i] = Mountain(mountain['name'], mountain['state'])
 
     conn.close()
-    return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains, sort=sort, order=order, region=region)
+    return render_template('rankings.jinja', nav_links=nav_links, active_page='rankings', mountains=mountains, sort=sort, order=order, region=region, state=state)
 
 
 @app.route('/trail-rankings')
@@ -193,13 +200,17 @@ def trail_rankings():
     if not region:
         region = 'usa'
     search_string += f'region={region}&'
+    state = request.args.get('state')
+    if state == 'None':
+        state = None
+    search_string += f'state={state}&'
     page = request.args.get('page')
     if not page:
         page = 1
     limit = request.args.get('limit')
     if not limit:
         limit = 50
-    if limit > 200:
+    if int(limit) > 200:
         limit = 200
     search_string += f'limit={limit}&'
     sort_by = request.args.get('sort')
@@ -218,12 +229,16 @@ def trail_rankings():
 
     conn = database.dict_cursor()
 
-    if region == 'usa':
-        query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
-        trails = conn.execute(query, (limit, offset)).fetchall()
+    if not state:
+        if region == 'usa':
+            query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
+            trails = conn.execute(query, (limit, offset)).fetchall()
+        else:
+            query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
+            trails = conn.execute(query, (region, limit, offset)).fetchall()
     else:
-        query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
-        trails = conn.execute(query, (region, limit, offset)).fetchall()
+        query = f'SELECT trail_id FROM Trails INNER JOIN Mountains ON Trails.mountain_id=Mountains.mountain_id WHERE Mountains.state = ? AND Trails.name <> "" ORDER BY Trails.{sort_by} DESC LIMIT ? OFFSET ?'
+        trails = conn.execute(query, (state, limit, offset)).fetchall()
 
     conn.close()
 
@@ -253,7 +268,7 @@ def trail_rankings():
     if len(urlBase) > 0 and urlBase[-1] == '&':
         urlBase = urlBase[0:-1]
     pages['first'] = f'/trail-rankings?region={region}&limit={limit}'
-    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, pages=pages, sort_by=sort_by)
+    return render_template('trail_rankings.jinja', nav_links=nav_links, active_page='trail_rankings', trails=trails, region=region, state=state, pages=pages, sort_by=sort_by)
 
 
 @app.route('/lift-rankings')
@@ -263,6 +278,10 @@ def lift_rankings():
     if not region:
         region = 'usa'
     search_string += f'region={region}&'
+    state = request.args.get('state')
+    if state == 'None':
+        state = None
+    search_string += f'state={state}&'
     page = request.args.get('page')
     if not page:
         page = 1
@@ -291,12 +310,16 @@ def lift_rankings():
     if sort_by == 'pitch':
         sort_by = 'vertical_rise / Lifts.length'
 
-    if region == 'usa':
-        query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
-        lifts = conn.execute(query, (limit, offset)).fetchall()
+    if not state:
+        if region == 'usa':
+            query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
+            lifts = conn.execute(query, (limit, offset)).fetchall()
+        else:
+            query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
+            lifts = conn.execute(query, (region, limit, offset)).fetchall()
     else:
-        query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Mountains.region = ? AND Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
-        lifts = conn.execute(query, (region, limit, offset)).fetchall()
+        query = f'SELECT lift_id FROM Lifts INNER JOIN Mountains ON Lifts.mountain_id=Mountains.mountain_id WHERE Mountains.state = ? AND Lifts.name <> "" ORDER BY Lifts.{sort_by} DESC LIMIT ? OFFSET ?'
+        lifts = conn.execute(query, (state, limit, offset)).fetchall()
 
     conn.close()
 
@@ -326,7 +349,7 @@ def lift_rankings():
     if len(urlBase) > 0 and urlBase[-1] == '&':
         urlBase = urlBase[0:-1]
     pages['first'] = f'/lift-rankings?region={region}&limit={limit}'
-    return render_template('lift_rankings.jinja', nav_links=nav_links, active_page='lift_rankings', lifts=lifts, region=region, pages=pages, sort_by=sort_by)
+    return render_template('lift_rankings.jinja', nav_links=nav_links, active_page='lift_rankings', lifts=lifts, region=region, state=state, pages=pages, sort_by=sort_by)
 
 @app.route('/map/<string:state>/<string:name>')
 def map(state, name):

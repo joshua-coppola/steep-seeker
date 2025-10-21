@@ -12,10 +12,12 @@ main {
     align-items: center;
     font-size: 1.1rem;
     text-transform: uppercase;
+    line-height: 1.5;
 }
 
 .ranking-sort > * {
-    margin-right: 16px;
+    margin-left: 8px;
+    margin-right: 8px;
 }
 
 .ranking-sort a {
@@ -30,13 +32,13 @@ main {
 .ranking-sort .button-cta {
     color: white;
     width: 100%;
-    max-width: 150px;
+    max-width: 300px;
 }
 
 .ranking-sort .button-cta2 {
     color: white;
     width: 100%;
-    max-width: 150px;
+    max-width: 300px;
 }
 
 .legend ul li {
@@ -90,6 +92,23 @@ tr a.active {
     color: var(--color-accent);
 }
 
+select {
+    width: 222px;
+    height: 37px;
+    font-size: 1.1rem;
+    margin-left: 8px;
+}
+
+select>option {
+    background-color: #b8e1ba;
+}
+
+#submit {
+    font-size: 1.1rem;
+    padding-left: .5rem;
+    margin-left: 8px;
+}
+
 @media screen and (min-width: 1001px) {
     .mobile {
         display: none;
@@ -113,6 +132,7 @@ tr a.active {
     .ranking-sort {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
+        line-height: 1.0;
     }
 
     .ranking-sort > * {
@@ -138,6 +158,23 @@ tr a.active {
         padding-top: 16px;
     }
   }
+
+@media screen and (max-width: 950px) {
+    #submit {
+        width: auto;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    #submit {
+        margin-top: 8px;
+        width: calc(100% - 16px);
+    }
+
+    select {
+        width: calc(100% - 16px);
+    }
+}
 
 @media screen and (max-width: 350px) {
     .ranking-sort {

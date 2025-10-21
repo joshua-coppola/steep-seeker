@@ -13,107 +13,70 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
     <h1>Mountain Rankings</h1>
 
     <ul class="ranking-sort">
-        {% if sort == "difficulty" %}
-        {% if order == "desc" %}
-        <li><a href="/rankings?sort=difficulty&order=asc&region={{request.args.get('region')}}"
-                class="button-cta">Difficulty &#x25bc;</a></li>
-        {% endif %}
-        {% if order == "asc" %}
-        <li><a href="/rankings?sort=difficulty&order=desc&region={{request.args.get('region')}}"
-                class="button-cta">Difficulty &#x25b2;</a></li>
-        {% endif %}
+        {% set sorts = {
+            "difficulty": "Difficulty",
+            "beginner": "Beginner Friendliness"
+        } %}
 
-        <li><a class="button-cta2" href="/rankings?sort=beginner&order=asc&region={{request.args.get('region')}}">Beginner Friendliness</a>
-        </li>
-        {% endif %}
-
-        {% if sort == "beginner" %}
-        <li><a class="button-cta2" href="/rankings?sort=difficulty&order=desc&region={{request.args.get('region')}}">Difficulty</a></li>
-
-        {% if order == "desc" %}
-        <li><a href="/rankings?sort=beginner&order=asc&region={{request.args.get('region')}}" class="button-cta">Beginner
-                Friendliness &#x25bc;</a></li>
-        {% endif %}
-        {% if order == "asc" %}
-        <li><a href="/rankings?sort=beginner&order=desc&region={{request.args.get('region')}}" class="button-cta">Beginner
-                Friendliness &#x25b2;</a></li>
-        {% endif %}
-        {% endif %}
+        {% for key, label in sorts.items() %}
+            {% if sort == key %}
+                {% set new_order = "asc" if order == "desc" else "desc" %}
+                <li>
+                    <a href="/rankings?sort={{ key }}&order={{ new_order }}&region={{ region }}&state={{ state }}"
+                    class="button-cta">
+                        {{ label }} {% if order == "desc" %}&#x25bc;{% else %}&#x25b2;{% endif %}
+                    </a>
+                </li>
+            {% else %}
+                <li>
+                    <a class="button-cta2"
+                    href="/rankings?sort={{ key }}&order=asc&region={{ region }}&state={{ state }}">
+                        {{ label }}
+                    </a>
+                </li>
+            {% endif %}
+        {% endfor %}
     </ul>
 
     <ul class="ranking-sort">
-        {% if region == "usa" %}
-        <li><a class="button-cta">USA</a></li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a>
-        </li>
-        {% endif %}
-        {% if region == "northeast" %}
-        <li><a class="button-cta2" href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a>
-        </li>
-        <li><a class="button-cta">Northeast</a></li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a>
-        </li>
-        {% endif %}
-        {% if region == "southeast" %}
-        <li><a class="button-cta2" href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a>
-        </li>
-        <li><a class="button-cta">Southeast</a></li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a>
-        </li>
-        {% endif %}
-        {% if region == "midwest" %}
-        <li><a class="button-cta2" href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a>
-        </li>
-        <li><a class="button-cta">Midwest</a></li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=west">West</a>
-        </li>
-        {% endif %}
-        {% if region == "west" %}
-        <li><a class="button-cta2" href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=usa">USA</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=northeast">Northeast</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=southeast">Southeast</a>
-        </li>
-        <li><a class="button-cta2"
-                href="/rankings?sort={{request.args.get('sort')}}&order={{request.args.get('order')}}&region=midwest">Midwest</a>
-        </li>
-        <li><a class="button-cta">West</a></li>
-        {% endif %}
+        {% set regions = ["usa", "northeast", "southeast", "midwest", "west"] %}
+        {% for r in regions %}
+            <li>
+                {% if r == region and state == None %}
+                    <a class="button-cta">{{ r|capitalize }}</a>
+                {% else %}
+                    <a class="button-cta2"
+                    href="/rankings?sort={{ sort }}&order={{ order }}&region={{ r }}">
+                        {{ r|capitalize }}
+                    </a>
+                {% endif %}
+            </li>
+        {% endfor %}
     </ul>
+
+    <form id="search-form" class="search-form" action="/rankings" method="get">
+        <select id="state" name="state" required>
+            <option value="" disabled {% if not state %}selected{% endif %}>Select State</option>
+            {% set states = {
+                "AL":"Alabama", "AK":"Alaska", "AZ":"Arizona", "AR":"Arkansas", "CA":"California",
+                "CO":"Colorado", "CT":"Connecticut", "DE":"Delaware", "FL":"Florida", "GA":"Georgia",
+                "HI":"Hawaii", "ID":"Idaho", "IL":"Illinois", "IN":"Indiana", "IA":"Iowa",
+                "KS":"Kansas", "KY":"Kentucky", "LA":"Louisiana", "ME":"Maine", "MD":"Maryland",
+                "MA":"Massachusetts", "MI":"Michigan", "MN":"Minnesota", "MS":"Mississippi", "MO":"Missouri",
+                "MT":"Montana", "NE":"Nebraska", "NV":"Nevada", "NH":"New Hampshire", "NJ":"New Jersey",
+                "NM":"New Mexico", "NY":"New York", "NC":"North Carolina", "ND":"North Dakota", "OH":"Ohio",
+                "OK":"Oklahoma", "OR":"Oregon", "PA":"Pennsylvania", "RI":"Rhode Island", "SC":"South Carolina",
+                "SD":"South Dakota", "TN":"Tennessee", "TX":"Texas", "UT":"Utah", "VT":"Vermont",
+                "VA":"Virginia", "WA":"Washington", "WV":"West Virginia", "WI":"Wisconsin", "WY":"Wyoming"
+            } %}
+            {% for code, name in states.items() %}
+                <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="hidden" name="order" value="{{ order }}">
+        <input class="button-cta" id="submit" type="submit" value="Select" />
+    </form>
 
     <p class="detail">
         {% if sort == "beginner" %}
