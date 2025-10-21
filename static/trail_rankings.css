@@ -16,8 +16,7 @@ main {
 }
 
 .ranking-sort > * {
-    margin-left: 8px;
-    margin-right: 8px;
+    margin-right: 16px;
 }
 
 .ranking-sort a {
@@ -96,7 +95,6 @@ select {
     width: 222px;
     height: 37px;
     font-size: 1.1rem;
-    margin-left: 8px;
 }
 
 select>option {
@@ -105,7 +103,6 @@ select>option {
 
 #submit {
     font-size: 1.1rem;
-    padding-left: .5rem;
     margin-left: 8px;
 }
 
@@ -116,6 +113,10 @@ select>option {
 }
 
 @media screen and (max-width: 1000px) {
+    #content > * {
+        margin-bottom: 36px;
+    }
+
     h1 {
         padding-top: 32px;
     }
@@ -133,10 +134,12 @@ select>option {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         line-height: 1.0;
+        row-gap: 8px;
+        column-gap: 16px;
     }
 
     .ranking-sort > * {
-        margin-bottom: 8px;
+        margin-right: 0;
     }
 
     .legend ul{
@@ -168,11 +171,12 @@ select>option {
 @media screen and (max-width: 400px) {
     #submit {
         margin-top: 8px;
-        width: calc(100% - 16px);
+        margin-left: 0;
+        width: 100%;
     }
 
     select {
-        width: calc(100% - 16px);
+        width: 100%;
     }
 }
 
