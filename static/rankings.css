@@ -93,10 +93,6 @@ select {
     font-size: 1.1rem;
 }
 
-select>option {
-    background-color: #b8e1ba;
-}
-
 #submit {
     font-size: 1.1rem;
     margin-left: 8px;
