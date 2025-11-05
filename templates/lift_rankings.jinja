@@ -55,13 +55,11 @@ Lift Rankings - Compare Chairlifts Across the USA
 
     <ul class="ranking-sort mobile">
         {% set sorts = {
-            "difficulty": "Difficulty",
-            "steepest_30m": "30m Pitch",
-            "steepest_50m": "50m Pitch",
-            "steepest_100m": "100m Pitch",
-            "steepest_200m": "200m Pitch",
-            "steepest_500m": "500m Pitch",
-            "steepest_1000m": "1000m Pitch"
+            "vertical_rise": "Vertical Rise",
+            "length": "Length",
+            "pitch": "Average Pitch",
+            "occupancy": "Occupancy",
+            "bubble": "Has Bubble",
         } %}
 
         {% for key, label in sorts.items() %}

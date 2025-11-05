@@ -288,7 +288,7 @@ def lift_rankings():
     limit = request.args.get('limit')
     if not limit:
         limit = 50
-    if limit > 200:
+    if int(limit) > 200:
         limit = 200
     search_string += f'limit={limit}&'
     sort_by = request.args.get('sort')
