@@ -7,8 +7,14 @@
     "theme_color": "#000000",
     "icons": [
         {
-            "src": "/logo.svg",
-            "type": "image/svg"
+            "src": "/logo_small.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/logo_large.png",
+            "type": "image/png",
+            "sizes": "512x512"
         }
     ]
 }
