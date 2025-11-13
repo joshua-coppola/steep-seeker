@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Steep Seeker - Universal Ski Trail Rating System
+    </title>
+
+    <link href="/base.css" rel="stylesheet">
+
+    <link rel="manifest" href="/manifest.json">
+    <link href="/page.css" rel="stylesheet">
+    <link href="/index.css" rel="stylesheet">
+
+<body>
+    
+<nav>
+    <div class="top-bar">
+        <div class="home-div">
+            <a id="home-link" href="/"><img alt="Steep Seeker Logo" height="50" width="50" src="/logo.svg">Steep Seeker</a>
+        <a href="javascript:void(0);" class="hamburger" onclick="myFunction()">
+            <img alt="Hamburger Menu" height="24" width="24" src="/hamburger-menu.svg">
+        </a>
+        </div>
+        <div class="nav-div" id="nav-div">
+            <ul class="nav-list">
+                
+                <li><div class="button"><a href="/about" class="button-cta2">
+                        About
+                    </a></div></li>
+                
+                <li><div class="button"><a href="/search" class="button-cta2">
+                        Search
+                    </a></div></li>
+                
+                <li><div class="button"><a href="/explore-map" class="button-cta2">
+                        Explore Map
+                    </a></div></li>
+                
+                <li><div class="button"><a href="/rankings?sort=difficulty&amp;order=desc&amp;region=usa" class="button-cta2">
+                        Mountain Rankings
+                    </a></div></li>
+                
+                <li><div class="button"><a href="/trail-rankings?region=usa" class="button-cta2">
+                        Trail Rankings
+                    </a></div></li>
+                
+                <li><div class="button"><a href="/lift-rankings?region=usa" class="button-cta2">
+                        Lift Rankings
+                    </a></div></li>
+                
+            </ul>
+        </div>
+    </div>
+
+    
+    <script>
+        /* Toggle between showing and hiding the navigation menu links when the user clicks on the hamburger menu / bar icon */
+        function myFunction() {
+            var x = document.getElementById("nav-div");
+            if (x.style.display === "block") {
+                x.style.display = "none";
+            } else {
+                x.style.display = "block";
+            }
+        } 
+    </script>
+</nav>
+
+<main>
+    
+<section id="content">
+    <div class="hero-text">
+        <h1><em>Error:</em> No Internet</h1>
+        <p>
+            You are not currently connected to the internet, and there was not an
+            existing offline version of the page you were visiting. Any pages you
+            have already visited in the app should be cached and continue to be 
+            available.
+        </p>
+    </div>
+</section>
+
+</main>
