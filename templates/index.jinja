@@ -38,6 +38,11 @@ Steep Seeker - Universal Ski Trail Rating System
             ezstandalone.showAds(101);
         });
     </script>
+    <script>
+        if (typeof navigator.serviceWorker !== 'undefined') {
+            navigator.serviceWorker.register('sw.js')
+        }
+    </script>
 
 </section>
 {% endblock content %}

@@ -7,6 +7,9 @@
   "servers": [
     {
       "url": "https://steepseeker.com"
+    },
+    {
+      "url": "https://www.steepseeker.com"
     }
   ],
   "components": {},
@@ -215,7 +218,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^.*\\.(svg|png|ico|css|txt|js)$"
+              "pattern": "^.*\\.(svg|png|ico|css|txt|js|json|xml)$"
             }
           }
         ],
@@ -265,4 +268,4 @@
       }
     }
   }
-}
+} 
