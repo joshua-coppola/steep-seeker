@@ -67,7 +67,8 @@
 .ts-form input[type=submit] {
     font-size: 1.25rem;
     color: white;
-    border: none;
+    border-width: 2px;
+    border-color: var(--color-accent-dark);
     background-color: var(--color-accent);
     padding: 0 16px;
     height: 36px;

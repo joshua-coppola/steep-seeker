@@ -91,6 +91,9 @@ select {
     width: 222px;
     height: 37px;
     font-size: 1.1rem;
+    border-width: 2px;
+    border-radius: 4px;
+    border-color: var(--color-secondary);
 }
 
 #submit {

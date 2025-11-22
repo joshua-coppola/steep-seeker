@@ -50,7 +50,7 @@ main {
     height: 40px;
     padding: 0 16px;
     border-radius: 4px;
-    border: 2px solid var(--color-primary);
+    border: 2px solid var(--color-secondary);
     color: var(--color-primary);
     font-size: 1.2rem;
 }
@@ -65,7 +65,7 @@ main {
 }
 .search-form #submit {
     color: white;
-    border: none;
+    border-color: var(--color-accent-dark);
 }
 .search-form #sort {
     background-color: transparent;

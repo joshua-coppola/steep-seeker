@@ -25,10 +25,6 @@ footer {
     max-width: 65ch;
 }
 
-.hero-links > * {
-    margin-right: 32px;
-}
-
 em {
     font-weight: bold;
 }
@@ -41,9 +37,25 @@ img {
     padding-bottom: 16px;
 }
 
-@media screen and (max-width: 700px) {
+@media screen and (max-width: 950px) {
     .hero-links > * {
-        margin-right: 0px;
+        width: fit-content;
+        line-height: 1;
+    }
+}
+
+@media screen and (max-width: 650px) {
+    .hero-links > * {
         text-align: center;
+        width: 100%;
+    }
+
+    main {
+        margin: 0;
+        padding: 0;
+    }
+
+    #content > * {
+        margin: 0;
     }
 }
