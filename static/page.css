@@ -183,9 +183,12 @@ p.copy {
     nav {
         z-index: 9;
         background-color: var(--color-background);
+        padding: 0;
+        padding-top: 4px;
     }
     #home-link {
         margin-right: 16px;
+        margin-left: 10px;
     }
 
     .top-bar {
@@ -203,6 +206,7 @@ p.copy {
     .home-div {
         display: flex;
         justify-content: space-between;
+        padding-bottom: 4px;
     }
 
     .hamburger {
@@ -210,14 +214,15 @@ p.copy {
         right: 0;
         top: 0;
         padding-top: 13px;
-        padding-right: 13px;
+        padding-right: 15px;
+        padding-left: 15px;
     }
 
     .nav-list {
-        padding-top: 8px;
         float: none;
         display: block;
         text-align: center;
+        padding-bottom: 8px;
     }
 
     .nav-list li {
