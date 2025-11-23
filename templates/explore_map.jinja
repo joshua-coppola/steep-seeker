@@ -63,7 +63,7 @@ Explore Resorts - Find Ski Resorts Across the USA
     geojson_features = L.geoJSON(locations, {onEachFeature: onEachFeature});
     map.fitBounds(geojson_features.getBounds());
 
-    var legend = L.control({ position: "bottomright" });
+    var legend = L.control({ position: "topright" });
 
     legend.onAdd = function(map) {
     var div = L.DomUtil.create("div", "legend");
