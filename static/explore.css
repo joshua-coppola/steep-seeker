@@ -33,7 +33,7 @@ footer {
     margin: 0;
     margin-top: .2rem;
     font-size: 1rem;
-    color: var(--color-secondary);
+    color: var(--color-primary);
 }
 
 .icon {

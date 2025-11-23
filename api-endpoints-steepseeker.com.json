@@ -133,6 +133,15 @@
         }
       }
     },
+    "/offline.html": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "A response"
+          }
+        }
+      }
+    },
     "/explore-map": {
       "get": {
         "responses": {

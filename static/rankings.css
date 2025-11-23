@@ -43,7 +43,7 @@ main {
     display: inline;
     margin-top: 8px;
     margin-right: 32px;
-    color: var(--color-secondary);
+    color: var(--color-primary);
 }
 
 .rankings {

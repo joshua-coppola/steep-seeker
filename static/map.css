@@ -83,7 +83,7 @@ main > * {
 }
 .mountain-section ul li {
     margin-top: 16px;
-    color: var(--color-secondary);
+    color: var(--color-primary);
     display: flex;
 }
 
@@ -98,13 +98,13 @@ main > * {
 }
 .selected-details table {
     width: 100%;
-    color: var(--color-secondary);
+    color: var(--color-primary);
 }
 .selected-details td {
     padding-bottom: 16px;
 }
 .selected-details .selected-difficulty {
-    color: var(--color-secondary);
+    color: var(--color-primary);
 }
 .difficulty-meter {
     width: 100%;

@@ -132,7 +132,7 @@ h2 {
 
 p.detail {
     font-size: 1.2rem;
-    color: var(--color-secondary);
+    color: var(--color-primary);
     min-width: 200px;
     max-width: 80ch;
 }
