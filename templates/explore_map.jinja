@@ -27,6 +27,16 @@ Explore Resorts - Find Ski Resorts Across the USA
 
 {% block content %}
 <section id="content">
+<div class="legend-mobile">
+    <ul>
+        <li><span class="icon difficulty-green"></span> Beginner</li>
+        <li><span class="icon difficulty-royalblue"></span> Intermediate</li>
+        <li><span class="icon difficulty-black"></span> Advanced</li>
+        <li><span class="icon difficulty-red"></span> Expert</li>
+        <li><span class="icon difficulty-gold"></span> Extreme</li>
+    </ul>
+</div>
+
 <div id='map'></div>
 <script>
     locations = {{geojson}}

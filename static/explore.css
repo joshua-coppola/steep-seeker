@@ -1,15 +1,17 @@
 main {
     --center-width: 100%;
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
     pointer-events: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
 }
 
 main > * {
     pointer-events: all;
+}
+
+#content > * {
+    margin-bottom: 0;
 }
 
 #map {
@@ -83,4 +85,44 @@ footer {
     height: 2rem;
     margin-right: .5rem;
     margin-top: .5rem;
+}
+
+.legend-mobile ul li {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.legend-mobile ul {
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.legend-mobile {
+    padding: 12px;
+}
+
+@media screen and (max-width: 650px) {
+    .legend {
+        display: none;
+    }
+
+    #map {
+        top: 124px;
+    }
+}
+
+@media screen and (max-width: 406px) {
+    #map {
+        top: 146px;
+    }
+}
+
+@media screen and (max-width: 277px) {
+    #map {
+        top: 191px;
+    }
 }
