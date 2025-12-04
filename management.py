@@ -147,7 +147,7 @@ def management_edit_resort():
 
         if delete:
             main.delete_item(name, state, delete, blacklist)
-            
+
 
         if url:
             database._set_url(name, state, url)
@@ -264,7 +264,9 @@ def management_edit_resort():
             coords = [[element[1], element[0], int(float(element[2]) * 100 / (2.54 * 12)), element[3]] for element in lift_points]
 
             feature['geometry']['coordinates'] = coords
-            popup_content = f'<h3>{lift.name}</h3><p>Length: {lift.length} ft</p>'
+            popup_content = f'<h3>{lift.name}</h3>'
+            popup_content += f'<p>OSM ID: {lift.lift_id}</p>'
+            popup_content += f'<p>Length: {lift.length} ft</p>'
             popup_content += f'<p>Vertical Rise: {lift.vertical} ft</p>'
             if lift.occupancy:
                 popup_content += f'<p>Occupancy: {lift.occupancy} people</p>'
@@ -275,6 +277,8 @@ def management_edit_resort():
             popup_content += '<form id="delete" class="search-form">'
             popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
             popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{lift.lift_id}">'
+            popup_content += '<input type="checkbox" id="blacklist" name="blacklist" value=True>'
+            popup_content += '<label for="blacklist">Blacklist</label><br>'
             popup_content += '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
             feature['properties']['popupContent'] = popup_content
             feature['properties']['label'] = f'{lift.name}'
