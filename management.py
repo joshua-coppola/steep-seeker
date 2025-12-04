@@ -74,6 +74,7 @@ def management_edit_resort():
         size_increase = request.args.get('size_increase')
         rotate = request.args.get('rotate')
         delete = request.args.get('delete')
+        blacklist = request.args.get('blacklist')
         trail_id = request.args.get('trail_id')
         url = request.args.get('url')
         update_passes = request.args.get('update_passes')
@@ -145,7 +146,8 @@ def management_edit_resort():
 
 
         if delete:
-            main.delete_item(name, state, delete)
+            main.delete_item(name, state, delete, blacklist)
+            
 
         if url:
             database._set_url(name, state, url)
@@ -228,6 +230,8 @@ def management_edit_resort():
             popup_content += '<form id="delete" class="search-form">'
             popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
             popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{trail.trail_id}">'
+            popup_content += '<input type="checkbox" id="blacklist" name="blacklist" value=True>'
+            popup_content += '<label for="blacklist">Blacklist</label><br>'
             popup_content += '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
         
             feature['properties']['popupContent'] = popup_content

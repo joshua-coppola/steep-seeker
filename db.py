@@ -34,7 +34,15 @@ def reset_db() -> None:
 
 
 def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()), weather_modifier: float) -> None:
+    query = 'SELECT id from Blacklist WHERE mountain_id = ?'
+    blacklist = cur.execute(query, (mountain_id,)).fetchall()
+    blacklist = {str(item[0]) for item in blacklist}
+
     for trail in trails:
+        if trail['id'] in blacklist:
+            print(f"Trail {trail['name']}:{trail['id']} blacklisted")
+            continue
+
         try:
             query = 'INSERT INTO Trails (trail_id, mountain_id, name, area, gladed, ungroomed, official_rating) \
                 VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -534,6 +542,15 @@ def delete_lift(mountain_id: int, lift_id: int) -> None:
 
     db.commit()
     db.close()
+
+
+def blacklist(mountain_id: int, item_id: int) -> None:
+    with tuple_cursor() as conn:
+        query = 'INSERT INTO Blacklist (id, mountain_id) VALUES (?, ?)'
+        params = (item_id, mountain_id)
+        conn.execute(query, params)
+
+        conn.commit()
 
 
 def fill_cache() -> None:

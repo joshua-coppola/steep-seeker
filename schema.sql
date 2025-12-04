@@ -117,3 +117,11 @@ CREATE TABLE "CachedPoints"
     "elevation" REAL,
     PRIMARY KEY("lat", "lon")
 );
+
+DROP TABLE IF EXISTS Blacklist;
+
+CREATE TABLE "Blacklist"
+(
+    "id" INTEGER PRIMARY KEY,
+    "mountain_id" INTEGER NOT NULL
+)
