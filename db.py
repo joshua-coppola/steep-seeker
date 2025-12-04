@@ -77,6 +77,10 @@ def add_trails(cur, mountain_id: int, trails: list(dict()), lifts: list(dict()),
                 print(f'{name} {trail_id} {i} is conflicting.')
 
     for lift in lifts:
+        if lift['id'] in blacklist:
+            print(f"Lift {lift['name']}:{lift['id']} blacklisted")
+            continue
+
         try:
             query = 'INSERT INTO Lifts (lift_id, mountain_id, name, occupancy, capacity, duration, detachable, bubble, heated) \
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
