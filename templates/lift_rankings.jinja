@@ -113,7 +113,7 @@ Lift Rankings - Compare Chairlifts Across the USA
                 {% else %}
                 <th><a href="{{pages.first}}&sort=length">Length</a></th>
                 {% endif %}
-                {% if sort_by == "vertical_rise / Lifts.length"%}
+                {% if sort_by == "pitch"%}
                 <th><a class="active">Average Pitch</a></th>
                 {% else %}
                 <th><a href="{{pages.first}}&sort=pitch">Average Pitch</a></th>
@@ -185,25 +185,41 @@ Lift Rankings - Compare Chairlifts Across the USA
             </table>
         </div>
         <table>
+            {% if sort_by == "vertical_rise"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
             <tr>
+            {% endif %}
                 <td style="width:50%">Vertical Rise</td>
                 <td style="width:50%">
                     {{lift.vertical}} ft
                 </td>
             </tr>
+            {% if sort_by == "length"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
             <tr>
+            {% endif %}
                 <td>Length</td>
                 <td>
                     {{lift.length}} ft
                 </td>
             </tr>
+            {% if sort_by == "pitch"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
             <tr>
+            {% endif %}
                 <td>Average Pitch</td>
                 <td>
                     {{lift.pitch}}°
                 </td>
             </tr>
+            {% if sort_by == "occupancy"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
             <tr>
+            {% endif %}
                 <td>Occupancy</td>
                 {% if lift.occupancy %}
                     {% if lift.occupancy <= 4 %}
@@ -221,7 +237,11 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <td>--</td>
                 {% endif %}
             </tr>
+            {% if sort_by == "bubble"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
             <tr>
+            {% endif %}
                 <td>Bubble</td>
                 <td>
                 {% if lift.bubble %}

@@ -61,8 +61,9 @@ body {
     --color-secondary: #666;
     --color-tertiary: #888;
     --color-accent: dodgerblue;
-    --color-accent-light: hsl(210deg, 100%, 66%);
+    --color-accent-light: hsl(210, 100%, 66%);
     --color-accent-dark: hsl(210, 100%, 40%);
+    --color-accent-very-light: hsl(210, 100.00%, 80%);
 }
 
 body.dark {

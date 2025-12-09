@@ -349,6 +349,9 @@ def lift_rankings():
     if len(urlBase) > 0 and urlBase[-1] == '&':
         urlBase = urlBase[0:-1]
     pages['first'] = f'/lift-rankings?region={region}&limit={limit}'
+    
+    if sort_by == 'vertical_rise / Lifts.length':
+        sort_by = 'pitch'
     return render_template('lift_rankings.jinja', nav_links=nav_links, active_page='lift_rankings', lifts=lifts, region=region, state=state, pages=pages, sort_by=sort_by)
 
 @app.route('/map/<string:state>/<string:name>')

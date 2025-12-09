@@ -66,9 +66,7 @@ table a {
 }
 
 th, td {
-    padding-left: 6px;
-    padding-right: 6px;
-    padding-bottom: 6px;
+    padding: 4px;
     border-right: 2px solid var(--color-primary);
 }
 
@@ -145,6 +143,7 @@ select {
 
     .mobile table {
         width: 100%;
+        margin-top: 4px;
     }
 
     .mobile ul {
