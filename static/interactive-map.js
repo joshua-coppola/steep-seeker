@@ -22,13 +22,13 @@ function run_map(trails, map){
         heightgraph_width = window_width - 632;
     }
     if(window_width <=  950){
-        heightgraph_width = window_width - 216;
+        heightgraph_width = window_width - 20;
     }
     if(window_width <= 500){
-        heightgraph_width = window_width - 52;
+        heightgraph_width = window_width - 20;
         heightgraph_height = 200;
-        position = "bottomright";
     }
+    position = "topright";
 
 
     const hg = L.control.heightgraph({
@@ -54,12 +54,26 @@ function run_map(trails, map){
             legend: "Legend"
         },
         margins: {
-            top: 10,
+            top: 30,
             right: 30,
-            bottom: 55,
+            bottom: 50,
             left: 60
         }
     }).addTo(map);
+
+    setTimeout(() => {
+        const svg = document.querySelector(".heightgraph svg");
+        if (!svg) return;
+      
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        title.setAttribute("x", "50%");
+        title.setAttribute("y", "20");
+        title.setAttribute("text-anchor", "middle");
+        title.setAttribute("class", "heightgraph-svg-title");
+        title.textContent = "Elevation Profile (No Trail Selected)";
+      
+        svg.prepend(title);
+    });
 
     function onEachFeature(feature, layer) {
         // does this feature have a property named popupContent?
@@ -206,9 +220,11 @@ function run_map(trails, map){
             json_data.push(create_height_graph_json(coordinates, difficulty_modifier, "Difficulty"));
             json_data.push(create_height_graph_json(coordinates, 0, "Steepness"));
             
+            document.querySelector(".heightgraph-svg-title").textContent = layer.feature.properties.label;
             hg.addData(json_data);
         }
         else {
+            document.querySelector(".heightgraph-svg-title").textContent = "Elevation Profile: N/A";
             hg.addData({})
         }
     }

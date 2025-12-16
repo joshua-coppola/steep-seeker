@@ -14,7 +14,7 @@ nav {
     top: 76px;
     left: 432px;
     right: 16px;
-    bottom: 116px;
+    bottom: 16px;
     z-index: -1;
 }
 
@@ -51,7 +51,7 @@ main > * {
 .mountain-details {
     position: absolute;
     top: 28px;
-    bottom: 100px;
+    bottom: 0;
     left: 0;
     width: 400px;
     height: auto;
@@ -154,8 +154,8 @@ h3 {
 
 .map-button {
     position: absolute;
-    right: 0px;
-    top: 28px;
+    left: 426px;
+    top: 38px;
     font-size: 1.2rem;
 }
 
@@ -184,8 +184,7 @@ h3 {
 }
 
 .legend-hover {
-    font-size: .8rem;
-    font-weight: bold;
+    display: none;
 }
 
 #selectionText {
@@ -197,38 +196,68 @@ h3 {
     display: none;
 }
 
+.leaflet-top {
+    margin-top: 44px;
+}
+
+.heightgraph-svg-title {
+    font-size: 1.2rem;
+}
 
 @media screen and (max-width: 950px) {
+    main {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
     .mountain-details {
         float: none;
         display: none;
-        text-align: center;
         width: 100%;
         z-index: 8;
     }
 
+    .mountain-title {
+        display: block;
+    }
+
+    .mountain-title h1 {
+        max-width: calc(100% - 111px);
+    }
+
+    .mountain-location {
+        margin-top: 8px;
+    }
 
     #map {
-        left: 16px;
+        top: 59px;
+        left: 0;
+        right: 0;
+        bottom: 0;
     }
 
     .map-button {
-        right: 0px;
+        left: 10px;
+        right: auto;
         width: auto;
         font-size: 1rem;
-    }
-
-    .map-button {
-        width: auto;
+        height: 34px
     }
 
     #hideButton {
-        display: block;
-        bottom: 100px;
-        top: auto;
-        left: 0px;
-        right: auto;
+        display: inline-flex;
+        bottom: auto;
+        top: 38px;
+        left: auto;
+        right: 10px;
         z-index: 10;
+        align-items: flex-end;
+    }
+
+    .heightgraph-container {
+        z-index: 1000;
     }
 }
 
