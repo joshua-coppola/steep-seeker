@@ -124,9 +124,16 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
     <div class="rankings">
         {% for mountain in mountains %}
         {% if sort == "difficulty" %}
-        <p>{{loop.index}}. <a href="/map/{{mountain.state}}/{{mountain.name}}"
+        <p>{{loop.index}}. 
+            <a href="/map/{{mountain.state}}/{{mountain.name}}"
                 title="Difficulty: {{mountain.difficulty}}">
-                {{mountain.name}}, {{mountain.state}}</a></p>
+                {{mountain.name}}, {{mountain.state}}
+            </a>
+            {% for season_pass in mountain.season_passes %}
+            <img src="icons/{{season_pass}}.png" class="pass-icon"/>
+            {% endfor %}
+        </p>
+        
         <div class="bar-div"><span class="{{'ranking-bar' if mountain.difficulty <= 47 else 'black-text'}}"
             title="{{mountain.name}} Difficulty: {{mountain.difficulty}}"
             style="--bar-size: {{

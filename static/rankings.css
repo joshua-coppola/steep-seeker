@@ -85,7 +85,7 @@ main {
 .links {
     display: flex;
     align-items: center;
-  }
+}
 
 select {
     width: 222px;
@@ -94,6 +94,11 @@ select {
     border-width: 2px;
     border-radius: 4px;
     border-color: var(--color-secondary);
+}
+
+.pass-icon {
+    width: 18px;
+    height: 18px;
 }
 
 #submit {
