@@ -5,6 +5,7 @@ from flask_wtf import FlaskForm
 import os
 import geojson
 from math import sqrt, degrees, atan2
+import random
 
 from data.secret import secret
 
@@ -42,6 +43,19 @@ def index():
 @app.route('/about')
 def about():
     return render_template('about.jinja', nav_links=nav_links, active_page='about')
+
+@app.route('/random-mountain')
+def random_mountain():
+    conn = database.tuple_cursor()
+
+    query = 'SELECT name, state FROM Mountains'
+    all_mountains = conn.execute(query).fetchall()
+
+    name, state = random.choice(all_mountains)
+
+    conn.close()
+
+    return redirect(url_for('map', state=state, name=name))
 
 
 @app.route('/search')
