@@ -63,7 +63,7 @@ main {
 .rankings p {
     width: 100%;
     height: 100%;
-    padding-left: 8px;
+    padding-left: 4px;
     padding-top: 4px;
 }
 .rankings .ranking-bar {
@@ -147,12 +147,12 @@ select {
 
     .rankings > .bar-div:nth-child(4n+2) {
         margin-left: 0;
-        padding-left: 8px;
+        padding-left: 4px;
         width: 100%;
     }
 
     .rankings > .bar-div {
-        padding-left: 8px;
+        padding-left: 4px;
         padding-bottom: 4px;
     }
 
