@@ -477,7 +477,7 @@ def interactive_map(state, name):
         else:
             gladed = ''
         if trail.ungroomed:
-            ungroomed = '<span>&nbsp;&nbsp;</span><i class="icon ungroomed"></i>'
+            ungroomed = '<i class="icon ungroomed"></i>'
         else:
             ungroomed = ''
         popup_content = f'<h3>{trail.name}{gladed}{ungroomed}</h3>'
