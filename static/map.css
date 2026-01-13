@@ -194,6 +194,16 @@ main > * {
     margin-right: .5rem;
 }
 
+@media screen and (max-width: 1116px){
+    .zoom-button {
+        width: auto;
+    }
+
+    .map-button {
+        width: auto;
+    }
+}
+
 
 @media screen and (max-width: 950px) {
     .mountain-details {

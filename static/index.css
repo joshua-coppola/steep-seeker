@@ -37,7 +37,7 @@ img {
     padding-bottom: 16px;
 }
 
-@media screen and (max-width: 950px) {
+@media screen and (max-width: 1116px) {
     .hero-links > * {
         width: fit-content;
         line-height: 1;

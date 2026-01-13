@@ -179,7 +179,7 @@ p.copy {
 }
 
 
-@media screen and (max-width: 950px) {
+@media screen and (max-width: 1116px) {
     nav {
         z-index: 9;
         background-color: var(--color-background);

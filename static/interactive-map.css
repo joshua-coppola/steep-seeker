@@ -204,6 +204,21 @@ h3 {
     font-size: 1.2rem;
 }
 
+@media screen and (max-width: 1116px){
+    .zoom-button {
+        width: auto;
+    }
+
+    .map-button {
+        width: auto;
+    }
+
+    #url {
+        width: auto;
+    }
+}
+
+
 @media screen and (max-width: 950px) {
     main {
         top: 0;
@@ -273,5 +288,9 @@ h3 {
 
     .legend i.icon {
         background-size: .8rem;
+    }
+
+    #url {
+        width: 100%;
     }
 }

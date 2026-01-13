@@ -33,6 +33,7 @@ nav_links.append(navigationLink('Mountain Rankings', 'rankings',
                                 '/rankings?sort=difficulty&order=desc&region=usa'))
 nav_links.append(navigationLink('Trail Rankings', 'trail_rankings', '/trail-rankings?region=usa'))
 nav_links.append(navigationLink('Lift Rankings', 'lift_rankings', '/lift-rankings?region=usa'))
+nav_links.append(navigationLink('Random Mountain', 'random_map', '/random-mountain'))
 
 
 @app.route('/')
