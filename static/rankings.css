@@ -59,6 +59,13 @@ main {
     color: var(--color-primary);
     font-size: 1.2rem;
 }
+
+.rankings p {
+    width: 100%;
+    height: 100%;
+    padding-left: 8px;
+    padding-top: 4px;
+}
 .rankings .ranking-bar {
     width: var(--bar-size);
     background-color: var(--bar-color);
@@ -106,6 +113,17 @@ select {
     margin-left: 8px;
 }
 
+.rankings > p:nth-child(4n+1),
+.rankings > .bar-div:nth-child(4n+2) {
+    background-color: rgb(243, 242, 242); /* Light gray for alternate rows */
+}
+
+.rankings > .bar-div:nth-child(4n+2) {
+    margin-left: -64px;
+    padding-left: 64px;
+    width: calc(100% + 64px);
+}
+
 @media screen and (max-width: 1116px) {
     #submit {
         width: auto;
@@ -125,6 +143,17 @@ select {
         grid-template-columns: max-content;
         display: block;
         line-height: 1.7rem;
+    }
+
+    .rankings > .bar-div:nth-child(4n+2) {
+        margin-left: 0;
+        padding-left: 8px;
+        width: 100%;
+    }
+
+    .rankings > .bar-div {
+        padding-left: 8px;
+        padding-bottom: 4px;
     }
 
     main {
