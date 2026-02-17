@@ -1,7 +1,45 @@
 function run_map(trails, map){
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
-    }).addTo(map);
+    });
+    
+    const satelliteBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+    });
+
+    topoBasemap.addTo(map);
+
+    let currentBasemap = 'topo';
+
+    L.Control.BasemapToggle = L.Control.extend({
+        onAdd: function(map) {
+            const button = L.DomUtil.create('button');
+            button.innerHTML = 'Satellite';
+            button.className = 'basemap-toggle-btn';
+            
+            button.onclick = function() {
+                if (currentBasemap === 'topo') {
+                    map.removeLayer(topoBasemap);
+                    map.addLayer(satelliteBasemap);
+                    button.innerHTML = 'Topo';
+                    currentBasemap = 'satellite';
+                } else {
+                    map.removeLayer(satelliteBasemap);
+                    map.addLayer(topoBasemap);
+                    button.innerHTML = 'Satellite';
+                    currentBasemap = 'topo';
+                }
+            };
+            
+            return button;
+        }
+    });
+
+    L.control.basemapToggle = function(opts) {
+        return new L.Control.BasemapToggle(opts);
+    }
+    
+    L.control.basemapToggle({ position: 'topright' }).addTo(map);
 
     let heightgraph_width = 800;
     let heightgraph_height = 280;

@@ -204,6 +204,29 @@ h3 {
     font-size: 1.2rem;
 }
 
+.basemap-toggle-btn {
+    background-color: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    background-clip: padding-box;
+}
+
+.basemap-toggle-btn:hover {
+    background-color: #f4f4f4;
+}
+
+.basemap-toggle-btn:active {
+    background-color: #ddd;
+}
+
+.leaflet-control-basemaptoggle {
+    order: -1; /* This puts it at the top */
+}
+
 @media screen and (max-width: 1116px){
     .zoom-button {
         width: auto;
