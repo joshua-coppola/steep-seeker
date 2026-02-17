@@ -11,7 +11,12 @@
 {% block content %}
 
 <main>
-    <div class="map-pane mountain-details">
+    <a href="javascript:void(0);" class="button-cta2 map-button" id="hideButton">
+        <img alt="Mountain Details" height="17" width="17" src="/icons/mountain_black.png">
+        &nbsp;Details&nbsp;
+        <img alt="Mountain Details" height="17" width="17" src="/hamburger-menu-light.svg">
+    </a>
+    <div class="map-pane mountain-details" id="mountain-details">
         <div class="mountain-title">
             <h1>{{mountain.name}}</h1>
             <span class="mountain-location">{{mountain.state}}</span>
@@ -100,6 +105,16 @@
         <button class="button-cta2 map-button" id="interactive"><a href="/interactive-map/{{mountain.state}}/{{mountain.name}}">Interactive Map</a></button>
     </div>
     <script>
+        document.getElementById("hideButton").addEventListener("click", function() {
+            var x = document.getElementById("mountain-details");
+            if (x.checkVisibility()) {
+                x.style.display = "none";
+            } else {
+                x.style.display = "block";
+                
+            }
+        });
+
         ezstandalone.cmd.push(function () {
             ezstandalone.showAds(124, 125, 126);
         });

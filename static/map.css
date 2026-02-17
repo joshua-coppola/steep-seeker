@@ -140,8 +140,8 @@ main > * {
 
 .zoom-buttons {
     position: absolute;
-    left: 416px;
-    top: 28px;
+    left: 424px;
+    top: 83px;
 }
 .zoom-button {
     min-width: 32px;
@@ -154,8 +154,8 @@ main > * {
 
 .map-button {
     position: absolute;
-    right: 0px;
-    top: 28px;
+    left: 424px;
+    top: 36px;
     font-size: 1.2rem;
 }
 
@@ -194,6 +194,10 @@ main > * {
     margin-right: .5rem;
 }
 
+#hideButton {
+    display: none;
+}
+
 @media screen and (max-width: 1116px){
     .zoom-button {
         width: auto;
@@ -202,13 +206,38 @@ main > * {
     .map-button {
         width: auto;
     }
+
+    #url {
+        width: auto;
+    }
 }
 
 
 @media screen and (max-width: 950px) {
+    main {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
     .mountain-details {
-        visibility: hidden;
-        width: 0px;
+        float: none;
+        display: none;
+        width: 100%;
+        z-index: 8;
+    }
+
+    .mountain-title {
+        display: block;
+    }
+
+    .mountain-title h1 {
+        max-width: calc(100% - 111px);
+    }
+
+    .mountain-location {
+        margin-top: 8px;
     }
 
     #map {
@@ -216,7 +245,7 @@ main > * {
     }
 
     .zoom-buttons {
-        left: 0px;
+        left: 10px;
     }
 
     .zoom-button {
@@ -224,8 +253,20 @@ main > * {
     }
 
     .map-button {
-        right: 0px;
+        left: 10px;
+        right: auto;
         width: auto;
         font-size: 1rem;
+        height: 34px
+    }
+
+    #hideButton {
+        display: inline-flex;
+        bottom: auto;
+        top: 38px;
+        left: auto;
+        right: 10px;
+        z-index: 10;
+        align-items: flex-end;
     }
 }
