@@ -56,7 +56,7 @@ def random_mountain():
 
     conn.close()
 
-    return redirect(url_for('interactive-map', state=state, name=name))
+    return redirect(url_for('interactive_map', state=state, name=name))
 
 
 @app.route('/search')
