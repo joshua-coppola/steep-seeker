@@ -24,7 +24,12 @@ options.append(managementButton('Edit Resort', '/management-edit-resort'))
 
 @api.app.route('/management')
 def management():
-    return render_template('management.jinja', nav_links=api.nav_links, management_links=options, active_page='management')
+    return render_template(
+        'management.jinja',
+        nav_links=api.nav_links,
+        management_links=options,
+        active_page='management'
+    )
 
 @api.app.route('/management-add-resort')
 def management_add_resort():
@@ -32,7 +37,21 @@ def management_add_resort():
     for item in os.listdir('data/osm'):
         if item.endswith('.osm'):
             available_resorts.append(item.split('.')[0])
-    return render_template('management-add-resort.jinja', nav_links=api.nav_links, management_links=options, active_page='Add Resort', resorts=available_resorts)
+
+    q = request.args.get('q')
+    if q:
+        name, state = main.add_resort(q)
+        query_param = f"{name}, {state}"
+    
+        return redirect(url_for('management_edit_resort', q=query_param))
+    
+    return render_template(
+        'management-add-resort.jinja',
+        nav_links=api.nav_links,
+        management_links=options,
+        active_page='Add Resort',
+        resorts=available_resorts
+    )
 
 @api.app.route('/management-edit-resort')
 def management_edit_resort():

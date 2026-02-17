@@ -9,7 +9,7 @@ Add Resort
 
 {% block insideContent %}
     <form id="search-form" class="search-form">
-        <select>
+        <select id="search" name="q" type="search">
         {% for resort in resorts %}
             <option value="{{resort}}">{{resort}}</option>
         {% endfor %}

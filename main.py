@@ -16,6 +16,8 @@ def add_resort(name: str) -> None:
         maps.create_map(name, state)
         maps.create_thumbnail(name, state)
 
+    return name, state
+
 
 def bulk_add_resorts() -> None:
     for item in os.listdir('data/osm'):
