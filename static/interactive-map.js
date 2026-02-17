@@ -1,4 +1,5 @@
 function run_map(trails, map){
+    // Define two basemaps
     const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
@@ -6,11 +7,14 @@ function run_map(trails, map){
     const satelliteBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri'
     });
-
+    
+    // Add the default basemap
     topoBasemap.addTo(map);
-
+    
+    // Track current basemap
     let currentBasemap = 'topo';
-
+    
+    // Create basemap toggle control
     L.Control.BasemapToggle = L.Control.extend({
         onAdd: function(map) {
             const button = L.DomUtil.create('button');
@@ -29,12 +33,16 @@ function run_map(trails, map){
                     button.innerHTML = 'Satellite';
                     currentBasemap = 'topo';
                 }
+                
+                // Update trail labels
+                updateTrailLabels();
             };
             
             return button;
         }
     });
-
+    
+    // Add the toggle control to map
     L.control.basemapToggle = function(opts) {
         return new L.Control.BasemapToggle(opts);
     }
@@ -67,7 +75,6 @@ function run_map(trails, map){
         heightgraph_height = 200;
     }
     position = "topright";
-
 
     const hg = L.control.heightgraph({
         mappings: colorMappings,
@@ -114,11 +121,19 @@ function run_map(trails, map){
     });
 
     function onEachFeature(feature, layer) {
-        // does this feature have a property named popupContent?
         if (feature.properties && feature.properties.popupContent) {
             layer.bindPopup(feature.properties.popupContent);
             if (map.getZoom() > 14) {
-                layer.setText(feature.properties.label, {offset: -5, center: true, orientation: feature.properties.orientation});
+                const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
+                layer.setText(feature.properties.label, {
+                    offset: -5, 
+                    center: true, 
+                    orientation: feature.properties.orientation,
+                    attributes: {
+                        fill: textColor,
+                        'font-size': '14px'
+                    }
+                });
             }
         }
     }
@@ -248,9 +263,7 @@ function run_map(trails, map){
         return output_feature;
     }
 
-    // Function to handle Heightgraph updates
     function addHeightGraphData(layer) {
-        // Add elevation data for the clicked trail
         if(layer.feature.geometry.type == "LineString"){
             let difficulty_modifier = layer.feature.properties.difficulty_modifier;
             let coordinates = layer.feature.geometry.coordinates;
@@ -267,6 +280,8 @@ function run_map(trails, map){
         }
     }
 
+    let geojson_features;
+
     function addTrails() {
         geojson_features = L.geoJSON(trails, {onEachFeature: onEachFeature, style: style}).addTo(map);
         map.almostOver.addLayer(geojson_features);
@@ -278,11 +293,15 @@ function run_map(trails, map){
         });
     }
 
+    function updateTrailLabels() {
+        geojson_features.removeFrom(map);
+        geojson_features.removeFrom(map.almostOver);
+        addTrails();
+    }
+
     addTrails();
     map.fitBounds(geojson_features.getBounds());
 
-    // whenever the zoom level changes, remove the layer and re-add it to 
-    // force the style to update based on the current map scale
     map.on('zoomend', function(){
         geojson_features.removeFrom(map);
         geojson_features.removeFrom(map.almostOver);
@@ -299,7 +318,7 @@ function run_map(trails, map){
 
     map.on('almost:click', function (e) {
         e.layer.openPopup();
-        const clickedLayer = e.layer; // The clicked trail layer
+        const clickedLayer = e.layer;
         if (clickedLayer) {
             addHeightGraphData(clickedLayer);
         }
@@ -308,7 +327,7 @@ function run_map(trails, map){
     var legend = L.control({ position: "bottomright" });
 
     legend.onAdd = function(map) {
-    var div = L.DomUtil.create("div", "legend");
+        var div = L.DomUtil.create("div", "legend");
         div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
         div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
         div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
@@ -319,7 +338,6 @@ function run_map(trails, map){
     };
 
     legend.addTo(map);
-
 
     L.control.locate().addTo(map);
 }
