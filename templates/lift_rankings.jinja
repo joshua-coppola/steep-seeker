@@ -132,11 +132,11 @@ Lift Rankings - Compare Chairlifts Across the USA
             {% if not '' == lift.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="/map/{{lift.state}}/{{lift.resort_name}}">
+                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state}}/{{lift.resort_name}}">
                             {{lift.name}}
                         </a></p>
                 </td>
-                <td><a href="/map/{{lift.state}}/{{lift.resort_name}}">{{lift.resort_name}}</a></td>
+                <td><a href="/interactive-map/{{lift.state}}/{{lift.resort_name}}">{{lift.resort_name}}</a></td>
                 <td>{{lift.state}}</td>
                 <td>{{lift.vertical}} ft</td>
                 <td>{{lift.length}} ft</td>
@@ -177,7 +177,7 @@ Lift Rankings - Compare Chairlifts Across the USA
             <table class="header">
                 <tr>
                     <td>
-                        {{pages.offset + loop.index}}. <a href="/map/{{lift.state}}/{{lift.resort_name}}">
+                        {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state}}/{{lift.resort_name}}">
                                 {{lift.name}}, {{lift.resort_name}} ({{lift.state}})
                             </a>
                     </td>

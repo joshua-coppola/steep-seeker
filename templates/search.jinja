@@ -57,11 +57,11 @@ Search Ski Resorts
     <ul class="results">
         {% for mountain in mountains %}
         <li class="result">
-            <a href="/map/{{mountain.state}}/{{mountain.name}}">
+            <a href="/interactive-map/{{mountain.state}}/{{mountain.name}}">
                 <img alt="{{mountain.name}} - {{mountain.state}}" class="thumbnail" src="thumbnails/{{mountain.state}}/{{mountain.name}}.svg" width=125px
                     height=100px />
             </a>
-            <h2><a href="/map/{{mountain.state}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>
+            <h2><a href="/interactive-map/{{mountain.state}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>
             <div>
                 {% if mountain.difficulty > 0 %}
                 {% if mountain.beginner_friendliness > 12 %}
@@ -90,7 +90,7 @@ Search Ski Resorts
             <p class="copy">
                 {{mountain.state}} — {{mountain.trail_count}} Trails — {{mountain.vertical}}' Vertical
             </p>
-            <a class="map-link" href="/map/{{mountain.state}}/{{mountain.name}}">View map</a>
+            <a class="map-link" href="/interactive-map/{{mountain.state}}/{{mountain.name}}">View map</a>
         </li>
         {% endfor %}
         {% if not mountains %}

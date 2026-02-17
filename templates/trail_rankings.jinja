@@ -159,7 +159,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% if not '' == trail.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="/map/{{trail.state}}/{{trail.resort_name}}">
+                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state}}/{{trail.resort_name}}">
                             {{trail.name}}
                             {% if trail.gladed == True %}
                             <span class="icon gladed"></span>
@@ -169,7 +169,7 @@ Trail Rankings - Find the Hardest Trails in the USA
                             {% endif %}
                         </a></p>
                 </td>
-                <td><a href="/map/{{trail.state}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
+                <td><a href="/interactive-map/{{trail.state}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
                 <td>{{trail.state}}</td>
                 <td>
                     {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
@@ -317,7 +317,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             <table class="header">
                 <tr>
                     <td>
-                        <p>{{pages.offset + loop.index}}. <a href="/map/{{trail.state}}/{{trail.resort_name}}">
+                        <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state}}/{{trail.resort_name}}">
                                 {{trail.name}}, {{trail.resort_name}} ({{trail.state}})
                                 {% if trail.gladed == True %}
                                 <span class="icon gladed"></span>

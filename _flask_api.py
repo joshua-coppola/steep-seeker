@@ -415,7 +415,7 @@ def explore_map():
         feature['properties']['difficulty'] = mountain.difficulty
         feature['properties']['beginner_friendliness'] = mountain.beginner_friendliness
         feature['properties']['size'] = mountain.vertical**(1/3) / 20
-        href = f'<a href="/map/{mountain.state}/{mountain.name}">{mountain.name}</a>'
+        href = f'<a href="/interactive-map/{mountain.state}/{mountain.name}">{mountain.name}</a>'
         difficulty_color = _misc.trail_color(mountain.difficulty)
         beginner_color = 'gold'
         if mountain.beginner_friendliness > -17:
