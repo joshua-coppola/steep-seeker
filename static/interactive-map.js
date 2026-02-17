@@ -5,7 +5,7 @@ function run_map(trails, map){
     });
     
     const satelliteBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri'
+        attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
     
     // Add the default basemap
