@@ -5,15 +5,21 @@ Add Resort
 {% endblock title %}
 
 {% block pagehead %}
+<link href="/management-edit-resort.css" rel="stylesheet" />
+<link href="/management-add-resort.css" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block insideContent %}
-    <form id="search-form" class="search-form">
+    <form id="search-form" class="search-form" method="POST" enctype="multipart/form-data">
         <select id="search" name="q" type="search">
-        {% for resort in resorts %}
-            <option value="{{resort}}">{{resort}}</option>
-        {% endfor %}
+            <option value="none" selected disabled hidden>Select a File</option>
+            {% for resort in resorts %}
+                <option value="{{resort}}">{{resort}}</option>
+            {% endfor %}
         </select>
+        <br>
+        <input type="file" id="file" name="file" accept=".osm" />
+        <br>
         <input class="button-cta" id="submit" type="submit" value="Add" />
     </form>
 {% endblock insideContent %}

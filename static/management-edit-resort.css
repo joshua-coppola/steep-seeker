@@ -18,3 +18,11 @@ ul {
 h2 {
     padding-top: 1rem;
 }
+
+select {
+    height: 32px;
+}
+
+input:not([type="checkbox"]) {
+    height: 32px;
+}

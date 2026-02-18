@@ -31,19 +31,34 @@ def management():
         active_page='management'
     )
 
-@api.app.route('/management-add-resort')
+@api.app.route('/management-add-resort', methods=['GET', 'POST'])
 def management_add_resort():
     available_resorts = []
     for item in os.listdir('data/osm'):
         if item.endswith('.osm'):
             available_resorts.append(item.split('.')[0])
-
-    q = request.args.get('q')
-    if q:
-        name, state = main.add_resort(q)
-        query_param = f"{name}, {state}"
     
-        return redirect(url_for('management_edit_resort', q=query_param))
+    if request.method == 'POST':
+        # Check if user selected from dropdown
+        q = request.form.get('q')
+        
+        # Check if user uploaded a file
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and file.filename != '' and file.filename.endswith('.osm'):
+                # Save the uploaded file
+                filename = file.filename
+                filepath = os.path.join('data/osm', filename)
+                file.save(filepath)
+                
+                # Use the uploaded file name (without .osm extension)
+                q = filename.rsplit('.', 1)[0]
+        
+        # Process the resort (either from dropdown or uploaded file)
+        if q and q != 'none':
+            name, state = main.add_resort(q)
+            query_param = f"{name}, {state}"
+            return redirect(url_for('management_edit_resort', q=query_param))
     
     return render_template(
         'management-add-resort.jinja',
