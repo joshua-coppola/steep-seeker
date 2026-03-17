@@ -160,6 +160,49 @@ Edit Resort
         <input id="confirmation" name="delete_resort" type="search" placeholder="Type 'DELETE' to confirm" />
         <input class="button-cta" id="submit" type="submit" value="Delete Resort" />
     </form>
+    <div class="mountain-section">
+        <h2>Trails - Sorted by Difficulty</h2>
+        <ul>
+            <li><span class="icon gladed"></span>Gladed</li>
+            <li><span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>Ungroomed/Moguls</li>
+            {% for trail in trails %}
+            {% if not '' == trail.name %}
+            <li>
+                {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
+                    {% else %}
+                    {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
+                        {% else %}
+                        {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
+                            {% else %}
+                            {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
+                                {% else %}
+                                <span class="icon difficulty-gold"></span>
+                                {% endif %}
+                                {% endif %}
+                                {% endif %}
+                                {% endif %}
+                                {{trail.steepest_30m}}° - {{trail.name}}
+                                {% if trail.gladed == True %}
+                                <span> </span><span class="icon gladed"></span>
+                                {% endif %}
+                                {% if trail.ungroomed == True %}
+                                <span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>
+                                {% endif %}
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="mountain-section">
+        <h2>Lifts</h2>
+        <ul>
+            {% for lift in lifts %}
+            {% if not '' == lift.name %}
+            <li>{{lift.name}} - {{lift.length}} ft</li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
     <script>
         let trails = {{geojson}}
 
