@@ -59,7 +59,7 @@ def random_mountain():
     return redirect(url_for('interactive_map', state=state, name=name))
 
 
-@app.route('/search')
+@app.route('/search', methods=['GET', 'POST'])
 def search():
     # parsing query string for database search
     search_string = ''

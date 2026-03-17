@@ -168,6 +168,7 @@ def management_edit_resort():
             gladed = request.args.get('gladed')
             ungroomed = request.args.get('ungroomed')
             area = request.args.get('area')
+            difficulty = request.args.get('difficulty')
 
             if not gladed:
                 gladed = False
@@ -259,8 +260,9 @@ def management_edit_resort():
                 checked = ''
             popup_content += f'<input type="checkbox" id="area" name="area" value=True {checked}>'
             popup_content += '<label for="area">Area</label><br>'
+            popup_content += f'<input type="number" value="{trail.difficulty}" id="difficulty" name="difficulty" step=".1">'
+            popup_content += '<label for="difficulty"> Manual Difficulty</label>'
             popup_content += '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
-
             popup_content += '<form id="delete" class="search-form">'
             popup_content += f'<input type="hidden" name="q" id="q" value="{name}, {state}">'
             popup_content += f'<input type="hidden" name="delete" id="delete_item" value="{trail.trail_id}">'
