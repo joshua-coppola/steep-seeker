@@ -121,6 +121,9 @@ def management_edit_resort():
         main.delete_resort(name, state)
         q = None
 
+    trails = []
+    lifts = []
+
     if q:
         full_refresh = request.args.get("full_refresh")
         stats_refresh = request.args.get("stats_refresh")
