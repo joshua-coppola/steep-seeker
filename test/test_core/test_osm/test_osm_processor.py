@@ -48,8 +48,12 @@ def test_get_trails(osm_file, monkeypatch):
 
     trails = osm_processor_instance.get_trails()
 
-    assert len(trails) > 0
+    assert len(trails) == 159
     assert isinstance(trails, dict)
+    # Non Area Example
+    assert len(trails["w11"].geometry["coordinates"]) == 19
+    # Area Example
+    assert len(trails["w10"].geometry["coordinates"][0]) == 36
     
     for trail_id, trail in trails.items():
         coords = trail.geometry["coordinates"]
