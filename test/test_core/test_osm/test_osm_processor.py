@@ -1,8 +1,19 @@
 from uuid import UUID
 from shapely import Point
+import requests
 
 from core.osm.osm_processor import OSMProcessor
 from core.datamodels.state import State
+
+
+class FakeResponse:
+    def __init__(self, status_code=200, results=None):
+        self.status_code = status_code
+        self._results = results or []
+        self.text = "fake response"
+
+    def json(self):
+        return {"results": self._results}
 
 
 def test_OSMProcessor(osm_file):
@@ -19,13 +30,23 @@ def test_OSMProcessor(osm_file):
     assert osm_processor.mountain_id == UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
 
 
-def test_get_trails(osm_file):
+def test_get_trails(osm_file, monkeypatch):
+    fake_results = [
+        {"elevation": 1600},
+        {"elevation": 1700},
+    ]
+
+    def fake_get(url):
+        return FakeResponse(200, fake_results)
+
+    #monkeypatch.setattr(requests, "get", fake_get)
+
     osm_processor = OSMProcessor(osm_file)
 
     trails = osm_processor.get_trails()
 
     assert len(trails) == 159
-    assert len(trails["w10"].geometry) == 1420
+    assert len(trails["w10"].geometry["coordinates"]) == 36
 
 
 def test_get_lifts(osm_file):

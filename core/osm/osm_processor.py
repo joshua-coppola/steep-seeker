@@ -17,7 +17,7 @@ from core.support.utils import (
     polygon_interior_grid,
 )
 from core.datamodels.state import State
-from core.connectors.api import get_elevation
+from core.connectors.api import Elevation
 
 
 ## Todo: handle multiline relations
@@ -209,7 +209,13 @@ class OSMProcessor:
         are the trail IDs.
         """
         trail_objects = {}
+        count = 0
+        elevation_api = Elevation()
+
         for trail_id in self.trails:
+            count += 1
+            if count > 5:
+                break
             trail = self.trails[trail_id]
             nodes = trail["nodes"]
             node_array = []
@@ -217,25 +223,22 @@ class OSMProcessor:
                 point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
                 node_array.append(point)
 
-            try:
-                if not trail["area"]:
-                    geometry = space_line_points_evenly(shapely.LineString(node_array))
-                    geometry_json = json.loads(shapely.to_geojson(geometry))
-                    geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"]]
-                    geometry_json["coordinates"] = get_elevation(geometry_json["coordinates"])
-                    interior_geometry = None
-                else:
-                    geometry = space_polygon_exterior_points_evenly(
-                        shapely.Polygon(node_array)
-                    )
-                    geometry_json = json.loads(shapely.to_geojson(geometry))
-                    geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"][0]]
-                    #geometry_json["coordinates"] = [get_elevation(geometry_json["coordinates"][0])]
-                    interior_geometry = shapely.to_geojson(polygon_interior_grid(geometry))
-            except:
-                print('failed here')
+            interior_geometry = None
 
-            #print(geometry_json)
+            if not trail["area"]:
+                geometry = space_line_points_evenly(shapely.LineString(node_array))
+                geometry_json = json.loads(shapely.to_geojson(geometry))
+                geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"]]
+                geometry_json["coordinates"] = elevation_api.get(geometry_json["coordinates"])
+            else:
+                geometry = space_polygon_exterior_points_evenly(
+                    shapely.Polygon(node_array)
+                )
+                geometry_json = json.loads(shapely.to_geojson(geometry))
+                geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"][0]]
+                geometry_json["coordinates"] = [elevation_api.get(geometry_json["coordinates"])]
+                interior_geometry = json.loads(shapely.to_geojson(polygon_interior_grid(geometry)))
+                interior_geometry["coordinates"] = elevation_api.get(interior_geometry["coordinates"])
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
