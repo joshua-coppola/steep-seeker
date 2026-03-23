@@ -209,13 +209,9 @@ class OSMProcessor:
         are the trail IDs.
         """
         trail_objects = {}
-        count = 0
         elevation_api = Elevation()
 
         for trail_id in self.trails:
-            count += 1
-            if count > 5:
-                break
             trail = self.trails[trail_id]
             nodes = trail["nodes"]
             node_array = []
