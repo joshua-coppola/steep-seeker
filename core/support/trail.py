@@ -16,7 +16,7 @@ class Trail:
 
     trail_id: str
     mountain_id: int
-    geometry: LineString, Polygon
+    geometry: LineString | Polygon
     name: str
     official_rating: str
     gladed: bool
