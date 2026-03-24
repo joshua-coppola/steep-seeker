@@ -40,6 +40,7 @@ def trail():
         TrailTable.trail_id: "w1000",
         TrailTable.mountain_id: 1,
         TrailTable.geometry: LineString([[1, 1], [0, 0]]),
+        TrailTable.interior_geometry: LineString([[1, 1], [0, 0]]),
         TrailTable.name: "Test",
         TrailTable.official_rating: "Expert",
         TrailTable.gladed: True,

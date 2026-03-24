@@ -224,17 +224,31 @@ class OSMProcessor:
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
                 geometry_json = json.loads(shapely.to_geojson(geometry))
-                geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"]]
-                geometry_json["coordinates"] = elevation_api.get(geometry_json["coordinates"])
+                geometry_json["coordinates"] = [
+                    [round(Decimal(i), 6) for i in nested]
+                    for nested in geometry_json["coordinates"]
+                ]
+                geometry_json["coordinates"] = elevation_api.get(
+                    geometry_json["coordinates"]
+                )
             else:
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
                 geometry_json = json.loads(shapely.to_geojson(geometry))
-                geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"][0]]
-                geometry_json["coordinates"] = [elevation_api.get(geometry_json["coordinates"])]
-                interior_geometry = json.loads(shapely.to_geojson(polygon_interior_grid(geometry)))
-                interior_geometry["coordinates"] = elevation_api.get(interior_geometry["coordinates"])
+                geometry_json["coordinates"] = [
+                    [round(Decimal(i), 6) for i in nested]
+                    for nested in geometry_json["coordinates"][0]
+                ]
+                geometry_json["coordinates"] = [
+                    elevation_api.get(geometry_json["coordinates"])
+                ]
+                interior_geometry = json.loads(
+                    shapely.to_geojson(polygon_interior_grid(geometry))
+                )
+                interior_geometry["coordinates"] = elevation_api.get(
+                    interior_geometry["coordinates"]
+                )
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
@@ -272,8 +286,13 @@ class OSMProcessor:
 
             geometry = space_line_points_evenly(shapely.LineString(node_array))
             geometry_json = json.loads(shapely.to_geojson(geometry))
-            geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"]]
-            geometry_json["coordinates"] = elevation_api.get(geometry_json["coordinates"])
+            geometry_json["coordinates"] = [
+                [round(Decimal(i), 6) for i in nested]
+                for nested in geometry_json["coordinates"]
+            ]
+            geometry_json["coordinates"] = elevation_api.get(
+                geometry_json["coordinates"]
+            )
 
             lift_dict = {}
             lift_dict["lift_id"] = lift["id"]

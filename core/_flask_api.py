@@ -1,5 +1,3 @@
-import sys
-import sqlite3
 from flask import (
     Flask,
     render_template,
@@ -7,15 +5,9 @@ from flask import (
     redirect,
     url_for,
     request,
-    flash,
-    session,
-    request,
     Response,
 )
-from flask_wtf import FlaskForm
-import os
-import geojson
-from math import sqrt, degrees, atan2
+from math import degrees, atan2
 import random
 
 from data.secret import secret
@@ -452,6 +444,7 @@ def lift_rankings():
         sort_by=sort_by,
     )
 
+
 @app.route("/map/<string:state>/<string:name>")
 def map(state, name):
     mountain = Mountain(name, state)
@@ -521,12 +514,12 @@ def explore_map():
         feature["properties"]["popupContent"] = f"<h3>{href}</h3>"
         if mountain.season_passes:
             for season_pass in mountain.season_passes:
-                feature["properties"][
-                    "popupContent"
-                ] += f'<img src="icons/{season_pass}.png" class="pass-icon"/>'
-        feature["properties"][
-            "popupContent"
-        ] += f'<p>Vertical: {mountain.vertical} ft</p><p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+                feature["properties"]["popupContent"] += (
+                    f'<img src="icons/{season_pass}.png" class="pass-icon"/>'
+                )
+        feature["properties"]["popupContent"] += (
+            f'<p>Vertical: {mountain.vertical} ft</p><p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p><p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+        )
         feature["properties"]["icon"] = f"icons/mountain_{difficulty_color}.png"
         geojson["features"].append(feature)
 

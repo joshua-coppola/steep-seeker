@@ -1,17 +1,9 @@
-import sys
-import sqlite3
 from flask import (
-    Flask,
     render_template,
-    json,
     redirect,
     url_for,
     request,
-    flash,
-    session,
-    request,
 )
-from flask_wtf import FlaskForm
 import os
 from math import degrees, atan2
 
@@ -132,7 +124,6 @@ def management_edit_resort():
         size_increase = request.args.get("size_increase")
         rotate = request.args.get("rotate")
         delete = request.args.get("delete")
-<<<<<<< HEAD
         blacklist = request.args.get("blacklist")
         trail_id = request.args.get("trail_id")
         url = request.args.get("url")

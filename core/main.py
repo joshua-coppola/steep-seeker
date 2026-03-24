@@ -163,7 +163,7 @@ def delete_item(resort_name, state, item_id, blacklist=False) -> None:
     mountain_id = db.get_mountain_id(resort_name, state)
     db.delete_trail(mountain_id, item_id)
     db.delete_lift(mountain_id, item_id)
-    if blacklist == "True" or blacklist == True:
+    if blacklist == "True" or blacklist:
         db.blacklist(mountain_id, item_id)
     maps.create_map(resort_name, state)
     maps.create_thumbnail(resort_name, state)

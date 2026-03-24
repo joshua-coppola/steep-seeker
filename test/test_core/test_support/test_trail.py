@@ -17,6 +17,7 @@ def test_trail_from_db(trail, db_path):
                 {TrailTable.trail_id},
                 {TrailTable.mountain_id},
                 {TrailTable.geometry},
+                {TrailTable.interior_geometry},
                 {TrailTable.name},
                 {TrailTable.official_rating},
                 {TrailTable.gladed},
@@ -29,12 +30,13 @@ def test_trail_from_db(trail, db_path):
                 {TrailTable.max_slope},
                 {TrailTable.average_slope}
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             trail.trail_id,
             trail.mountain_id,
             str(trail.geometry),
+            str(trail.interior_geometry),
             trail.name,
             trail.official_rating,
             trail.gladed,
@@ -70,6 +72,7 @@ def test_trail_to_db(trail, db_path):
         TrailTable.trail_id: "w1000",
         TrailTable.mountain_id: 1,
         TrailTable.geometry: "LINESTRING (1 1, 0 0)",
+        TrailTable.interior_geometry: "LINESTRING (1 1, 0 0)",
         TrailTable.name: "Test",
         TrailTable.official_rating: "Expert",
         TrailTable.gladed: 1,

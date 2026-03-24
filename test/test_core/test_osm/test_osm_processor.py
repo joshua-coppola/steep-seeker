@@ -1,29 +1,11 @@
 from uuid import UUID
 from shapely import Point
-import requests
 
+from core.osm import osm_processor
 from core.osm.osm_processor import OSMProcessor
 from core.datamodels.state import State
 
-
-class FakeResponse:
-    def __init__(self, status_code=200, results=None):
-        self.status_code = status_code
-        self._results = results or []
-        self.text = "fake response"
-
-    def json(self):
-        return {"results": self._results}
-
-class FakeElevation:
-        last_called = 0.0
-
-        def __init__(self):
-            pass
-        
-        def get(self, nodes, spacing=100):
-            """Mock elevation API - adds elevation of 1500 to each coordinate"""
-            return [[lon, lat, 1500.0] for lon, lat in nodes]
+from test.test_core.conftest import FakeElevation
 
 
 def test_OSMProcessor(osm_file):
@@ -41,9 +23,8 @@ def test_OSMProcessor(osm_file):
 
 
 def test_get_trails(osm_file, monkeypatch):
-    from core.osm import osm_processor
-    monkeypatch.setattr(osm_processor, 'Elevation', FakeElevation)
-    
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+
     osm_processor_instance = osm_processor.OSMProcessor(osm_file)
 
     trails = osm_processor_instance.get_trails()
@@ -54,10 +35,10 @@ def test_get_trails(osm_file, monkeypatch):
     assert len(trails["w11"].geometry["coordinates"]) == 19
     # Area Example
     assert len(trails["w10"].geometry["coordinates"][0]) == 36
-    
+
     for trail_id, trail in trails.items():
         coords = trail.geometry["coordinates"]
-        
+
         # Handle both LineString and Polygon coordinate structures
         if trail.area:
             # For polygons, coordinates are nested one level deeper
@@ -67,18 +48,19 @@ def test_get_trails(osm_file, monkeypatch):
         else:
             # For lines, coordinates are flat
             actual_coords = coords
-        
+
         # Now check that coordinates have elevation
-        assert all(len(coord) == 3 for coord in actual_coords), \
+        assert all(len(coord) == 3 for coord in actual_coords), (
             f"Trail {trail_id}: Not all coords have 3 values. Sample: {actual_coords[:3]}"
-        assert all(coord[2] == 1500.0 for coord in actual_coords), \
+        )
+        assert all(coord[2] == 1500.0 for coord in actual_coords), (
             f"Trail {trail_id}: Not all elevations are 1500. Sample: {actual_coords[:3]}"
+        )
 
 
 def test_get_lifts(osm_file, monkeypatch):
-    from core.osm import osm_processor
-    monkeypatch.setattr(osm_processor, 'Elevation', FakeElevation)
-    
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+
     osm_processor_instance = osm_processor.OSMProcessor(osm_file)
 
     lifts = osm_processor_instance.get_lifts()

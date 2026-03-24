@@ -1,16 +1,7 @@
 import pytest
 import requests
-from core.connectors.api import get_elevation
-
-
-class FakeResponse:
-    def __init__(self, status_code=200, results=None):
-        self.status_code = status_code
-        self._results = results or []
-        self.text = "fake response"
-
-    def json(self):
-        return {"results": self._results}
+from core.connectors.api import Elevation
+from test.test_core.conftest import FakeResponse
 
 
 def test_get_elevation_success(monkeypatch):
@@ -28,7 +19,7 @@ def test_get_elevation_success(monkeypatch):
     monkeypatch.setattr(requests, "get", fake_get)
 
     # Act
-    result = get_elevation(nodes, spacing=100)
+    result = Elevation().get(nodes, spacing=100)
 
     # Assert
     assert len(result) == 2
@@ -45,11 +36,11 @@ def test_get_elevation_api_failure(monkeypatch):
     monkeypatch.setattr(requests, "get", fake_get)
 
     with pytest.raises(RuntimeError) as excinfo:
-        get_elevation(nodes)
+        Elevation().get(nodes)
 
     assert "Elevation API call failed" in str(excinfo.value)
 
 
 def test_get_elevation_empty_nodes():
     # Should just return empty list if input is empty
-    assert get_elevation([]) == []
+    assert Elevation().get([]) == []

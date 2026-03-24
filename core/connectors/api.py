@@ -24,6 +24,7 @@ class Elevation:
         def divide_chunks(full_list, n):
             for i in range(0, len(full_list), n):
                 yield full_list[i : i + n]
+
         url = "https://api.opentopodata.org/v1/ned10m?locations={}"
 
         results: List[Tuple[float, float, float]] = []
