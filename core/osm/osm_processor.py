@@ -6,6 +6,7 @@ from math import degrees, atan2
 from typing import Dict
 import json
 from decimal import Decimal
+from rich.progress import track
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
@@ -211,7 +212,7 @@ class OSMProcessor:
         trail_objects = {}
         elevation_api = Elevation()
 
-        for trail_id in self.trails:
+        for trail_id in track(self.trails):
             trail = self.trails[trail_id]
             nodes = trail["nodes"]
             node_array = []
@@ -276,7 +277,7 @@ class OSMProcessor:
         """
         elevation_api = Elevation()
         lift_objects = {}
-        for lift_id in self.lifts:
+        for lift_id in track(self.lifts):
             lift = self.lifts[lift_id]
             nodes = lift["nodes"]
             node_array = []

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, fields
 from typing import Self, Optional
-from shapely import wkt
+from shapely import LineString, Polygon, wkt
 
 from core.connectors.database import cursor, DATABASE_PATH
 from core.datamodels.database import TrailTable
@@ -16,7 +16,7 @@ class Trail:
 
     trail_id: str
     mountain_id: int
-    geometry: str
+    geometry: LineString, Polygon
     name: str
     official_rating: str
     gladed: bool
