@@ -16,7 +16,7 @@ class Trail:
 
     trail_id: str
     mountain_id: int
-    geometry: LineString | Polygon
+    geometry: LineString, Polygon
     name: str
     official_rating: str
     gladed: bool
@@ -28,6 +28,7 @@ class Trail:
     difficulty: Optional[float] = None
     max_slope: Optional[float] = None
     average_slope: Optional[float] = None
+    interior_geometry: Optional[str] = ""
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
@@ -43,6 +44,7 @@ class Trail:
 
         result = dict(result)
         result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
+        result[TrailTable.interior_geometry] = wkt.loads(result[TrailTable.interior_geometry])
         result[TrailTable.gladed] = bool(result[TrailTable.gladed])
         result[TrailTable.area] = bool(result[TrailTable.area])
         result[TrailTable.ungroomed] = bool(result[TrailTable.ungroomed])
@@ -59,12 +61,16 @@ class Trail:
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
 
+        if self.interior_geometry == "" and self.area:
+            raise ValueError("The following fields are missing: interior_geometry")
+
         with cursor(db_path=db_path) as cur:
             query = f"""
                 INSERT INTO Trails (
                     {TrailTable.trail_id},
                     {TrailTable.mountain_id},
                     {TrailTable.geometry},
+                    {TrailTable.interior_geometry},
                     {TrailTable.name},
                     {TrailTable.official_rating},
                     {TrailTable.gladed},
@@ -77,10 +83,11 @@ class Trail:
                     {TrailTable.max_slope},
                     {TrailTable.average_slope}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
+                    {TrailTable.interior_geometry} = excluded.{TrailTable.interior_geometry},
                     {TrailTable.name} = excluded.{TrailTable.name},
                     {TrailTable.official_rating} = excluded.{TrailTable.official_rating},
                     {TrailTable.gladed} = excluded.{TrailTable.gladed},
@@ -97,6 +104,7 @@ class Trail:
                 self.trail_id,
                 self.mountain_id,
                 str(self.geometry),
+                str(self.interior_geometry),
                 self.name,
                 self.official_rating,
                 self.gladed,

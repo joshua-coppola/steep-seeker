@@ -4,13 +4,21 @@ import uuid
 from united_states import UnitedStates
 from math import degrees, atan2
 from typing import Dict
+import json
+from decimal import Decimal
+from rich.progress import track
 
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_trails, identify_lifts
 from core.support.trail import Trail
 from core.support.lift import Lift
-from core.support.utils import space_line_points_evenly
+from core.support.utils import (
+    space_line_points_evenly,
+    space_polygon_exterior_points_evenly,
+    polygon_interior_grid,
+)
 from core.datamodels.state import State
+from core.connectors.api import Elevation
 
 
 ## Todo: handle multiline relations
@@ -30,7 +38,6 @@ class OSMProcessor:
         self.nodes = osm_handler.nodes
         self.ways = osm_handler.ways
         self.relations = osm_handler.relations
-
         self.mountain_id = mountain_id
         if not self.mountain_id:
             # generate a UUID based on the latiude/longitude and name of the mountain
@@ -203,7 +210,9 @@ class OSMProcessor:
         are the trail IDs.
         """
         trail_objects = {}
-        for trail_id in self.trails:
+        elevation_api = Elevation()
+
+        for trail_id in track(self.trails):
             trail = self.trails[trail_id]
             nodes = trail["nodes"]
             node_array = []
@@ -211,14 +220,41 @@ class OSMProcessor:
                 point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
                 node_array.append(point)
 
+            interior_geometry = None
+
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
+                geometry_json = json.loads(shapely.to_geojson(geometry))
+                geometry_json["coordinates"] = [
+                    [round(Decimal(i), 6) for i in nested]
+                    for nested in geometry_json["coordinates"]
+                ]
+                geometry_json["coordinates"] = elevation_api.get(
+                    geometry_json["coordinates"]
+                )
             else:
-                geometry = shapely.Polygon(node_array)
+                geometry = space_polygon_exterior_points_evenly(
+                    shapely.Polygon(node_array)
+                )
+                geometry_json = json.loads(shapely.to_geojson(geometry))
+                geometry_json["coordinates"] = [
+                    [round(Decimal(i), 6) for i in nested]
+                    for nested in geometry_json["coordinates"][0]
+                ]
+                geometry_json["coordinates"] = [
+                    elevation_api.get(geometry_json["coordinates"])
+                ]
+                interior_geometry = json.loads(
+                    shapely.to_geojson(polygon_interior_grid(geometry))
+                )
+                interior_geometry["coordinates"] = elevation_api.get(
+                    interior_geometry["coordinates"]
+                )
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
-            trail_dict["geometry"] = shapely.to_geojson(geometry)
+            trail_dict["geometry"] = geometry_json
+            trail_dict["interior_geometry"] = interior_geometry
             trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():
@@ -239,8 +275,9 @@ class OSMProcessor:
         lift in the dict. Returns a dict of Lift objects where the dict keys
         are the lift IDs.
         """
+        elevation_api = Elevation()
         lift_objects = {}
-        for lift_id in self.lifts:
+        for lift_id in track(self.lifts):
             lift = self.lifts[lift_id]
             nodes = lift["nodes"]
             node_array = []
@@ -249,10 +286,18 @@ class OSMProcessor:
                 node_array.append(point)
 
             geometry = space_line_points_evenly(shapely.LineString(node_array))
+            geometry_json = json.loads(shapely.to_geojson(geometry))
+            geometry_json["coordinates"] = [
+                [round(Decimal(i), 6) for i in nested]
+                for nested in geometry_json["coordinates"]
+            ]
+            geometry_json["coordinates"] = elevation_api.get(
+                geometry_json["coordinates"]
+            )
 
             lift_dict = {}
             lift_dict["lift_id"] = lift["id"]
-            lift_dict["geometry"] = shapely.to_geojson(geometry)
+            lift_dict["geometry"] = geometry_json
             lift_dict["mountain_id"] = self.mountain_id
 
             for key in lift.keys():

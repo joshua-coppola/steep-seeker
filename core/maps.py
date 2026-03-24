@@ -153,10 +153,8 @@ def populate_map(
         lat_mirror = lon_mirror
         lon_mirror = temp
         x_data = "lon"
-        y_data = "lat"
     if not flip_lat_lon:
         x_data = "lat"
-        y_data = "lon"
 
     fig = plt.gcf()
     # line width between .4 - 2

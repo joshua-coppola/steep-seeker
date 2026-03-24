@@ -8,6 +8,9 @@ from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.connectors.database import cursor
 from core.datamodels.database import MountainTable
+from core.osm import osm_processor
+
+from test.test_core.conftest import FakeElevation
 
 
 def test_mountain(mountain):
@@ -164,7 +167,9 @@ def test_mountain_to_db(mountain, db_path):
     assert "fields are missing" in str(exc_info)
 
 
-def test_mountain_from_osm(osm_file):
+def test_mountain_from_osm(osm_file, monkeypatch):
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+
     season_passes = [Season_Pass.EPIC, Season_Pass.IKON]
     url = "https://test.com"
     mountain = Mountain.from_osm(osm_file, season_passes, url)

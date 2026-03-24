@@ -111,6 +111,7 @@ numpy==2.3.0
     #   shapely
 osmium==4.0.2
     # via -r requirements.in
+nodeenv==1.9.1
 packaging==25.0
     # via
     #   build
