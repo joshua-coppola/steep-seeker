@@ -260,6 +260,7 @@ class OSMProcessor:
         lift in the dict. Returns a dict of Lift objects where the dict keys
         are the lift IDs.
         """
+        elevation_api = Elevation()
         lift_objects = {}
         for lift_id in self.lifts:
             lift = self.lifts[lift_id]
@@ -270,10 +271,13 @@ class OSMProcessor:
                 node_array.append(point)
 
             geometry = space_line_points_evenly(shapely.LineString(node_array))
+            geometry_json = json.loads(shapely.to_geojson(geometry))
+            geometry_json["coordinates"] = [[round(Decimal(i), 6) for i in nested] for nested in geometry_json["coordinates"]]
+            geometry_json["coordinates"] = elevation_api.get(geometry_json["coordinates"])
 
             lift_dict = {}
             lift_dict["lift_id"] = lift["id"]
-            lift_dict["geometry"] = shapely.to_geojson(geometry)
+            lift_dict["geometry"] = geometry_json
             lift_dict["mountain_id"] = self.mountain_id
 
             for key in lift.keys():

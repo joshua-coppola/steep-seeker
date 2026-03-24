@@ -15,6 +15,16 @@ class FakeResponse:
     def json(self):
         return {"results": self._results}
 
+class FakeElevation:
+        last_called = 0.0
+
+        def __init__(self):
+            pass
+        
+        def get(self, nodes, spacing=100):
+            """Mock elevation API - adds elevation of 1500 to each coordinate"""
+            return [[lon, lat, 1500.0] for lon, lat in nodes]
+
 
 def test_OSMProcessor(osm_file):
     osm_processor = OSMProcessor(osm_file)
@@ -31,16 +41,6 @@ def test_OSMProcessor(osm_file):
 
 
 def test_get_trails(osm_file, monkeypatch):
-    class FakeElevation:
-        last_called = 0.0
-
-        def __init__(self):
-            pass
-        
-        def get(self, nodes, spacing=100):
-            """Mock elevation API - adds elevation of 1500 to each coordinate"""
-            return [[lon, lat, 1500.0] for lon, lat in nodes]
-
     from core.osm import osm_processor
     monkeypatch.setattr(osm_processor, 'Elevation', FakeElevation)
     
@@ -75,13 +75,17 @@ def test_get_trails(osm_file, monkeypatch):
             f"Trail {trail_id}: Not all elevations are 1500. Sample: {actual_coords[:3]}"
 
 
-def test_get_lifts(osm_file):
-    osm_processor = OSMProcessor(osm_file)
+def test_get_lifts(osm_file, monkeypatch):
+    from core.osm import osm_processor
+    monkeypatch.setattr(osm_processor, 'Elevation', FakeElevation)
+    
+    osm_processor_instance = osm_processor.OSMProcessor(osm_file)
 
-    lifts = osm_processor.get_lifts()
+    lifts = osm_processor_instance.get_lifts()
 
     assert len(lifts) == 20
-    assert len(lifts["w113"].geometry) == 4877
+    assert len(lifts["w113"].geometry["coordinates"]) == 124
+    assert len(lifts["w113"].geometry["coordinates"][0]) == 3
 
 
 def test_get_center(osm_file):
