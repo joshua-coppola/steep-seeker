@@ -182,3 +182,4 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert mountain.url == url
     assert len(mountain.trails) == 159
     assert len(mountain.lifts) == 20
+    assert mountain.vertical == 0

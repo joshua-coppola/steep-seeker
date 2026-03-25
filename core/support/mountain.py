@@ -231,4 +231,14 @@ class Mountain:
             url=url,
         )
 
+        elevation_set = set()
+        for trail_id in mountain.trails:
+            trail = mountain.trails[trail_id]
+            if trail.area:
+                [elevation_set.add(point[2]) for point in trail.geometry["coordinates"][0]]
+                [elevation_set.add(point[2]) for point in trail.interior_geometry["coordinates"]]
+            if not trail.area:
+                [elevation_set.add(point[2]) for point in trail.geometry["coordinates"]]
+
+        mountain.vertical = int(max(elevation_set) - min(elevation_set))
         return mountain
