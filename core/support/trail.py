@@ -16,7 +16,7 @@ class Trail:
 
     trail_id: str
     mountain_id: int
-    geometry: LineString, Polygon
+    geometry: LineString | Polygon
     name: str
     official_rating: str
     gladed: bool
@@ -44,7 +44,9 @@ class Trail:
 
         result = dict(result)
         result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
-        result[TrailTable.interior_geometry] = wkt.loads(result[TrailTable.interior_geometry])
+        result[TrailTable.interior_geometry] = wkt.loads(
+            result[TrailTable.interior_geometry]
+        )
         result[TrailTable.gladed] = bool(result[TrailTable.gladed])
         result[TrailTable.area] = bool(result[TrailTable.area])
         result[TrailTable.ungroomed] = bool(result[TrailTable.ungroomed])

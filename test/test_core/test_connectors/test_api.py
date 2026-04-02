@@ -28,7 +28,7 @@ def test_get_elevation_success(monkeypatch):
 
 
 def test_get_elevation_api_failure(monkeypatch):
-    nodes = [(-105.0, 40.0)]
+    nodes = [(-105.1, 40.0)]
 
     def fake_get(url):
         return FakeResponse(status_code=500)

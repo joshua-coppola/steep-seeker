@@ -247,6 +247,10 @@ class OSMProcessor:
                 interior_geometry = json.loads(
                     shapely.to_geojson(polygon_interior_grid(geometry))
                 )
+                interior_geometry["coordinates"] = [
+                    [round(Decimal(i), 6) for i in nested]
+                    for nested in interior_geometry["coordinates"]
+                ]
                 interior_geometry["coordinates"] = elevation_api.get(
                     interior_geometry["coordinates"]
                 )
