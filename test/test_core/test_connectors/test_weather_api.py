@@ -9,6 +9,7 @@ from core.connectors.weather_api import Weather
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_row(date: str, t_max: float, t_min: float, rain: float, snow: float) -> dict:
     return {
         "time": date,
@@ -22,6 +23,7 @@ def make_row(date: str, t_max: float, t_min: float, rain: float, snow: float) ->
 # ---------------------------------------------------------------------------
 # _filter_winter_data
 # ---------------------------------------------------------------------------
+
 
 class TestFilterWinterData:
     def setup_method(self):
@@ -48,6 +50,7 @@ class TestFilterWinterData:
 # ---------------------------------------------------------------------------
 # _count_freeze_thaw_days
 # ---------------------------------------------------------------------------
+
 
 class TestCountFreezeThawDays:
     def setup_method(self):
@@ -89,12 +92,19 @@ class TestCountFreezeThawDays:
 # _process_weather
 # ---------------------------------------------------------------------------
 
+
 class TestProcessWeather:
     def setup_method(self):
         self.w = Weather(num_seasons=2)
 
     def _make_daily_dict(self, rows):
-        keys = ["time", "temperature_2m_max", "temperature_2m_min", "rain_sum", "snowfall_sum"]
+        keys = [
+            "time",
+            "temperature_2m_max",
+            "temperature_2m_min",
+            "rain_sum",
+            "snowfall_sum",
+        ]
         return {k: [r[k] for r in rows] for k in keys}
 
     def test_averages_over_num_seasons(self):
@@ -118,6 +128,7 @@ class TestProcessWeather:
 # ---------------------------------------------------------------------------
 # get (HTTP layer)
 # ---------------------------------------------------------------------------
+
 
 class TestGet:
     def setup_method(self):
