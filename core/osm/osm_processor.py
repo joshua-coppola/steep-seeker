@@ -18,7 +18,7 @@ from core.support.utils import (
     polygon_interior_grid,
 )
 from core.datamodels.state import State
-from core.connectors.api import Elevation
+from core.connectors.elevation_api import Elevation
 
 
 ## Todo: handle multiline relations
