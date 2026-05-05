@@ -2,6 +2,8 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
+from shapely import Point
+
 from core.connectors.weather_api import Weather
 
 
@@ -152,7 +154,7 @@ class TestGet:
         mock_resp.raise_for_status.return_value = None
         mock_get.return_value = mock_resp
 
-        result = self.w.get(44.0, -72.0)
+        result = self.w.get(Point(-72.0, 44.0))
         assert set(result.keys()) == {"icy_days", "rain", "snow"}
 
     @patch("core.connectors.weather_api.requests.get")
@@ -166,7 +168,7 @@ class TestGet:
         mock_get.return_value = mock_resp
 
         with pytest.raises(ValueError, match="Weather API call failed"):
-            self.w.get(44.0, -72.0)
+            self.w.get(Point(-72.0, 44.0))
 
     @patch("core.connectors.weather_api.requests.get")
     def test_daily_limit_exceeded_raises_value_error(self, mock_get):
@@ -179,4 +181,4 @@ class TestGet:
         mock_get.return_value = mock_resp
 
         with pytest.raises(ValueError, match="Daily API request limit exceeded"):
-            self.w.get(44.0, -72.0)
+            self.w.get(Point(-72.0, 44.0))

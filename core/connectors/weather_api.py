@@ -2,6 +2,7 @@ from typing import Dict, List, Tuple
 from datetime import datetime
 import requests
 import time
+from shapely import Point
 
 
 class Weather:
@@ -39,13 +40,12 @@ class Weather:
 
         return start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
 
-    def get(self, lat: float, lon: float) -> Dict[str, float]:
+    def get(self, coordinate: Point) -> Dict[str, float]:
         """
         Fetch and process historical weather data for a location.
 
         Args:
-            lat: Latitude coordinate
-            lon: Longitude coordinate
+            coordinate: Shapely point containing a lat/lon
 
         Returns:
             Dictionary with averaged winter weather metrics:
@@ -56,8 +56,8 @@ class Weather:
         start_date, end_date = self._get_date_range()
 
         params = {
-            "latitude": lat,
-            "longitude": lon,
+            "latitude": coordinate.y,
+            "longitude": coordinate.x,
             "start_date": start_date,
             "end_date": end_date,
             "daily": "temperature_2m_max,temperature_2m_min,rain_sum,snowfall_sum",
@@ -82,7 +82,7 @@ class Weather:
 
                 print("Rate limited. Waiting 60 seconds before retry...")
                 time.sleep(60)
-                return self.get(lat, lon)
+                return self.get(coordinate)
             else:
                 raise ValueError(
                     f"Weather API call failed with code: {response.status_code}\n{response.text}"

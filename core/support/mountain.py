@@ -11,6 +11,7 @@ from core.support.trail import Trail
 from core.support.lift import Lift
 from core.osm.osm_processor import OSMProcessor
 from core.connectors.database import cursor, DATABASE_PATH
+from core.connectors.weather_api import Weather
 
 
 @dataclass
@@ -247,4 +248,11 @@ class Mountain:
                 [elevation_set.add(point[2]) for point in trail.geometry["coordinates"]]
 
         mountain.vertical = int(max(elevation_set) - min(elevation_set))
+
+        weather = Weather().get(mountain.coordinates)
+        
+        mountain.average_icy_days = weather["icy_days"]
+        mountain.average_rain = weather["rain"]
+        mountain.average_snow = weather ["snow"]
+        
         return mountain

@@ -9,8 +9,9 @@ from core.datamodels.season_pass import Season_Pass
 from core.connectors.database import cursor
 from core.datamodels.database import MountainTable
 from core.osm import osm_processor
+from core.support import mountain as mountain_module
 
-from test.test_core.conftest import FakeElevation
+from test.test_core.conftest import FakeElevation, FakeWeather
 
 
 def test_mountain(mountain):
@@ -169,6 +170,7 @@ def test_mountain_to_db(mountain, db_path):
 
 def test_mountain_from_osm(osm_file, monkeypatch):
     monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+    monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
 
     season_passes = [Season_Pass.EPIC, Season_Pass.IKON]
     url = "https://test.com"
@@ -183,3 +185,6 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert len(mountain.trails) == 159
     assert len(mountain.lifts) == 20
     assert mountain.vertical == 0
+    assert mountain.average_icy_days == 50.1
+    assert mountain.average_rain == 10.01
+    assert mountain.average_snow == 125.00
