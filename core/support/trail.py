@@ -23,11 +23,11 @@ class Trail:
     area: bool
     ungroomed: bool
     park: bool
-    length: Optional[float] = None
-    vertical: Optional[float] = None
-    difficulty: Optional[float] = None
-    max_slope: Optional[float] = None
-    average_slope: Optional[float] = None
+    length: Optional[float] = None # To Finish
+    vertical: Optional[float] = None # To Finish
+    difficulty: Optional[float] = None # To Finish
+    max_slope: Optional[float] = None # To Finish
+    average_slope: Optional[float] = None # To Finish
     interior_geometry: Optional[str] = ""
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:

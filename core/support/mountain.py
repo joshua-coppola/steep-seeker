@@ -11,6 +11,7 @@ from core.support.trail import Trail
 from core.support.lift import Lift
 from core.osm.osm_processor import OSMProcessor
 from core.connectors.database import cursor, DATABASE_PATH
+from core.connectors.weather_api import Weather
 
 
 @dataclass
@@ -29,8 +30,8 @@ class Mountain:
     season_passes: Optional[List[Season_Pass]] = field(default_factory=list)
     url: Optional[str] = None
     vertical: Optional[int] = None
-    difficulty: Optional[float] = None
-    beginner_friendliness: Optional[float] = None
+    difficulty: Optional[float] = None # To Finish
+    beginner_friendliness: Optional[float] = None # To Finish
     average_icy_days: Optional[float] = None
     average_snow: Optional[float] = None
     average_rain: Optional[float] = None
@@ -235,10 +236,23 @@ class Mountain:
         for trail_id in mountain.trails:
             trail = mountain.trails[trail_id]
             if trail.area:
-                [elevation_set.add(point[2]) for point in trail.geometry["coordinates"][0]]
-                [elevation_set.add(point[2]) for point in trail.interior_geometry["coordinates"]]
+                [
+                    elevation_set.add(point[2])
+                    for point in trail.geometry["coordinates"][0]
+                ]
+                [
+                    elevation_set.add(point[2])
+                    for point in trail.interior_geometry["coordinates"]
+                ]
             if not trail.area:
                 [elevation_set.add(point[2]) for point in trail.geometry["coordinates"]]
 
         mountain.vertical = int(max(elevation_set) - min(elevation_set))
+
+        weather = Weather().get(mountain.coordinates)
+        
+        mountain.average_icy_days = weather["icy_days"]
+        mountain.average_rain = weather["rain"]
+        mountain.average_snow = weather ["snow"]
+
         return mountain
