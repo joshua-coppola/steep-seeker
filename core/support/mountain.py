@@ -30,8 +30,8 @@ class Mountain:
     season_passes: Optional[List[Season_Pass]] = field(default_factory=list)
     url: Optional[str] = None
     vertical: Optional[int] = None
-    difficulty: Optional[float] = None
-    beginner_friendliness: Optional[float] = None
+    difficulty: Optional[float] = None # To Finish
+    beginner_friendliness: Optional[float] = None # To Finish
     average_icy_days: Optional[float] = None
     average_snow: Optional[float] = None
     average_rain: Optional[float] = None
@@ -254,5 +254,5 @@ class Mountain:
         mountain.average_icy_days = weather["icy_days"]
         mountain.average_rain = weather["rain"]
         mountain.average_snow = weather ["snow"]
-        
+
         return mountain

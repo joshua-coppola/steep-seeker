@@ -257,9 +257,9 @@ class OSMProcessor:
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
+            trail_dict["mountain_id"] = self.mountain_id
             trail_dict["geometry"] = geometry_json
             trail_dict["interior_geometry"] = interior_geometry
-            trail_dict["mountain_id"] = self.mountain_id
 
             for key in trail.keys():
                 if key == "nodes" or key == "id":

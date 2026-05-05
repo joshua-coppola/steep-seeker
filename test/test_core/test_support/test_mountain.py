@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 import pytest
+from shapely import Point
 
 from core.support.mountain import Mountain
 from core.datamodels.state import State
@@ -180,11 +181,15 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert mountain.name == "test"
     assert mountain.state == State("VT")
     assert mountain.direction == "w"
+    assert mountain.coordinates.x == pytest.approx(-72.73645, abs=1e-5)
+    assert mountain.coordinates.y == pytest.approx(43.41029, abs=1e-5)
     assert mountain.season_passes == season_passes
     assert mountain.url == url
-    assert len(mountain.trails) == 159
-    assert len(mountain.lifts) == 20
     assert mountain.vertical == 0
+    #assert mountain.difficulty == "TEMP VALUE"
+    #assert mountain.beginner_friendliness == "TEMP VALUE"
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
+    assert len(mountain.trails) == 159
+    assert len(mountain.lifts) == 20
