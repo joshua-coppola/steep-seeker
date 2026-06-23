@@ -3,6 +3,10 @@ import shapely.ops
 import pyproj
 from math import ceil
 import numpy as np
+import haversine as hs
+
+from core.support.trail import Trail
+from core.support.lift import Lift
 
 
 def space_line_points_evenly(
@@ -93,3 +97,26 @@ def polygon_interior_grid(
         return shapely.MultiPoint(pts) if pts else None
     else:
         raise ValueError(f"Unexpected geometry type: {inside.geom_type}")
+    
+def get_length(feature: Trail | Lift) -> float:
+    # TODO: Handle areas correctly
+
+    previous_point = None
+    cumulative_dist = 0
+
+    for i, point in enumerate(feature.geometry.coords):
+
+        if i == 0:
+            previous_point = point
+            continue
+
+        # Haversine expects (lat, lon)
+        dist = hs.haversine(
+            (previous_point[1], previous_point[0]),
+            (point[1], point[0]),
+            unit=hs.Unit.METERS,
+        )
+        cumulative_dist += dist
+        previous_point = point
+
+    return cumulative_dist

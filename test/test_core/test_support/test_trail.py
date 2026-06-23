@@ -7,7 +7,7 @@ from core.datamodels.database import TrailTable
 
 
 def test_trail(trail):
-    assert trail.geometry == LineString([[1, 1], [0, 0]])
+    assert trail.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
 def test_trail_from_db(trail, db_path):
@@ -71,8 +71,8 @@ def test_trail_to_db(trail, db_path):
     expected_result = {
         TrailTable.trail_id: "w1000",
         TrailTable.mountain_id: 1,
-        TrailTable.geometry: "LINESTRING (1 1, 0 0)",
-        TrailTable.interior_geometry: "LINESTRING (1 1, 0 0)",
+        TrailTable.geometry: "LINESTRING Z (1 1 10, 0 0 0)",
+        TrailTable.interior_geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         TrailTable.name: "Test",
         TrailTable.official_rating: "Expert",
         TrailTable.gladed: 1,

@@ -1,6 +1,6 @@
 import shapely
 
-from core.support.utils import space_line_points_evenly, polygon_interior_grid
+from core.support.utils import space_line_points_evenly, polygon_interior_grid, get_length
 
 
 def test_space_line_points_evenly():
@@ -17,3 +17,7 @@ def test_polygon_interior_grid():
     output_points = polygon_interior_grid(test_polygon, spacing_feet=100)
 
     assert len(output_points.geoms) == 2651
+
+
+def test_get_length(trail):
+    assert round(get_length(trail)) == 157250
