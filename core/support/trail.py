@@ -23,7 +23,7 @@ class Trail:
     area: bool
     ungroomed: bool
     park: bool
-    length: Optional[float] = None # To Finish
+    length: Optional[float]
     vertical: Optional[float] = None # To Finish
     difficulty: Optional[float] = None # To Finish
     max_slope: Optional[float] = None # To Finish

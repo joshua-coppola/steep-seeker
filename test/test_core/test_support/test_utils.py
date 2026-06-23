@@ -1,4 +1,5 @@
 import shapely
+from decimal import Decimal
 
 from core.support.utils import space_line_points_evenly, polygon_interior_grid, get_length
 
@@ -19,5 +20,13 @@ def test_polygon_interior_grid():
     assert len(output_points.geoms) == 2651
 
 
-def test_get_length(trail):
-    assert round(get_length(trail)) == 157250
+def test_get_length():
+    geojson = {
+        'type': 'LineString', 
+        'coordinates': [
+            [Decimal('-72.718289'), Decimal('43.422299'), 1500.0],
+            [Decimal('-72.718362'), Decimal('43.422312'), 1500.0],
+        ],
+    }
+    
+    assert round(get_length(geojson), 2 == 6.07)

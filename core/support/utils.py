@@ -4,6 +4,7 @@ import pyproj
 from math import ceil
 import numpy as np
 import haversine as hs
+from typing import Dict
 
 from core.support.trail import Trail
 from core.support.lift import Lift
@@ -98,13 +99,16 @@ def polygon_interior_grid(
     else:
         raise ValueError(f"Unexpected geometry type: {inside.geom_type}")
     
-def get_length(feature: Trail | Lift) -> float:
+def get_length(geometry: Dict[str, str]) -> float:
+    """
+    Accepts a geojson blob and calculates the haversine distance of the line
+    """
     # TODO: Handle areas correctly
 
     previous_point = None
     cumulative_dist = 0
 
-    for i, point in enumerate(feature.geometry.coords):
+    for i, point in enumerate(geometry["coordinates"]):
 
         if i == 0:
             previous_point = point

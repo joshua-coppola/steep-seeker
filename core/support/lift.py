@@ -24,7 +24,7 @@ class Lift:
     detachable: bool
     bubble: bool
     heating: bool
-    length: Optional[float] = None # To Finish
+    length: Optional[float]
     vertical: Optional[float] = None # To Finish
     average_slope: Optional[float] = None # To Finish
 

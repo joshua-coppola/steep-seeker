@@ -16,6 +16,7 @@ from core.support.utils import (
     space_line_points_evenly,
     space_polygon_exterior_points_evenly,
     polygon_interior_grid,
+    get_length,
 )
 from core.datamodels.state import State
 from core.connectors.elevation_api import Elevation
@@ -233,6 +234,7 @@ class OSMProcessor:
                     geometry_json["coordinates"]
                 )
             else:
+                # TODO: convert point net to route for length, slope
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
@@ -260,6 +262,7 @@ class OSMProcessor:
             trail_dict["mountain_id"] = self.mountain_id
             trail_dict["geometry"] = geometry_json
             trail_dict["interior_geometry"] = interior_geometry
+            trail_dict["length"] = get_length(geometry_json)
 
             for key in trail.keys():
                 if key == "nodes" or key == "id":
@@ -303,6 +306,7 @@ class OSMProcessor:
             lift_dict["lift_id"] = lift["id"]
             lift_dict["geometry"] = geometry_json
             lift_dict["mountain_id"] = self.mountain_id
+            lift_dict["length"] = get_length(geometry_json)
 
             for key in lift.keys():
                 if key == "nodes" or key == "id":

@@ -36,6 +36,8 @@ def test_get_trails(osm_file, monkeypatch):
     # Area Example
     assert len(trails["w10"].geometry["coordinates"][0]) == 36
 
+    assert round(trails["w11"].length, 3) == 105.677
+
     for trail_id, trail in trails.items():
         coords = trail.geometry["coordinates"]
 
