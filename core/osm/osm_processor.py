@@ -17,6 +17,7 @@ from core.support.utils import (
     space_polygon_exterior_points_evenly,
     polygon_interior_grid,
     get_length,
+    get_vertical_drop,
 )
 from core.datamodels.state import State
 from core.connectors.elevation_api import Elevation
@@ -263,6 +264,7 @@ class OSMProcessor:
             trail_dict["geometry"] = geometry_json
             trail_dict["interior_geometry"] = interior_geometry
             trail_dict["length"] = get_length(geometry_json)
+            trail_dict["vertical"] = get_vertical_drop(geometry_json)
 
             for key in trail.keys():
                 if key == "nodes" or key == "id":

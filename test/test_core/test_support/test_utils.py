@@ -1,7 +1,12 @@
 import shapely
 from decimal import Decimal
 
-from core.support.utils import space_line_points_evenly, polygon_interior_grid, get_length
+from core.support.utils import (
+    space_line_points_evenly, 
+    polygon_interior_grid, 
+    get_length, 
+    get_vertical_drop,
+)
 
 
 def test_space_line_points_evenly():
@@ -28,5 +33,20 @@ def test_get_length():
             [Decimal('-72.718362'), Decimal('43.422312'), 1500.0],
         ],
     }
-    
-    assert round(get_length(geojson), 2 == 6.07)
+
+    assert round(get_length(geojson), 2) == 6.07
+
+
+def test_get_vertical_drop_line():
+    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.01, 40.01, 300], [-120.02, 40.02, 200]]}
+    assert get_vertical_drop(geometry) == 200
+
+
+def test_get_vertical_drop_nested_area():
+    geometry = {"coordinates": [[[-120.0, 40.0, 50], [-120.01, 40.01, 150]] ]}
+    assert get_vertical_drop(geometry) == 100
+
+
+def test_get_vertical_drop_no_elevations():
+    geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
+    assert get_vertical_drop(geometry) is None

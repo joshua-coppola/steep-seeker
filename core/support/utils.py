@@ -4,7 +4,7 @@ import pyproj
 from math import ceil
 import numpy as np
 import haversine as hs
-from typing import Dict
+from typing import Dict, Optional
 
 from core.support.trail import Trail
 from core.support.lift import Lift
@@ -124,3 +124,32 @@ def get_length(geometry: Dict[str, str]) -> float:
         previous_point = point
 
     return cumulative_dist
+
+
+def get_vertical_drop(geometry: Dict[str, str]) -> Optional[float]:
+    """
+    Accepts a geojson blob and calculates vertical drop (max elevation - min elevation).
+    Returns meters or `None` if no elevation data is available.
+    """
+    elevations = []
+
+    coords = geometry.get("coordinates") or []
+
+    def _extract(points):
+        for p in points:
+            # nested coordinate lists (e.g., polygons) can appear as lists of lists
+            if isinstance(p, (list, tuple)) and p and isinstance(p[0], (list, tuple)):
+                _extract(p)
+            else:
+                # expect [lon, lat, elevation] or [lon, lat]
+                if isinstance(p, (list, tuple)) and len(p) >= 3:
+                    elev = p[2]
+                    if elev is not None:
+                        elevations.append(float(elev))
+
+    _extract(coords)
+
+    if not elevations:
+        return None
+
+    return max(elevations) - min(elevations)
