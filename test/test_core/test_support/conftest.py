@@ -52,6 +52,12 @@ def trail():
         TrailTable.difficulty: 1.0,
         TrailTable.max_slope: 1.0,
         TrailTable.average_slope: 1.0,
+        TrailTable.steepest_30m: 1.0,
+        TrailTable.steepest_50m: 1.0,
+        TrailTable.steepest_100m: 1.0,
+        TrailTable.steepest_200m: 1.0,
+        TrailTable.steepest_500m: 1.0,
+        TrailTable.steepest_1000m: 1.0,
     }
 
     return Trail(**trail_dict)

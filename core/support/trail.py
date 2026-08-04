@@ -28,6 +28,12 @@ class Trail:
     difficulty: Optional[float] = None # To Finish
     max_slope: Optional[float] = None
     average_slope: Optional[float] = None
+    steepest_30m: Optional[float] = None
+    steepest_50m: Optional[float] = None
+    steepest_100m: Optional[float] = None
+    steepest_200m: Optional[float] = None
+    steepest_500m: Optional[float] = None
+    steepest_1000m: Optional[float] = None
     interior_geometry: Optional[str] = ""
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
@@ -58,8 +64,23 @@ class Trail:
         """
         Updates DB record with the values in the dataclass
         """
-        # check that all fields have been populated before saving
-        missing_fields = [f.name for f in fields(self) if getattr(self, f.name) is None]
+        # steepest_Xm fields may legitimately be None: a trail shorter than
+        # the window has no segment of that length to measure
+        nullable_fields = {
+            "steepest_30m",
+            "steepest_50m",
+            "steepest_100m",
+            "steepest_200m",
+            "steepest_500m",
+            "steepest_1000m",
+        }
+
+        # check that all other fields have been populated before saving
+        missing_fields = [
+            f.name
+            for f in fields(self)
+            if f.name not in nullable_fields and getattr(self, f.name) is None
+        ]
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
 
@@ -83,9 +104,15 @@ class Trail:
                     {TrailTable.vertical},
                     {TrailTable.difficulty},
                     {TrailTable.max_slope},
-                    {TrailTable.average_slope}
+                    {TrailTable.average_slope},
+                    {TrailTable.steepest_30m},
+                    {TrailTable.steepest_50m},
+                    {TrailTable.steepest_100m},
+                    {TrailTable.steepest_200m},
+                    {TrailTable.steepest_500m},
+                    {TrailTable.steepest_1000m}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
@@ -100,7 +127,13 @@ class Trail:
                     {TrailTable.vertical} = excluded.{TrailTable.vertical},
                     {TrailTable.difficulty} = excluded.{TrailTable.difficulty},
                     {TrailTable.max_slope} = excluded.{TrailTable.max_slope},
-                    {TrailTable.average_slope} = excluded.{TrailTable.average_slope}
+                    {TrailTable.average_slope} = excluded.{TrailTable.average_slope},
+                    {TrailTable.steepest_30m} = excluded.{TrailTable.steepest_30m},
+                    {TrailTable.steepest_50m} = excluded.{TrailTable.steepest_50m},
+                    {TrailTable.steepest_100m} = excluded.{TrailTable.steepest_100m},
+                    {TrailTable.steepest_200m} = excluded.{TrailTable.steepest_200m},
+                    {TrailTable.steepest_500m} = excluded.{TrailTable.steepest_500m},
+                    {TrailTable.steepest_1000m} = excluded.{TrailTable.steepest_1000m}
             """
             params = (
                 self.trail_id,
@@ -118,5 +151,11 @@ class Trail:
                 self.difficulty,
                 self.max_slope,
                 self.average_slope,
+                self.steepest_30m,
+                self.steepest_50m,
+                self.steepest_100m,
+                self.steepest_200m,
+                self.steepest_500m,
+                self.steepest_1000m,
             )
             cur.execute(query, params)

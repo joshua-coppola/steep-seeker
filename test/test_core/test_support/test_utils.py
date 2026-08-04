@@ -8,6 +8,7 @@ from core.support.utils import (
     get_vertical_drop,
     get_max_slope,
     get_average_slope,
+    get_steepest_pitch,
 )
 
 
@@ -72,3 +73,37 @@ def test_get_average_slope():
 def test_get_average_slope_no_elevations():
     geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
     assert get_average_slope(geometry) is None
+
+
+# A steady-grade line ~556m long, dropping 20m every ~55.6m (constant ~19.8 degree pitch)
+STEADY_GRADE_LINE = {
+    "coordinates": [
+        [-120.0, 40.0 + i * 0.0005, 1000 - i * 20] for i in range(11)
+    ]
+}
+
+
+def test_get_steepest_pitch_finds_window():
+    assert get_steepest_pitch(STEADY_GRADE_LINE, 100) == 19.8
+
+
+def test_get_steepest_pitch_no_window_long_returns_none():
+    # trail is ~556m; no 1000m window exists and 1000 > 30, so no fallback
+    assert get_steepest_pitch(STEADY_GRADE_LINE, 1000) is None
+
+
+def test_get_steepest_pitch_short_trail_falls_back_to_overall_slope():
+    # trail is ~14m, shorter than the 30m window, so falls back to the
+    # whole-trail slope instead of returning None
+    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.0001, 40.0001, 105]]}
+    assert get_steepest_pitch(geometry, 30) == 19.6
+
+
+def test_get_steepest_pitch_no_elevations():
+    geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
+    assert get_steepest_pitch(geometry, 30) is None
+
+
+def test_get_steepest_pitch_too_few_points():
+    geometry = {"coordinates": [[-120.0, 40.0, 100]]}
+    assert get_steepest_pitch(geometry, 30) is None

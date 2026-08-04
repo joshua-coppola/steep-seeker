@@ -40,6 +40,14 @@ def test_get_trails(osm_file, monkeypatch):
     # FakeElevation returns 1500.0 for every point, so slope is flat
     assert trails["w11"].max_slope == 0
     assert trails["w11"].average_slope == 0
+    # w11 is ~106m long: 30/50/100m windows exist (flat, so 0), longer
+    # windows don't fit so they fall back to None
+    assert trails["w11"].steepest_30m == 0
+    assert trails["w11"].steepest_50m == 0
+    assert trails["w11"].steepest_100m == 0
+    assert trails["w11"].steepest_200m is None
+    assert trails["w11"].steepest_500m is None
+    assert trails["w11"].steepest_1000m is None
 
     for trail_id, trail in trails.items():
         coords = trail.geometry["coordinates"]

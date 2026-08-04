@@ -216,3 +216,79 @@ def get_average_slope(geometry: Dict[str, str]) -> Optional[float]:
     slopes = get_slope_profile(geometry)
 
     return sum(slopes) / len(slopes) if slopes else None
+
+
+def get_steepest_pitch(
+    geometry: Dict[str, str], window_meters: float
+) -> Optional[float]:
+    """
+    Accepts a geojson blob and returns the steepest slope in degrees found
+    over any contiguous window of at least `window_meters` along the line.
+
+    If the trail is shorter than the window, falls back to the overall
+    trail slope for windows of 30m or less (the trail is short enough that
+    its whole length is a reasonable stand-in); for longer windows there's
+    no meaningful window-sized measurement, so `None` is returned.
+    """
+    # TODO: Handle areas correctly
+    coordinates = geometry.get("coordinates") or []
+
+    if len(coordinates) < 2:
+        return None
+
+    max_pitch = None
+
+    for start, start_point in enumerate(coordinates):
+        if len(start_point) < 3 or start_point[2] is None:
+            continue
+
+        cumulative_dist = 0
+        previous_point = start_point
+
+        for point in coordinates[start + 1 :]:
+            cumulative_dist += hs.haversine(
+                (previous_point[1], previous_point[0]),
+                (point[1], point[0]),
+                unit=hs.Unit.METERS,
+            )
+            previous_point = point
+
+            if cumulative_dist >= window_meters:
+                if len(point) >= 3 and point[2] is not None:
+                    elevation_change = start_point[2] - point[2]
+                    pitch = (
+                        abs(degrees(atan(elevation_change / cumulative_dist)))
+                        if elevation_change != 0
+                        else 0.0
+                    )
+                    if max_pitch is None or pitch > max_pitch:
+                        max_pitch = pitch
+                break
+
+    if max_pitch is not None:
+        return round(max_pitch, 1)
+
+    if window_meters > 30:
+        return None
+
+    first_point, last_point = coordinates[0], coordinates[-1]
+    if (
+        len(first_point) < 3
+        or len(last_point) < 3
+        or first_point[2] is None
+        or last_point[2] is None
+    ):
+        return None
+
+    total_dist = get_length(geometry)
+    if total_dist == 0:
+        return 0.0
+
+    elevation_change = last_point[2] - first_point[2]
+
+    return round(
+        abs(degrees(atan(elevation_change / total_dist)))
+        if elevation_change != 0
+        else 0.0,
+        1,
+    )

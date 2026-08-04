@@ -28,9 +28,15 @@ def test_trail_from_db(trail, db_path):
                 {TrailTable.vertical},
                 {TrailTable.difficulty},
                 {TrailTable.max_slope},
-                {TrailTable.average_slope}
+                {TrailTable.average_slope},
+                {TrailTable.steepest_30m},
+                {TrailTable.steepest_50m},
+                {TrailTable.steepest_100m},
+                {TrailTable.steepest_200m},
+                {TrailTable.steepest_500m},
+                {TrailTable.steepest_1000m}
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             trail.trail_id,
@@ -48,6 +54,12 @@ def test_trail_from_db(trail, db_path):
             trail.difficulty,
             trail.max_slope,
             trail.average_slope,
+            trail.steepest_30m,
+            trail.steepest_50m,
+            trail.steepest_100m,
+            trail.steepest_200m,
+            trail.steepest_500m,
+            trail.steepest_1000m,
         )
         cur.execute(query, params)
 
@@ -84,6 +96,12 @@ def test_trail_to_db(trail, db_path):
         TrailTable.difficulty: 1.0,
         TrailTable.max_slope: 1.0,
         TrailTable.average_slope: 1.0,
+        TrailTable.steepest_30m: 1.0,
+        TrailTable.steepest_50m: 1.0,
+        TrailTable.steepest_100m: 1.0,
+        TrailTable.steepest_200m: 1.0,
+        TrailTable.steepest_500m: 1.0,
+        TrailTable.steepest_1000m: 1.0,
     }
 
     assert dict(result[0]) == expected_result
@@ -107,3 +125,18 @@ def test_trail_to_db(trail, db_path):
         trail.to_db(db_path=db_path)
 
     assert "fields are missing" in str(exc_info)
+
+
+def test_trail_to_db_allows_missing_steepest_pitch(trail, db_path):
+    # A trail shorter than a given window legitimately has no steepest
+    # pitch for it, so these fields should not block saving
+    trail.steepest_500m = None
+    trail.steepest_1000m = None
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = cur.execute("SELECT * FROM Trails").fetchall()
+
+    assert dict(result[0])[TrailTable.steepest_500m] is None
+    assert dict(result[0])[TrailTable.steepest_1000m] is None
