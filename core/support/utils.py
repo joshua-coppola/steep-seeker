@@ -1,10 +1,10 @@
 import shapely
 import shapely.ops
 import pyproj
-from math import ceil
+from math import ceil, atan, degrees
 import numpy as np
 import haversine as hs
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from core.support.trail import Trail
 from core.support.lift import Lift
@@ -153,3 +153,66 @@ def get_vertical_drop(geometry: Dict[str, str]) -> Optional[float]:
         return None
 
     return max(elevations) - min(elevations)
+
+
+def get_slope_profile(geometry: Dict[str, str]) -> List[float]:
+    """
+    Accepts a geojson blob and calculates the slope in degrees between
+    each consecutive pair of points, based on elevation change and
+    horizontal (haversine) distance. Returns one slope value per segment.
+    """
+    # TODO: Handle areas correctly
+    coordinates = geometry.get("coordinates") or []
+
+    slopes = []
+    previous_point = None
+
+    for point in coordinates:
+        if previous_point is None:
+            previous_point = point
+            continue
+
+        if (
+            len(previous_point) < 3
+            or len(point) < 3
+            or previous_point[2] is None
+            or point[2] is None
+        ):
+            previous_point = point
+            continue
+
+        dist = hs.haversine(
+            (previous_point[1], previous_point[0]),
+            (point[1], point[0]),
+            unit=hs.Unit.METERS,
+        )
+        elevation_change = point[2] - previous_point[2]
+
+        if dist == 0:
+            slopes.append(0.0)
+        else:
+            slopes.append(abs(degrees(atan(elevation_change / dist))))
+
+        previous_point = point
+
+    return slopes
+
+
+def get_max_slope(geometry: Dict[str, str]) -> Optional[float]:
+    """
+    Accepts a geojson blob and returns the steepest segment-to-segment
+    slope in degrees, or `None` if it can't be calculated.
+    """
+    slopes = get_slope_profile(geometry)
+
+    return max(slopes) if slopes else None
+
+
+def get_average_slope(geometry: Dict[str, str]) -> Optional[float]:
+    """
+    Accepts a geojson blob and returns the average segment-to-segment
+    slope in degrees, or `None` if it can't be calculated.
+    """
+    slopes = get_slope_profile(geometry)
+
+    return sum(slopes) / len(slopes) if slopes else None

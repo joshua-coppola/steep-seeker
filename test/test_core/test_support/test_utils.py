@@ -2,10 +2,12 @@ import shapely
 from decimal import Decimal
 
 from core.support.utils import (
-    space_line_points_evenly, 
-    polygon_interior_grid, 
-    get_length, 
+    space_line_points_evenly,
+    polygon_interior_grid,
+    get_length,
     get_vertical_drop,
+    get_max_slope,
+    get_average_slope,
 )
 
 
@@ -50,3 +52,23 @@ def test_get_vertical_drop_nested_area():
 def test_get_vertical_drop_no_elevations():
     geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
     assert get_vertical_drop(geometry) is None
+
+
+def test_get_max_slope():
+    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.01, 40.01, 300], [-120.02, 40.02, 200]]}
+    assert round(get_max_slope(geometry), 2) == 8.13
+
+
+def test_get_max_slope_no_elevations():
+    geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
+    assert get_max_slope(geometry) is None
+
+
+def test_get_average_slope():
+    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.01, 40.01, 300], [-120.02, 40.02, 200]]}
+    assert round(get_average_slope(geometry), 2) == 6.11
+
+
+def test_get_average_slope_no_elevations():
+    geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
+    assert get_average_slope(geometry) is None

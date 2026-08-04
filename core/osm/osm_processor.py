@@ -18,6 +18,8 @@ from core.support.utils import (
     polygon_interior_grid,
     get_length,
     get_vertical_drop,
+    get_max_slope,
+    get_average_slope,
 )
 from core.datamodels.state import State
 from core.connectors.elevation_api import Elevation
@@ -265,6 +267,8 @@ class OSMProcessor:
             trail_dict["interior_geometry"] = interior_geometry
             trail_dict["length"] = get_length(geometry_json)
             trail_dict["vertical"] = get_vertical_drop(geometry_json)
+            trail_dict["max_slope"] = get_max_slope(geometry_json)
+            trail_dict["average_slope"] = get_average_slope(geometry_json)
 
             for key in trail.keys():
                 if key == "nodes" or key == "id":
@@ -309,6 +313,8 @@ class OSMProcessor:
             lift_dict["geometry"] = geometry_json
             lift_dict["mountain_id"] = self.mountain_id
             lift_dict["length"] = get_length(geometry_json)
+            lift_dict["vertical"] = get_vertical_drop(geometry_json)
+            lift_dict["average_slope"] = get_average_slope(geometry_json)
 
             for key in lift.keys():
                 if key == "nodes" or key == "id":

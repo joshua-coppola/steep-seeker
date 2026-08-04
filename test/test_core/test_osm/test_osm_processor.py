@@ -37,6 +37,9 @@ def test_get_trails(osm_file, monkeypatch):
     assert len(trails["w10"].geometry["coordinates"][0]) == 36
 
     assert round(trails["w11"].length, 3) == 105.677
+    # FakeElevation returns 1500.0 for every point, so slope is flat
+    assert trails["w11"].max_slope == 0
+    assert trails["w11"].average_slope == 0
 
     for trail_id, trail in trails.items():
         coords = trail.geometry["coordinates"]
@@ -70,6 +73,10 @@ def test_get_lifts(osm_file, monkeypatch):
     assert len(lifts) == 20
     assert len(lifts["w113"].geometry["coordinates"]) == 124
     assert len(lifts["w113"].geometry["coordinates"][0]) == 3
+
+    # FakeElevation returns 1500.0 for every point, so drop/slope is 0
+    assert lifts["w113"].vertical == 0
+    assert lifts["w113"].average_slope == 0
 
 
 def test_get_center(osm_file):
