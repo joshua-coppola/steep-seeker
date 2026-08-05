@@ -39,8 +39,8 @@ def trail():
     trail_dict = {
         TrailTable.trail_id: "w1000",
         TrailTable.mountain_id: 1,
-        TrailTable.geometry: LineString([[1, 1], [0, 0]]),
-        TrailTable.interior_geometry: LineString([[1, 1], [0, 0]]),
+        TrailTable.geometry: LineString([[1, 1, 10], [0, 0, 0]]), # lon, lat, elevation
+        TrailTable.interior_geometry: LineString([[1, 1, 10], [0, 0, 0]]),
         TrailTable.name: "Test",
         TrailTable.official_rating: "Expert",
         TrailTable.gladed: True,
@@ -52,6 +52,12 @@ def trail():
         TrailTable.difficulty: 1.0,
         TrailTable.max_slope: 1.0,
         TrailTable.average_slope: 1.0,
+        TrailTable.steepest_30m: 1.0,
+        TrailTable.steepest_50m: 1.0,
+        TrailTable.steepest_100m: 1.0,
+        TrailTable.steepest_200m: 1.0,
+        TrailTable.steepest_500m: 1.0,
+        TrailTable.steepest_1000m: 1.0,
     }
 
     return Trail(**trail_dict)
@@ -62,7 +68,7 @@ def lift():
     lift_dict = {
         LiftTable.lift_id: "w1001",
         LiftTable.mountain_id: 1,
-        LiftTable.geometry: LineString([[1, 1], [0, 0]]),
+        LiftTable.geometry: LineString([[1, 1, 10], [0, 0, 0]]),
         LiftTable.name: "Test",
         LiftTable.lift_type: "chair_lift",
         LiftTable.occupancy: 4,

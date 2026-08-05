@@ -1,7 +1,8 @@
 import pytest
 from shapely import Point
 
-from core.connectors.database import db_init, DATABASE_INIT_SQL
+from core.connectors.database import db_init, DATABASE_INIT_SQL, CACHE_DB_INIT_SQL
+from core.connectors.weather_api import Weather
 
 
 @pytest.fixture
@@ -18,6 +19,17 @@ def db_path(tmpdir):
     db_init(db_path=db_path, sql_path=DATABASE_INIT_SQL)
 
     return db_path
+
+
+@pytest.fixture
+def cache_db_path(tmpdir):
+    cache_db_path = tmpdir + "/cache_db.db"
+
+    open(cache_db_path, "w").close()
+
+    db_init(db_path=cache_db_path, sql_path=CACHE_DB_INIT_SQL)
+
+    return cache_db_path
 
 
 class FakeResponse:
@@ -37,14 +49,12 @@ class FakeElevation:
         pass
 
     def get(self, nodes, spacing=100):
-        """Mock elevation API - adds elevation of 1500 to each coordinate"""
-        return [[lon, lat, 1500.0] for lon, lat in nodes]
+        """Mock elevation API - returns a descending elevation profile per
+        segment, starting at 1500 and dropping by 1 for each point already
+        processed in this call"""
+        return [[lon, lat, 1500.0 - i] for i, (lon, lat) in enumerate(nodes)]
     
 
-class FakeWeather:
-    def __init__(self, num_seasons: int = 5, timezone: str = "America/New_York"):
-        self.num_seasons = num_seasons
-        self.timezone = timezone
-
+class FakeWeather(Weather):
     def get(self, coordinates: Point):
         return {"icy_days": 50.1, "rain": 10.01, "snow": 125.00}

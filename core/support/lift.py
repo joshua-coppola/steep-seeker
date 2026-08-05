@@ -24,9 +24,9 @@ class Lift:
     detachable: bool
     bubble: bool
     heating: bool
-    length: Optional[float] = None # To Finish
-    vertical: Optional[float] = None # To Finish
-    average_slope: Optional[float] = None # To Finish
+    length: Optional[float]
+    vertical: Optional[float] = None
+    average_slope: Optional[float] = None
 
     def from_db(lift_id: str, db_path: str = DATABASE_PATH) -> Self:
         """

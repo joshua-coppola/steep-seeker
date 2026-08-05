@@ -1,8 +1,13 @@
 import shapely
 import shapely.ops
 import pyproj
-from math import ceil
+from math import ceil, atan, degrees
 import numpy as np
+import haversine as hs
+from typing import Dict, List, Optional, Tuple
+
+from core.support.trail import Trail
+from core.support.lift import Lift
 
 
 def space_line_points_evenly(
@@ -93,3 +98,258 @@ def polygon_interior_grid(
         return shapely.MultiPoint(pts) if pts else None
     else:
         raise ValueError(f"Unexpected geometry type: {inside.geom_type}")
+    
+def get_length(geometry: Dict[str, str]) -> float:
+    """
+    Accepts a geojson blob and calculates the haversine distance of the line
+    """
+    # TODO: Handle areas correctly
+
+    previous_point = None
+    cumulative_dist = 0
+
+    for i, point in enumerate(geometry["coordinates"]):
+
+        if i == 0:
+            previous_point = point
+            continue
+
+        # Haversine expects (lat, lon)
+        dist = hs.haversine(
+            (previous_point[1], previous_point[0]),
+            (point[1], point[0]),
+            unit=hs.Unit.METERS,
+        )
+        cumulative_dist += dist
+        previous_point = point
+
+    return cumulative_dist
+
+
+def get_vertical_drop(geometry: Dict[str, str]) -> Optional[float]:
+    """
+    Accepts a geojson blob and calculates vertical drop (max elevation - min elevation).
+    Returns meters or `None` if no elevation data is available.
+    """
+    elevations = []
+
+    coords = geometry.get("coordinates") or []
+
+    def _extract(points):
+        for p in points:
+            # nested coordinate lists (e.g., polygons) can appear as lists of lists
+            if isinstance(p, (list, tuple)) and p and isinstance(p[0], (list, tuple)):
+                _extract(p)
+            else:
+                # expect [lon, lat, elevation] or [lon, lat]
+                if isinstance(p, (list, tuple)) and len(p) >= 3:
+                    elev = p[2]
+                    if elev is not None:
+                        elevations.append(float(elev))
+
+    _extract(coords)
+
+    if not elevations:
+        return None
+
+    return max(elevations) - min(elevations)
+
+
+def get_slope_profile(geometry: Dict[str, str]) -> List[float]:
+    """
+    Accepts a geojson blob and calculates the slope in degrees between
+    each consecutive pair of points, based on elevation change and
+    horizontal (haversine) distance. Returns one slope value per segment.
+    """
+    # TODO: Handle areas correctly
+    coordinates = geometry.get("coordinates") or []
+
+    slopes = []
+    previous_point = None
+
+    for point in coordinates:
+        if previous_point is None:
+            previous_point = point
+            continue
+
+        if (
+            len(previous_point) < 3
+            or len(point) < 3
+            or previous_point[2] is None
+            or point[2] is None
+        ):
+            previous_point = point
+            continue
+
+        dist = hs.haversine(
+            (previous_point[1], previous_point[0]),
+            (point[1], point[0]),
+            unit=hs.Unit.METERS,
+        )
+        elevation_change = point[2] - previous_point[2]
+
+        if dist == 0:
+            slopes.append(0.0)
+        else:
+            slopes.append(abs(degrees(atan(elevation_change / dist))))
+
+        previous_point = point
+
+    return slopes
+
+
+def get_max_slope(geometry: Dict[str, str]) -> Optional[float]:
+    """
+    Accepts a geojson blob and returns the steepest segment-to-segment
+    slope in degrees, or `None` if it can't be calculated.
+    """
+    slopes = get_slope_profile(geometry)
+
+    return max(slopes) if slopes else None
+
+
+def get_average_slope(geometry: Dict[str, str]) -> Optional[float]:
+    """
+    Accepts a geojson blob and returns the average segment-to-segment
+    slope in degrees, or `None` if it can't be calculated.
+    """
+    slopes = get_slope_profile(geometry)
+
+    return sum(slopes) / len(slopes) if slopes else None
+
+
+def get_steepest_pitch(
+    geometry: Dict[str, str], window_meters: float
+) -> Optional[float]:
+    """
+    Accepts a geojson blob and returns the steepest slope in degrees found
+    over any contiguous window of at least `window_meters` along the line.
+
+    If the trail is shorter than the window, falls back to the overall
+    trail slope for windows of 30m or less (the trail is short enough that
+    its whole length is a reasonable stand-in); for longer windows there's
+    no meaningful window-sized measurement, so `None` is returned.
+    """
+    # TODO: Handle areas correctly
+    coordinates = geometry.get("coordinates") or []
+
+    if len(coordinates) < 2:
+        return None
+
+    max_pitch = None
+
+    for start, start_point in enumerate(coordinates):
+        if len(start_point) < 3 or start_point[2] is None:
+            continue
+
+        cumulative_dist = 0
+        previous_point = start_point
+
+        for point in coordinates[start + 1 :]:
+            cumulative_dist += hs.haversine(
+                (previous_point[1], previous_point[0]),
+                (point[1], point[0]),
+                unit=hs.Unit.METERS,
+            )
+            previous_point = point
+
+            if cumulative_dist >= window_meters:
+                if len(point) >= 3 and point[2] is not None:
+                    elevation_change = start_point[2] - point[2]
+                    pitch = (
+                        abs(degrees(atan(elevation_change / cumulative_dist)))
+                        if elevation_change != 0
+                        else 0.0
+                    )
+                    if max_pitch is None or pitch > max_pitch:
+                        max_pitch = pitch
+                break
+
+    if max_pitch is not None:
+        return round(max_pitch, 1)
+
+    if window_meters > 30:
+        return None
+
+    first_point, last_point = coordinates[0], coordinates[-1]
+    if (
+        len(first_point) < 3
+        or len(last_point) < 3
+        or first_point[2] is None
+        or last_point[2] is None
+    ):
+        return None
+
+    total_dist = get_length(geometry)
+    if total_dist == 0:
+        return 0.0
+
+    elevation_change = last_point[2] - first_point[2]
+
+    return round(
+        abs(degrees(atan(elevation_change / total_dist)))
+        if elevation_change != 0
+        else 0.0,
+        1,
+    )
+
+
+def get_trail_difficulty(
+    steepest_30m: Optional[float],
+    gladed: bool,
+    ungroomed: bool,
+    weather_modifier: float,
+) -> Optional[float]:
+    """
+    Accepts a trail's steepest 30m pitch, its gladed/ungroomed flags, and
+    the mountain's weather modifier (see connectors.weather_api), and
+    returns the trail's overall difficulty rating. Returns `None` if
+    steepest_30m couldn't be calculated.
+
+    A trail that is both gladed and ungroomed only gets the gladed modifier;
+    the two aren't stacked.
+    """
+    if steepest_30m is None:
+        return None
+
+    difficulty = steepest_30m + weather_modifier
+
+    if gladed:
+        difficulty += 5.5
+    elif ungroomed:
+        difficulty += 2.5
+
+    return round(difficulty, 1)
+
+
+def get_mountain_rating(
+    trail_difficulties: List[float],
+) -> Tuple[Optional[float], Optional[float]]:
+    """
+    Accepts the difficulty ratings of a mountain's trails and returns
+    (difficulty, beginner_friendliness) for the mountain overall, or
+    (None, None) if no trail difficulties were given.
+
+    Each value blends a top/bottom-30 average (20% weight) with a
+    top/bottom-5 average (80% weight) - difficulty from the hardest trails,
+    beginner_friendliness from the easiest - so a mountain with a handful of
+    standout hard or easy trails is rated accordingly without being fully
+    dominated by outliers.
+    """
+    if not trail_difficulties:
+        return None, None
+
+    sorted_difficulties = sorted(trail_difficulties, reverse=True)
+
+    wide_count = min(30, len(sorted_difficulties))
+    narrow_count = min(5, wide_count)
+
+    def weighted_average(values: List[float]) -> float:
+        wide = values[:wide_count]
+        narrow = values[:narrow_count]
+        return (sum(wide) / wide_count) * 0.2 + (sum(narrow) / narrow_count) * 0.8
+
+    difficulty = weighted_average(sorted_difficulties)
+    beginner_friendliness = weighted_average(list(reversed(sorted_difficulties)))
+
+    return round(difficulty, 1), round(beginner_friendliness, 1)

@@ -185,11 +185,21 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert mountain.coordinates.y == pytest.approx(43.41029, abs=1e-5)
     assert mountain.season_passes == season_passes
     assert mountain.url == url
-    assert mountain.vertical == 0
-    #assert mountain.difficulty == "TEMP VALUE"
-    #assert mountain.beginner_friendliness == "TEMP VALUE"
+    # FakeElevation descends 1 unit per point within each trail/area segment;
+    # the mountain's vertical is the max-min elevation across all trail points
+    assert mountain.vertical == 1215
+    # weighted blend of the hardest/easiest trails' difficulty, restricted
+    # to trails longer than 100m (129 of the mountain's 159 trails qualify)
+    assert mountain.difficulty == 17.9
+    assert mountain.beginner_friendliness == 12.8
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
     assert len(mountain.trails) == 159
     assert len(mountain.lifts) == 20
+
+    # difficulty = steepest_30m + weather_modifier (+ gladed/ungroomed bonus)
+    assert mountain.trails["w11"].gladed is False
+    assert mountain.trails["w11"].ungroomed is False
+    assert mountain.trails["w11"].steepest_30m == 9.3
+    assert mountain.trails["w11"].difficulty == 12.8

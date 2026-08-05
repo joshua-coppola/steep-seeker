@@ -7,7 +7,7 @@ from core.datamodels.database import LiftTable
 
 
 def test_lift(lift):
-    assert lift.geometry == LineString([[1, 1], [0, 0]])
+    assert lift.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
 def test_lift_from_db(lift, db_path):
@@ -66,7 +66,7 @@ def test_lift_to_db(lift, db_path):
     expected_result = {
         LiftTable.lift_id: "w1001",
         LiftTable.mountain_id: 1,
-        LiftTable.geometry: "LINESTRING (1 1, 0 0)",
+        LiftTable.geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         LiftTable.name: "Test",
         LiftTable.lift_type: "chair_lift",
         LiftTable.occupancy: 4,

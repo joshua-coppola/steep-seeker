@@ -16,12 +16,19 @@ from core.support.utils import (
     space_line_points_evenly,
     space_polygon_exterior_points_evenly,
     polygon_interior_grid,
+    get_length,
+    get_vertical_drop,
+    get_max_slope,
+    get_average_slope,
+    get_steepest_pitch,
 )
 from core.datamodels.state import State
 from core.connectors.elevation_api import Elevation
 
 
 ## Todo: handle multiline relations
+
+STEEPEST_PITCH_WINDOWS_METERS = (30, 50, 100, 200, 500, 1000)
 
 
 class OSMProcessor:
@@ -233,6 +240,7 @@ class OSMProcessor:
                     geometry_json["coordinates"]
                 )
             else:
+                # TODO: convert point net to route for length, slope
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
@@ -260,6 +268,14 @@ class OSMProcessor:
             trail_dict["mountain_id"] = self.mountain_id
             trail_dict["geometry"] = geometry_json
             trail_dict["interior_geometry"] = interior_geometry
+            trail_dict["length"] = get_length(geometry_json)
+            trail_dict["vertical"] = get_vertical_drop(geometry_json)
+            trail_dict["max_slope"] = get_max_slope(geometry_json)
+            trail_dict["average_slope"] = get_average_slope(geometry_json)
+            for window_meters in STEEPEST_PITCH_WINDOWS_METERS:
+                trail_dict[f"steepest_{window_meters}m"] = get_steepest_pitch(
+                    geometry_json, window_meters
+                )
 
             for key in trail.keys():
                 if key == "nodes" or key == "id":
@@ -303,6 +319,9 @@ class OSMProcessor:
             lift_dict["lift_id"] = lift["id"]
             lift_dict["geometry"] = geometry_json
             lift_dict["mountain_id"] = self.mountain_id
+            lift_dict["length"] = get_length(geometry_json)
+            lift_dict["vertical"] = get_vertical_drop(geometry_json)
+            lift_dict["average_slope"] = get_average_slope(geometry_json)
 
             for key in lift.keys():
                 if key == "nodes" or key == "id":
