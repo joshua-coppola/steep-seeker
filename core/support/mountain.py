@@ -9,7 +9,7 @@ from core.datamodels.season_pass import Season_Pass
 from core.datamodels.database import MountainTable, TrailTable, LiftTable
 from core.support.trail import Trail
 from core.support.lift import Lift
-from core.support.utils import get_trail_difficulty
+from core.support.utils import get_trail_difficulty, get_mountain_rating
 from core.osm.osm_processor import OSMProcessor
 from core.connectors.database import cursor, DATABASE_PATH
 from core.connectors.weather_api import Weather
@@ -31,8 +31,8 @@ class Mountain:
     season_passes: Optional[List[Season_Pass]] = field(default_factory=list)
     url: Optional[str] = None
     vertical: Optional[int] = None
-    difficulty: Optional[float] = None # To Finish
-    beginner_friendliness: Optional[float] = None # To Finish
+    difficulty: Optional[float] = None
+    beginner_friendliness: Optional[float] = None
     average_icy_days: Optional[float] = None
     average_snow: Optional[float] = None
     average_rain: Optional[float] = None
@@ -261,5 +261,15 @@ class Mountain:
             trail.difficulty = get_trail_difficulty(
                 trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier
             )
+
+        # only rate the mountain off trails long enough to be meaningful
+        rated_trail_difficulties = [
+            trail.difficulty
+            for trail in mountain.trails.values()
+            if trail.length > 100 and trail.difficulty is not None
+        ]
+        mountain.difficulty, mountain.beginner_friendliness = get_mountain_rating(
+            rated_trail_difficulties
+        )
 
         return mountain

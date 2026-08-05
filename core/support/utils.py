@@ -4,7 +4,7 @@ import pyproj
 from math import ceil, atan, degrees
 import numpy as np
 import haversine as hs
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from core.support.trail import Trail
 from core.support.lift import Lift
@@ -320,3 +320,36 @@ def get_trail_difficulty(
         difficulty += 2.5
 
     return round(difficulty, 1)
+
+
+def get_mountain_rating(
+    trail_difficulties: List[float],
+) -> Tuple[Optional[float], Optional[float]]:
+    """
+    Accepts the difficulty ratings of a mountain's trails and returns
+    (difficulty, beginner_friendliness) for the mountain overall, or
+    (None, None) if no trail difficulties were given.
+
+    Each value blends a top/bottom-30 average (20% weight) with a
+    top/bottom-5 average (80% weight) - difficulty from the hardest trails,
+    beginner_friendliness from the easiest - so a mountain with a handful of
+    standout hard or easy trails is rated accordingly without being fully
+    dominated by outliers.
+    """
+    if not trail_difficulties:
+        return None, None
+
+    sorted_difficulties = sorted(trail_difficulties, reverse=True)
+
+    wide_count = min(30, len(sorted_difficulties))
+    narrow_count = min(5, wide_count)
+
+    def weighted_average(values: List[float]) -> float:
+        wide = values[:wide_count]
+        narrow = values[:narrow_count]
+        return (sum(wide) / wide_count) * 0.2 + (sum(narrow) / narrow_count) * 0.8
+
+    difficulty = weighted_average(sorted_difficulties)
+    beginner_friendliness = weighted_average(list(reversed(sorted_difficulties)))
+
+    return round(difficulty, 1), round(beginner_friendliness, 1)

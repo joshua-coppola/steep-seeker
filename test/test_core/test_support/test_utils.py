@@ -10,6 +10,7 @@ from core.support.utils import (
     get_average_slope,
     get_steepest_pitch,
     get_trail_difficulty,
+    get_mountain_rating,
 )
 
 
@@ -129,3 +130,28 @@ def test_get_trail_difficulty_ungroomed_only():
 
 def test_get_trail_difficulty_no_steepest_30m_returns_none():
     assert get_trail_difficulty(None, gladed=True, ungroomed=True, weather_modifier=3.0) is None
+
+
+def test_get_mountain_rating_no_trails_returns_none():
+    assert get_mountain_rating([]) == (None, None)
+
+
+def test_get_mountain_rating_single_trail_rates_both_the_same():
+    # With nothing to compare against, the one trail defines both ends
+    assert get_mountain_rating([15.0]) == (15.0, 15.0)
+
+
+def test_get_mountain_rating_fewer_than_five_trails_rates_both_the_same():
+    # Too few trails to distinguish a "top 5" from a "top 30", so
+    # difficulty and beginner_friendliness end up identical
+    assert get_mountain_rating([10, 20, 30]) == (20.0, 20.0)
+
+
+def test_get_mountain_rating_weights_extremes_more_heavily():
+    # difficulty leans on the hardest trails, beginner_friendliness on the
+    # easiest - here that pulls them to opposite ends of the 1-10 range
+    difficulty, beginner_friendliness = get_mountain_rating(
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    )
+    assert difficulty == 7.5
+    assert beginner_friendliness == 3.5
