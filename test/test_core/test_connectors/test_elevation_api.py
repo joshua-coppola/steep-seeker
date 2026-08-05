@@ -1,10 +1,13 @@
 import pytest
 import requests
+from core.connectors import elevation_api
 from core.connectors.elevation_api import Elevation
 from test.test_core.conftest import FakeResponse
 
 
-def test_get_elevation_success(monkeypatch):
+def test_get_elevation_success(monkeypatch, cache_db_path):
+    monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
+
     # Arrange
     nodes = [(-105.0, 40.0), (-106.0, 41.0)]
     fake_results = [
@@ -27,7 +30,9 @@ def test_get_elevation_success(monkeypatch):
     assert result[1] == [-106.0, 41.0, 1700]
 
 
-def test_get_elevation_api_failure(monkeypatch):
+def test_get_elevation_api_failure(monkeypatch, cache_db_path):
+    monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
+
     nodes = [(-105.1, 40.0)]
 
     def fake_get(url):

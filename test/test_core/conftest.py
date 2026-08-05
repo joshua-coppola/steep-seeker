@@ -1,7 +1,7 @@
 import pytest
 from shapely import Point
 
-from core.connectors.database import db_init, DATABASE_INIT_SQL
+from core.connectors.database import db_init, DATABASE_INIT_SQL, CACHE_DB_INIT_SQL
 from core.connectors.weather_api import Weather
 
 
@@ -19,6 +19,17 @@ def db_path(tmpdir):
     db_init(db_path=db_path, sql_path=DATABASE_INIT_SQL)
 
     return db_path
+
+
+@pytest.fixture
+def cache_db_path(tmpdir):
+    cache_db_path = tmpdir + "/cache_db.db"
+
+    open(cache_db_path, "w").close()
+
+    db_init(db_path=cache_db_path, sql_path=CACHE_DB_INIT_SQL)
+
+    return cache_db_path
 
 
 class FakeResponse:
