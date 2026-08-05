@@ -37,14 +37,15 @@ def test_get_trails(osm_file, monkeypatch):
     assert len(trails["w10"].geometry["coordinates"][0]) == 36
 
     assert round(trails["w11"].length, 3) == 105.677
-    # FakeElevation returns 1500.0 for every point, so slope is flat
-    assert trails["w11"].max_slope == 0
-    assert trails["w11"].average_slope == 0
-    # w11 is ~106m long: 30/50/100m windows exist (flat, so 0), longer
-    # windows don't fit so they fall back to None
-    assert trails["w11"].steepest_30m == 0
-    assert trails["w11"].steepest_50m == 0
-    assert trails["w11"].steepest_100m == 0
+    # FakeElevation descends 1 unit per point, so w11 (19 points) drops 18
+    assert trails["w11"].vertical == 18.0
+    assert round(trails["w11"].max_slope, 3) == 27.127
+    assert round(trails["w11"].average_slope, 3) == 10.298
+    # w11 is ~106m long: 30/50/100m windows exist, longer windows don't fit
+    # so they fall back to None
+    assert trails["w11"].steepest_30m == 9.3
+    assert trails["w11"].steepest_50m == 10.0
+    assert trails["w11"].steepest_100m == 9.3
     assert trails["w11"].steepest_200m is None
     assert trails["w11"].steepest_500m is None
     assert trails["w11"].steepest_1000m is None
@@ -66,8 +67,12 @@ def test_get_trails(osm_file, monkeypatch):
         assert all(len(coord) == 3 for coord in actual_coords), (
             f"Trail {trail_id}: Not all coords have 3 values. Sample: {actual_coords[:3]}"
         )
-        assert all(coord[2] == 1500.0 for coord in actual_coords), (
-            f"Trail {trail_id}: Not all elevations are 1500. Sample: {actual_coords[:3]}"
+        # FakeElevation starts at 1500 and drops 1 per point in the segment
+        assert all(
+            coord[2] == 1500.0 - i for i, coord in enumerate(actual_coords)
+        ), (
+            f"Trail {trail_id}: elevations don't match the expected descending "
+            f"profile. Sample: {actual_coords[:3]}"
         )
 
 
@@ -82,9 +87,9 @@ def test_get_lifts(osm_file, monkeypatch):
     assert len(lifts["w113"].geometry["coordinates"]) == 124
     assert len(lifts["w113"].geometry["coordinates"][0]) == 3
 
-    # FakeElevation returns 1500.0 for every point, so drop/slope is 0
-    assert lifts["w113"].vertical == 0
-    assert lifts["w113"].average_slope == 0
+    # FakeElevation descends 1 unit per point, so w113 (124 points) drops 123
+    assert lifts["w113"].vertical == 123.0
+    assert round(lifts["w113"].average_slope, 3) == 9.923
 
 
 def test_get_center(osm_file):

@@ -9,6 +9,7 @@ from core.datamodels.season_pass import Season_Pass
 from core.datamodels.database import MountainTable, TrailTable, LiftTable
 from core.support.trail import Trail
 from core.support.lift import Lift
+from core.support.utils import get_trail_difficulty
 from core.osm.osm_processor import OSMProcessor
 from core.connectors.database import cursor, DATABASE_PATH
 from core.connectors.weather_api import Weather
@@ -250,9 +251,15 @@ class Mountain:
         mountain.vertical = int(max(elevation_set) - min(elevation_set))
 
         weather = Weather().get(mountain.coordinates)
-        
+
         mountain.average_icy_days = weather["icy_days"]
         mountain.average_rain = weather["rain"]
         mountain.average_snow = weather ["snow"]
+
+        weather_modifier = Weather.get_modifier(weather)
+        for trail in mountain.trails.values():
+            trail.difficulty = get_trail_difficulty(
+                trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier
+            )
 
         return mountain

@@ -292,3 +292,31 @@ def get_steepest_pitch(
         else 0.0,
         1,
     )
+
+
+def get_trail_difficulty(
+    steepest_30m: Optional[float],
+    gladed: bool,
+    ungroomed: bool,
+    weather_modifier: float,
+) -> Optional[float]:
+    """
+    Accepts a trail's steepest 30m pitch, its gladed/ungroomed flags, and
+    the mountain's weather modifier (see connectors.weather_api), and
+    returns the trail's overall difficulty rating. Returns `None` if
+    steepest_30m couldn't be calculated.
+
+    A trail that is both gladed and ungroomed only gets the gladed modifier;
+    the two aren't stacked.
+    """
+    if steepest_30m is None:
+        return None
+
+    difficulty = steepest_30m + weather_modifier
+
+    if gladed:
+        difficulty += 5.5
+    elif ungroomed:
+        difficulty += 2.5
+
+    return round(difficulty, 1)

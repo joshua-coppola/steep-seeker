@@ -14,6 +14,18 @@ class Weather:
     FREEZE_THRESHOLD_HIGH = 34  # °F
     FREEZE_THRESHOLD_LOW = 32  # °F
 
+    # Statistics below are from the historical resort population (updated 2023-12-28):
+    #   Metric       | Mean              | Standard Deviation
+    #   icy_days     | 40.13571428571428 | 18.81610659373872
+    #   snow         | 79.67810714285716 | 61.38204737243106
+    #   rain         | 4.711321428571425 | 4.6343473924412
+    # The min/max bounds below are +/- 2 standard deviations from the mean,
+    # i.e. the range of non-outlier values.
+    MIN_ICY_DAYS = 2.5
+    MAX_ICY_DAYS = 77.78
+    MAX_SNOW = 202.44
+    MAX_RAIN = 13.97
+
     def __init__(self, num_seasons: int = 5, timezone: str = "America/New_York"):
         """
         Initialize Weather API client.
@@ -179,3 +191,34 @@ class Weather:
                 freeze_thaw += 1
 
         return freeze_thaw
+
+    @staticmethod
+    def get_modifier(weather: Dict[str, float]) -> float:
+        """
+        Accepts a dict of averaged winter weather metrics (as returned by
+        get()) and returns a modifier between 0-6 degrees based on how a
+        resort's weather compares to other resorts. Each metric contributes
+        up to 2 degrees: a resort 2 standard deviations harder than the mean
+        for a given metric gets the full two points for it.
+        """
+        icy_days = min(
+            max(weather["icy_days"], Weather.MIN_ICY_DAYS), Weather.MAX_ICY_DAYS
+        )
+        rain = min(weather["rain"], Weather.MAX_RAIN)
+        snow = min(weather["snow"], Weather.MAX_SNOW)
+
+        modifier = 0.0
+
+        # Icy days - note the adjustment for both ends of the range being valid
+        modifier += (
+            (icy_days - Weather.MIN_ICY_DAYS)
+            / (Weather.MAX_ICY_DAYS - Weather.MIN_ICY_DAYS)
+        ) * 2
+
+        # Rain
+        modifier += (rain / Weather.MAX_RAIN) * 2
+
+        # Snow - higher snow means better conditions, so invert the percentage
+        modifier += (1 - (snow / Weather.MAX_SNOW)) * 2
+
+        return modifier

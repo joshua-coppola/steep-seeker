@@ -9,6 +9,7 @@ from core.support.utils import (
     get_max_slope,
     get_average_slope,
     get_steepest_pitch,
+    get_trail_difficulty,
 )
 
 
@@ -107,3 +108,24 @@ def test_get_steepest_pitch_no_elevations():
 def test_get_steepest_pitch_too_few_points():
     geometry = {"coordinates": [[-120.0, 40.0, 100]]}
     assert get_steepest_pitch(geometry, 30) is None
+
+
+def test_get_trail_difficulty_plain():
+    assert get_trail_difficulty(20.0, gladed=False, ungroomed=False, weather_modifier=3.0) == 23.0
+
+
+def test_get_trail_difficulty_gladed_and_ungroomed_only_applies_gladed():
+    # gladed and ungroomed don't stack; gladed wins
+    assert get_trail_difficulty(20.0, gladed=True, ungroomed=True, weather_modifier=3.0) == 28.5
+
+
+def test_get_trail_difficulty_gladed_only():
+    assert get_trail_difficulty(20.0, gladed=True, ungroomed=False, weather_modifier=0) == 25.5
+
+
+def test_get_trail_difficulty_ungroomed_only():
+    assert get_trail_difficulty(20.0, gladed=False, ungroomed=True, weather_modifier=0) == 22.5
+
+
+def test_get_trail_difficulty_no_steepest_30m_returns_none():
+    assert get_trail_difficulty(None, gladed=True, ungroomed=True, weather_modifier=3.0) is None

@@ -25,7 +25,7 @@ class Trail:
     park: bool
     length: Optional[float]
     vertical: Optional[float] = None
-    difficulty: Optional[float] = None # To Finish
+    difficulty: Optional[float] = None
     max_slope: Optional[float] = None
     average_slope: Optional[float] = None
     steepest_30m: Optional[float] = None
