@@ -149,9 +149,8 @@ def identify_lifts(ways):
             capacity = None
         lift["capacity"] = capacity
 
-        if (
-            tags.get("aerialway:detachable") == "yes"
-            or "express" in lift["name"].lower()
+        if tags.get("aerialway:detachable") == "yes" or (
+            lift["name"] and "express" in lift["name"].lower()
         ):
             lift["detachable"] = True
         else:
