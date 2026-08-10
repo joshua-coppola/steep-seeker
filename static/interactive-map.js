@@ -1,10 +1,12 @@
 function run_map(trails, map){
     // Define two basemaps
     const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
-    
+
     const satelliteBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
     
