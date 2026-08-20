@@ -28,6 +28,7 @@ CREATE TABLE "Trails"
     "mountain_id" INTEGER NOT NULL,
     "geometry" TEXT NOT NULL,
     "interior_geometry" TEXT,
+    "route" TEXT,
     "name" TEXT NOT NULL,
     "official_rating" TEXT,
     "gladed" BOOLEAN NOT NULL,

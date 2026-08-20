@@ -1,13 +1,14 @@
+from datetime import datetime, timezone
+
 import pytest
 from shapely import LineString, Point
-from datetime import datetime
 
+from core.datamodels.database import LiftTable, MountainTable, TrailTable
+from core.datamodels.season_pass import Season_Pass
+from core.datamodels.state import State
+from core.support.lift import Lift
 from core.support.mountain import Mountain
 from core.support.trail import Trail
-from core.support.lift import Lift
-from core.datamodels.state import State
-from core.datamodels.season_pass import Season_Pass
-from core.datamodels.database import MountainTable, TrailTable, LiftTable
 
 
 @pytest.fixture
@@ -28,7 +29,9 @@ def mountain(trail, lift):
         MountainTable.average_rain: 10,
         MountainTable.trails: {trail.trail_id: trail},
         MountainTable.lifts: {lift.lift_id: lift},
-        MountainTable.last_updated: datetime(2000, 2, 5, 12, 30, 5),
+        MountainTable.last_updated: datetime(
+            2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc
+        ),
     }
 
     return Mountain(**mountain_dict)
@@ -39,7 +42,7 @@ def trail():
     trail_dict = {
         TrailTable.trail_id: "w1000",
         TrailTable.mountain_id: 1,
-        TrailTable.geometry: LineString([[1, 1, 10], [0, 0, 0]]), # lon, lat, elevation
+        TrailTable.geometry: LineString([[1, 1, 10], [0, 0, 0]]),  # lon, lat, elevation
         TrailTable.interior_geometry: LineString([[1, 1, 10], [0, 0, 0]]),
         TrailTable.name: "Test",
         TrailTable.official_rating: "Expert",

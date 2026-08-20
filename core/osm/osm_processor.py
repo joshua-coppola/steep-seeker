@@ -1,30 +1,29 @@
+import uuid
+from decimal import Decimal
+from math import atan2, degrees
+
 import shapely
 import shapely.ops
-import uuid
-from united_states import UnitedStates
-from math import degrees, atan2
-from typing import Dict
-import json
-from decimal import Decimal
 from rich.progress import track
+from united_states import UnitedStates
 
+from core.connectors.elevation_api import Elevation
+from core.datamodels.state import State
 from core.osm.osm_reader import OSMHandler
-from core.osm.trail_parser import identify_trails, identify_lifts
-from core.support.trail import Trail
+from core.osm.trail_parser import identify_lifts, identify_trails
+from core.support.area_routes import get_area_route
 from core.support.lift import Lift
+from core.support.trail import Trail
 from core.support.utils import (
+    get_average_slope,
+    get_length,
+    get_max_slope,
+    get_steepest_pitch,
+    get_vertical_drop,
+    polygon_interior_grid,
     space_line_points_evenly,
     space_polygon_exterior_points_evenly,
-    polygon_interior_grid,
-    get_length,
-    get_vertical_drop,
-    get_max_slope,
-    get_average_slope,
-    get_steepest_pitch,
 )
-from core.datamodels.state import State
-from core.connectors.elevation_api import Elevation
-
 
 ## Todo: handle multiline relations
 
@@ -38,7 +37,7 @@ class OSMProcessor:
     The trails and lifts are stored in dicts of the same name.
     """
 
-    def __init__(self, filename: str, mountain_id: int = None):
+    def __init__(self, filename: str, mountain_id: int | None = None):
         osm_handler = OSMHandler()
         osm_handler.apply_file(filename)
 
@@ -93,20 +92,20 @@ class OSMProcessor:
             }
             for way_id in relation_value.get("members"):
                 way = self.trails[way_id]
-                for key in trail_info.keys():
+                for key, value_list in trail_info.items():
                     if key == "id":
-                        trail_info[key].append(way_id)
+                        value_list.append(way_id)
                     else:
-                        trail_info[key].append(way[key])
+                        value_list.append(way[key])
 
             same_values = 0
-            for key in trail_info.keys():
+            for key, value_list in trail_info.items():
                 if key == "nodes" or key == "id":
                     continue
-                if len(set(trail_info[key])) == 1:
+                if len(set(value_list)) == 1:
                     same_values += 1
 
-            if not same_values == 6:
+            if same_values != 6:
                 continue
 
             to_be_merged = [
@@ -173,31 +172,22 @@ class OSMProcessor:
 
         for trail_id, trail_value in self.trails.items():
             found_match = False
-            for existing_trail in complete_trails.keys():
+            for existing_data in complete_trails.values():
                 matching_parts = 0
-                for key in complete_trails[existing_trail].keys():
+                for key, value in existing_data.items():
                     # skip the unique parts
                     if key == "id" or key == "nodes":
                         continue
-                    if trail_value[key] == complete_trails[existing_trail][key]:
+                    if trail_value[key] == value:
                         matching_parts += 1
 
                 # if all metadata is matching, then check if the start/end points line up
                 if matching_parts == 6:
-                    if (
-                        trail_value["nodes"][0]
-                        == complete_trails[existing_trail]["nodes"][-1]
-                    ):
-                        complete_trails[existing_trail]["nodes"] += trail_value[
-                            "nodes"
-                        ][1:]
-                    elif (
-                        trail_value["nodes"][-1]
-                        == complete_trails[existing_trail]["nodes"][0]
-                    ):
-                        complete_trails[existing_trail]["nodes"] = (
-                            trail_value["nodes"][:-1]
-                            + complete_trails[existing_trail]["nodes"]
+                    if trail_value["nodes"][0] == existing_data["nodes"][-1]:
+                        existing_data["nodes"] += trail_value["nodes"][1:]
+                    elif trail_value["nodes"][-1] == existing_data["nodes"][0]:
+                        existing_data["nodes"] = (
+                            trail_value["nodes"][:-1] + existing_data["nodes"]
                         )
                     else:
                         continue
@@ -208,7 +198,7 @@ class OSMProcessor:
 
         self.trails = complete_trails
 
-    def get_trails(self) -> Dict[str, Trail]:
+    def get_trails(self) -> dict[str, Trail]:
         """
         Transforms the trails dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -228,56 +218,102 @@ class OSMProcessor:
                 node_array.append(point)
 
             interior_geometry = None
+            route = None
 
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
-                geometry_json = json.loads(shapely.to_geojson(geometry))
-                geometry_json["coordinates"] = [
-                    [round(Decimal(i), 6) for i in nested]
-                    for nested in geometry_json["coordinates"]
-                ]
+                geometry_json = {
+                    "coordinates": [
+                        [round(Decimal(i), 6) for i in coord]
+                        for coord in geometry.coords
+                    ]
+                }
                 geometry_json["coordinates"] = elevation_api.get(
                     geometry_json["coordinates"]
                 )
             else:
-                # TODO: convert point net to route for length, slope
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
-                geometry_json = json.loads(shapely.to_geojson(geometry))
-                geometry_json["coordinates"] = [
-                    [round(Decimal(i), 6) for i in nested]
-                    for nested in geometry_json["coordinates"][0]
-                ]
+                geometry_json = {
+                    "coordinates": [
+                        [round(Decimal(i), 6) for i in coord]
+                        for coord in geometry.exterior.coords
+                    ]
+                }
                 geometry_json["coordinates"] = [
                     elevation_api.get(geometry_json["coordinates"])
                 ]
-                interior_geometry = json.loads(
-                    shapely.to_geojson(polygon_interior_grid(geometry))
-                )
-                interior_geometry["coordinates"] = [
-                    [round(Decimal(i), 6) for i in nested]
-                    for nested in interior_geometry["coordinates"]
-                ]
+                interior_multipoint = polygon_interior_grid(geometry)
+                interior_geometry = {
+                    "coordinates": [
+                        [round(Decimal(i), 6) for i in point.coords[0]]
+                        for point in interior_multipoint.geoms
+                    ]
+                }
                 interior_geometry["coordinates"] = elevation_api.get(
                     interior_geometry["coordinates"]
                 )
+                route = get_area_route(geometry_json, interior_geometry)
+                # get_area_route's smoothing pass produces elevations by
+                # averaging neighboring points, not by measuring the
+                # smoothed position -- re-space and re-query elevation the
+                # same way boundary/lift geometry does, so the route's
+                # elevations (and slope stats derived from them) reflect
+                # real terrain
+                route_line = space_line_points_evenly(
+                    shapely.LineString(
+                        [(point[0], point[1]) for point in route["coordinates"]]
+                    )
+                )
+                route = {
+                    "coordinates": elevation_api.get(
+                        [
+                            [round(Decimal(i), 6) for i in coord]
+                            for coord in route_line.coords
+                        ]
+                    )
+                }
+
+            # length/slope stats need a real line to walk along -- a
+            # boundary polygon's ring isn't one, so area trails use their
+            # computed route (the least-steep line down the area) instead
+            stats_geometry = route if trail["area"] else geometry_json
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
             trail_dict["mountain_id"] = self.mountain_id
-            trail_dict["geometry"] = geometry_json
-            trail_dict["interior_geometry"] = interior_geometry
-            trail_dict["length"] = get_length(geometry_json)
+            trail_dict["length"] = get_length(stats_geometry)
             trail_dict["vertical"] = get_vertical_drop(geometry_json)
-            trail_dict["max_slope"] = get_max_slope(geometry_json)
-            trail_dict["average_slope"] = get_average_slope(geometry_json)
+            trail_dict["max_slope"] = get_max_slope(stats_geometry)
+            trail_dict["average_slope"] = get_average_slope(stats_geometry)
             for window_meters in STEEPEST_PITCH_WINDOWS_METERS:
                 trail_dict[f"steepest_{window_meters}m"] = get_steepest_pitch(
-                    geometry_json, window_meters
+                    stats_geometry, window_meters
                 )
 
-            for key in trail.keys():
+            # geometry_json/interior_geometry/route are geojson blobs (the
+            # format utils.py's stat helpers and get_area_route expect);
+            # Trail's fields are real shapely geometries so they round-trip
+            # through to_db/from_db as WKT
+            if trail["area"]:
+                trail_dict["geometry"] = shapely.Polygon(
+                    geometry_json["coordinates"][0]
+                )
+            else:
+                trail_dict["geometry"] = shapely.LineString(
+                    geometry_json["coordinates"]
+                )
+            trail_dict["interior_geometry"] = (
+                shapely.MultiPoint(interior_geometry["coordinates"])
+                if interior_geometry
+                else None
+            )
+            trail_dict["route"] = (
+                shapely.LineString(route["coordinates"]) if route else None
+            )
+
+            for key in trail:
                 if key == "nodes" or key == "id":
                     continue
                 trail_dict[key] = trail[key]
@@ -287,7 +323,7 @@ class OSMProcessor:
 
         return trail_objects
 
-    def get_lifts(self) -> Dict[str, Lift]:
+    def get_lifts(self) -> dict[str, Lift]:
         """
         Transforms the lifts dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -306,24 +342,27 @@ class OSMProcessor:
                 node_array.append(point)
 
             geometry = space_line_points_evenly(shapely.LineString(node_array))
-            geometry_json = json.loads(shapely.to_geojson(geometry))
-            geometry_json["coordinates"] = [
-                [round(Decimal(i), 6) for i in nested]
-                for nested in geometry_json["coordinates"]
-            ]
+            geometry_json = {
+                "coordinates": [
+                    [round(Decimal(i), 6) for i in coord] for coord in geometry.coords
+                ]
+            }
             geometry_json["coordinates"] = elevation_api.get(
                 geometry_json["coordinates"]
             )
 
             lift_dict = {}
             lift_dict["lift_id"] = lift["id"]
-            lift_dict["geometry"] = geometry_json
+            # geometry_json is a geojson blob (the format utils.py's stat
+            # helpers expect); Lift.geometry is a real shapely LineString so
+            # it round-trips through to_db/from_db as WKT
+            lift_dict["geometry"] = shapely.LineString(geometry_json["coordinates"])
             lift_dict["mountain_id"] = self.mountain_id
             lift_dict["length"] = get_length(geometry_json)
             lift_dict["vertical"] = get_vertical_drop(geometry_json)
             lift_dict["average_slope"] = get_average_slope(geometry_json)
 
-            for key in lift.keys():
+            for key in lift:
                 if key == "nodes" or key == "id":
                     continue
                 lift_dict[key] = lift[key]

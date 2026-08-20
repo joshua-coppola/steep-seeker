@@ -1,18 +1,19 @@
-from dataclasses import dataclass, fields, field
-from typing import Self, Optional, Dict, List
-from datetime import datetime
+from dataclasses import dataclass, field, fields
+from datetime import datetime, timezone
+from typing import Self
+
 from shapely import Point, wkt
 
-from core.datamodels.state import State
+from core.connectors.database import DATABASE_PATH, cursor
+from core.connectors.weather_api import Weather
+from core.datamodels.database import LiftTable, MountainTable, TrailTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
-from core.datamodels.database import MountainTable, TrailTable, LiftTable
-from core.support.trail import Trail
-from core.support.lift import Lift
-from core.support.utils import get_trail_difficulty, get_mountain_rating
+from core.datamodels.state import State
 from core.osm.osm_processor import OSMProcessor
-from core.connectors.database import cursor, DATABASE_PATH
-from core.connectors.weather_api import Weather
+from core.support.lift import Lift
+from core.support.trail import Trail
+from core.support.utils import get_mountain_rating, get_trail_difficulty
 
 
 @dataclass
@@ -28,17 +29,19 @@ class Mountain:
     state: State
     direction: str
     coordinates: Point
-    season_passes: Optional[List[Season_Pass]] = field(default_factory=list)
-    url: Optional[str] = None
-    vertical: Optional[int] = None
-    difficulty: Optional[float] = None
-    beginner_friendliness: Optional[float] = None
-    average_icy_days: Optional[float] = None
-    average_snow: Optional[float] = None
-    average_rain: Optional[float] = None
-    last_updated: Optional[datetime] = datetime.now()
-    trails: Optional[Dict[str, Trail]] = field(default_factory=dict)
-    lifts: Optional[Dict[str, Lift]] = field(default_factory=dict)
+    season_passes: list[Season_Pass] | None = field(default_factory=list)
+    url: str | None = None
+    vertical: int | None = None
+    difficulty: float | None = None
+    beginner_friendliness: float | None = None
+    average_icy_days: float | None = None
+    average_snow: float | None = None
+    average_rain: float | None = None
+    last_updated: datetime | None = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    trails: dict[str, Trail] | None = field(default_factory=dict)
+    lifts: dict[str, Lift] | None = field(default_factory=dict)
 
     def region(self) -> Region:
         """
@@ -109,8 +112,8 @@ class Mountain:
             Season_Pass(value)
             for value in result[MountainTable.season_passes].split(",")
         ]
-        result[MountainTable.last_updated] = datetime.strptime(
-            result[MountainTable.last_updated], "%Y-%m-%d %H:%M:%S"
+        result[MountainTable.last_updated] = datetime.fromisoformat(
+            result[MountainTable.last_updated]
         )
 
         if include_trails:
@@ -203,7 +206,7 @@ class Mountain:
                 self.average_icy_days,
                 self.average_snow,
                 self.average_rain,
-                self.last_updated,
+                self.last_updated.isoformat(),
                 self.url,
             )
             cur.execute(query, params)
@@ -214,7 +217,7 @@ class Mountain:
         for lift_id in self.lifts:
             self.lifts[lift_id].to_db(db_path)
 
-    def from_osm(filename: str, season_passes: List[Season_Pass], url: str) -> Self:
+    def from_osm(filename: str, season_passes: list[Season_Pass], url: str) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
         Mountain object
@@ -237,16 +240,12 @@ class Mountain:
         for trail_id in mountain.trails:
             trail = mountain.trails[trail_id]
             if trail.area:
-                [
-                    elevation_set.add(point[2])
-                    for point in trail.geometry["coordinates"][0]
-                ]
-                [
-                    elevation_set.add(point[2])
-                    for point in trail.interior_geometry["coordinates"]
-                ]
-            if not trail.area:
-                [elevation_set.add(point[2]) for point in trail.geometry["coordinates"]]
+                elevation_set.update(
+                    coord[2] for coord in trail.geometry.exterior.coords
+                )
+                elevation_set.update(point.z for point in trail.interior_geometry.geoms)
+            else:
+                elevation_set.update(coord[2] for coord in trail.geometry.coords)
 
         mountain.vertical = int(max(elevation_set) - min(elevation_set))
 
@@ -254,7 +253,7 @@ class Mountain:
 
         mountain.average_icy_days = weather["icy_days"]
         mountain.average_rain = weather["rain"]
-        mountain.average_snow = weather ["snow"]
+        mountain.average_snow = weather["snow"]
 
         weather_modifier = Weather.get_modifier(weather)
         for trail in mountain.trails.values():

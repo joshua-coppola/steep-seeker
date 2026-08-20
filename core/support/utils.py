@@ -1,13 +1,10 @@
+from math import atan, ceil, degrees
+
+import haversine as hs
+import numpy as np
+import pyproj
 import shapely
 import shapely.ops
-import pyproj
-from math import ceil, atan, degrees
-import numpy as np
-import haversine as hs
-from typing import Dict, List, Optional, Tuple
-
-from core.support.trail import Trail
-from core.support.lift import Lift
 
 
 def space_line_points_evenly(
@@ -98,18 +95,19 @@ def polygon_interior_grid(
         return shapely.MultiPoint(pts) if pts else None
     else:
         raise ValueError(f"Unexpected geometry type: {inside.geom_type}")
-    
-def get_length(geometry: Dict[str, str]) -> float:
-    """
-    Accepts a geojson blob and calculates the haversine distance of the line
-    """
-    # TODO: Handle areas correctly
 
+
+def get_length(geometry: dict[str, str]) -> float:
+    """
+    Accepts a geojson LineString blob (flat "coordinates" list of points)
+    and calculates the haversine distance of the line. For an area trail,
+    pass its route rather than its boundary polygon -- a ring's nested
+    coordinate structure isn't a line to walk along.
+    """
     previous_point = None
     cumulative_dist = 0
 
     for i, point in enumerate(geometry["coordinates"]):
-
         if i == 0:
             previous_point = point
             continue
@@ -126,7 +124,7 @@ def get_length(geometry: Dict[str, str]) -> float:
     return cumulative_dist
 
 
-def get_vertical_drop(geometry: Dict[str, str]) -> Optional[float]:
+def get_vertical_drop(geometry: dict[str, str]) -> float | None:
     """
     Accepts a geojson blob and calculates vertical drop (max elevation - min elevation).
     Returns meters or `None` if no elevation data is available.
@@ -155,13 +153,15 @@ def get_vertical_drop(geometry: Dict[str, str]) -> Optional[float]:
     return max(elevations) - min(elevations)
 
 
-def get_slope_profile(geometry: Dict[str, str]) -> List[float]:
+def get_slope_profile(geometry: dict[str, str]) -> list[float]:
     """
-    Accepts a geojson blob and calculates the slope in degrees between
-    each consecutive pair of points, based on elevation change and
-    horizontal (haversine) distance. Returns one slope value per segment.
+    Accepts a geojson LineString blob (flat "coordinates" list of points)
+    and calculates the slope in degrees between each consecutive pair of
+    points, based on elevation change and horizontal (haversine) distance.
+    Returns one slope value per segment. For an area trail, pass its route
+    rather than its boundary polygon -- a ring's nested coordinate
+    structure isn't a line to walk along.
     """
-    # TODO: Handle areas correctly
     coordinates = geometry.get("coordinates") or []
 
     slopes = []
@@ -198,7 +198,7 @@ def get_slope_profile(geometry: Dict[str, str]) -> List[float]:
     return slopes
 
 
-def get_max_slope(geometry: Dict[str, str]) -> Optional[float]:
+def get_max_slope(geometry: dict[str, str]) -> float | None:
     """
     Accepts a geojson blob and returns the steepest segment-to-segment
     slope in degrees, or `None` if it can't be calculated.
@@ -208,7 +208,7 @@ def get_max_slope(geometry: Dict[str, str]) -> Optional[float]:
     return max(slopes) if slopes else None
 
 
-def get_average_slope(geometry: Dict[str, str]) -> Optional[float]:
+def get_average_slope(geometry: dict[str, str]) -> float | None:
     """
     Accepts a geojson blob and returns the average segment-to-segment
     slope in degrees, or `None` if it can't be calculated.
@@ -218,19 +218,19 @@ def get_average_slope(geometry: Dict[str, str]) -> Optional[float]:
     return sum(slopes) / len(slopes) if slopes else None
 
 
-def get_steepest_pitch(
-    geometry: Dict[str, str], window_meters: float
-) -> Optional[float]:
+def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float | None:
     """
-    Accepts a geojson blob and returns the steepest slope in degrees found
-    over any contiguous window of at least `window_meters` along the line.
+    Accepts a geojson LineString blob (flat "coordinates" list of points)
+    and returns the steepest slope in degrees found over any contiguous
+    window of at least `window_meters` along the line. For an area trail,
+    pass its route rather than its boundary polygon -- a ring's nested
+    coordinate structure isn't a line to walk along.
 
     If the trail is shorter than the window, falls back to the overall
     trail slope for windows of 30m or less (the trail is short enough that
     its whole length is a reasonable stand-in); for longer windows there's
     no meaningful window-sized measurement, so `None` is returned.
     """
-    # TODO: Handle areas correctly
     coordinates = geometry.get("coordinates") or []
 
     if len(coordinates) < 2:
@@ -295,11 +295,11 @@ def get_steepest_pitch(
 
 
 def get_trail_difficulty(
-    steepest_30m: Optional[float],
+    steepest_30m: float | None,
     gladed: bool,
     ungroomed: bool,
     weather_modifier: float,
-) -> Optional[float]:
+) -> float | None:
     """
     Accepts a trail's steepest 30m pitch, its gladed/ungroomed flags, and
     the mountain's weather modifier (see connectors.weather_api), and
@@ -323,8 +323,8 @@ def get_trail_difficulty(
 
 
 def get_mountain_rating(
-    trail_difficulties: List[float],
-) -> Tuple[Optional[float], Optional[float]]:
+    trail_difficulties: list[float],
+) -> tuple[float | None, float | None]:
     """
     Accepts the difficulty ratings of a mountain's trails and returns
     (difficulty, beginner_friendliness) for the mountain overall, or
@@ -344,7 +344,7 @@ def get_mountain_rating(
     wide_count = min(30, len(sorted_difficulties))
     narrow_count = min(5, wide_count)
 
-    def weighted_average(values: List[float]) -> float:
+    def weighted_average(values: list[float]) -> float:
         wide = values[:wide_count]
         narrow = values[:narrow_count]
         return (sum(wide) / wide_count) * 0.2 + (sum(narrow) / narrow_count) * 0.8

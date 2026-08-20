@@ -1,8 +1,9 @@
 from dataclasses import dataclass, fields
-from typing import Self, Optional
+from typing import Self
+
 from shapely import LineString, Polygon, wkt
 
-from core.connectors.database import cursor, DATABASE_PATH
+from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import TrailTable
 
 
@@ -23,18 +24,19 @@ class Trail:
     area: bool
     ungroomed: bool
     park: bool
-    length: Optional[float]
-    vertical: Optional[float] = None
-    difficulty: Optional[float] = None
-    max_slope: Optional[float] = None
-    average_slope: Optional[float] = None
-    steepest_30m: Optional[float] = None
-    steepest_50m: Optional[float] = None
-    steepest_100m: Optional[float] = None
-    steepest_200m: Optional[float] = None
-    steepest_500m: Optional[float] = None
-    steepest_1000m: Optional[float] = None
-    interior_geometry: Optional[str] = ""
+    length: float | None
+    vertical: float | None = None
+    difficulty: float | None = None
+    max_slope: float | None = None
+    average_slope: float | None = None
+    steepest_30m: float | None = None
+    steepest_50m: float | None = None
+    steepest_100m: float | None = None
+    steepest_200m: float | None = None
+    steepest_500m: float | None = None
+    steepest_1000m: float | None = None
+    interior_geometry: LineString | Polygon | None = ""
+    route: LineString | None = None
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
@@ -50,8 +52,13 @@ class Trail:
 
         result = dict(result)
         result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
-        result[TrailTable.interior_geometry] = wkt.loads(
-            result[TrailTable.interior_geometry]
+        result[TrailTable.interior_geometry] = (
+            wkt.loads(result[TrailTable.interior_geometry])
+            if result[TrailTable.interior_geometry]
+            else None
+        )
+        result[TrailTable.route] = (
+            wkt.loads(result[TrailTable.route]) if result[TrailTable.route] else None
         )
         result[TrailTable.gladed] = bool(result[TrailTable.gladed])
         result[TrailTable.area] = bool(result[TrailTable.area])
@@ -73,6 +80,7 @@ class Trail:
             "steepest_200m",
             "steepest_500m",
             "steepest_1000m",
+            "route",
         }
 
         # check that all other fields have been populated before saving
@@ -87,6 +95,9 @@ class Trail:
         if self.interior_geometry == "" and self.area:
             raise ValueError("The following fields are missing: interior_geometry")
 
+        if self.route is None and self.area:
+            raise ValueError("The following fields are missing: route")
+
         with cursor(db_path=db_path) as cur:
             query = f"""
                 INSERT INTO Trails (
@@ -94,6 +105,7 @@ class Trail:
                     {TrailTable.mountain_id},
                     {TrailTable.geometry},
                     {TrailTable.interior_geometry},
+                    {TrailTable.route},
                     {TrailTable.name},
                     {TrailTable.official_rating},
                     {TrailTable.gladed},
@@ -112,11 +124,12 @@ class Trail:
                     {TrailTable.steepest_500m},
                     {TrailTable.steepest_1000m}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
                     {TrailTable.interior_geometry} = excluded.{TrailTable.interior_geometry},
+                    {TrailTable.route} = excluded.{TrailTable.route},
                     {TrailTable.name} = excluded.{TrailTable.name},
                     {TrailTable.official_rating} = excluded.{TrailTable.official_rating},
                     {TrailTable.gladed} = excluded.{TrailTable.gladed},
@@ -140,6 +153,7 @@ class Trail:
                 self.mountain_id,
                 str(self.geometry),
                 str(self.interior_geometry),
+                str(self.route) if self.route is not None else None,
                 self.name,
                 self.official_rating,
                 self.gladed,
