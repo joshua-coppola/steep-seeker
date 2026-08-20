@@ -22,6 +22,7 @@ from core.support.utils import (
     get_average_slope,
     get_steepest_pitch,
 )
+from core.support.route import get_area_route
 from core.datamodels.state import State
 from core.connectors.elevation_api import Elevation
 
@@ -228,6 +229,7 @@ class OSMProcessor:
                 node_array.append(point)
 
             interior_geometry = None
+            route = None
 
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
@@ -240,7 +242,6 @@ class OSMProcessor:
                     geometry_json["coordinates"]
                 )
             else:
-                # TODO: convert point net to route for length, slope
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
@@ -262,12 +263,11 @@ class OSMProcessor:
                 interior_geometry["coordinates"] = elevation_api.get(
                     interior_geometry["coordinates"]
                 )
+                route = get_area_route(geometry_json, interior_geometry)
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
             trail_dict["mountain_id"] = self.mountain_id
-            trail_dict["geometry"] = geometry_json
-            trail_dict["interior_geometry"] = interior_geometry
             trail_dict["length"] = get_length(geometry_json)
             trail_dict["vertical"] = get_vertical_drop(geometry_json)
             trail_dict["max_slope"] = get_max_slope(geometry_json)
@@ -276,6 +276,21 @@ class OSMProcessor:
                 trail_dict[f"steepest_{window_meters}m"] = get_steepest_pitch(
                     geometry_json, window_meters
                 )
+
+            # geometry_json/interior_geometry/route are geojson blobs (the
+            # format utils.py's stat helpers and get_area_route expect);
+            # Trail's fields are real shapely geometries so they round-trip
+            # through to_db/from_db as WKT
+            if trail["area"]:
+                trail_dict["geometry"] = shapely.Polygon(geometry_json["coordinates"][0])
+            else:
+                trail_dict["geometry"] = shapely.LineString(geometry_json["coordinates"])
+            trail_dict["interior_geometry"] = (
+                shapely.MultiPoint(interior_geometry["coordinates"])
+                if interior_geometry
+                else None
+            )
+            trail_dict["route"] = shapely.LineString(route["coordinates"]) if route else None
 
             for key in trail.keys():
                 if key == "nodes" or key == "id":
