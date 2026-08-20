@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 import pytest
@@ -15,8 +15,8 @@ from test.test_core.conftest import FakeElevation, FakeWeather
 
 
 def test_mountain(mountain):
-    # naive on purpose, matching the app's naive last_updated convention
-    assert mountain.last_updated.date() == datetime(2000, 2, 5, 12, 30, 5).date()  # noqa: DTZ001
+    expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc)
+    assert mountain.last_updated.date() == expected.date()
 
 
 def test_mountain_region(mountain):
@@ -87,7 +87,7 @@ def test_mountain_from_db(mountain, db_path):
             mountain.average_icy_days,
             mountain.average_snow,
             mountain.average_rain,
-            mountain.last_updated,
+            mountain.last_updated.isoformat(),
             mountain.url,
         )
         cur.execute(query, params)
@@ -128,7 +128,9 @@ def test_mountain_to_db(mountain, db_path):
         MountainTable.average_icy_days: 25.0,
         MountainTable.average_snow: 150.0,
         MountainTable.average_rain: 10.0,
-        MountainTable.last_updated: str(datetime(2000, 2, 5, 12, 30, 5)),  # noqa: DTZ001
+        MountainTable.last_updated: datetime(
+            2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc
+        ).isoformat(),
         MountainTable.url: "https://test.com",
     }
 

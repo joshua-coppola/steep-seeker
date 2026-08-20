@@ -1,7 +1,8 @@
-from typing import Dict, List, Tuple
-from datetime import datetime
-import requests
 import time
+from datetime import datetime, timezone
+from typing import ClassVar
+
+import requests
 from shapely import Point
 
 
@@ -10,7 +11,7 @@ class Weather:
 
     # Class constants
     BASE_URL = "https://archive-api.open-meteo.com/v1/archive"
-    WINTER_MONTHS = [11, 12, 1, 2, 3, 4]  # Nov - April
+    WINTER_MONTHS: ClassVar[list[int]] = [11, 12, 1, 2, 3, 4]  # Nov - April
     FREEZE_THRESHOLD_HIGH = 34  # °F
     FREEZE_THRESHOLD_LOW = 32  # °F
 
@@ -37,22 +38,28 @@ class Weather:
         self.num_seasons = num_seasons
         self.timezone = timezone
 
-    def _get_date_range(self) -> Tuple[str, str]:
+    def _get_date_range(self) -> tuple[str, str]:
         """Calculate dynamic date range based on current date and num_seasons."""
-        end_date = datetime.now()
+        end_date = datetime.now(timezone.utc)
 
         # If we're past April, use this year's April 30, else use last year's
         if end_date.month > self.WINTER_MONTHS[-1]:
-            end_date = datetime(end_date.year, self.WINTER_MONTHS[-1], 30)
+            end_date = datetime(
+                end_date.year, self.WINTER_MONTHS[-1], 30, tzinfo=timezone.utc
+            )
         else:
-            end_date = datetime(end_date.year - 1, self.WINTER_MONTHS[-1], 30)
+            end_date = datetime(
+                end_date.year - 1, self.WINTER_MONTHS[-1], 30, tzinfo=timezone.utc
+            )
 
         # Start date is num_seasons years before, November 1
-        start_date = datetime(end_date.year - self.num_seasons, 11, 1)
+        start_date = datetime(
+            end_date.year - self.num_seasons, 11, 1, tzinfo=timezone.utc
+        )
 
         return start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
 
-    def get(self, coordinate: Point) -> Dict[str, float]:
+    def get(self, coordinate: Point) -> dict[str, float]:
         """
         Fetch and process historical weather data for a location.
 
@@ -100,9 +107,9 @@ class Weather:
                     f"Weather API call failed with code: {response.status_code}\n{response.text}"
                 )
         except requests.exceptions.RequestException as e:
-            raise ValueError(f"Weather API request failed: {str(e)}")
+            raise ValueError(f"Weather API request failed: {e!s}")
 
-    def _process_weather(self, data: Dict) -> Dict[str, float]:
+    def _process_weather(self, data: dict) -> dict[str, float]:
         """
         Process daily weather data into seasonal averages.
 
@@ -115,7 +122,7 @@ class Weather:
         # Reshape dict to list
         weather_list = []
         for i in range(len(data["time"])):
-            row = {key: data[key][i] for key in data.keys()}
+            row = {key: data[key][i] for key in data}
             weather_list.append(row)
 
         # Filter to winter months only and remove incomplete data
@@ -136,7 +143,7 @@ class Weather:
             "snow": round(snow_total / self.num_seasons, 2),
         }
 
-    def _filter_winter_data(self, weather_list: List[Dict]) -> List[Dict]:
+    def _filter_winter_data(self, weather_list: list[dict]) -> list[dict]:
         """
         Filter data to winter months only and remove incomplete records.
 
@@ -164,7 +171,7 @@ class Weather:
 
         return winter_list
 
-    def _count_freeze_thaw_days(self, winter_list: List[Dict]) -> int:
+    def _count_freeze_thaw_days(self, winter_list: list[dict]) -> int:
         """
         Count days with freeze-thaw cycles.
 
@@ -193,7 +200,7 @@ class Weather:
         return freeze_thaw
 
     @staticmethod
-    def get_modifier(weather: Dict[str, float]) -> float:
+    def get_modifier(weather: dict[str, float]) -> float:
         """
         Accepts a dict of averaged winter weather metrics (as returned by
         get()) and returns a modifier between 0-6 degrees based on how a

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Self
 
 from shapely import Point, wkt
@@ -37,7 +37,9 @@ class Mountain:
     average_icy_days: float | None = None
     average_snow: float | None = None
     average_rain: float | None = None
-    last_updated: datetime | None = field(default_factory=datetime.now)
+    last_updated: datetime | None = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
     trails: dict[str, Trail] | None = field(default_factory=dict)
     lifts: dict[str, Lift] | None = field(default_factory=dict)
 
@@ -110,12 +112,8 @@ class Mountain:
             Season_Pass(value)
             for value in result[MountainTable.season_passes].split(",")
         ]
-        # naive on purpose: to_db writes naive datetimes and every fixture/
-        # comparison in the app assumes naive last_updated values. Making this
-        # tz-aware requires an app-wide timezone policy decision, not a
-        # mechanical fix.
-        result[MountainTable.last_updated] = datetime.strptime(  # noqa: DTZ007
-            result[MountainTable.last_updated], "%Y-%m-%d %H:%M:%S"
+        result[MountainTable.last_updated] = datetime.fromisoformat(
+            result[MountainTable.last_updated]
         )
 
         if include_trails:
@@ -208,7 +206,7 @@ class Mountain:
                 self.average_icy_days,
                 self.average_snow,
                 self.average_rain,
-                self.last_updated,
+                self.last_updated.isoformat(),
                 self.url,
             )
             cur.execute(query, params)
