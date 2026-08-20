@@ -51,8 +51,6 @@ class Elevation:
             if point_str not in cached_results
         ]
 
-        # print(f"Cache hits: {len(cached_results)}, Cache misses: {len(uncached_nodes)}")
-
         # Query API for uncached points
         api_results = {}
         if uncached_nodes:
