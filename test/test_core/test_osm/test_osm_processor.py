@@ -105,8 +105,9 @@ def test_get_lifts(osm_file, monkeypatch):
     lifts = osm_processor_instance.get_lifts()
 
     assert len(lifts) == 20
-    assert len(lifts["w113"].geometry["coordinates"]) == 124
-    assert len(lifts["w113"].geometry["coordinates"][0]) == 3
+    lift_coords = list(lifts["w113"].geometry.coords)
+    assert len(lift_coords) == 124
+    assert len(lift_coords[0]) == 3
 
     # FakeElevation descends 1 unit per point, so w113 (124 points) drops 123
     assert lifts["w113"].vertical == 123.0

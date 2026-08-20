@@ -1,4 +1,3 @@
-import json
 import uuid
 from decimal import Decimal
 from math import atan2, degrees
@@ -223,11 +222,12 @@ class OSMProcessor:
 
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
-                geometry_json = json.loads(shapely.to_geojson(geometry))
-                geometry_json["coordinates"] = [
-                    [round(Decimal(i), 6) for i in nested]
-                    for nested in geometry_json["coordinates"]
-                ]
+                geometry_json = {
+                    "coordinates": [
+                        [round(Decimal(i), 6) for i in coord]
+                        for coord in geometry.coords
+                    ]
+                }
                 geometry_json["coordinates"] = elevation_api.get(
                     geometry_json["coordinates"]
                 )
@@ -235,21 +235,22 @@ class OSMProcessor:
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
-                geometry_json = json.loads(shapely.to_geojson(geometry))
-                geometry_json["coordinates"] = [
-                    [round(Decimal(i), 6) for i in nested]
-                    for nested in geometry_json["coordinates"][0]
-                ]
+                geometry_json = {
+                    "coordinates": [
+                        [round(Decimal(i), 6) for i in coord]
+                        for coord in geometry.exterior.coords
+                    ]
+                }
                 geometry_json["coordinates"] = [
                     elevation_api.get(geometry_json["coordinates"])
                 ]
-                interior_geometry = json.loads(
-                    shapely.to_geojson(polygon_interior_grid(geometry))
-                )
-                interior_geometry["coordinates"] = [
-                    [round(Decimal(i), 6) for i in nested]
-                    for nested in interior_geometry["coordinates"]
-                ]
+                interior_multipoint = polygon_interior_grid(geometry)
+                interior_geometry = {
+                    "coordinates": [
+                        [round(Decimal(i), 6) for i in point.coords[0]]
+                        for point in interior_multipoint.geoms
+                    ]
+                }
                 interior_geometry["coordinates"] = elevation_api.get(
                     interior_geometry["coordinates"]
                 )
@@ -322,18 +323,21 @@ class OSMProcessor:
                 node_array.append(point)
 
             geometry = space_line_points_evenly(shapely.LineString(node_array))
-            geometry_json = json.loads(shapely.to_geojson(geometry))
-            geometry_json["coordinates"] = [
-                [round(Decimal(i), 6) for i in nested]
-                for nested in geometry_json["coordinates"]
-            ]
+            geometry_json = {
+                "coordinates": [
+                    [round(Decimal(i), 6) for i in coord] for coord in geometry.coords
+                ]
+            }
             geometry_json["coordinates"] = elevation_api.get(
                 geometry_json["coordinates"]
             )
 
             lift_dict = {}
             lift_dict["lift_id"] = lift["id"]
-            lift_dict["geometry"] = geometry_json
+            # geometry_json is a geojson blob (the format utils.py's stat
+            # helpers expect); Lift.geometry is a real shapely LineString so
+            # it round-trips through to_db/from_db as WKT
+            lift_dict["geometry"] = shapely.LineString(geometry_json["coordinates"])
             lift_dict["mountain_id"] = self.mountain_id
             lift_dict["length"] = get_length(geometry_json)
             lift_dict["vertical"] = get_vertical_drop(geometry_json)
