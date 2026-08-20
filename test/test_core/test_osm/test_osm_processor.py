@@ -45,11 +45,11 @@ def test_get_trails(osm_file, monkeypatch):
 
     # length/slope stats for an area trail are computed off its route
     # (a real line), not its boundary polygon (not a line to walk along)
-    assert round(trails["w10"].length, 3) == 43.047
+    assert round(trails["w10"].length, 3) == 35.408
     assert trails["w10"].vertical == 34.0
-    assert round(trails["w10"].max_slope, 3) == 76.136
-    assert round(trails["w10"].average_slope, 3) == 30.597
-    assert trails["w10"].steepest_30m == 44.2
+    assert round(trails["w10"].max_slope, 3) == 79.249
+    assert round(trails["w10"].average_slope, 3) == 43.76
+    assert trails["w10"].steepest_30m == 42.1
     assert trails["w10"].steepest_50m is None
     assert trails["w10"].steepest_100m is None
 

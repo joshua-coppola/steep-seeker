@@ -190,7 +190,7 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     # FakeElevation descends 1 unit per point within each trail/area segment;
     # the mountain's vertical is the max-min elevation across all trail points
     assert mountain.vertical == 1215
-    assert mountain.difficulty == 52.4
+    assert mountain.difficulty == 53.8
     assert mountain.beginner_friendliness == 12.8
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01

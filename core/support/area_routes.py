@@ -42,7 +42,7 @@ STEP_DEGREES = 1  # how far each tightening step lowers the slope cap
 MAX_GROWTH_MULTIPLIER = (
     1.2  # route length may grow at most this multiple of the loosest pass's length
 )
-SMOOTHING_WINDOW = 1  # points on each side averaged together in the smoothing pass
+SMOOTHING_WINDOW = 2  # points on each side averaged together in the smoothing pass
 
 Point = tuple[float, float, float]  # (lon, lat, elevation)
 
