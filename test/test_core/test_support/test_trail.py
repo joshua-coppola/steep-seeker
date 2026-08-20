@@ -1,9 +1,9 @@
-from shapely import LineString
 import pytest
+from shapely import LineString
 
-from core.support.trail import Trail
 from core.connectors.database import cursor
 from core.datamodels.database import TrailTable
+from core.support.trail import Trail
 
 
 def test_trail(trail):

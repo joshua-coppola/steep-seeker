@@ -1,31 +1,30 @@
+import json
+import uuid
+from decimal import Decimal
+from math import atan2, degrees
+
 import shapely
 import shapely.ops
-import uuid
-from united_states import UnitedStates
-from math import degrees, atan2
-from typing import Dict
-import json
-from decimal import Decimal
 from rich.progress import track
+from united_states import UnitedStates
 
+from core.connectors.elevation_api import Elevation
+from core.datamodels.state import State
 from core.osm.osm_reader import OSMHandler
-from core.osm.trail_parser import identify_trails, identify_lifts
-from core.support.trail import Trail
+from core.osm.trail_parser import identify_lifts, identify_trails
 from core.support.lift import Lift
+from core.support.route import get_area_route
+from core.support.trail import Trail
 from core.support.utils import (
+    get_average_slope,
+    get_length,
+    get_max_slope,
+    get_steepest_pitch,
+    get_vertical_drop,
+    polygon_interior_grid,
     space_line_points_evenly,
     space_polygon_exterior_points_evenly,
-    polygon_interior_grid,
-    get_length,
-    get_vertical_drop,
-    get_max_slope,
-    get_average_slope,
-    get_steepest_pitch,
 )
-from core.support.route import get_area_route
-from core.datamodels.state import State
-from core.connectors.elevation_api import Elevation
-
 
 ## Todo: handle multiline relations
 
@@ -39,7 +38,7 @@ class OSMProcessor:
     The trails and lifts are stored in dicts of the same name.
     """
 
-    def __init__(self, filename: str, mountain_id: int = None):
+    def __init__(self, filename: str, mountain_id: int | None = None):
         osm_handler = OSMHandler()
         osm_handler.apply_file(filename)
 
@@ -94,20 +93,20 @@ class OSMProcessor:
             }
             for way_id in relation_value.get("members"):
                 way = self.trails[way_id]
-                for key in trail_info.keys():
+                for key, value_list in trail_info.items():
                     if key == "id":
-                        trail_info[key].append(way_id)
+                        value_list.append(way_id)
                     else:
-                        trail_info[key].append(way[key])
+                        value_list.append(way[key])
 
             same_values = 0
-            for key in trail_info.keys():
+            for key, value_list in trail_info.items():
                 if key == "nodes" or key == "id":
                     continue
-                if len(set(trail_info[key])) == 1:
+                if len(set(value_list)) == 1:
                     same_values += 1
 
-            if not same_values == 6:
+            if same_values != 6:
                 continue
 
             to_be_merged = [
@@ -174,31 +173,22 @@ class OSMProcessor:
 
         for trail_id, trail_value in self.trails.items():
             found_match = False
-            for existing_trail in complete_trails.keys():
+            for existing_data in complete_trails.values():
                 matching_parts = 0
-                for key in complete_trails[existing_trail].keys():
+                for key, value in existing_data.items():
                     # skip the unique parts
                     if key == "id" or key == "nodes":
                         continue
-                    if trail_value[key] == complete_trails[existing_trail][key]:
+                    if trail_value[key] == value:
                         matching_parts += 1
 
                 # if all metadata is matching, then check if the start/end points line up
                 if matching_parts == 6:
-                    if (
-                        trail_value["nodes"][0]
-                        == complete_trails[existing_trail]["nodes"][-1]
-                    ):
-                        complete_trails[existing_trail]["nodes"] += trail_value[
-                            "nodes"
-                        ][1:]
-                    elif (
-                        trail_value["nodes"][-1]
-                        == complete_trails[existing_trail]["nodes"][0]
-                    ):
-                        complete_trails[existing_trail]["nodes"] = (
-                            trail_value["nodes"][:-1]
-                            + complete_trails[existing_trail]["nodes"]
+                    if trail_value["nodes"][0] == existing_data["nodes"][-1]:
+                        existing_data["nodes"] += trail_value["nodes"][1:]
+                    elif trail_value["nodes"][-1] == existing_data["nodes"][0]:
+                        existing_data["nodes"] = (
+                            trail_value["nodes"][:-1] + existing_data["nodes"]
                         )
                     else:
                         continue
@@ -209,7 +199,7 @@ class OSMProcessor:
 
         self.trails = complete_trails
 
-    def get_trails(self) -> Dict[str, Trail]:
+    def get_trails(self) -> dict[str, Trail]:
         """
         Transforms the trails dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -282,17 +272,23 @@ class OSMProcessor:
             # Trail's fields are real shapely geometries so they round-trip
             # through to_db/from_db as WKT
             if trail["area"]:
-                trail_dict["geometry"] = shapely.Polygon(geometry_json["coordinates"][0])
+                trail_dict["geometry"] = shapely.Polygon(
+                    geometry_json["coordinates"][0]
+                )
             else:
-                trail_dict["geometry"] = shapely.LineString(geometry_json["coordinates"])
+                trail_dict["geometry"] = shapely.LineString(
+                    geometry_json["coordinates"]
+                )
             trail_dict["interior_geometry"] = (
                 shapely.MultiPoint(interior_geometry["coordinates"])
                 if interior_geometry
                 else None
             )
-            trail_dict["route"] = shapely.LineString(route["coordinates"]) if route else None
+            trail_dict["route"] = (
+                shapely.LineString(route["coordinates"]) if route else None
+            )
 
-            for key in trail.keys():
+            for key in trail:
                 if key == "nodes" or key == "id":
                     continue
                 trail_dict[key] = trail[key]
@@ -302,7 +298,7 @@ class OSMProcessor:
 
         return trail_objects
 
-    def get_lifts(self) -> Dict[str, Lift]:
+    def get_lifts(self) -> dict[str, Lift]:
         """
         Transforms the lifts dict into a standardized format for the rest of
         SteepSeeker. This takes the form of removing references to nodes and
@@ -338,7 +334,7 @@ class OSMProcessor:
             lift_dict["vertical"] = get_vertical_drop(geometry_json)
             lift_dict["average_slope"] = get_average_slope(geometry_json)
 
-            for key in lift.keys():
+            for key in lift:
                 if key == "nodes" or key == "id":
                     continue
                 lift_dict[key] = lift[key]

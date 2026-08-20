@@ -1,10 +1,10 @@
 from uuid import UUID
-from shapely import Point
 
+from shapely import LineString, Point
+
+from core.datamodels.state import State
 from core.osm import osm_processor
 from core.osm.osm_processor import OSMProcessor
-from core.datamodels.state import State
-
 from test.test_core.conftest import FakeElevation
 
 
@@ -32,9 +32,16 @@ def test_get_trails(osm_file, monkeypatch):
     assert len(trails) == 159
     assert isinstance(trails, dict)
     # Non Area Example
-    assert len(trails["w11"].geometry["coordinates"]) == 19
+    assert len(list(trails["w11"].geometry.coords)) == 19
     # Area Example
-    assert len(trails["w10"].geometry["coordinates"][0]) == 36
+    assert len(list(trails["w10"].geometry.exterior.coords)) == 36
+
+    # route is only computed for area trails
+    assert trails["w11"].route is None
+    assert isinstance(trails["w10"].route, LineString)
+    route_coords = list(trails["w10"].route.coords)
+    assert len(route_coords) == 9
+    assert route_coords[0] == (-72.741146, 43.393933, 1499.0)
 
     assert round(trails["w11"].length, 3) == 105.677
     # FakeElevation descends 1 unit per point, so w11 (19 points) drops 18
@@ -51,29 +58,33 @@ def test_get_trails(osm_file, monkeypatch):
     assert trails["w11"].steepest_1000m is None
 
     for trail_id, trail in trails.items():
-        coords = trail.geometry["coordinates"]
-
-        # Handle both LineString and Polygon coordinate structures
+        # Polygons expose their ring via .exterior.coords; lines via .coords
         if trail.area:
-            # For polygons, coordinates are nested one level deeper
-            assert isinstance(coords, list)
-            assert len(coords) > 0
-            actual_coords = coords[0] if coords else []
+            actual_coords = list(trail.geometry.exterior.coords)
+            assert actual_coords[-1] == actual_coords[0], (
+                f"Trail {trail_id}: ring isn't closed. "
+                f"First: {actual_coords[0]}, last: {actual_coords[-1]}"
+            )
         else:
-            # For lines, coordinates are flat
-            actual_coords = coords
+            actual_coords = list(trail.geometry.coords)
 
         # Now check that coordinates have elevation
         assert all(len(coord) == 3 for coord in actual_coords), (
             f"Trail {trail_id}: Not all coords have 3 values. Sample: {actual_coords[:3]}"
         )
-        # FakeElevation starts at 1500 and drops 1 per point in the segment
-        assert all(
-            coord[2] == 1500.0 - i for i, coord in enumerate(actual_coords)
-        ), (
-            f"Trail {trail_id}: elevations don't match the expected descending "
-            f"profile. Sample: {actual_coords[:3]}"
-        )
+
+        # FakeElevation starts at 1500 and drops 1 per new (lon, lat) point
+        # seen in the segment; a repeated coordinate (e.g. a closed ring's
+        # start/end, or a resampling artifact) reuses the elevation it was
+        # first assigned rather than continuing to descend
+        seen = {}
+        for coord in actual_coords:
+            key = (coord[0], coord[1])
+            if key not in seen:
+                seen[key] = 1500.0 - len(seen)
+            assert coord[2] == seen[key], (
+                f"Trail {trail_id}: elevation mismatch at {coord}, expected {seen[key]}"
+            )
 
 
 def test_get_lifts(osm_file, monkeypatch):

@@ -28,7 +28,6 @@ import heapq
 import json
 from collections import defaultdict
 from math import atan, degrees
-from typing import Dict, List, Tuple
 
 import haversine as hs
 import numpy as np
@@ -40,15 +39,17 @@ NEIGHBOR_RADIUS_MULTIPLIER = 1.8  # 8-connects the grid + links boundary to inte
 VERTICAL_BAND_FRACTION = 0.05  # perimeter points within this fraction of the vertical drop from the top/bottom are valid start/end candidates
 START_SLOPE_DEGREES = 70  # loosest slope cap the least-wandering pass starts from
 STEP_DEGREES = 1  # how far each tightening step lowers the slope cap
-MAX_GROWTH_MULTIPLIER = 1.2  # route length may grow at most this multiple of the loosest pass's length
+MAX_GROWTH_MULTIPLIER = (
+    1.2  # route length may grow at most this multiple of the loosest pass's length
+)
 SMOOTHING_WINDOW = 1  # points on each side averaged together in the smoothing pass
 
-Point = Tuple[float, float, float]  # (lon, lat, elevation)
+Point = tuple[float, float, float]  # (lon, lat, elevation)
 
 
 def _bottleneck_dijkstra(
-    adjacency: Dict[int, List[Tuple[int, float, float]]], start: int, n_nodes: int
-) -> List[float]:
+    adjacency: dict[int, list[tuple[int, float, float]]], start: int, n_nodes: int
+) -> list[float]:
     """
     Modified Dijkstra where a path's cost is its single worst edge rather
     than the sum of edges -- finds the minimum steepest-pitch needed to
@@ -74,11 +75,11 @@ def _bottleneck_dijkstra(
 
 
 def _add_virtual_endpoints(
-    adjacency: Dict[int, List[Tuple[int, float, float]]],
+    adjacency: dict[int, list[tuple[int, float, float]]],
     node_elev: np.ndarray,
     n_boundary: int,
     vertical_drop_fraction: float,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """
     Adds two virtual nodes to `adjacency` (indices len(node_elev) and
     len(node_elev) + 1): a virtual start with zero-cost edges to every
@@ -124,13 +125,13 @@ def _add_virtual_endpoints(
 
 
 def _least_wandering_path(
-    adjacency: Dict[int, List[Tuple[int, float, float]]],
+    adjacency: dict[int, list[tuple[int, float, float]]],
     start: int,
     end: int,
     n_nodes: int,
     slope_limit: float,
     epsilon: float = 1e-6,
-) -> Tuple[List[int], float]:
+) -> tuple[list[int], float]:
     """
     Among all routes whose steepest single segment is at or below
     `slope_limit`, find the shortest one (fewest unnecessary detours).
@@ -171,7 +172,7 @@ def _least_wandering_path(
 
 
 def _find_best_max_slope(
-    adjacency: Dict[int, List[Tuple[int, float, float]]],
+    adjacency: dict[int, list[tuple[int, float, float]]],
     start: int,
     end: int,
     n_nodes: int,
@@ -179,7 +180,7 @@ def _find_best_max_slope(
     start_slope: float,
     step: float,
     max_growth_multiplier: float,
-) -> Tuple[float, List[int], float]:
+) -> tuple[float, list[int], float]:
     """
     Starts from a loose `start_slope` cap and tightens it toward the
     bottleneck minimum (`slope_limit`) in `step`-degree increments,
@@ -218,7 +219,9 @@ def _find_best_max_slope(
     return best
 
 
-def _smooth_route(nodes: List[Point], route_indices: List[int], window: int) -> List[Point]:
+def _smooth_route(
+    nodes: list[Point], route_indices: list[int], window: int
+) -> list[Point]:
     """
     Basic moving-average smoothing: replaces each interior route point with
     the average lon/lat/elevation of itself and its `window` neighbors on
@@ -244,15 +247,15 @@ def _smooth_route(nodes: List[Point], route_indices: List[int], window: int) -> 
 
 
 def get_area_route(
-    geometry: Dict[str, str],
-    interior_geometry: Dict[str, str],
+    geometry: dict[str, str],
+    interior_geometry: dict[str, str],
     vertical_band_fraction: float = VERTICAL_BAND_FRACTION,
     neighbor_radius_multiplier: float = NEIGHBOR_RADIUS_MULTIPLIER,
     start_slope: float = START_SLOPE_DEGREES,
     step: float = STEP_DEGREES,
     max_growth_multiplier: float = MAX_GROWTH_MULTIPLIER,
     smoothing_window: int = SMOOTHING_WINDOW,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Accepts an area trail's boundary geometry (a Polygon geojson blob, as
     produced by space_polygon_exterior_points_evenly) and interior
@@ -272,7 +275,9 @@ def get_area_route(
     raw_nodes = list(boundary_points) + list(interior_points)
     # OSM coordinates come through as Decimal; cast to float so numpy/math
     # ops work, and drop any point elevation lookups failed for
-    nodes = [(float(p[0]), float(p[1]), float(p[2])) for p in raw_nodes if p[2] is not None]
+    nodes = [
+        (float(p[0]), float(p[1]), float(p[2])) for p in raw_nodes if p[2] is not None
+    ]
 
     node_lon = np.array([p[0] for p in nodes])
     node_lat = np.array([p[1] for p in nodes])
@@ -285,7 +290,9 @@ def get_area_route(
     lon_window = neighbor_radius_m / meters_per_deg_lon
     lat_window = neighbor_radius_m / meters_per_deg_lat
 
-    adjacency = defaultdict(list)  # node index -> [(neighbor index, distance_m, slope_deg), ...]
+    adjacency = defaultdict(
+        list
+    )  # node index -> [(neighbor index, distance_m, slope_deg), ...]
 
     for i in range(n_nodes):
         candidates = np.where(
@@ -296,7 +303,9 @@ def get_area_route(
             if j <= i:
                 continue
             dist = hs.haversine(
-                (node_lat[i], node_lon[i]), (node_lat[j], node_lon[j]), unit=hs.Unit.METERS
+                (node_lat[i], node_lon[i]),
+                (node_lat[j], node_lon[j]),
+                unit=hs.Unit.METERS,
             )
             if dist == 0 or dist > neighbor_radius_m:
                 continue
@@ -310,7 +319,9 @@ def get_area_route(
     )
     n_nodes_with_virtual = n_nodes + 2
 
-    bottleneck = _bottleneck_dijkstra(adjacency, virtual_start_idx, n_nodes_with_virtual)
+    bottleneck = _bottleneck_dijkstra(
+        adjacency, virtual_start_idx, n_nodes_with_virtual
+    )
     slope_limit = bottleneck[virtual_end_idx]
 
     best = _find_best_max_slope(

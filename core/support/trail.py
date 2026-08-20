@@ -1,8 +1,9 @@
 from dataclasses import dataclass, fields
-from typing import Self, Optional
+from typing import Self
+
 from shapely import LineString, Polygon, wkt
 
-from core.connectors.database import cursor, DATABASE_PATH
+from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import TrailTable
 
 
@@ -23,19 +24,19 @@ class Trail:
     area: bool
     ungroomed: bool
     park: bool
-    length: Optional[float]
-    vertical: Optional[float] = None
-    difficulty: Optional[float] = None
-    max_slope: Optional[float] = None
-    average_slope: Optional[float] = None
-    steepest_30m: Optional[float] = None
-    steepest_50m: Optional[float] = None
-    steepest_100m: Optional[float] = None
-    steepest_200m: Optional[float] = None
-    steepest_500m: Optional[float] = None
-    steepest_1000m: Optional[float] = None
-    interior_geometry: Optional[LineString | Polygon] = ""
-    route: Optional[LineString] = None
+    length: float | None
+    vertical: float | None = None
+    difficulty: float | None = None
+    max_slope: float | None = None
+    average_slope: float | None = None
+    steepest_30m: float | None = None
+    steepest_50m: float | None = None
+    steepest_100m: float | None = None
+    steepest_200m: float | None = None
+    steepest_500m: float | None = None
+    steepest_1000m: float | None = None
+    interior_geometry: LineString | Polygon | None = ""
+    route: LineString | None = None
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
