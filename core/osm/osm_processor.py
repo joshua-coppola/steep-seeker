@@ -255,6 +255,25 @@ class OSMProcessor:
                     interior_geometry["coordinates"]
                 )
                 route = get_area_route(geometry_json, interior_geometry)
+                # get_area_route's smoothing pass produces elevations by
+                # averaging neighboring points, not by measuring the
+                # smoothed position -- re-space and re-query elevation the
+                # same way boundary/lift geometry does, so the route's
+                # elevations (and slope stats derived from them) reflect
+                # real terrain
+                route_line = space_line_points_evenly(
+                    shapely.LineString(
+                        [(point[0], point[1]) for point in route["coordinates"]]
+                    )
+                )
+                route = {
+                    "coordinates": elevation_api.get(
+                        [
+                            [round(Decimal(i), 6) for i in coord]
+                            for coord in route_line.coords
+                        ]
+                    )
+                }
 
             # length/slope stats need a real line to walk along -- a
             # boundary polygon's ring isn't one, so area trails use their

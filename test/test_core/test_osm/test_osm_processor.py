@@ -40,16 +40,19 @@ def test_get_trails(osm_file, monkeypatch):
     assert trails["w11"].route is None
     assert isinstance(trails["w10"].route, LineString)
     route_coords = list(trails["w10"].route.coords)
-    assert len(route_coords) == 9
-    assert route_coords[0] == (-72.741146, 43.393933, 1499.0)
+    # the route is re-spaced and re-queried for elevation after smoothing
+    # (see get_trails), so its point count/spacing no longer matches the
+    # boundary/interior grid's
+    assert len(route_coords) == 7
+    assert route_coords[0] == (-72.741146, 43.393933, 1500.0)
 
     # length/slope stats for an area trail are computed off its route
     # (a real line), not its boundary polygon (not a line to walk along)
-    assert round(trails["w10"].length, 3) == 35.408
+    assert round(trails["w10"].length, 3) == 34.266
     assert trails["w10"].vertical == 34.0
-    assert round(trails["w10"].max_slope, 3) == 79.249
-    assert round(trails["w10"].average_slope, 3) == 43.76
-    assert trails["w10"].steepest_30m == 42.1
+    assert round(trails["w10"].max_slope, 3) == 11.655
+    assert round(trails["w10"].average_slope, 3) == 10.018
+    assert trails["w10"].steepest_30m == 9.9
     assert trails["w10"].steepest_50m is None
     assert trails["w10"].steepest_100m is None
 
