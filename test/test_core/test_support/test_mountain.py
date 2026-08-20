@@ -1,22 +1,22 @@
 from datetime import datetime
 from uuid import UUID
-import pytest
-from shapely import Point
 
-from core.support.mountain import Mountain
-from core.datamodels.state import State
-from core.datamodels.region import Region
-from core.datamodels.season_pass import Season_Pass
+import pytest
+
 from core.connectors.database import cursor
 from core.datamodels.database import MountainTable
+from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
+from core.datamodels.state import State
 from core.osm import osm_processor
 from core.support import mountain as mountain_module
-
+from core.support.mountain import Mountain
 from test.test_core.conftest import FakeElevation, FakeWeather
 
 
 def test_mountain(mountain):
-    assert mountain.last_updated.date() == datetime(2000, 2, 5, 12, 30, 5).date()
+    # naive on purpose, matching the app's naive last_updated convention
+    assert mountain.last_updated.date() == datetime(2000, 2, 5, 12, 30, 5).date()  # noqa: DTZ001
 
 
 def test_mountain_region(mountain):
@@ -128,7 +128,7 @@ def test_mountain_to_db(mountain, db_path):
         MountainTable.average_icy_days: 25.0,
         MountainTable.average_snow: 150.0,
         MountainTable.average_rain: 10.0,
-        MountainTable.last_updated: str(datetime(2000, 2, 5, 12, 30, 5)),
+        MountainTable.last_updated: str(datetime(2000, 2, 5, 12, 30, 5)),  # noqa: DTZ001
         MountainTable.url: "https://test.com",
     }
 
@@ -188,9 +188,7 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     # FakeElevation descends 1 unit per point within each trail/area segment;
     # the mountain's vertical is the max-min elevation across all trail points
     assert mountain.vertical == 1215
-    # weighted blend of the hardest/easiest trails' difficulty, restricted
-    # to trails longer than 100m (129 of the mountain's 159 trails qualify)
-    assert mountain.difficulty == 17.9
+    assert mountain.difficulty == 52.4
     assert mountain.beginner_friendliness == 12.8
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01

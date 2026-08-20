@@ -255,16 +255,21 @@ class OSMProcessor:
                 )
                 route = get_area_route(geometry_json, interior_geometry)
 
+            # length/slope stats need a real line to walk along -- a
+            # boundary polygon's ring isn't one, so area trails use their
+            # computed route (the least-steep line down the area) instead
+            stats_geometry = route if trail["area"] else geometry_json
+
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
             trail_dict["mountain_id"] = self.mountain_id
-            trail_dict["length"] = get_length(geometry_json)
+            trail_dict["length"] = get_length(stats_geometry)
             trail_dict["vertical"] = get_vertical_drop(geometry_json)
-            trail_dict["max_slope"] = get_max_slope(geometry_json)
-            trail_dict["average_slope"] = get_average_slope(geometry_json)
+            trail_dict["max_slope"] = get_max_slope(stats_geometry)
+            trail_dict["average_slope"] = get_average_slope(stats_geometry)
             for window_meters in STEEPEST_PITCH_WINDOWS_METERS:
                 trail_dict[f"steepest_{window_meters}m"] = get_steepest_pitch(
-                    geometry_json, window_meters
+                    stats_geometry, window_meters
                 )
 
             # geometry_json/interior_geometry/route are geojson blobs (the

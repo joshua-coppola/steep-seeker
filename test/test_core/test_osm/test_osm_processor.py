@@ -43,6 +43,16 @@ def test_get_trails(osm_file, monkeypatch):
     assert len(route_coords) == 9
     assert route_coords[0] == (-72.741146, 43.393933, 1499.0)
 
+    # length/slope stats for an area trail are computed off its route
+    # (a real line), not its boundary polygon (not a line to walk along)
+    assert round(trails["w10"].length, 3) == 43.047
+    assert trails["w10"].vertical == 34.0
+    assert round(trails["w10"].max_slope, 3) == 76.136
+    assert round(trails["w10"].average_slope, 3) == 30.597
+    assert trails["w10"].steepest_30m == 44.2
+    assert trails["w10"].steepest_50m is None
+    assert trails["w10"].steepest_100m is None
+
     assert round(trails["w11"].length, 3) == 105.677
     # FakeElevation descends 1 unit per point, so w11 (19 points) drops 18
     assert trails["w11"].vertical == 18.0
