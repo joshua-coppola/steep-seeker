@@ -39,17 +39,15 @@ NEIGHBOR_RADIUS_MULTIPLIER = 1.8  # 8-connects the grid + links boundary to inte
 VERTICAL_BAND_FRACTION = 0.05  # perimeter points within this fraction of the vertical drop from the top/bottom are valid start/end candidates
 START_SLOPE_DEGREES = 70  # loosest slope cap the least-wandering pass starts from
 STEP_DEGREES = 1  # how far each tightening step lowers the slope cap
-MAX_GROWTH_MULTIPLIER = (
-    1.2  # route length may grow at most this multiple of the loosest pass's length
-)
+MAX_GROWTH_MULTIPLIER = 1.2  # max route-length growth vs. loosest pass
 SMOOTHING_WINDOW = 2  # points on each side averaged together in the smoothing pass
 
 Point = tuple[float, float, float]  # (lon, lat, elevation)
+# node index -> [(neighbor index, distance_m, slope_deg), ...]
+Adjacency = dict[int, list[tuple[int, float, float]]]
 
 
-def _bottleneck_dijkstra(
-    adjacency: dict[int, list[tuple[int, float, float]]], start: int, n_nodes: int
-) -> list[float]:
+def _bottleneck_dijkstra(adjacency: Adjacency, start: int, n_nodes: int) -> list[float]:
     """
     Modified Dijkstra where a path's cost is its single worst edge rather
     than the sum of edges -- finds the minimum steepest-pitch needed to
@@ -75,7 +73,7 @@ def _bottleneck_dijkstra(
 
 
 def _add_virtual_endpoints(
-    adjacency: dict[int, list[tuple[int, float, float]]],
+    adjacency: Adjacency,
     node_elev: np.ndarray,
     n_boundary: int,
     vertical_drop_fraction: float,
@@ -125,7 +123,7 @@ def _add_virtual_endpoints(
 
 
 def _least_wandering_path(
-    adjacency: dict[int, list[tuple[int, float, float]]],
+    adjacency: Adjacency,
     start: int,
     end: int,
     n_nodes: int,
@@ -172,7 +170,7 @@ def _least_wandering_path(
 
 
 def _find_best_max_slope(
-    adjacency: dict[int, list[tuple[int, float, float]]],
+    adjacency: Adjacency,
     start: int,
     end: int,
     n_nodes: int,
@@ -290,9 +288,7 @@ def get_area_route(
     lon_window = neighbor_radius_m / meters_per_deg_lon
     lat_window = neighbor_radius_m / meters_per_deg_lat
 
-    adjacency = defaultdict(
-        list
-    )  # node index -> [(neighbor index, distance_m, slope_deg), ...]
+    adjacency: Adjacency = defaultdict(list)
 
     for i in range(n_nodes):
         candidates = np.where(
