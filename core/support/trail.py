@@ -5,6 +5,7 @@ from shapely import LineString, Polygon, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import TrailTable
+from core.support.utils import round_geometry_precision
 
 
 @dataclass
@@ -151,9 +152,13 @@ class Trail:
             params = (
                 self.trail_id,
                 self.mountain_id,
-                str(self.geometry),
-                str(self.interior_geometry),
-                str(self.route) if self.route is not None else None,
+                str(round_geometry_precision(self.geometry)),
+                str(round_geometry_precision(self.interior_geometry))
+                if self.interior_geometry
+                else str(self.interior_geometry),
+                str(round_geometry_precision(self.route))
+                if self.route is not None
+                else None,
                 self.name,
                 self.official_rating,
                 self.gladed,

@@ -4,6 +4,7 @@ from shapely import LineString, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import LiftTable
+from core.support.utils import round_geometry_precision
 
 
 @dataclass
@@ -92,7 +93,7 @@ class Lift:
             params = (
                 self.lift_id,
                 self.mountain_id,
-                str(self.geometry),
+                str(round_geometry_precision(self.geometry)),
                 self.name,
                 self.lift_type,
                 self.occupancy,

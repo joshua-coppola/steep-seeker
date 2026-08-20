@@ -25,6 +25,12 @@ class Elevation:
         if not nodes:
             return []
 
+        # Round before using as a cache key -- upstream geometry math
+        # (reprojection round-trips, resampling) leaves float noise past the
+        # 6th decimal place that would otherwise miss the cache even though
+        # the point is the same one already cached.
+        nodes = [(round(lon, 6), round(lat, 6)) for lon, lat in nodes]
+
         # Create point strings for all nodes
         node_points = {str(shapely.Point(lon, lat)): (lon, lat) for lon, lat in nodes}
 

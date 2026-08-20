@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 import pytest
+from shapely import Point
 
 from core.connectors.database import cursor
 from core.datamodels.database import MountainTable
@@ -169,6 +170,17 @@ def test_mountain_to_db(mountain, db_path):
         mountain.to_db(db_path=db_path)
 
     assert "fields are missing" in str(exc_info)
+
+
+def test_mountain_to_db_rounds_coordinates_precision(mountain, db_path):
+    mountain.coordinates = Point(-72.1234567891, 43.1234567891)
+
+    mountain.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Mountains").fetchall()[0])
+
+    assert result[MountainTable.coordinates] == "POINT (-72.123457 43.123457)"
 
 
 def test_mountain_from_osm(osm_file, monkeypatch):

@@ -128,6 +128,28 @@ def test_trail_to_db(trail, db_path):
     assert "fields are missing" in str(exc_info)
 
 
+def test_trail_to_db_rounds_geometry_precision(trail, db_path):
+    trail.geometry = LineString([[-72.1234567891, 43.1234567891, 10], [0, 0, 0]])
+    trail.interior_geometry = LineString(
+        [[-72.1234567891, 43.1234567891, 10], [0, 0, 0]]
+    )
+    trail.route = LineString([[-72.1234567891, 43.1234567891, 10], [0, 0, 0]])
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+
+    assert (
+        result[TrailTable.geometry] == "LINESTRING Z (-72.123457 43.123457 10, 0 0 0)"
+    )
+    assert (
+        result[TrailTable.interior_geometry]
+        == "LINESTRING Z (-72.123457 43.123457 10, 0 0 0)"
+    )
+    assert result[TrailTable.route] == "LINESTRING Z (-72.123457 43.123457 10, 0 0 0)"
+
+
 def test_trail_to_db_allows_missing_steepest_pitch(trail, db_path):
     # A trail shorter than a given window legitimately has no steepest
     # pitch for it, so these fields should not block saving

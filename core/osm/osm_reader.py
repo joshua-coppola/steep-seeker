@@ -1,5 +1,4 @@
 import osmium
-from decimal import Decimal
 
 
 class OSMHandler(osmium.SimpleHandler):
@@ -23,8 +22,8 @@ class OSMHandler(osmium.SimpleHandler):
 
     def node(self, n):
         self.nodes[n.id] = {
-            "lat": round(Decimal(n.lat), 6),
-            "lon": round(Decimal(n.lon), 6),
+            "lat": round(n.lat, 6),
+            "lon": round(n.lon, 6),
         }
 
     def way(self, w):

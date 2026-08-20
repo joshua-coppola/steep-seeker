@@ -1,5 +1,4 @@
 import uuid
-from decimal import Decimal
 from math import atan2, degrees
 
 import shapely
@@ -223,37 +222,21 @@ class OSMProcessor:
             if not trail["area"]:
                 geometry = space_line_points_evenly(shapely.LineString(node_array))
                 geometry_json = {
-                    "coordinates": [
-                        [round(Decimal(i), 6) for i in coord]
-                        for coord in geometry.coords
-                    ]
+                    "coordinates": elevation_api.get(list(geometry.coords))
                 }
-                geometry_json["coordinates"] = elevation_api.get(
-                    geometry_json["coordinates"]
-                )
             else:
                 geometry = space_polygon_exterior_points_evenly(
                     shapely.Polygon(node_array)
                 )
                 geometry_json = {
-                    "coordinates": [
-                        [round(Decimal(i), 6) for i in coord]
-                        for coord in geometry.exterior.coords
-                    ]
+                    "coordinates": [elevation_api.get(list(geometry.exterior.coords))]
                 }
-                geometry_json["coordinates"] = [
-                    elevation_api.get(geometry_json["coordinates"])
-                ]
                 interior_multipoint = polygon_interior_grid(geometry)
                 interior_geometry = {
-                    "coordinates": [
-                        [round(Decimal(i), 6) for i in point.coords[0]]
-                        for point in interior_multipoint.geoms
-                    ]
+                    "coordinates": elevation_api.get(
+                        [point.coords[0] for point in interior_multipoint.geoms]
+                    )
                 }
-                interior_geometry["coordinates"] = elevation_api.get(
-                    interior_geometry["coordinates"]
-                )
                 route = get_area_route(geometry_json, interior_geometry)
                 # get_area_route's smoothing pass produces elevations by
                 # averaging neighboring points, not by measuring the
@@ -266,14 +249,7 @@ class OSMProcessor:
                         [(point[0], point[1]) for point in route["coordinates"]]
                     )
                 )
-                route = {
-                    "coordinates": elevation_api.get(
-                        [
-                            [round(Decimal(i), 6) for i in coord]
-                            for coord in route_line.coords
-                        ]
-                    )
-                }
+                route = {"coordinates": elevation_api.get(list(route_line.coords))}
 
             # length/slope stats need a real line to walk along -- a
             # boundary polygon's ring isn't one, so area trails use their
@@ -342,14 +318,7 @@ class OSMProcessor:
                 node_array.append(point)
 
             geometry = space_line_points_evenly(shapely.LineString(node_array))
-            geometry_json = {
-                "coordinates": [
-                    [round(Decimal(i), 6) for i in coord] for coord in geometry.coords
-                ]
-            }
-            geometry_json["coordinates"] = elevation_api.get(
-                geometry_json["coordinates"]
-            )
+            geometry_json = {"coordinates": elevation_api.get(list(geometry.coords))}
 
             lift_dict = {}
             lift_dict["lift_id"] = lift["id"]

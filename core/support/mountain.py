@@ -13,7 +13,11 @@ from core.datamodels.state import State
 from core.osm.osm_processor import OSMProcessor
 from core.support.lift import Lift
 from core.support.trail import Trail
-from core.support.utils import get_mountain_rating, get_trail_difficulty
+from core.support.utils import (
+    get_mountain_rating,
+    get_trail_difficulty,
+    round_geometry_precision,
+)
 
 
 @dataclass
@@ -198,7 +202,7 @@ class Mountain:
                 self.name,
                 self.state.value,
                 self.direction,
-                str(self.coordinates),
+                str(round_geometry_precision(self.coordinates)),
                 season_passes,
                 self.vertical,
                 self.difficulty,
