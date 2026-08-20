@@ -28,6 +28,7 @@ class TrailTable:
     mountain_id: str = "mountain_id"
     geometry: str = "geometry"
     interior_geometry: str = "interior_geometry"
+    route: str = "route"
     name: str = "name"
     official_rating: str = "official_rating"
     gladed: str = "gladed"

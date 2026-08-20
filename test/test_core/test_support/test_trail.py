@@ -85,6 +85,7 @@ def test_trail_to_db(trail, db_path):
         TrailTable.mountain_id: 1,
         TrailTable.geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         TrailTable.interior_geometry: "LINESTRING Z (1 1 10, 0 0 0)",
+        TrailTable.route: None,
         TrailTable.name: "Test",
         TrailTable.official_rating: "Expert",
         TrailTable.gladed: 1,

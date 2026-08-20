@@ -34,7 +34,8 @@ class Trail:
     steepest_200m: Optional[float] = None
     steepest_500m: Optional[float] = None
     steepest_1000m: Optional[float] = None
-    interior_geometry: Optional[str] = ""
+    interior_geometry: Optional[LineString | Polygon] = ""
+    route: Optional[LineString] = None
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
@@ -50,8 +51,13 @@ class Trail:
 
         result = dict(result)
         result[TrailTable.geometry] = wkt.loads(result[TrailTable.geometry])
-        result[TrailTable.interior_geometry] = wkt.loads(
-            result[TrailTable.interior_geometry]
+        result[TrailTable.interior_geometry] = (
+            wkt.loads(result[TrailTable.interior_geometry])
+            if result[TrailTable.interior_geometry]
+            else None
+        )
+        result[TrailTable.route] = (
+            wkt.loads(result[TrailTable.route]) if result[TrailTable.route] else None
         )
         result[TrailTable.gladed] = bool(result[TrailTable.gladed])
         result[TrailTable.area] = bool(result[TrailTable.area])
@@ -73,6 +79,7 @@ class Trail:
             "steepest_200m",
             "steepest_500m",
             "steepest_1000m",
+            "route",
         }
 
         # check that all other fields have been populated before saving
@@ -87,6 +94,9 @@ class Trail:
         if self.interior_geometry == "" and self.area:
             raise ValueError("The following fields are missing: interior_geometry")
 
+        if self.route is None and self.area:
+            raise ValueError("The following fields are missing: route")
+
         with cursor(db_path=db_path) as cur:
             query = f"""
                 INSERT INTO Trails (
@@ -94,6 +104,7 @@ class Trail:
                     {TrailTable.mountain_id},
                     {TrailTable.geometry},
                     {TrailTable.interior_geometry},
+                    {TrailTable.route},
                     {TrailTable.name},
                     {TrailTable.official_rating},
                     {TrailTable.gladed},
@@ -112,11 +123,12 @@ class Trail:
                     {TrailTable.steepest_500m},
                     {TrailTable.steepest_1000m}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
                     {TrailTable.interior_geometry} = excluded.{TrailTable.interior_geometry},
+                    {TrailTable.route} = excluded.{TrailTable.route},
                     {TrailTable.name} = excluded.{TrailTable.name},
                     {TrailTable.official_rating} = excluded.{TrailTable.official_rating},
                     {TrailTable.gladed} = excluded.{TrailTable.gladed},
@@ -140,6 +152,7 @@ class Trail:
                 self.mountain_id,
                 str(self.geometry),
                 str(self.interior_geometry),
+                str(self.route) if self.route is not None else None,
                 self.name,
                 self.official_rating,
                 self.gladed,
