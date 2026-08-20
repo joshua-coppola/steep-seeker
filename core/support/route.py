@@ -36,7 +36,7 @@ import shapely
 
 SPACING_FEET = 20  # matches polygon_interior_grid's/space_polygon_exterior_points_evenly's default sample spacing
 SPACING_METERS = SPACING_FEET / 3.28084
-NEIGHBOR_RADIUS_METERS = SPACING_METERS * 1.8  # 8-connects the grid + links boundary to interior
+NEIGHBOR_RADIUS_MULTIPLIER = 1.8  # 8-connects the grid + links boundary to interior
 VERTICAL_BAND_FRACTION = 0.05  # perimeter points within this fraction of the vertical drop from the top/bottom are valid start/end candidates
 START_SLOPE_DEGREES = 70  # loosest slope cap the least-wandering pass starts from
 STEP_DEGREES = 1  # how far each tightening step lowers the slope cap
@@ -218,18 +218,6 @@ def _find_best_max_slope(
     return best
 
 
-def _point_metrics(point_a: Point, point_b: Point) -> Tuple[float, float]:
-    """
-    Direct distance (m) and slope (degrees) between two (lon, lat, elev)
-    points, regardless of whether they're connected in the graph.
-    """
-    lon_a, lat_a, elev_a = point_a
-    lon_b, lat_b, elev_b = point_b
-    dist = hs.haversine((lat_a, lon_a), (lat_b, lon_b), unit=hs.Unit.METERS)
-    slope = abs(degrees(atan((elev_a - elev_b) / dist))) if dist > 0 else 0.0
-    return dist, slope
-
-
 def _smooth_route(nodes: List[Point], route_indices: List[int], window: int) -> List[Point]:
     """
     Basic moving-average smoothing: replaces each interior route point with
@@ -259,7 +247,7 @@ def get_area_route(
     geometry: Dict[str, str],
     interior_geometry: Dict[str, str],
     vertical_band_fraction: float = VERTICAL_BAND_FRACTION,
-    neighbor_radius_multiplier: float = NEIGHBOR_RADIUS_METERS / SPACING_METERS,
+    neighbor_radius_multiplier: float = NEIGHBOR_RADIUS_MULTIPLIER,
     start_slope: float = START_SLOPE_DEGREES,
     step: float = STEP_DEGREES,
     max_growth_multiplier: float = MAX_GROWTH_MULTIPLIER,
@@ -325,7 +313,7 @@ def get_area_route(
     bottleneck = _bottleneck_dijkstra(adjacency, virtual_start_idx, n_nodes_with_virtual)
     slope_limit = bottleneck[virtual_end_idx]
 
-    _max_slope, route_indices, _route_length_m = _find_best_max_slope(
+    best = _find_best_max_slope(
         adjacency,
         virtual_start_idx,
         virtual_end_idx,
@@ -335,6 +323,13 @@ def get_area_route(
         step=step,
         max_growth_multiplier=max_growth_multiplier,
     )
+    if best is None:
+        raise ValueError(
+            "No route connects a valid start point to a valid end point even at "
+            f"the loosest slope cap ({start_slope} degrees) -- the sampled points "
+            "may not form a connected graph."
+        )
+    _max_slope, route_indices, _route_length_m = best
 
     route_indices = route_indices[1:-1]  # drop the virtual start/end bridging nodes
     route_points = _smooth_route(nodes, route_indices, window=smoothing_window)
