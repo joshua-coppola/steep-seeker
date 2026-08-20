@@ -5,7 +5,7 @@ import haversine as hs
 import numpy as np
 import pytest
 
-from core.support.route import get_area_route
+from core.support.area_routes import get_area_route
 
 
 def _sloped_square(

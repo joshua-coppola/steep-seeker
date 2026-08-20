@@ -12,8 +12,8 @@ from core.connectors.elevation_api import Elevation
 from core.datamodels.state import State
 from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_lifts, identify_trails
+from core.support.area_routes import get_area_route
 from core.support.lift import Lift
-from core.support.route import get_area_route
 from core.support.trail import Trail
 from core.support.utils import (
     get_average_slope,
