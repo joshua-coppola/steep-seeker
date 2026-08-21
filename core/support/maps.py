@@ -107,10 +107,10 @@ def _get_label_placement(
     valid_list = []
 
     for i, _ in enumerate(x):
-        valid = False
-        if average_point_gap * i > label_length / 2:
-            if average_point_gap * (point_count - i) > label_length / 2:
-                valid = True
+        valid = (
+            average_point_gap * i > label_length / 2
+            and average_point_gap * (point_count - i) > label_length / 2
+        )
         if i == 0:
             ang = 0
         else:
@@ -165,10 +165,6 @@ def _find_map_size(mountain: Mountain) -> dict:
         lons, lats = _xy_from_coords(coords)
         trail_lons.extend(lons)
         trail_lats.extend(lats)
-        if trail.route is not None:
-            lons, lats = _xy_from_coords(trail.route.coords)
-            trail_lons.extend(lons)
-            trail_lats.extend(lats)
 
     lift_lons: list[float] = []
     lift_lats: list[float] = []
@@ -177,8 +173,8 @@ def _find_map_size(mountain: Mountain) -> dict:
         lift_lons.extend(lons)
         lift_lats.extend(lats)
 
-    trail_max_lat, trail_min_lat = max(trail_lats), min(trail_lats)
-    trail_max_lon, trail_min_lon = max(trail_lons), min(trail_lons)
+    trail_max_lat = max(trail_lats)
+    trail_max_lon = max(trail_lons)
 
     all_lats = trail_lats + lift_lats
     all_lons = trail_lons + lift_lons
@@ -197,12 +193,12 @@ def _find_map_size(mountain: Mountain) -> dict:
     if "s" in mountain.direction or "n" in mountain.direction:
         x_length, y_length = y_length, x_length
 
-    return dict(
-        x_length=x_length,
-        y_length=y_length,
-        x_point=trail_max_lat,
-        y_point=trail_max_lon,
-    )
+    return {
+        "x_length": x_length,
+        "y_length": y_length,
+        "x_point": trail_max_lat,
+        "y_point": trail_max_lon,
+    }
 
 
 def _populate_map(
@@ -265,7 +261,7 @@ def _populate_map(
                     ha="center",
                     backgroundcolor="white",
                     va="center",
-                    bbox=dict(boxstyle="square,pad=0.01", fc="white", ec="none"),
+                    bbox={"boxstyle": "square,pad=0.01", "fc": "white", "ec": "none"},
                 )
 
     # trails
@@ -290,7 +286,9 @@ def _populate_map(
             debug_x = [j * lat_mirror for j in debug_x]
             debug_y = [k * lon_mirror for k in debug_y]
 
-        color = _trail_color(trail.difficulty) if trail.difficulty is not None else "grey"
+        color = (
+            _trail_color(trail.difficulty) if trail.difficulty is not None else "grey"
+        )
 
         # place lines
         if trail.area:
@@ -342,7 +340,7 @@ def _populate_map(
                     ha="center",
                     backgroundcolor="white",
                     va="center",
-                    bbox=dict(boxstyle="square,pad=0.01", fc="white", ec="none"),
+                    bbox={"boxstyle": "square,pad=0.01", "fc": "white", "ec": "none"},
                 )
 
 
@@ -373,8 +371,7 @@ def create_map(
     plt.xticks([])
     plt.yticks([])
 
-    if font_size > 16:
-        font_size = 16
+    font_size = min(font_size, 16)
     if font_size == 5:
         plt.gcf().text(
             0.5,
