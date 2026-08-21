@@ -1,9 +1,9 @@
 import shapely
-from decimal import Decimal
 
 from core.support.utils import (
     space_line_points_evenly,
     polygon_interior_grid,
+    round_geometry_precision,
     get_length,
     get_vertical_drop,
     get_max_slope,
@@ -12,6 +12,27 @@ from core.support.utils import (
     get_trail_difficulty,
     get_mountain_rating,
 )
+
+
+def test_round_geometry_precision_point():
+    point = shapely.Point(-72.123456789012345, 43.987654321098765)
+
+    rounded = round_geometry_precision(point)
+
+    assert rounded == shapely.Point(-72.123457, 43.987654)
+
+
+def test_round_geometry_precision_leaves_elevation_untouched():
+    line = shapely.LineString(
+        [(-72.1234567891, 43.1234567891, 1000.123456), (-72.2, 43.2, 1001.0)]
+    )
+
+    rounded = round_geometry_precision(line)
+
+    assert list(rounded.coords) == [
+        (-72.123457, 43.123457, 1000.123456),
+        (-72.2, 43.2, 1001.0),
+    ]
 
 
 def test_space_line_points_evenly():
@@ -34,8 +55,8 @@ def test_get_length():
     geojson = {
         'type': 'LineString', 
         'coordinates': [
-            [Decimal('-72.718289'), Decimal('43.422299'), 1500.0],
-            [Decimal('-72.718362'), Decimal('43.422312'), 1500.0],
+            [-72.718289, 43.422299, 1500.0],
+            [-72.718362, 43.422312, 1500.0],
         ],
     }
 

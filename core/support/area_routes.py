@@ -271,11 +271,8 @@ def get_area_route(
     n_boundary = len(boundary_points)
 
     raw_nodes = list(boundary_points) + list(interior_points)
-    # OSM coordinates come through as Decimal; cast to float so numpy/math
-    # ops work, and drop any point elevation lookups failed for
-    nodes = [
-        (float(p[0]), float(p[1]), float(p[2])) for p in raw_nodes if p[2] is not None
-    ]
+    # drop any point elevation lookups failed for
+    nodes = [(p[0], p[1], p[2]) for p in raw_nodes if p[2] is not None]
 
     node_lon = np.array([p[0] for p in nodes])
     node_lat = np.array([p[1] for p in nodes])

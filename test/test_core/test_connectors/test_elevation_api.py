@@ -49,3 +49,28 @@ def test_get_elevation_api_failure(monkeypatch, cache_db_path):
 def test_get_elevation_empty_nodes():
     # Should just return empty list if input is empty
     assert Elevation().get([]) == []
+
+
+def test_get_elevation_rounds_before_cache_lookup(monkeypatch, cache_db_path):
+    monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
+
+    def fake_get(url):
+        return FakeResponse(200, [{"elevation": 1600}])
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    # Seed the cache with a canonical, 6-decimal-place point.
+    Elevation().get([(-105.123456, 40.654321)])
+
+    # A point differing only by float noise past the 6th decimal place --
+    # the kind reprojection/resampling math produces for what is really the
+    # same point -- must still round to the cached point and hit the cache
+    # rather than re-querying the API.
+    def fail_get(url):
+        raise AssertionError("should not hit the API on a cache hit")
+
+    monkeypatch.setattr(requests, "get", fail_get)
+
+    result = Elevation().get([(-105.123456 + 3e-9, 40.654321 - 4e-9)])
+
+    assert result == [[-105.123456, 40.654321, 1600]]

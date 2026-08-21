@@ -58,10 +58,10 @@ class FakeElevation:
         seen = {}
         results = []
         for lon, lat in nodes:
-            key = (lon, lat)
+            key = (round(lon, 6), round(lat, 6))
             if key not in seen:
                 seen[key] = 1500.0 - len(seen)
-            results.append([lon, lat, seen[key]])
+            results.append([key[0], key[1], seen[key]])
         return results
 
 

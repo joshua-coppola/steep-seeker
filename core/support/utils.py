@@ -6,6 +6,28 @@ import pyproj
 import shapely
 import shapely.ops
 
+COORDINATE_PRECISION = 6
+
+
+def round_geometry_precision(
+    geometry: shapely.geometry.base.BaseGeometry,
+    ndigits: int = COORDINATE_PRECISION,
+) -> shapely.geometry.base.BaseGeometry:
+    """
+    Returns a copy of the given geometry with its x/y coordinates rounded to
+    `ndigits` decimal places (6dp is ~11cm). Elevation (z), if present, is
+    left untouched. Call this on any geometry right before it's persisted,
+    so precision is guaranteed at the DB boundary regardless of how the
+    geometry's coordinates were produced upstream.
+    """
+
+    def _round(coords: np.ndarray) -> np.ndarray:
+        coords = coords.copy()
+        coords[:, :2] = np.round(coords[:, :2], ndigits)
+        return coords
+
+    return shapely.transform(geometry, _round, include_z=geometry.has_z)
+
 
 def space_line_points_evenly(
     line: shapely.LineString, spacing_feet: int = 20
