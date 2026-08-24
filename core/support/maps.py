@@ -286,9 +286,7 @@ def _populate_map(
             debug_x = [j * lat_mirror for j in debug_x]
             debug_y = [k * lon_mirror for k in debug_y]
 
-        color = (
-            _trail_color(trail.difficulty) if trail.difficulty is not None else "grey"
-        )
+        color = _trail_color(trail.difficulty)
 
         # place lines
         if trail.area:
@@ -313,12 +311,9 @@ def _populate_map(
 
         # add label names
         if with_labels:
-            if trail.steepest_30m is not None:
-                label_text = "{} {:.1f}{}".format(
-                    trail.name.strip(), trail.steepest_30m, "\N{DEGREE SIGN}"
-                )
-            else:
-                label_text = trail.name.strip()
+            label_text = "{} {:.1f}{}".format(
+                trail.name.strip(), trail.steepest_30m, "\N{DEGREE SIGN}"
+            )
             length_feet = (trail.length or 0) * METERS_TO_FEET
             point, angle, label_length = _get_label_placement(
                 x, y, length_feet, len(label_text)

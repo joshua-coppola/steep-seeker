@@ -119,7 +119,7 @@ def identify_lifts(ways):
         lift = {
             "id": way_id,
             "nodes": way_values.get("nodes"),
-            "name": tags.get("name"),
+            "name": tags.get("name") or "",
         }
 
         # Check Validity
