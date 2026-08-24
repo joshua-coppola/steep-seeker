@@ -118,3 +118,16 @@ def test_list_mountains_handles_empty_season_passes(mountain_factory, db_path):
     summaries, _ = list_mountains(db_path=db_path)
 
     assert summaries[0].season_passes == []
+
+
+def test_mountain_summary_vertical_converted_to_feet(mountain_factory, db_path):
+    # Mountain.vertical is stored in meters; MountainSummary is a display
+    # DTO, so its vertical should already be feet by the time a template
+    # sees it
+    mountain_factory(mountain_id="5", name="Meters Mountain", vertical=1024).to_db(
+        db_path
+    )
+
+    summaries, _ = list_mountains(db_path=db_path)
+
+    assert summaries[0].vertical == round(1024 * 3.28084)

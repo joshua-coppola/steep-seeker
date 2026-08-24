@@ -8,10 +8,19 @@ from core.support.utils import (
     get_steepest_pitch,
     get_trail_difficulty,
     get_vertical_drop,
+    meters_to_feet,
     polygon_interior_grid,
     round_geometry_precision,
     space_line_points_evenly,
 )
+
+
+def test_meters_to_feet():
+    assert meters_to_feet(1) == 3.28084
+
+
+def test_meters_to_feet_none():
+    assert meters_to_feet(None) is None
 
 
 def test_round_geometry_precision_point():

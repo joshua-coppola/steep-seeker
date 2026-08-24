@@ -7,6 +7,19 @@ import shapely
 import shapely.ops
 
 COORDINATE_PRECISION = 6
+METERS_TO_FEET = 3.28084
+
+
+def meters_to_feet(value: float | None) -> float | None:
+    """
+    Converts a meters value (how length/vertical are stored internally,
+    matching the elevation API and geometry math) to feet, for display to
+    the end user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return value * METERS_TO_FEET
 
 
 def round_geometry_precision(
