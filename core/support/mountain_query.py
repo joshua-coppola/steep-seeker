@@ -5,7 +5,7 @@ from core.datamodels.database import MountainTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
-from core.support.utils import meters_to_feet
+from core.support.utils import meters_to_feet, round_degrees, round_feet
 
 VALID_SORT_FIELDS = {
     "name",
@@ -89,9 +89,11 @@ def list_mountains(
             mountain_id=row[MountainTable.mountain_id],
             name=row[MountainTable.name],
             state=State(row[MountainTable.state]),
-            vertical=round(meters_to_feet(row[MountainTable.vertical])),
-            difficulty=row[MountainTable.difficulty],
-            beginner_friendliness=row[MountainTable.beginner_friendliness],
+            vertical=round_feet(meters_to_feet(row[MountainTable.vertical])),
+            difficulty=round_degrees(row[MountainTable.difficulty]),
+            beginner_friendliness=round_degrees(
+                row[MountainTable.beginner_friendliness]
+            ),
             trail_count=row["trail_count"],
             lift_count=row["lift_count"],
             season_passes=[

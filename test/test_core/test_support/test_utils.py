@@ -10,6 +10,8 @@ from core.support.utils import (
     get_vertical_drop,
     meters_to_feet,
     polygon_interior_grid,
+    round_degrees,
+    round_feet,
     round_geometry_precision,
     space_line_points_evenly,
 )
@@ -21,6 +23,30 @@ def test_meters_to_feet():
 
 def test_meters_to_feet_none():
     assert meters_to_feet(None) is None
+
+
+def test_round_feet():
+    assert round_feet(328.084) == 328
+
+
+def test_round_feet_rounds_to_nearest_whole_number():
+    assert round_feet(328.6) == 329
+
+
+def test_round_feet_none():
+    assert round_feet(None) is None
+
+
+def test_round_degrees():
+    assert round_degrees(12.849) == 12.8
+
+
+def test_round_degrees_rounds_to_nearest_tenth():
+    assert round_degrees(12.85) == 12.8
+
+
+def test_round_degrees_none():
+    assert round_degrees(None) is None
 
 
 def test_round_geometry_precision_point():

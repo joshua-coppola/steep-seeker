@@ -5,7 +5,9 @@ from flask import Blueprint, current_app, render_template, request
 
 from core.datamodels.region import Region
 from core.datamodels.state import State
+from core.support.lift_query import list_lifts
 from core.support.mountain_query import list_mountains
+from core.support.trail_query import list_trails
 
 web = Blueprint("web", __name__)
 
@@ -52,6 +54,16 @@ def _parse_state(value: str | None) -> State | None:
     try:
         return State(value)
     except ValueError:
+        return None
+
+
+def _parse_region(region_param: str, state: State | None) -> Region | None:
+    # state, when given, takes priority over region
+    if state is not None or region_param == "usa":
+        return None
+    try:
+        return Region[region_param.upper()]
+    except KeyError:
         return None
 
 
@@ -119,13 +131,7 @@ def rankings():
         order = "desc"
 
     state = _parse_state(state_param)
-
-    region = None
-    if state is None and region_param != "usa":
-        try:
-            region = Region[region_param.upper()]
-        except KeyError:
-            region = None
+    region = _parse_region(region_param, state)
 
     db_path = current_app.config["DATABASE_PATH"]
     mountains, _ = list_mountains(
@@ -145,4 +151,108 @@ def rankings():
         order=order,
         region=region_param,
         state=state_param,
+    )
+
+
+@web.route("/trail-rankings")
+def trail_rankings():
+    region_param = request.args.get("region") or "usa"
+    state_param = request.args.get("state")
+    if state_param == "None":
+        state_param = None
+    page = int(request.args.get("page") or 1)
+    limit = min(int(request.args.get("limit") or 50), 200)
+    sort_by = request.args.get("sort") or "difficulty"
+
+    offset = limit * (page - 1)
+
+    state = _parse_state(state_param)
+    region = _parse_region(region_param, state)
+
+    db_path = current_app.config["DATABASE_PATH"]
+    trails, total_trail_count = list_trails(
+        db_path=db_path,
+        state=state,
+        region=region,
+        sort=sort_by,
+        limit=limit,
+        offset=offset,
+    )
+
+    def _pagination_url(target_page: int) -> str:
+        args = request.args.to_dict()
+        args["page"] = str(target_page)
+        return f"/trail-rankings?{urlencode(args)}"
+
+    pages = {"offset": offset}
+    if total_trail_count > limit and (limit * page) < total_trail_count:
+        pages["next"] = _pagination_url(page + 1)
+    if offset != 0:
+        pages["prev"] = _pagination_url(page - 1)
+    first_args = {"region": region_param, "limit": limit}
+    if state_param:
+        first_args["state"] = state_param
+    pages["first"] = f"/trail-rankings?{urlencode(first_args)}"
+
+    return render_template(
+        "trail_rankings.jinja",
+        nav_links=nav_links,
+        active_page="trail_rankings",
+        trails=trails,
+        region=region_param,
+        state=state_param,
+        pages=pages,
+        sort_by=sort_by,
+    )
+
+
+@web.route("/lift-rankings")
+def lift_rankings():
+    region_param = request.args.get("region") or "usa"
+    state_param = request.args.get("state")
+    if state_param == "None":
+        state_param = None
+    page = int(request.args.get("page") or 1)
+    limit = min(int(request.args.get("limit") or 50), 200)
+    sort_by = request.args.get("sort") or "vertical"
+
+    offset = limit * (page - 1)
+
+    state = _parse_state(state_param)
+    region = _parse_region(region_param, state)
+
+    db_path = current_app.config["DATABASE_PATH"]
+    lifts, total_lift_count = list_lifts(
+        db_path=db_path,
+        state=state,
+        region=region,
+        sort=sort_by,
+        limit=limit,
+        offset=offset,
+    )
+
+    def _pagination_url(target_page: int) -> str:
+        args = request.args.to_dict()
+        args["page"] = str(target_page)
+        return f"/lift-rankings?{urlencode(args)}"
+
+    pages = {"offset": offset}
+    if total_lift_count > limit and (limit * page) < total_lift_count:
+        pages["next"] = _pagination_url(page + 1)
+    if offset != 0:
+        pages["prev"] = _pagination_url(page - 1)
+    first_args = {"region": region_param, "limit": limit}
+    if state_param:
+        first_args["state"] = state_param
+    pages["first"] = f"/lift-rankings?{urlencode(first_args)}"
+
+    return render_template(
+        "lift_rankings.jinja",
+        nav_links=nav_links,
+        active_page="lift_rankings",
+        lifts=lifts,
+        region=region_param,
+        state=state_param,
+        pages=pages,
+        sort_by=sort_by,
     )

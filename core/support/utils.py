@@ -22,6 +22,29 @@ def meters_to_feet(value: float | None) -> float | None:
     return value * METERS_TO_FEET
 
 
+def round_feet(value: float | None) -> int | None:
+    """
+    Rounds a feet value to the nearest whole foot, for display to the end
+    user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return round(value)
+
+
+def round_degrees(value: float | None) -> float | None:
+    """
+    Rounds a degrees value (difficulty, beginner_friendliness, max_slope,
+    average_slope, steepest_Xm) to the nearest 0.1 degree, for display to
+    the end user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return round(value, 1)
+
+
 def round_geometry_precision(
     geometry: shapely.geometry.base.BaseGeometry,
     ndigits: int = COORDINATE_PRECISION,

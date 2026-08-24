@@ -55,9 +55,9 @@ Lift Rankings - Compare Chairlifts Across the USA
 
     <ul class="ranking-sort mobile">
         {% set sorts = {
-            "vertical_rise": "Vertical Rise",
+            "vertical": "Vertical Rise",
             "length": "Length",
-            "pitch": "Average Pitch",
+            "average_slope": "Average Pitch",
             "occupancy": "Occupancy",
             "bubble": "Has Bubble",
         } %}
@@ -103,20 +103,20 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <th>Lift Name</th>
                 <th>Resort</th>
                 <th>State</th>
-                {% if sort_by == "vertical_rise"%}
+                {% if sort_by == "vertical"%}
                 <th><a class="active">Vertical Rise</a></th>
                 {% else %}
-                <th><a href="{{pages.first}}&sort=vertical_rise">Vertical Rise</a></th>
+                <th><a href="{{pages.first}}&sort=vertical">Vertical Rise</a></th>
                 {% endif %}
                 {% if sort_by == "length"%}
                 <th><a class="active">Length</a></th>
                 {% else %}
                 <th><a href="{{pages.first}}&sort=length">Length</a></th>
                 {% endif %}
-                {% if sort_by == "pitch"%}
+                {% if sort_by == "average_slope"%}
                 <th><a class="active">Average Pitch</a></th>
                 {% else %}
-                <th><a href="{{pages.first}}&sort=pitch">Average Pitch</a></th>
+                <th><a href="{{pages.first}}&sort=average_slope">Average Pitch</a></th>
                 {% endif %}
                 {% if sort_by == "occupancy"%}
                 <th><a class="active">Occupancy</a></th>
@@ -132,15 +132,15 @@ Lift Rankings - Compare Chairlifts Across the USA
             {% if not '' == lift.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state}}/{{lift.resort_name}}">
+                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}">
                             {{lift.name}}
                         </a></p>
                 </td>
-                <td><a href="/interactive-map/{{lift.state}}/{{lift.resort_name}}">{{lift.resort_name}}</a></td>
-                <td>{{lift.state}}</td>
+                <td><a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}">{{lift.resort_name}}</a></td>
+                <td>{{lift.state.value}}</td>
                 <td>{{lift.vertical}} ft</td>
                 <td>{{lift.length}} ft</td>
-                <td>{{lift.pitch}}°</td>
+                <td>{{lift.average_slope}}°</td>
                 {% if lift.occupancy %}
                     {% if lift.occupancy <= 4 %}
                     <td>
@@ -177,15 +177,15 @@ Lift Rankings - Compare Chairlifts Across the USA
             <table class="header">
                 <tr>
                     <td>
-                        {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state}}/{{lift.resort_name}}">
-                                {{lift.name}}, {{lift.resort_name}} ({{lift.state}})
+                        {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}">
+                                {{lift.name}}, {{lift.resort_name}} ({{lift.state.value}})
                             </a>
                     </td>
                 </tr>
             </table>
         </div>
         <table>
-            {% if sort_by == "vertical_rise"%}
+            {% if sort_by == "vertical"%}
             <tr style="background-color: var(--color-accent-very-light)">
             {% else %}
             <tr>
@@ -205,14 +205,14 @@ Lift Rankings - Compare Chairlifts Across the USA
                     {{lift.length}} ft
                 </td>
             </tr>
-            {% if sort_by == "pitch"%}
+            {% if sort_by == "average_slope"%}
             <tr style="background-color: var(--color-accent-very-light)">
             {% else %}
             <tr>
             {% endif %}
                 <td>Average Pitch</td>
                 <td>
-                    {{lift.pitch}}°
+                    {{lift.average_slope}}°
                 </td>
             </tr>
             {% if sort_by == "occupancy"%}
