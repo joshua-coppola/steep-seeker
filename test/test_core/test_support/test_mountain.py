@@ -26,6 +26,11 @@ def test_mountain_region(mountain_factory):
     assert mountain.region() == Region.NORTHEAST
 
 
+def test_mountain_vertical_feet(mountain_factory):
+    mountain = mountain_factory(vertical=1024)
+    assert mountain.vertical_feet() == round(1024 * 3.28084)
+
+
 def test_mountain_bearing(mountain_factory):
     mountain = mountain_factory()
     assert mountain.bearing() == 180
@@ -111,6 +116,19 @@ def test_mountain_from_db(mountain_factory, db_path):
     assert returned_mountain == mountain
 
     assert Mountain.from_db("fake_id", db_path) is None
+
+
+def test_mountain_from_name(mountain_factory, db_path):
+    mountain = mountain_factory()
+    mountain.to_db(db_path=db_path)
+
+    returned_mountain = Mountain.from_name(mountain.name, mountain.state, db_path)
+
+    assert returned_mountain == mountain
+
+
+def test_mountain_from_name_no_match_returns_none(db_path):
+    assert Mountain.from_name("Nonexistent", State.VERMONT, db_path) is None
 
 
 def test_mountain_from_db_handles_empty_season_passes(mountain_factory, db_path):

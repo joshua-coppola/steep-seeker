@@ -11,6 +11,16 @@ def test_lift(lift_factory):
     assert lift.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
+def test_lift_length_feet(lift_factory):
+    lift = lift_factory(length=100)
+    assert lift.length_feet() == round(100 * 3.28084)
+
+
+def test_lift_vertical_feet(lift_factory):
+    lift = lift_factory(vertical=50)
+    assert lift.vertical_feet() == round(50 * 3.28084)
+
+
 def test_lift_from_db(lift_factory, db_path):
     lift = lift_factory()
     with cursor(db_path=db_path) as cur:

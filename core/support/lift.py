@@ -6,7 +6,7 @@ from shapely import LineString, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import LiftTable
-from core.support.utils import round_geometry_precision
+from core.support.utils import meters_to_feet, round_feet, round_geometry_precision
 
 
 @dataclass
@@ -30,6 +30,19 @@ class Lift:
     length: float | None
     vertical: float | None = None
     average_slope: float | None = None
+
+    def length_feet(self) -> int | None:
+        """
+        Returns length in feet, for display -- length is stored in meters.
+        """
+        return round_feet(meters_to_feet(self.length))
+
+    def vertical_feet(self) -> int | None:
+        """
+        Returns vertical rise in feet, for display -- vertical is stored
+        in meters.
+        """
+        return round_feet(meters_to_feet(self.vertical))
 
     def from_db(lift_id: str, db_path: str = DATABASE_PATH) -> Self:
         """

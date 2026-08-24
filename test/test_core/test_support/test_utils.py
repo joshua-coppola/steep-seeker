@@ -1,6 +1,7 @@
 import shapely
 
 from core.support.utils import (
+    build_elevation_profile,
     get_average_slope,
     get_length,
     get_max_slope,
@@ -47,6 +48,45 @@ def test_round_degrees_rounds_to_nearest_tenth():
 
 def test_round_degrees_none():
     assert round_degrees(None) is None
+
+
+def test_build_elevation_profile_first_point_has_zero_slope():
+    coords = [(-120.0, 40.0, 1000), (-120.0001, 40.0001, 990)]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[0][3] == 0.0
+
+
+def test_build_elevation_profile_converts_elevation_to_feet():
+    coords = [(-120.0, 40.0, 1000), (-120.0001, 40.0001, 990)]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[0][2] == round(1000 * 3.28084)
+    assert profile[1][2] == round(990 * 3.28084)
+
+
+def test_build_elevation_profile_computes_positive_slope_downhill_and_uphill():
+    coords = [
+        (-120.0, 40.0, 1000),
+        (-120.0001, 40.0001, 990),
+        (-120.0002, 40.0002, 1000),
+    ]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[1][3] > 0
+    assert profile[2][3] > 0
+
+
+def test_build_elevation_profile_preserves_lon_lat():
+    coords = [(-120.0, 40.0, 1000), (-120.0001, 40.0001, 990)]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[0][0] == -120.0
+    assert profile[0][1] == 40.0
 
 
 def test_round_geometry_precision_point():

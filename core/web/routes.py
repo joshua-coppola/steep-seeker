@@ -1,13 +1,16 @@
 from dataclasses import dataclass
+from math import atan2, degrees
 from urllib.parse import urlencode
 
-from flask import Blueprint, current_app, render_template, request
+from flask import Blueprint, abort, current_app, render_template, request
 
 from core.datamodels.region import Region
 from core.datamodels.state import State
 from core.support.lift_query import list_lifts
+from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail_query import list_trails
+from core.support.utils import build_elevation_profile, round_degrees, trail_color
 
 web = Blueprint("web", __name__)
 
@@ -255,4 +258,210 @@ def lift_rankings():
         state=state_param,
         pages=pages,
         sort_by=sort_by,
+    )
+
+
+def _orientation(
+    lon_points: list[float], lat_points: list[float], is_area: bool, direction: str
+) -> int:
+    """
+    Picks which side of a trail/lift line its name label should be
+    written on (0 or 180 degrees), based on the line's rough bearing at
+    its midpoint and which way the mountain map itself is rotated
+    (mountain.direction). Area trails' polygon outlines don't have a
+    single meaningful direction, so they're never flipped.
+    """
+    midpoint = int(len(lon_points) / 2)
+    dx = (
+        lon_points[max(midpoint - 5, 0)]
+        - lon_points[min(midpoint + 5, (midpoint * 2) - 1)]
+    )
+    dy = (
+        lat_points[max(midpoint - 5, 0)]
+        - lat_points[min(midpoint + 5, (midpoint * 2) - 1)]
+    )
+    ang = degrees(atan2(dy, dx))
+    orientation = 0
+    if abs(ang) < 90 and not is_area and direction == "s":
+        orientation = 180
+    if abs(ang) > 90 and not is_area and direction == "n":
+        orientation = 180
+    if ang > 0 and not is_area and direction == "w":
+        orientation = 180
+    if ang < 0 and not is_area and direction == "e":
+        orientation = 180
+
+    return orientation
+
+
+def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
+    """
+    Builds the GeoJSON feature(s) for one trail. A line trail is a single
+    LineString feature. An area trail (glade/bowl, sampled as a polygon)
+    is its boundary Polygon feature plus -- when a route (the least-steep
+    path down the area) has been computed for it -- a second, fully
+    transparent/non-interactive LineString feature carrying that route's
+    elevation profile. The polygon's own popup carries the route's
+    profile too (as routeCoordinates), so interactive-map.js can show a
+    real heightgraph when the polygon itself is clicked, rather than the
+    "N/A" a bare Polygon feature would otherwise get.
+    """
+    if trail.area:
+        coords = list(trail.geometry.exterior.coords)
+        profile = build_elevation_profile(coords)
+        geometry = {"type": "Polygon", "coordinates": [profile + [profile[0]]]}
+    else:
+        coords = list(trail.geometry.coords)
+        profile = build_elevation_profile(coords)
+        geometry = {"type": "LineString", "coordinates": profile}
+
+    lon_points = [c[0] for c in coords]
+    lat_points = [c[1] for c in coords]
+    orientation = _orientation(lon_points, lat_points, trail.area, direction)
+
+    gladed_icon = '<i class="icon gladed"></i>' if trail.gladed else ""
+    ungroomed_icon = '<i class="icon ungroomed"></i>' if trail.ungroomed else ""
+    popup_content = f"<h3>{trail.name}{gladed_icon}{ungroomed_icon}</h3>"
+    popup_content += (
+        f"<p>Rating: {trail.difficulty}"
+        f'<span class="icon difficulty-{trail_color(trail.difficulty)}"></span></p>'
+    )
+    popup_content += (
+        f"<p>Length: {trail.length_feet()} ft</p>"
+        f"<p>Vertical Drop: {trail.vertical_feet()} ft</p>"
+    )
+    for window in ("30m", "50m", "100m", "200m", "500m", "1000m"):
+        value = getattr(trail, f"steepest_{window}")
+        if value:
+            popup_content += (
+                f"<p>{window} Pitch: {value}\N{DEGREE SIGN}"
+                f'<span class="icon difficulty-{trail_color(value)}"></span></p>'
+            )
+    if debug_mode:
+        popup_content += f"<p>Trail ID: {trail.trail_id}</p>"
+
+    properties = {
+        "popupContent": popup_content,
+        "label": trail.name,
+        "orientation": orientation,
+        "color": trail_color(trail.difficulty),
+        "gladed": str(trail.gladed),
+        "difficulty_modifier": (trail.difficulty or 0) - (trail.steepest_30m or 0),
+    }
+
+    features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
+
+    if trail.area and trail.route is not None:
+        route_profile = build_elevation_profile(list(trail.route.coords))
+        properties["routeCoordinates"] = route_profile
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"isRoute": True, "color": "transparent"},
+                "geometry": {"type": "LineString", "coordinates": route_profile},
+            }
+        )
+
+    return features
+
+
+def _lift_feature(
+    lift, direction: str, weather_modifier: float, debug_mode: bool
+) -> dict:
+    coords = list(lift.geometry.coords)
+    profile = build_elevation_profile(coords)
+    lon_points = [c[0] for c in coords]
+    lat_points = [c[1] for c in coords]
+    orientation = _orientation(lon_points, lat_points, False, direction)
+
+    popup_content = f"<h3>{lift.name}</h3>"
+    if lift.occupancy:
+        if lift.occupancy <= 4:
+            popup_content += (
+                "<p>" + '<span class="icon person"></span>' * lift.occupancy + "</p>"
+            )
+        else:
+            popup_content += (
+                f'<p class="occupancy">{lift.occupancy}'
+                '<span class="small-spacer"></span>'
+                '<span class="icon person"></span></p>'
+            )
+    popup_content += f"<p>Length: {lift.length_feet()} ft</p>"
+    popup_content += f"<p>Vertical Rise: {lift.vertical_feet()} ft</p>"
+    popup_content += f"<p>Average Pitch: {round_degrees(lift.average_slope)}°</p>"
+    if lift.bubble:
+        popup_content += "<p>&#x2705; Bubble</p>"
+    if lift.heating:
+        popup_content += "<p>&#x2705; Heated</p>"
+    if debug_mode:
+        popup_content += f"<p>Lift ID: {lift.lift_id}</p>"
+
+    return {
+        "type": "Feature",
+        "properties": {
+            "popupContent": popup_content,
+            "label": lift.name,
+            "orientation": orientation,
+            "color": "grey",
+            "difficulty_modifier": weather_modifier,
+        },
+        "geometry": {"type": "LineString", "coordinates": profile},
+    }
+
+
+@web.route("/interactive-map/<string:state>/<string:name>")
+def interactive_map(state, name):
+    debug_mode = request.args.get("debug") == "true"
+
+    state_enum = _parse_state(state)
+    if state_enum is None:
+        abort(404)
+
+    db_path = current_app.config["DATABASE_PATH"]
+    mountain = Mountain.from_name(name, state_enum, db_path)
+    if mountain is None:
+        abort(404)
+
+    trails = sorted(
+        (t for t in mountain.trails.values() if t.name),
+        key=lambda t: t.difficulty if t.difficulty is not None else -1,
+        reverse=True,
+    )
+    lifts = [lift for lift in mountain.lifts.values() if lift.name]
+
+    # Recovers the mountain's weather modifier alone (stripping the
+    # gladed/ungroomed bonus baked into trails[0]'s difficulty)
+    weather_modifier = 0
+    if trails:
+        first = trails[0]
+        if first.difficulty is not None and first.steepest_30m is not None:
+            weather_modifier = (
+                first.difficulty
+                - first.steepest_30m
+                - (5.5 if first.gladed else 0)
+                - (2.5 if first.ungroomed else 0)
+            )
+
+    features = []
+    for trail in trails:
+        features.extend(_trail_features(trail, mountain.direction, debug_mode))
+    for lift in lifts:
+        features.append(
+            _lift_feature(lift, mountain.direction, weather_modifier, debug_mode)
+        )
+
+    geojson = {
+        "type": "FeatureCollection",
+        "features": features,
+        "properties": {"summary": "elevation"},
+    }
+
+    return render_template(
+        "interactive_map.jinja",
+        nav_links=nav_links,
+        active_page="map",
+        geojson=geojson,
+        mountain=mountain,
+        trails=trails,
+        lifts=lifts,
     )

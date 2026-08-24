@@ -11,6 +11,16 @@ def test_trail(trail_factory):
     assert trail.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
+def test_trail_length_feet(trail_factory):
+    trail = trail_factory(length=100)
+    assert trail.length_feet() == round(100 * 3.28084)
+
+
+def test_trail_vertical_feet(trail_factory):
+    trail = trail_factory(vertical=50)
+    assert trail.vertical_feet() == round(50 * 3.28084)
+
+
 def test_trail_from_db(trail_factory, db_path):
     trail = trail_factory()
     with cursor(db_path=db_path) as cur:

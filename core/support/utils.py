@@ -45,6 +45,28 @@ def round_degrees(value: float | None) -> float | None:
     return round(value, 1)
 
 
+def trail_color(difficulty: float) -> str:
+    """
+    Maps a difficulty/pitch value (degrees) to the site's standard trail
+    color scale, used for both static map rendering and interactive-map
+    popups.
+    """
+    # 0-18 degrees: green
+    if difficulty < 18:
+        return "green"
+    # 18-27 degrees: blue
+    if difficulty < 27:
+        return "royalblue"
+    # 27-36 degrees: black
+    if difficulty < 36:
+        return "black"
+    # 36-47 degrees: red
+    if difficulty < 47:
+        return "red"
+    # >47 degrees: yellow
+    return "gold"
+
+
 def round_geometry_precision(
     geometry: shapely.geometry.base.BaseGeometry,
     ndigits: int = COORDINATE_PRECISION,
@@ -254,6 +276,38 @@ def get_slope_profile(geometry: dict[str, str]) -> list[float]:
         previous_point = point
 
     return slopes
+
+
+def build_elevation_profile(
+    coords: list[tuple[float, float, float]],
+) -> list[list[float]]:
+    """
+    Converts an ordered list of (lon, lat, elevation_meters) points, for 
+    example from Trail.geometry.coords, Trail.geometry.exterior.coords for an 
+    area trail's boundary ring, or Trail.route.coords into the
+    [lon, lat, elevation_feet, slope_degrees] point array the interactive
+    map's elevation profile (leaflet.heightgraph) expects. slope_degrees is
+    the raw point-to-point pitch (no difficulty modifiers applied); the
+    first point's slope is 0.
+    """
+    profile = []
+    previous_point = None
+
+    for lon, lat, elevation_m in coords:
+        slope = 0.0
+        if previous_point is not None:
+            prev_lon, prev_lat, prev_elevation_m = previous_point
+            dist = hs.haversine((prev_lat, prev_lon), (lat, lon), unit=hs.Unit.METERS)
+            elevation_change = prev_elevation_m - elevation_m
+            if dist != 0 and elevation_change != 0:
+                slope = abs(degrees(atan(elevation_change / dist)))
+
+        profile.append(
+            [lon, lat, round_feet(meters_to_feet(elevation_m)), round_degrees(slope)]
+        )
+        previous_point = (lon, lat, elevation_m)
+
+    return profile
 
 
 def get_max_slope(geometry: dict[str, str]) -> float | None:

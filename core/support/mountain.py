@@ -17,6 +17,8 @@ from core.support.trail import Trail
 from core.support.utils import (
     get_mountain_rating,
     get_trail_difficulty,
+    meters_to_feet,
+    round_feet,
     round_geometry_precision,
 )
 
@@ -54,6 +56,13 @@ class Mountain:
         (NORTHEAST, SOUTHEAST, MIDWEST, WEST)
         """
         return Region.get_region(self.state)
+
+    def vertical_feet(self) -> int | None:
+        """
+        Returns vertical drop in feet, for display -- vertical is stored
+        in meters.
+        """
+        return round_feet(meters_to_feet(self.vertical))
 
     def bearing(self) -> int:
         """
@@ -160,6 +169,34 @@ class Mountain:
                 }
 
         return Mountain(**result)
+
+    def from_name(
+        name: str,
+        state: State,
+        db_path: str = DATABASE_PATH,
+        include_trails: bool = True,
+        include_lifts: bool = True,
+    ) -> Self:
+        """
+        Looks up a mountain by (state, name) -- used by routes like
+        /interactive-map/<state>/<name> that don't carry a mountain_id --
+        and returns the same Mountain object from_db would, or None if no
+        mountain matches.
+        """
+        with cursor(db_path=db_path) as cur:
+            query = f"SELECT {MountainTable.mountain_id} from Mountains WHERE {MountainTable.state} = ? AND {MountainTable.name} = ?"
+            params = (state.value, name)
+            result = cur.execute(query, params).fetchone()
+
+        if not result:
+            return None
+
+        return Mountain.from_db(
+            result[MountainTable.mountain_id],
+            db_path=db_path,
+            include_trails=include_trails,
+            include_lifts=include_lifts,
+        )
 
     def to_db(self, db_path: str = DATABASE_PATH) -> None:
         """
