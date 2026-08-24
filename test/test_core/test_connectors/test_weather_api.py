@@ -1,11 +1,11 @@
 """Unit tests for the Weather class."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from shapely import Point
 
 from core.connectors.weather_api import Weather
-
 
 # ---------------------------------------------------------------------------
 # Helpers

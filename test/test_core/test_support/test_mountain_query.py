@@ -19,27 +19,27 @@ def seeded_db_path(mountain_factory, trail_factory, db_path):
     # lifts=() forces each mountain to get its own zero-lift default rather
     # than sharing the factory's fixed default lift_id across mountains
     mountain_factory(
-        mountain_id=1,
+        mountain_id="1",
         name="Bolton Valley",
         state=State.VERMONT,
         difficulty=40,
-        trails=_trails(trail_factory, 1, 3),
+        trails=_trails(trail_factory, "1", 3),
         lifts={},
     ).to_db(db_path)
     mountain_factory(
-        mountain_id=2,
+        mountain_id="2",
         name="Killington",
         state=State.VERMONT,
         difficulty=70,
-        trails=_trails(trail_factory, 2, 10),
+        trails=_trails(trail_factory, "2", 10),
         lifts={},
     ).to_db(db_path)
     mountain_factory(
-        mountain_id=3,
+        mountain_id="3",
         name="Alta",
         state=State.UTAH,
         difficulty=90,
-        trails=_trails(trail_factory, 3, 5),
+        trails=_trails(trail_factory, "3", 5),
         lifts={},
     ).to_db(db_path)
 
@@ -106,3 +106,15 @@ def test_mountain_summary_region_computed(seeded_db_path):
     summaries, _ = list_mountains(db_path=seeded_db_path, state=State.VERMONT)
 
     assert all(s.region() == Region.NORTHEAST for s in summaries)
+
+
+def test_list_mountains_handles_empty_season_passes(mountain_factory, db_path):
+    # to_db stores an empty season_passes list as "" (",".join([]) == "");
+    # list_mountains must not try to build a Season_Pass("") out of that
+    mountain_factory(mountain_id="4", name="No Pass Mountain", season_passes=[]).to_db(
+        db_path
+    )
+
+    summaries, _ = list_mountains(db_path=db_path)
+
+    assert summaries[0].season_passes == []

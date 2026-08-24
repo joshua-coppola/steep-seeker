@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import MountainTable
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 
 VALID_SORT_FIELDS = {
@@ -31,6 +32,7 @@ class MountainSummary:
     beginner_friendliness: float
     trail_count: int
     lift_count: int
+    season_passes: list[Season_Pass]
 
     def region(self) -> Region:
         return Region.get_region(self.state)
@@ -73,6 +75,7 @@ def list_mountains(
             m.{MountainTable.vertical},
             m.{MountainTable.difficulty},
             m.{MountainTable.beginner_friendliness},
+            m.{MountainTable.season_passes},
             (SELECT COUNT(*) FROM Trails t WHERE t.mountain_id = m.mountain_id) AS trail_count,
             (SELECT COUNT(*) FROM Lifts l WHERE l.mountain_id = m.mountain_id) AS lift_count
         FROM Mountains m
@@ -90,6 +93,11 @@ def list_mountains(
             beginner_friendliness=row[MountainTable.beginner_friendliness],
             trail_count=row["trail_count"],
             lift_count=row["lift_count"],
+            season_passes=[
+                Season_Pass(value)
+                for value in row[MountainTable.season_passes].split(",")
+                if value
+            ],
         )
         for row in rows
     ]

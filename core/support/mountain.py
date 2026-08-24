@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 from typing import Self
@@ -28,7 +29,7 @@ class Mountain:
     and a new or updated mountain can be saved back to the DB with to_db.
     """
 
-    mountain_id: int
+    mountain_id: str
     name: str
     state: State
     direction: str
@@ -101,9 +102,15 @@ class Mountain:
         """
         Gets mountain data from database and returns a Mountain object
         """
+        # sqlite3 can't bind UUID objects directly (mountain_id is a UUID
+        # for OSM-derived mountains); normalize once and reuse below
+        db_mountain_id = (
+            str(mountain_id) if isinstance(mountain_id, uuid.UUID) else mountain_id
+        )
+
         with cursor(db_path=db_path) as cur:
             query = "SELECT * from Mountains WHERE mountain_id = ?"
-            params = (mountain_id,)
+            params = (db_mountain_id,)
             result = cur.execute(query, params).fetchone()
 
         if not result:
@@ -112,10 +119,14 @@ class Mountain:
         result = dict(result)
         result[MountainTable.state] = State(result[MountainTable.state])
         result[MountainTable.coordinates] = wkt.loads(result[MountainTable.coordinates])
-        result[MountainTable.season_passes] = [
-            Season_Pass(value)
-            for value in result[MountainTable.season_passes].split(",")
-        ]
+        result[MountainTable.season_passes] = (
+            [
+                Season_Pass(value)
+                for value in result[MountainTable.season_passes].split(",")
+            ]
+            if result[MountainTable.season_passes]
+            else []
+        )
         result[MountainTable.last_updated] = datetime.fromisoformat(
             result[MountainTable.last_updated]
         )
@@ -123,7 +134,7 @@ class Mountain:
         if include_trails:
             with cursor(db_path=db_path) as cur:
                 query = f"SELECT {TrailTable.trail_id} from Trails WHERE {TrailTable.mountain_id} = ?"
-                params = (mountain_id,)
+                params = (db_mountain_id,)
                 trails_result = cur.execute(query, params).fetchall()
 
             if trails_result:
@@ -137,7 +148,7 @@ class Mountain:
         if include_lifts:
             with cursor(db_path=db_path) as cur:
                 query = f"SELECT {LiftTable.lift_id} from Lifts WHERE {LiftTable.mountain_id} = ?"
-                params = (mountain_id,)
+                params = (db_mountain_id,)
                 lifts_result = cur.execute(query, params).fetchall()
 
             if lifts_result:
@@ -198,7 +209,9 @@ class Mountain:
                     {MountainTable.url} = excluded.{MountainTable.url}
             """
             params = (
-                self.mountain_id,
+                str(self.mountain_id)
+                if isinstance(self.mountain_id, uuid.UUID)
+                else self.mountain_id,
                 self.name,
                 self.state.value,
                 self.direction,

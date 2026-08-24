@@ -5,7 +5,7 @@ import pytest
 from shapely import Point
 
 from core.connectors.database import cursor
-from core.datamodels.database import MountainTable
+from core.datamodels.database import LiftTable, MountainTable, TrailTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
@@ -113,6 +113,17 @@ def test_mountain_from_db(mountain_factory, db_path):
     assert Mountain.from_db("fake_id", db_path) is None
 
 
+def test_mountain_from_db_handles_empty_season_passes(mountain_factory, db_path):
+    # to_db stores an empty season_passes list as "" (",".join([]) == "");
+    # from_db must not try to build a Season_Pass("") out of that
+    mountain = mountain_factory(season_passes=[])
+    mountain.to_db(db_path=db_path)
+
+    returned_mountain = Mountain.from_db(mountain.mountain_id, db_path)
+
+    assert returned_mountain.season_passes == []
+
+
 def test_mountain_to_db(mountain_factory, db_path):
     mountain = mountain_factory()
     mountain.to_db(db_path=db_path)
@@ -125,7 +136,7 @@ def test_mountain_to_db(mountain_factory, db_path):
     assert len(result) == 1
 
     expected_result = {
-        MountainTable.mountain_id: 1,
+        MountainTable.mountain_id: "1",
         MountainTable.name: "Test",
         MountainTable.state: "VT",
         MountainTable.direction: "n",
@@ -190,6 +201,30 @@ def test_mountain_to_db_rounds_coordinates_precision(mountain_factory, db_path):
         result = dict(cur.execute("SELECT * FROM Mountains").fetchall()[0])
 
     assert result[MountainTable.coordinates] == "POINT (-72.123457 43.123457)"
+
+
+def test_mountain_to_db_serializes_uuid_mountain_id(mountain_factory, db_path):
+    # OSMProcessor generates mountain_id as a uuid.UUID when one isn't
+    # supplied; sqlite3 can't bind UUID objects directly, so to_db (and the
+    # Trail/Lift to_db calls it cascades into via the mountain_id foreign
+    # key) must convert it to a string before saving.
+    mountain_id = UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
+    mountain = mountain_factory(mountain_id=mountain_id)
+
+    mountain.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        mountain_result = dict(cur.execute("SELECT * FROM Mountains").fetchall()[0])
+        trail_result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+        lift_result = dict(cur.execute("SELECT * FROM Lifts").fetchall()[0])
+
+    assert mountain_result[MountainTable.mountain_id] == str(mountain_id)
+    assert trail_result[TrailTable.mountain_id] == str(mountain_id)
+    assert lift_result[LiftTable.mountain_id] == str(mountain_id)
+
+    # from_db's WHERE lookup must also accept a UUID param directly
+    returned_mountain = Mountain.from_db(mountain_id, db_path)
+    assert returned_mountain.mountain_id == str(mountain_id)
 
 
 def test_mountain_from_osm(osm_file, monkeypatch):

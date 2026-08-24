@@ -1,11 +1,13 @@
 from flask import Flask
 
+from core.connectors.database import DATABASE_PATH
 from core.web.routes import web
 
 
-def create_app() -> Flask:
+def create_app(db_path: str = DATABASE_PATH) -> Flask:
     """
-    Application factory for the Flask app
+    Application factory for the Flask app. db_path is overridable so tests
+    can point routes at a temporary database instead of the real one.
     """
     app = Flask(
         __name__,
@@ -13,5 +15,6 @@ def create_app() -> Flask:
         static_folder="../../static",
         template_folder="../../templates",
     )
+    app.config["DATABASE_PATH"] = db_path
     app.register_blueprint(web)
     return app

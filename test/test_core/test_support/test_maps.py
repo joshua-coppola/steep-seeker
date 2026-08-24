@@ -21,7 +21,7 @@ def area_trail_mountain():
     """
     trail = Trail(
         trail_id="w3000",
-        mountain_id=1,
+        mountain_id="1",
         geometry=Polygon(
             [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
         ),
@@ -42,7 +42,7 @@ def area_trail_mountain():
     )
 
     return Mountain(
-        mountain_id=1,
+        mountain_id="1",
         name="Test Area Mountain",
         state=State.VERMONT,
         direction="e",

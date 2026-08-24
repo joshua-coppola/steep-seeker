@@ -1,5 +1,5 @@
 from core.osm.osm_processor import OSMProcessor
-from core.osm.trail_parser import identify_trails, identify_lifts
+from core.osm.trail_parser import identify_lifts, identify_trails
 
 
 def test_identify_trails(osm_file):

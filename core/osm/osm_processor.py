@@ -36,7 +36,7 @@ class OSMProcessor:
     The trails and lifts are stored in dicts of the same name.
     """
 
-    def __init__(self, filename: str, mountain_id: int | None = None):
+    def __init__(self, filename: str, mountain_id: str | None = None):
         osm_handler = OSMHandler()
         osm_handler.apply_file(filename)
 

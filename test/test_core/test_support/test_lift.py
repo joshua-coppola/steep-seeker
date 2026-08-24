@@ -68,7 +68,7 @@ def test_lift_to_db(lift_factory, db_path):
 
     expected_result = {
         LiftTable.lift_id: "w1001",
-        LiftTable.mountain_id: 1,
+        LiftTable.mountain_id: "1",
         LiftTable.geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         LiftTable.name: "Test",
         LiftTable.lift_type: "chair_lift",
@@ -103,3 +103,34 @@ def test_lift_to_db(lift_factory, db_path):
         lift.to_db(db_path=db_path)
 
     assert "fields are missing" in str(exc_info)
+
+
+def test_lift_to_db_allows_missing_osm_tag_fields(lift_factory, db_path):
+    # occupancy/capacity/detachable/bubble/heating all come from OSM tags
+    # that many real lifts aren't tagged with (matches the old schema's
+    # nullability for these columns)
+    lift = lift_factory(
+        occupancy=None,
+        capacity=None,
+        detachable=None,
+        bubble=None,
+        heating=None,
+    )
+
+    lift.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Lifts").fetchall()[0])
+
+    assert result[LiftTable.occupancy] is None
+    assert result[LiftTable.capacity] is None
+    assert result[LiftTable.detachable] is None
+    assert result[LiftTable.bubble] is None
+    assert result[LiftTable.heating] is None
+
+    returned_lift = Lift.from_db(lift.lift_id, db_path)
+    assert returned_lift.occupancy is None
+    assert returned_lift.capacity is None
+    assert returned_lift.detachable is None
+    assert returned_lift.bubble is None
+    assert returned_lift.heating is None

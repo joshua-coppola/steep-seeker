@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS Mountains;
 
 CREATE TABLE "Mountains"
 (
-    "mountain_id" INTEGER PRIMARY KEY NOT NULL,
+    "mountain_id" TEXT PRIMARY KEY NOT NULL,
     "name" TEXT NOT NULL,
     "state" TEXT NOT NULL,
     "direction" TEXT NOT NULL,
@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS Trails;
 CREATE TABLE "Trails"
 (
     "trail_id" TEXT PRIMARY KEY NOT NULL,
-    "mountain_id" INTEGER NOT NULL,
+    "mountain_id" TEXT NOT NULL,
     "geometry" TEXT NOT NULL,
     "interior_geometry" TEXT,
     "route" TEXT,
@@ -55,15 +55,15 @@ DROP TABLE IF EXISTS Lifts;
 CREATE TABLE "Lifts"
 (
     "lift_id" TEXT PRIMARY KEY NOT NULL,
-    "mountain_id" INTEGER NOT NULL,
+    "mountain_id" TEXT NOT NULL,
     "geometry" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "lift_type" TEXT NOT NULL,
-    "occupancy" INTEGER NOT NULL,
-    "capacity" INTEGER NOT NULL,
-    "detachable" BOOLEAN NOT NULL,
-    "bubble" BOOLEAN NOT NULL,
-    "heating" BOOLEAN NOT NULL,
+    "occupancy" INTEGER,
+    "capacity" INTEGER,
+    "detachable" BOOLEAN,
+    "bubble" BOOLEAN,
+    "heating" BOOLEAN,
     "length" REAL,
     "vertical" REAL,
     "average_slope" REAL,

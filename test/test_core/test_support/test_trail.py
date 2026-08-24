@@ -85,7 +85,7 @@ def test_trail_to_db(trail_factory, db_path):
 
     expected_result = {
         TrailTable.trail_id: "w1000",
-        TrailTable.mountain_id: 1,
+        TrailTable.mountain_id: "1",
         TrailTable.geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         TrailTable.interior_geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         TrailTable.route: None,
@@ -168,3 +168,39 @@ def test_trail_to_db_allows_missing_steepest_pitch(trail_factory, db_path):
 
     assert dict(result[0])[TrailTable.steepest_500m] is None
     assert dict(result[0])[TrailTable.steepest_1000m] is None
+
+
+def test_trail_to_db_allows_none_interior_geometry_for_line_trail(
+    trail_factory, db_path
+):
+    # OSMProcessor leaves interior_geometry as None for non-area (line)
+    # trails -- it's only populated for area trails -- so saving one
+    # shouldn't be blocked, and it must round-trip as a real NULL rather
+    # than the literal string "None"
+    trail = trail_factory(interior_geometry=None)
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+
+    assert result[TrailTable.interior_geometry] is None
+
+    returned_trail = Trail.from_db(trail.trail_id, db_path=db_path)
+    assert returned_trail.interior_geometry is None
+
+
+def test_trail_to_db_allows_missing_official_rating(trail_factory, db_path):
+    # official_rating comes from OSM's piste:difficulty tag, which many
+    # real trails simply aren't tagged with
+    trail = trail_factory(official_rating=None)
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+
+    assert result[TrailTable.official_rating] is None
+
+    returned_trail = Trail.from_db(trail.trail_id, db_path=db_path)
+    assert returned_trail.official_rating is None
