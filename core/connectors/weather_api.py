@@ -80,6 +80,7 @@ class Weather:
             "start_date": start_date,
             "end_date": end_date,
             "daily": "temperature_2m_max,temperature_2m_min,rain_sum,snowfall_sum",
+            "models": "best_match",
             "timezone": self.timezone,
             "temperature_unit": "fahrenheit",
             "precipitation_unit": "inch",
