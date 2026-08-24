@@ -30,3 +30,8 @@ nav_links = [
 @web.route("/")
 def index():
     return render_template("index.jinja", nav_links=nav_links, active_page="index")
+
+
+@web.route("/about")
+def about():
+    return render_template("about.jinja", nav_links=nav_links, active_page="about")

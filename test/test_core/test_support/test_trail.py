@@ -6,11 +6,13 @@ from core.datamodels.database import TrailTable
 from core.support.trail import Trail
 
 
-def test_trail(trail):
+def test_trail(trail_factory):
+    trail = trail_factory()
     assert trail.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
-def test_trail_from_db(trail, db_path):
+def test_trail_from_db(trail_factory, db_path):
+    trail = trail_factory()
     with cursor(db_path=db_path) as cur:
         query = f"""
             INSERT INTO Trails (
@@ -70,7 +72,8 @@ def test_trail_from_db(trail, db_path):
     assert Trail.from_db("fake_id", db_path) is None
 
 
-def test_trail_to_db(trail, db_path):
+def test_trail_to_db(trail_factory, db_path):
+    trail = trail_factory()
     trail.to_db(db_path=db_path)
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:
@@ -128,7 +131,8 @@ def test_trail_to_db(trail, db_path):
     assert "fields are missing" in str(exc_info)
 
 
-def test_trail_to_db_rounds_geometry_precision(trail, db_path):
+def test_trail_to_db_rounds_geometry_precision(trail_factory, db_path):
+    trail = trail_factory()
     trail.geometry = LineString([[-72.1234567891, 43.1234567891, 10], [0, 0, 0]])
     trail.interior_geometry = LineString(
         [[-72.1234567891, 43.1234567891, 10], [0, 0, 0]]
@@ -150,7 +154,8 @@ def test_trail_to_db_rounds_geometry_precision(trail, db_path):
     assert result[TrailTable.route] == "LINESTRING Z (-72.123457 43.123457 10, 0 0 0)"
 
 
-def test_trail_to_db_allows_missing_steepest_pitch(trail, db_path):
+def test_trail_to_db_allows_missing_steepest_pitch(trail_factory, db_path):
+    trail = trail_factory()
     # A trail shorter than a given window legitimately has no steepest
     # pitch for it, so these fields should not block saving
     trail.steepest_500m = None

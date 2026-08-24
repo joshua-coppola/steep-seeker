@@ -15,16 +15,19 @@ from core.support.mountain import Mountain
 from test.test_core.conftest import FakeElevation, FakeWeather
 
 
-def test_mountain(mountain):
+def test_mountain(mountain_factory):
+    mountain = mountain_factory()
     expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc)
     assert mountain.last_updated.date() == expected.date()
 
 
-def test_mountain_region(mountain):
+def test_mountain_region(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.region() == Region.NORTHEAST
 
 
-def test_mountain_bearing(mountain):
+def test_mountain_bearing(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.bearing() == 180
 
     mountain.direction = "invalid"
@@ -35,22 +38,26 @@ def test_mountain_bearing(mountain):
     assert "Invalid direction value:" in exc_info.value.args[0]
 
 
-def test_mountain_trail_count(mountain):
+def test_mountain_trail_count(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.trail_count() == 1
 
 
-def test_mountain_lift_count(mountain):
+def test_mountain_lift_count(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.lift_count() == 1
 
 
-def test_mountain_add_trail(mountain, trail):
-    trail.trail_id = "w1002"
+def test_mountain_add_trail(mountain_factory, trail_factory):
+    mountain = mountain_factory()
+    trail = trail_factory(trail_id="w1002")
 
     mountain.add_trail(trail)
     assert mountain.trail_count() == 2
 
 
-def test_mountain_from_db(mountain, db_path):
+def test_mountain_from_db(mountain_factory, db_path):
+    mountain = mountain_factory()
     season_passes = ",".join(
         [season_pass.value for season_pass in mountain.season_passes]
     )
@@ -106,7 +113,8 @@ def test_mountain_from_db(mountain, db_path):
     assert Mountain.from_db("fake_id", db_path) is None
 
 
-def test_mountain_to_db(mountain, db_path):
+def test_mountain_to_db(mountain_factory, db_path):
+    mountain = mountain_factory()
     mountain.to_db(db_path=db_path)
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:
@@ -172,7 +180,8 @@ def test_mountain_to_db(mountain, db_path):
     assert "fields are missing" in str(exc_info)
 
 
-def test_mountain_to_db_rounds_coordinates_precision(mountain, db_path):
+def test_mountain_to_db_rounds_coordinates_precision(mountain_factory, db_path):
+    mountain = mountain_factory()
     mountain.coordinates = Point(-72.1234567891, 43.1234567891)
 
     mountain.to_db(db_path=db_path)

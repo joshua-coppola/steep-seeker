@@ -1,16 +1,18 @@
-from shapely import LineString
 import pytest
+from shapely import LineString
 
-from core.support.lift import Lift
 from core.connectors.database import cursor
 from core.datamodels.database import LiftTable
+from core.support.lift import Lift
 
 
-def test_lift(lift):
+def test_lift(lift_factory):
+    lift = lift_factory()
     assert lift.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
-def test_lift_from_db(lift, db_path):
+def test_lift_from_db(lift_factory, db_path):
+    lift = lift_factory()
     with cursor(db_path=db_path) as cur:
         query = f"""
             INSERT INTO Lifts (
@@ -53,7 +55,8 @@ def test_lift_from_db(lift, db_path):
     assert Lift.from_db("fake_id", db_path) is None
 
 
-def test_lift_to_db(lift, db_path):
+def test_lift_to_db(lift_factory, db_path):
+    lift = lift_factory()
     lift.to_db(db_path=db_path)
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:

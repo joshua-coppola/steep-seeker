@@ -15,3 +15,10 @@ def test_index_returns_ok(client):
 
     assert response.status_code == 200
     assert b"Steep Seeker" in response.data
+
+
+def test_about_returns_ok(client):
+    response = client.get("/about")
+
+    assert response.status_code == 200
+    assert b"About" in response.data
