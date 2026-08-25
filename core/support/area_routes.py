@@ -1,6 +1,8 @@
 """
 Finds the least-steep, least-wandering ski route down an area trail (a
 glade, bowl, or other trail sampled as a polygon rather than a line).
+This is designed to approximate the route an actual skier might take
+inside the area.
 
 Runs in three phases over a graph built from the area's sampled points
 (the boundary ring plus the interior grid, per `polygon_interior_grid`):
