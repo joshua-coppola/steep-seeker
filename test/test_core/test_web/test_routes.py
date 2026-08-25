@@ -3,7 +3,7 @@ from shapely import LineString, Point, Polygon
 
 from core.datamodels.state import State
 from core.web.app import create_app
-from core.web.routes import _trail_features
+from core.web.routes import _lift_feature, _trail_features
 
 
 @pytest.fixture
@@ -431,6 +431,89 @@ def test_trail_features_line_trail_has_single_linestring_feature(trail_factory):
     assert len(features) == 1
     assert features[0]["geometry"]["type"] == "LineString"
     assert "routeCoordinates" not in features[0]["properties"]
+
+
+def test_trail_features_without_edit_query_has_no_tag_edit_form(trail_factory):
+    line_trail = trail_factory(
+        area=False,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
+        interior_geometry="",
+        route=None,
+    )
+
+    features = _trail_features(line_trail, direction="n", debug_mode=False)
+
+    assert "update_tags" not in features[0]["properties"]["popupContent"]
+
+
+def test_trail_features_with_edit_query_adds_tag_edit_form(trail_factory):
+    line_trail = trail_factory(
+        trail_id="w42",
+        area=False,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
+        interior_geometry="",
+        route=None,
+        gladed=True,
+        ungroomed=False,
+    )
+
+    features = _trail_features(
+        line_trail, direction="n", debug_mode=False, edit_query="TestMountain, VT"
+    )
+
+    popup = features[0]["properties"]["popupContent"]
+    assert 'name="q" value="TestMountain, VT"' in popup
+    assert 'name="trail_id" value="w42"' in popup
+    assert 'id="gladed" name="gladed" value=True checked' in popup
+    assert 'id="ungroomed" name="ungroomed" value=True checked' not in popup
+
+
+def test_trail_features_with_edit_query_adds_delete_form(trail_factory):
+    line_trail = trail_factory(
+        trail_id="w42",
+        area=False,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
+        interior_geometry="",
+        route=None,
+    )
+
+    features = _trail_features(
+        line_trail, direction="n", debug_mode=False, edit_query="TestMountain, VT"
+    )
+
+    popup = features[0]["properties"]["popupContent"]
+    assert 'id="delete_submit"' in popup
+    assert 'name="delete" value="w42"' in popup
+    assert 'id="blacklist"' in popup
+
+
+def test_lift_feature_without_edit_query_has_no_delete_form(lift_factory):
+    lift = lift_factory(
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]])
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert "delete_submit" not in feature["properties"]["popupContent"]
+
+
+def test_lift_feature_with_edit_query_adds_delete_form(lift_factory):
+    lift = lift_factory(
+        lift_id="w99",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(
+        lift,
+        direction="n",
+        weather_modifier=0,
+        debug_mode=False,
+        edit_query="TestMountain, VT",
+    )
+
+    popup = feature["properties"]["popupContent"]
+    assert 'name="delete" value="w99"' in popup
+    assert 'id="blacklist"' in popup
 
 
 def test_trail_features_area_trail_with_route_adds_route_feature(trail_factory):

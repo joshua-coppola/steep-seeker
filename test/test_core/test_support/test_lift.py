@@ -144,3 +144,18 @@ def test_lift_to_db_allows_missing_osm_tag_fields(lift_factory, db_path):
     assert returned_lift.detachable is None
     assert returned_lift.bubble is None
     assert returned_lift.heating is None
+
+
+def test_lift_delete_from_db(lift_factory, db_path):
+    lift = lift_factory()
+    lift.to_db(db_path=db_path)
+
+    assert Lift.from_db(lift.lift_id, db_path) is not None
+
+    Lift.delete_from_db(lift.lift_id, db_path=db_path)
+
+    assert Lift.from_db(lift.lift_id, db_path) is None
+
+
+def test_lift_delete_from_db_nonexistent_id_is_a_no_op(db_path):
+    Lift.delete_from_db("nonexistent", db_path=db_path)

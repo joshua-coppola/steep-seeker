@@ -69,3 +69,13 @@ CREATE TABLE "Lifts"
     "average_slope" REAL,
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
+
+
+DROP TABLE IF EXISTS Blacklist;
+
+CREATE TABLE "Blacklist"
+(
+    "item_id" TEXT PRIMARY KEY NOT NULL,
+    "mountain_id" TEXT NOT NULL,
+    FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
+);

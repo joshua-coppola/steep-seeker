@@ -147,3 +147,11 @@ class Lift:
                 self.average_slope,
             )
             cur.execute(query, params)
+
+    def delete_from_db(lift_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes a lift from the DB by id.
+        """
+        with cursor(db_path=db_path) as cur:
+            query = f"DELETE FROM Lifts WHERE {LiftTable.lift_id} = ?"
+            cur.execute(query, (lift_id,))

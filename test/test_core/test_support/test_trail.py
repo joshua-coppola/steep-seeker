@@ -214,3 +214,18 @@ def test_trail_to_db_allows_missing_official_rating(trail_factory, db_path):
 
     returned_trail = Trail.from_db(trail.trail_id, db_path=db_path)
     assert returned_trail.official_rating is None
+
+
+def test_trail_delete_from_db(trail_factory, db_path):
+    trail = trail_factory()
+    trail.to_db(db_path=db_path)
+
+    assert Trail.from_db(trail.trail_id, db_path=db_path) is not None
+
+    Trail.delete_from_db(trail.trail_id, db_path=db_path)
+
+    assert Trail.from_db(trail.trail_id, db_path=db_path) is None
+
+
+def test_trail_delete_from_db_nonexistent_id_is_a_no_op(db_path):
+    Trail.delete_from_db("nonexistent", db_path=db_path)

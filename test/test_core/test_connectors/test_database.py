@@ -6,6 +6,7 @@ def test_db_init(db_path: str):
         ("Mountains",),
         ("Trails",),
         ("Lifts",),
+        ("Blacklist",),
     ]
 
     with cursor(db_path=db_path, dict_cursor=False) as cur:

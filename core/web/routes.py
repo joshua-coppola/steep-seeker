@@ -346,7 +346,25 @@ def _orientation(
     return orientation
 
 
-def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
+def _delete_form_html(edit_query: str, item_id: str) -> str:
+    """
+    Delete/blacklist form appended to a trail or lift's popup when the
+    management edit page is building it -- shared since it's identical
+    for both (only the id value differs).
+    """
+    return (
+        '<form id="delete" class="search-form">'
+        f'<input type="hidden" name="q" value="{edit_query}">'
+        f'<input type="hidden" name="delete" value="{item_id}">'
+        '<input type="checkbox" id="blacklist" name="blacklist" value=True>'
+        '<label for="blacklist">Blacklist</label><br>'
+        '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
+    )
+
+
+def _trail_features(
+    trail, direction: str, debug_mode: bool, edit_query: str | None = None
+) -> list[dict]:
     """
     Builds the GeoJSON feature(s) for one trail. A line trail is a single
     LineString feature. An area trail (glade/bowl, sampled as a polygon)
@@ -358,6 +376,11 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     interactive-map.js can show a real heightgraph when the polygon
     itself is clicked, rather than the "N/A" a bare Polygon feature would
     otherwise get.
+
+    edit_query, when given (the "<name>, <state>" the management edit
+    page's mountain selector uses), appends a gladed/ungroomed tag-edit
+    form to the popup -- only management_routes.py's edit page passes
+    this; the public interactive-map never does.
     """
     if trail.area:
         coords = list(trail.geometry.exterior.coords)
@@ -392,6 +415,20 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
             )
     if debug_mode:
         popup_content += f"<p>Trail ID: {trail.trail_id}</p>"
+    if edit_query is not None:
+        gladed_checked = "checked" if trail.gladed else ""
+        ungroomed_checked = "checked" if trail.ungroomed else ""
+        popup_content += (
+            '<form id="update_tags" class="search-form">'
+            f'<input type="hidden" name="q" value="{edit_query}">'
+            f'<input type="hidden" name="trail_id" value="{trail.trail_id}">'
+            f'<input type="checkbox" id="gladed" name="gladed" value=True {gladed_checked}>'
+            '<label for="gladed">Gladed</label>'
+            f'<input type="checkbox" id="ungroomed" name="ungroomed" value=True {ungroomed_checked}>'
+            '<label for="ungroomed">Ungroomed</label>'
+            '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
+        )
+        popup_content += _delete_form_html(edit_query, trail.trail_id)
 
     properties = {
         "popupContent": popup_content,
@@ -442,7 +479,11 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
 
 
 def _lift_feature(
-    lift, direction: str, weather_modifier: float, debug_mode: bool
+    lift,
+    direction: str,
+    weather_modifier: float,
+    debug_mode: bool,
+    edit_query: str | None = None,
 ) -> dict:
     coords = list(lift.geometry.coords)
     profile = build_elevation_profile(coords)
@@ -471,6 +512,8 @@ def _lift_feature(
         popup_content += "<p>&#x2705; Heated</p>"
     if debug_mode:
         popup_content += f"<p>Lift ID: {lift.lift_id}</p>"
+    if edit_query is not None:
+        popup_content += _delete_form_html(edit_query, lift.lift_id)
 
     return {
         "type": "Feature",
@@ -594,6 +637,57 @@ def static_map(state, name):
     )
 
 
+def _weather_modifier(trails: list) -> float:
+    """
+    Recovers the mountain's weather modifier alone (stripping the
+    gladed/ungroomed bonus baked into trails[0]'s difficulty), since
+    lifts don't carry their own difficulty_modifier -- matches the old
+    site's approach of reusing an arbitrary trail's numbers for this.
+    """
+    if not trails:
+        return 0
+
+    first = trails[0]
+    if first.difficulty is None or first.steepest_30m is None:
+        return 0
+
+    return (
+        first.difficulty
+        - first.steepest_30m
+        - (5.5 if first.gladed else 0)
+        - (2.5 if first.ungroomed else 0)
+    )
+
+
+def _build_geojson(
+    mountain: Mountain,
+    trails: list,
+    lifts: list,
+    debug_mode: bool,
+    editable: bool = False,
+) -> dict:
+    weather_modifier = _weather_modifier(trails)
+    edit_query = f"{mountain.name}, {mountain.state.value}" if editable else None
+
+    features = []
+    for trail in trails:
+        features.extend(
+            _trail_features(trail, mountain.direction, debug_mode, edit_query)
+        )
+    for lift in lifts:
+        features.append(
+            _lift_feature(
+                lift, mountain.direction, weather_modifier, debug_mode, edit_query
+            )
+        )
+
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        "properties": {"summary": "elevation"},
+    }
+
+
 @web.route("/interactive-map/<string:state>/<string:name>")
 def interactive_map(state, name):
     debug_mode = request.args.get("debug") == "true"
@@ -602,33 +696,7 @@ def interactive_map(state, name):
     mountain = _load_mountain_or_404(state, name, db_path)
 
     trails, lifts = _named_trails_and_lifts(mountain)
-
-    # Recovers the mountain's weather modifier alone (stripping the
-    # gladed/ungroomed bonus baked into trails[0]'s difficulty)
-    weather_modifier = 0
-    if trails:
-        first = trails[0]
-        if first.difficulty is not None and first.steepest_30m is not None:
-            weather_modifier = (
-                first.difficulty
-                - first.steepest_30m
-                - (5.5 if first.gladed else 0)
-                - (2.5 if first.ungroomed else 0)
-            )
-
-    features = []
-    for trail in trails:
-        features.extend(_trail_features(trail, mountain.direction, debug_mode))
-    for lift in lifts:
-        features.append(
-            _lift_feature(lift, mountain.direction, weather_modifier, debug_mode)
-        )
-
-    geojson = {
-        "type": "FeatureCollection",
-        "features": features,
-        "properties": {"summary": "elevation"},
-    }
+    geojson = _build_geojson(mountain, trails, lifts, debug_mode)
 
     return render_template(
         "interactive_map.jinja",

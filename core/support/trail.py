@@ -200,3 +200,11 @@ class Trail:
                 self.steepest_1000m,
             )
             cur.execute(query, params)
+
+    def delete_from_db(trail_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes a trail from the DB by id.
+        """
+        with cursor(db_path=db_path) as cur:
+            query = f"DELETE FROM Trails WHERE {TrailTable.trail_id} = ?"
+            cur.execute(query, (trail_id,))
