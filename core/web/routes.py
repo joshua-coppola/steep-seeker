@@ -454,25 +454,59 @@ def _lift_feature(
     }
 
 
-@web.route("/interactive-map/<string:state>/<string:name>")
-def interactive_map(state, name):
-    debug_mode = request.args.get("debug") == "true"
-
+def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     state_enum = _parse_state(state)
     if state_enum is None:
         abort(404)
 
-    db_path = current_app.config["DATABASE_PATH"]
     mountain = Mountain.from_name(name, state_enum, db_path)
     if mountain is None:
         abort(404)
 
+    return mountain
+
+
+def _named_trails_and_lifts(mountain: Mountain) -> tuple[list, list]:
+    """
+    Returns (trails, lifts): named trails sorted by difficulty descending
+    (unnamed connectors are excluded), and named lifts. Shared by /map and
+    /interactive-map's sidebar + (for interactive-map) GeoJSON building.
+    """
     trails = sorted(
         (t for t in mountain.trails.values() if t.name),
         key=lambda t: t.difficulty if t.difficulty is not None else -1,
         reverse=True,
     )
     lifts = [lift for lift in mountain.lifts.values() if lift.name]
+
+    return trails, lifts
+
+
+@web.route("/map/<string:state>/<string:name>")
+def static_map(state, name):
+    db_path = current_app.config["DATABASE_PATH"]
+    mountain = _load_mountain_or_404(state, name, db_path)
+
+    trails, lifts = _named_trails_and_lifts(mountain)
+
+    return render_template(
+        "map.jinja",
+        nav_links=nav_links,
+        active_page="map",
+        mountain=mountain,
+        trails=trails,
+        lifts=lifts,
+    )
+
+
+@web.route("/interactive-map/<string:state>/<string:name>")
+def interactive_map(state, name):
+    debug_mode = request.args.get("debug") == "true"
+
+    db_path = current_app.config["DATABASE_PATH"]
+    mountain = _load_mountain_or_404(state, name, db_path)
+
+    trails, lifts = _named_trails_and_lifts(mountain)
 
     # Recovers the mountain's weather modifier alone (stripping the
     # gladed/ungroomed bonus baked into trails[0]'s difficulty)

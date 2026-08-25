@@ -281,6 +281,25 @@ def mapped_client(client, db_path, mountain_factory, trail_factory, lift_factory
     return client
 
 
+def test_static_map_404_for_unknown_mountain(client):
+    response = client.get("/map/VT/Nonexistent")
+
+    assert response.status_code == 404
+
+
+def test_static_map_returns_ok(mapped_client):
+    response = mapped_client.get("/map/VT/TestMountain")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "TestMountain" in body
+    assert "Line Trail" in body
+    assert "Area Trail" in body
+    assert "Test Lift" in body
+    assert "/maps/VT/TestMountain.svg" in body
+    assert "/interactive-map/VT/TestMountain" in body
+
+
 def test_interactive_map_404_for_unknown_mountain(client):
     response = client.get("/interactive-map/VT/Nonexistent")
 
