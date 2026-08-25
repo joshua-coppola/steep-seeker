@@ -1,27 +1,27 @@
 """
 Finds the least-steep, least-wandering ski route down an area trail (a
 glade, bowl, or other trail sampled as a polygon rather than a line).
+This is designed to approximate the route an actual skier might take
+inside the area.
 
 Runs in three phases over a graph built from the area's sampled points
 (the boundary ring plus the interior grid, per `polygon_interior_grid`):
 
-1. Bottleneck pass -- a modified Dijkstra where a path's cost is its worst
+1. Bottleneck pass: a modified Dijkstra where a path's cost is its worst
    edge, not the sum of edges, run from a virtual start node (connected to
    every boundary point near the top of the area's vertical drop) to a
    virtual end node (connected from every boundary point near the bottom).
    This finds the gentlest steepest-pitch achievable by any valid
    start/end combination, rather than pinning to the single highest and
    lowest sampled points.
-2. Least-wandering pass -- starting from a loose slope cap and tightening
+2. Least-wandering pass: starting from a loose slope cap and tightening
    it toward the bottleneck minimum, tracks route length at each cap
    against a fixed baseline (the loosest pass). Stops as soon as
    tightening further would grow the route beyond a fixed multiple of
    that baseline, and keeps the previous, still-affordable cap.
-3. Smoothing pass -- a basic moving average over the route's lon/lat/
+3. Smoothing pass: a basic moving average over the route's lon/lat/
    elevation to reduce the zig-zag that shortest-path tie-breaking leaves
-   behind on a lattice-like graph. Endpoints are left untouched. This pass
-   is not slope-validated: a smoothed segment isn't guaranteed to stay
-   under the chosen cap.
+   behind on a lattice-like graph. Endpoints are left untouched.
 """
 
 import heapq

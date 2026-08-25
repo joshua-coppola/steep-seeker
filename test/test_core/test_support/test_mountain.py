@@ -5,26 +5,35 @@ import pytest
 from shapely import Point
 
 from core.connectors.database import cursor
-from core.datamodels.database import MountainTable
+from core.datamodels.database import LiftTable, MountainTable, TrailTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.osm import osm_processor
 from core.support import mountain as mountain_module
+from core.support.blacklist import add_to_blacklist, is_blacklisted
 from core.support.mountain import Mountain
 from test.test_core.conftest import FakeElevation, FakeWeather
 
 
-def test_mountain(mountain):
+def test_mountain(mountain_factory):
+    mountain = mountain_factory()
     expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc)
     assert mountain.last_updated.date() == expected.date()
 
 
-def test_mountain_region(mountain):
+def test_mountain_region(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.region() == Region.NORTHEAST
 
 
-def test_mountain_bearing(mountain):
+def test_mountain_vertical_feet(mountain_factory):
+    mountain = mountain_factory(vertical=1024)
+    assert mountain.vertical_feet() == round(1024 * 3.28084)
+
+
+def test_mountain_bearing(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.bearing() == 180
 
     mountain.direction = "invalid"
@@ -35,22 +44,58 @@ def test_mountain_bearing(mountain):
     assert "Invalid direction value:" in exc_info.value.args[0]
 
 
-def test_mountain_trail_count(mountain):
+def test_mountain_rotate_clockwise(mountain_factory):
+    mountain = mountain_factory(direction="n")
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "e"
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "s"
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "w"
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "n"
+
+
+def test_mountain_rotate_counterclockwise(mountain_factory):
+    mountain = mountain_factory(direction="n")
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "w"
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "s"
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "e"
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "n"
+
+
+def test_mountain_trail_count(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.trail_count() == 1
 
 
-def test_mountain_lift_count(mountain):
+def test_mountain_lift_count(mountain_factory):
+    mountain = mountain_factory()
     assert mountain.lift_count() == 1
 
 
-def test_mountain_add_trail(mountain, trail):
-    trail.trail_id = "w1002"
+def test_mountain_add_trail(mountain_factory, trail_factory):
+    mountain = mountain_factory()
+    trail = trail_factory(trail_id="w1002")
 
     mountain.add_trail(trail)
     assert mountain.trail_count() == 2
 
 
-def test_mountain_from_db(mountain, db_path):
+def test_mountain_from_db(mountain_factory, db_path):
+    mountain = mountain_factory()
     season_passes = ",".join(
         [season_pass.value for season_pass in mountain.season_passes]
     )
@@ -106,7 +151,32 @@ def test_mountain_from_db(mountain, db_path):
     assert Mountain.from_db("fake_id", db_path) is None
 
 
-def test_mountain_to_db(mountain, db_path):
+def test_mountain_from_name(mountain_factory, db_path):
+    mountain = mountain_factory()
+    mountain.to_db(db_path=db_path)
+
+    returned_mountain = Mountain.from_name(mountain.name, mountain.state, db_path)
+
+    assert returned_mountain == mountain
+
+
+def test_mountain_from_name_no_match_returns_none(db_path):
+    assert Mountain.from_name("Nonexistent", State.VERMONT, db_path) is None
+
+
+def test_mountain_from_db_handles_empty_season_passes(mountain_factory, db_path):
+    # to_db stores an empty season_passes list as "" (",".join([]) == "");
+    # from_db must not try to build a Season_Pass("") out of that
+    mountain = mountain_factory(season_passes=[])
+    mountain.to_db(db_path=db_path)
+
+    returned_mountain = Mountain.from_db(mountain.mountain_id, db_path)
+
+    assert returned_mountain.season_passes == []
+
+
+def test_mountain_to_db(mountain_factory, db_path):
+    mountain = mountain_factory()
     mountain.to_db(db_path=db_path)
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:
@@ -117,7 +187,7 @@ def test_mountain_to_db(mountain, db_path):
     assert len(result) == 1
 
     expected_result = {
-        MountainTable.mountain_id: 1,
+        MountainTable.mountain_id: "1",
         MountainTable.name: "Test",
         MountainTable.state: "VT",
         MountainTable.direction: "n",
@@ -172,7 +242,8 @@ def test_mountain_to_db(mountain, db_path):
     assert "fields are missing" in str(exc_info)
 
 
-def test_mountain_to_db_rounds_coordinates_precision(mountain, db_path):
+def test_mountain_to_db_rounds_coordinates_precision(mountain_factory, db_path):
+    mountain = mountain_factory()
     mountain.coordinates = Point(-72.1234567891, 43.1234567891)
 
     mountain.to_db(db_path=db_path)
@@ -181,6 +252,75 @@ def test_mountain_to_db_rounds_coordinates_precision(mountain, db_path):
         result = dict(cur.execute("SELECT * FROM Mountains").fetchall()[0])
 
     assert result[MountainTable.coordinates] == "POINT (-72.123457 43.123457)"
+
+
+def test_mountain_to_db_serializes_uuid_mountain_id(mountain_factory, db_path):
+    # OSMProcessor generates mountain_id as a uuid.UUID when one isn't
+    # supplied; sqlite3 can't bind UUID objects directly, so to_db (and the
+    # Trail/Lift to_db calls it cascades into via the mountain_id foreign
+    # key) must convert it to a string before saving.
+    mountain_id = UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
+    mountain = mountain_factory(mountain_id=mountain_id)
+
+    mountain.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        mountain_result = dict(cur.execute("SELECT * FROM Mountains").fetchall()[0])
+        trail_result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+        lift_result = dict(cur.execute("SELECT * FROM Lifts").fetchall()[0])
+
+    assert mountain_result[MountainTable.mountain_id] == str(mountain_id)
+    assert trail_result[TrailTable.mountain_id] == str(mountain_id)
+    assert lift_result[LiftTable.mountain_id] == str(mountain_id)
+
+    # from_db's WHERE lookup must also accept a UUID param directly
+    returned_mountain = Mountain.from_db(mountain_id, db_path)
+    assert returned_mountain.mountain_id == str(mountain_id)
+
+
+def test_mountain_delete_from_db(mountain_factory, db_path):
+    mountain = mountain_factory(mountain_id="1")
+    mountain.to_db(db_path=db_path)
+
+    assert Mountain.from_db("1", db_path=db_path) is not None
+
+    Mountain.delete_from_db("1", db_path=db_path)
+
+    assert Mountain.from_db("1", db_path=db_path) is None
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        assert cur.execute("SELECT * FROM Trails").fetchall() == []
+        assert cur.execute("SELECT * FROM Lifts").fetchall() == []
+
+
+def test_mountain_delete_from_db_also_clears_blacklist(mountain_factory, db_path):
+    mountain = mountain_factory(mountain_id="1")
+    mountain.to_db(db_path=db_path)
+    add_to_blacklist("1", "w1000", db_path=db_path)
+
+    Mountain.delete_from_db("1", db_path=db_path)
+
+    assert is_blacklisted("1", "w1000", db_path=db_path) is False
+
+
+def test_mountain_delete_from_db_nonexistent_id_is_a_no_op(db_path):
+    Mountain.delete_from_db("nonexistent", db_path=db_path)
+
+
+def test_mountain_clear_trails_and_lifts(mountain_factory, db_path):
+    mountain = mountain_factory(mountain_id="1")
+    mountain.to_db(db_path=db_path)
+    add_to_blacklist("1", "w1000", db_path=db_path)
+
+    Mountain.clear_trails_and_lifts("1", db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        assert cur.execute("SELECT * FROM Trails").fetchall() == []
+        assert cur.execute("SELECT * FROM Lifts").fetchall() == []
+
+    # the mountain row and its blacklist entries are untouched
+    assert Mountain.from_db("1", db_path=db_path) is not None
+    assert is_blacklisted("1", "w1000", db_path=db_path) is True
 
 
 def test_mountain_from_osm(osm_file, monkeypatch):
@@ -215,3 +355,16 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert mountain.trails["w11"].ungroomed is False
     assert mountain.trails["w11"].steepest_30m == 9.3
     assert mountain.trails["w11"].difficulty == 12.8
+
+
+def test_mountain_from_osm_preserves_given_mountain_id(osm_file, monkeypatch):
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+    monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
+
+    mountain = Mountain.from_osm(
+        osm_file, season_passes=[], url="https://test.com", mountain_id="existing-id"
+    )
+
+    assert mountain.mountain_id == "existing-id"
+    assert all(trail.mountain_id == "existing-id" for trail in mountain.trails.values())
+    assert all(lift.mountain_id == "existing-id" for lift in mountain.lifts.values())

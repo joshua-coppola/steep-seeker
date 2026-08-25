@@ -69,3 +69,9 @@ class LiftTable:
 class CacheTable:
     point: str = "point"
     elevation: str = "elevation"
+
+
+@dataclass
+class BlacklistTable:
+    item_id: str = "item_id"
+    mountain_id: str = "mountain_id"

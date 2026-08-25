@@ -1,8 +1,7 @@
 """
 Renders a mountain's trails and lifts to an SVG map (create_map) and a
 label-free SVG thumbnail (create_thumbnail), colored by trail difficulty.
-Operates entirely on an already-loaded core.support.mountain.Mountain --
-no DB access happens in this module.
+Operates entirely on an already-loaded core.support.mountain.Mountain
 """
 
 from math import atan2, degrees
@@ -14,27 +13,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from core.support.mountain import Mountain
+from core.support.utils import meters_to_feet
+from core.support.utils import trail_color as _trail_color
 
 mpl.use("svg")
-
-METERS_TO_FEET = 3.28084
-
-
-def _trail_color(difficulty: float) -> str:
-    # 0-18 degrees: green
-    if difficulty < 18:
-        return "green"
-    # 18-27 degrees: blue
-    if difficulty < 27:
-        return "royalblue"
-    # 27-36 degrees: black
-    if difficulty < 36:
-        return "black"
-    # 36-47 degrees: red
-    if difficulty < 47:
-        return "red"
-    # >47 degrees: yellow
-    return "gold"
 
 
 def _xy_from_coords(coords) -> tuple[list[float], list[float]]:
@@ -242,7 +224,7 @@ def _populate_map(
         plt.plot(x, y, c="grey", lw=line_width)
 
         if with_labels:
-            length_feet = (lift.length or 0) * METERS_TO_FEET
+            length_feet = meters_to_feet(lift.length) or 0
             point, angle, label_length = _get_label_placement(
                 x, y, length_feet, len(lift.name)
             )
@@ -314,7 +296,7 @@ def _populate_map(
             label_text = "{} {:.1f}{}".format(
                 trail.name.strip(), trail.steepest_30m, "\N{DEGREE SIGN}"
             )
-            length_feet = (trail.length or 0) * METERS_TO_FEET
+            length_feet = meters_to_feet(trail.length) or 0
             point, angle, label_length = _get_label_placement(
                 x, y, length_feet, len(label_text)
             )

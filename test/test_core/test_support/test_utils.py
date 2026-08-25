@@ -1,17 +1,93 @@
 import shapely
 
 from core.support.utils import (
-    space_line_points_evenly,
-    polygon_interior_grid,
-    round_geometry_precision,
-    get_length,
-    get_vertical_drop,
-    get_max_slope,
+    build_elevation_profile,
     get_average_slope,
+    get_bounding_box,
+    get_length,
+    get_max_slope,
+    get_mountain_rating,
     get_steepest_pitch,
     get_trail_difficulty,
-    get_mountain_rating,
+    get_vertical_drop,
+    meters_to_feet,
+    polygon_interior_grid,
+    round_degrees,
+    round_feet,
+    round_geometry_precision,
+    space_line_points_evenly,
 )
+
+
+def test_meters_to_feet():
+    assert meters_to_feet(1) == 3.28084
+
+
+def test_meters_to_feet_none():
+    assert meters_to_feet(None) is None
+
+
+def test_round_feet():
+    assert round_feet(328.084) == 328
+
+
+def test_round_feet_rounds_to_nearest_whole_number():
+    assert round_feet(328.6) == 329
+
+
+def test_round_feet_none():
+    assert round_feet(None) is None
+
+
+def test_round_degrees():
+    assert round_degrees(12.849) == 12.8
+
+
+def test_round_degrees_rounds_to_nearest_tenth():
+    assert round_degrees(12.85) == 12.8
+
+
+def test_round_degrees_none():
+    assert round_degrees(None) is None
+
+
+def test_build_elevation_profile_first_point_has_zero_slope():
+    coords = [(-120.0, 40.0, 1000), (-120.0001, 40.0001, 990)]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[0][3] == 0.0
+
+
+def test_build_elevation_profile_converts_elevation_to_feet():
+    coords = [(-120.0, 40.0, 1000), (-120.0001, 40.0001, 990)]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[0][2] == round(1000 * 3.28084)
+    assert profile[1][2] == round(990 * 3.28084)
+
+
+def test_build_elevation_profile_computes_positive_slope_downhill_and_uphill():
+    coords = [
+        (-120.0, 40.0, 1000),
+        (-120.0001, 40.0001, 990),
+        (-120.0002, 40.0002, 1000),
+    ]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[1][3] > 0
+    assert profile[2][3] > 0
+
+
+def test_build_elevation_profile_preserves_lon_lat():
+    coords = [(-120.0, 40.0, 1000), (-120.0001, 40.0001, 990)]
+
+    profile = build_elevation_profile(coords)
+
+    assert profile[0][0] == -120.0
+    assert profile[0][1] == 40.0
 
 
 def test_round_geometry_precision_point():
@@ -35,6 +111,22 @@ def test_round_geometry_precision_leaves_elevation_untouched():
     ]
 
 
+def test_get_bounding_box_no_padding():
+    geometries = [
+        shapely.LineString([[-72.0, 43.0], [-72.1, 43.1]]),
+        shapely.Point(-72.2, 42.9),
+    ]
+
+    assert get_bounding_box(geometries) == "-72.2,42.9,-72.0,43.1"
+
+
+def test_get_bounding_box_applies_padding():
+    geometries = [shapely.LineString([[-72.0, 43.0], [-71.0, 44.0]])]
+
+    # lon range is 1.0, lat range is 1.0 -- 0.5 padding adds 0.25 to each side
+    assert get_bounding_box(geometries, padding=0.5) == "-72.25,42.75,-70.75,44.25"
+
+
 def test_space_line_points_evenly():
     test_line = shapely.LineString([[0, 0], [0.001, 0.001]])
 
@@ -53,8 +145,8 @@ def test_polygon_interior_grid():
 
 def test_get_length():
     geojson = {
-        'type': 'LineString', 
-        'coordinates': [
+        "type": "LineString",
+        "coordinates": [
             [-72.718289, 43.422299, 1500.0],
             [-72.718362, 43.422312, 1500.0],
         ],
@@ -64,12 +156,18 @@ def test_get_length():
 
 
 def test_get_vertical_drop_line():
-    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.01, 40.01, 300], [-120.02, 40.02, 200]]}
+    geometry = {
+        "coordinates": [
+            [-120.0, 40.0, 100],
+            [-120.01, 40.01, 300],
+            [-120.02, 40.02, 200],
+        ]
+    }
     assert get_vertical_drop(geometry) == 200
 
 
 def test_get_vertical_drop_nested_area():
-    geometry = {"coordinates": [[[-120.0, 40.0, 50], [-120.01, 40.01, 150]] ]}
+    geometry = {"coordinates": [[[-120.0, 40.0, 50], [-120.01, 40.01, 150]]]}
     assert get_vertical_drop(geometry) == 100
 
 
@@ -79,7 +177,13 @@ def test_get_vertical_drop_no_elevations():
 
 
 def test_get_max_slope():
-    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.01, 40.01, 300], [-120.02, 40.02, 200]]}
+    geometry = {
+        "coordinates": [
+            [-120.0, 40.0, 100],
+            [-120.01, 40.01, 300],
+            [-120.02, 40.02, 200],
+        ]
+    }
     assert round(get_max_slope(geometry), 2) == 8.13
 
 
@@ -89,7 +193,13 @@ def test_get_max_slope_no_elevations():
 
 
 def test_get_average_slope():
-    geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.01, 40.01, 300], [-120.02, 40.02, 200]]}
+    geometry = {
+        "coordinates": [
+            [-120.0, 40.0, 100],
+            [-120.01, 40.01, 300],
+            [-120.02, 40.02, 200],
+        ]
+    }
     assert round(get_average_slope(geometry), 2) == 6.11
 
 
@@ -100,9 +210,7 @@ def test_get_average_slope_no_elevations():
 
 # A steady-grade line ~556m long, dropping 20m every ~55.6m (constant ~19.8 degree pitch)
 STEADY_GRADE_LINE = {
-    "coordinates": [
-        [-120.0, 40.0 + i * 0.0005, 1000 - i * 20] for i in range(11)
-    ]
+    "coordinates": [[-120.0, 40.0 + i * 0.0005, 1000 - i * 20] for i in range(11)]
 }
 
 
@@ -133,24 +241,39 @@ def test_get_steepest_pitch_too_few_points():
 
 
 def test_get_trail_difficulty_plain():
-    assert get_trail_difficulty(20.0, gladed=False, ungroomed=False, weather_modifier=3.0) == 23.0
+    assert (
+        get_trail_difficulty(20.0, gladed=False, ungroomed=False, weather_modifier=3.0)
+        == 23.0
+    )
 
 
 def test_get_trail_difficulty_gladed_and_ungroomed_only_applies_gladed():
     # gladed and ungroomed don't stack; gladed wins
-    assert get_trail_difficulty(20.0, gladed=True, ungroomed=True, weather_modifier=3.0) == 28.5
+    assert (
+        get_trail_difficulty(20.0, gladed=True, ungroomed=True, weather_modifier=3.0)
+        == 28.5
+    )
 
 
 def test_get_trail_difficulty_gladed_only():
-    assert get_trail_difficulty(20.0, gladed=True, ungroomed=False, weather_modifier=0) == 25.5
+    assert (
+        get_trail_difficulty(20.0, gladed=True, ungroomed=False, weather_modifier=0)
+        == 25.5
+    )
 
 
 def test_get_trail_difficulty_ungroomed_only():
-    assert get_trail_difficulty(20.0, gladed=False, ungroomed=True, weather_modifier=0) == 22.5
+    assert (
+        get_trail_difficulty(20.0, gladed=False, ungroomed=True, weather_modifier=0)
+        == 22.5
+    )
 
 
 def test_get_trail_difficulty_no_steepest_30m_returns_none():
-    assert get_trail_difficulty(None, gladed=True, ungroomed=True, weather_modifier=3.0) is None
+    assert (
+        get_trail_difficulty(None, gladed=True, ungroomed=True, weather_modifier=3.0)
+        is None
+    )
 
 
 def test_get_mountain_rating_no_trails_returns_none():

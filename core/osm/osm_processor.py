@@ -36,7 +36,7 @@ class OSMProcessor:
     The trails and lifts are stored in dicts of the same name.
     """
 
-    def __init__(self, filename: str, mountain_id: int | None = None):
+    def __init__(self, filename: str, mountain_id: str | None = None):
         osm_handler = OSMHandler()
         osm_handler.apply_file(filename)
 
@@ -237,23 +237,15 @@ class OSMProcessor:
                         [point.coords[0] for point in interior_multipoint.geoms]
                     )
                 }
-                route = get_area_route(geometry_json, interior_geometry)
-                # get_area_route's smoothing pass produces elevations by
-                # averaging neighboring points, not by measuring the
-                # smoothed position -- re-space and re-query elevation the
-                # same way boundary/lift geometry does, so the route's
-                # elevations (and slope stats derived from them) reflect
-                # real terrain
+                raw_route = get_area_route(geometry_json, interior_geometry)
                 route_line = space_line_points_evenly(
                     shapely.LineString(
-                        [(point[0], point[1]) for point in route["coordinates"]]
+                        [(point[0], point[1]) for point in raw_route["coordinates"]]
                     )
                 )
                 route = {"coordinates": elevation_api.get(list(route_line.coords))}
 
-            # length/slope stats need a real line to walk along -- a
-            # boundary polygon's ring isn't one, so area trails use their
-            # computed route (the least-steep line down the area) instead
+            # Use route for areas since the boundry isn't where people actually ski
             stats_geometry = route if trail["area"] else geometry_json
 
             trail_dict = {}

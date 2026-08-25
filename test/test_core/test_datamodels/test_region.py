@@ -1,5 +1,5 @@
-from core.datamodels.state import State
 from core.datamodels.region import Region
+from core.datamodels.state import State
 
 
 def test_region():

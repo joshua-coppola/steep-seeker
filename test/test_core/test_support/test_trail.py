@@ -6,11 +6,23 @@ from core.datamodels.database import TrailTable
 from core.support.trail import Trail
 
 
-def test_trail(trail):
+def test_trail(trail_factory):
+    trail = trail_factory()
     assert trail.geometry == LineString([[1, 1, 10], [0, 0, 0]])
 
 
-def test_trail_from_db(trail, db_path):
+def test_trail_length_feet(trail_factory):
+    trail = trail_factory(length=100)
+    assert trail.length_feet() == round(100 * 3.28084)
+
+
+def test_trail_vertical_feet(trail_factory):
+    trail = trail_factory(vertical=50)
+    assert trail.vertical_feet() == round(50 * 3.28084)
+
+
+def test_trail_from_db(trail_factory, db_path):
+    trail = trail_factory()
     with cursor(db_path=db_path) as cur:
         query = f"""
             INSERT INTO Trails (
@@ -70,7 +82,8 @@ def test_trail_from_db(trail, db_path):
     assert Trail.from_db("fake_id", db_path) is None
 
 
-def test_trail_to_db(trail, db_path):
+def test_trail_to_db(trail_factory, db_path):
+    trail = trail_factory()
     trail.to_db(db_path=db_path)
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:
@@ -82,7 +95,7 @@ def test_trail_to_db(trail, db_path):
 
     expected_result = {
         TrailTable.trail_id: "w1000",
-        TrailTable.mountain_id: 1,
+        TrailTable.mountain_id: "1",
         TrailTable.geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         TrailTable.interior_geometry: "LINESTRING Z (1 1 10, 0 0 0)",
         TrailTable.route: None,
@@ -128,7 +141,8 @@ def test_trail_to_db(trail, db_path):
     assert "fields are missing" in str(exc_info)
 
 
-def test_trail_to_db_rounds_geometry_precision(trail, db_path):
+def test_trail_to_db_rounds_geometry_precision(trail_factory, db_path):
+    trail = trail_factory()
     trail.geometry = LineString([[-72.1234567891, 43.1234567891, 10], [0, 0, 0]])
     trail.interior_geometry = LineString(
         [[-72.1234567891, 43.1234567891, 10], [0, 0, 0]]
@@ -150,7 +164,8 @@ def test_trail_to_db_rounds_geometry_precision(trail, db_path):
     assert result[TrailTable.route] == "LINESTRING Z (-72.123457 43.123457 10, 0 0 0)"
 
 
-def test_trail_to_db_allows_missing_steepest_pitch(trail, db_path):
+def test_trail_to_db_allows_missing_steepest_pitch(trail_factory, db_path):
+    trail = trail_factory()
     # A trail shorter than a given window legitimately has no steepest
     # pitch for it, so these fields should not block saving
     trail.steepest_500m = None
@@ -163,3 +178,54 @@ def test_trail_to_db_allows_missing_steepest_pitch(trail, db_path):
 
     assert dict(result[0])[TrailTable.steepest_500m] is None
     assert dict(result[0])[TrailTable.steepest_1000m] is None
+
+
+def test_trail_to_db_allows_none_interior_geometry_for_line_trail(
+    trail_factory, db_path
+):
+    # OSMProcessor leaves interior_geometry as None for non-area (line)
+    # trails -- it's only populated for area trails -- so saving one
+    # shouldn't be blocked, and it must round-trip as a real NULL rather
+    # than the literal string "None"
+    trail = trail_factory(interior_geometry=None)
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+
+    assert result[TrailTable.interior_geometry] is None
+
+    returned_trail = Trail.from_db(trail.trail_id, db_path=db_path)
+    assert returned_trail.interior_geometry is None
+
+
+def test_trail_to_db_allows_missing_official_rating(trail_factory, db_path):
+    # official_rating comes from OSM's piste:difficulty tag, which many
+    # real trails simply aren't tagged with
+    trail = trail_factory(official_rating=None)
+
+    trail.to_db(db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        result = dict(cur.execute("SELECT * FROM Trails").fetchall()[0])
+
+    assert result[TrailTable.official_rating] is None
+
+    returned_trail = Trail.from_db(trail.trail_id, db_path=db_path)
+    assert returned_trail.official_rating is None
+
+
+def test_trail_delete_from_db(trail_factory, db_path):
+    trail = trail_factory()
+    trail.to_db(db_path=db_path)
+
+    assert Trail.from_db(trail.trail_id, db_path=db_path) is not None
+
+    Trail.delete_from_db(trail.trail_id, db_path=db_path)
+
+    assert Trail.from_db(trail.trail_id, db_path=db_path) is None
+
+
+def test_trail_delete_from_db_nonexistent_id_is_a_no_op(db_path):
+    Trail.delete_from_db("nonexistent", db_path=db_path)

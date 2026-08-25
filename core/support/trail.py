@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass, fields
 from typing import Self
 
@@ -5,7 +6,7 @@ from shapely import LineString, Polygon, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import TrailTable
-from core.support.utils import round_geometry_precision
+from core.support.utils import meters_to_feet, round_feet, round_geometry_precision
 
 
 @dataclass
@@ -17,10 +18,10 @@ class Trail:
     """
 
     trail_id: str
-    mountain_id: int
+    mountain_id: str
     geometry: LineString | Polygon
     name: str
-    official_rating: str
+    official_rating: str | None
     gladed: bool
     area: bool
     ungroomed: bool
@@ -38,6 +39,19 @@ class Trail:
     steepest_1000m: float | None = None
     interior_geometry: LineString | Polygon | None = ""
     route: LineString | None = None
+
+    def length_feet(self) -> int | None:
+        """
+        Returns length in feet, for display. Length is stored in meters.
+        """
+        return round_feet(meters_to_feet(self.length))
+
+    def vertical_feet(self) -> int | None:
+        """
+        Returns vertical drop in feet, for display. Vertical is stored
+        in meters.
+        """
+        return round_feet(meters_to_feet(self.vertical))
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """
@@ -73,7 +87,11 @@ class Trail:
         Updates DB record with the values in the dataclass
         """
         # steepest_Xm fields may legitimately be None: a trail shorter than
-        # the window has no segment of that length to measure
+        # the window has no segment of that length to measure. route and
+        # interior_geometry are only meaningful for area trails (OSMProcessor
+        # leaves them None for line trails); required-when-area is enforced
+        # separately below. official_rating comes from OSM's
+        # piste:difficulty tag, which many trails simply aren't tagged with
         nullable_fields = {
             "steepest_30m",
             "steepest_50m",
@@ -82,6 +100,8 @@ class Trail:
             "steepest_500m",
             "steepest_1000m",
             "route",
+            "interior_geometry",
+            "official_rating",
         }
 
         # check that all other fields have been populated before saving
@@ -93,7 +113,7 @@ class Trail:
         if len(missing_fields) > 0:
             raise ValueError(f"The following fields are missing: {missing_fields}")
 
-        if self.interior_geometry == "" and self.area:
+        if self.interior_geometry in ("", None) and self.area:
             raise ValueError("The following fields are missing: interior_geometry")
 
         if self.route is None and self.area:
@@ -151,11 +171,13 @@ class Trail:
             """
             params = (
                 self.trail_id,
-                self.mountain_id,
+                str(self.mountain_id)
+                if isinstance(self.mountain_id, uuid.UUID)
+                else self.mountain_id,
                 str(round_geometry_precision(self.geometry)),
                 str(round_geometry_precision(self.interior_geometry))
                 if self.interior_geometry
-                else str(self.interior_geometry),
+                else None,
                 str(round_geometry_precision(self.route))
                 if self.route is not None
                 else None,
@@ -178,3 +200,11 @@ class Trail:
                 self.steepest_1000m,
             )
             cur.execute(query, params)
+
+    def delete_from_db(trail_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes a trail from the DB by id.
+        """
+        with cursor(db_path=db_path) as cur:
+            query = f"DELETE FROM Trails WHERE {TrailTable.trail_id} = ?"
+            cur.execute(query, (trail_id,))

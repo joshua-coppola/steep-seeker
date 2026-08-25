@@ -1,5 +1,6 @@
 import pytest
 import requests
+
 from core.connectors import elevation_api
 from core.connectors.elevation_api import Elevation
 from test.test_core.conftest import FakeResponse

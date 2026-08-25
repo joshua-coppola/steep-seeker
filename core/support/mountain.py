@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 from typing import Self
@@ -6,7 +7,12 @@ from shapely import Point, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor
 from core.connectors.weather_api import Weather
-from core.datamodels.database import LiftTable, MountainTable, TrailTable
+from core.datamodels.database import (
+    BlacklistTable,
+    LiftTable,
+    MountainTable,
+    TrailTable,
+)
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
@@ -16,6 +22,8 @@ from core.support.trail import Trail
 from core.support.utils import (
     get_mountain_rating,
     get_trail_difficulty,
+    meters_to_feet,
+    round_feet,
     round_geometry_precision,
 )
 
@@ -28,7 +36,7 @@ class Mountain:
     and a new or updated mountain can be saved back to the DB with to_db.
     """
 
-    mountain_id: int
+    mountain_id: str
     name: str
     state: State
     direction: str
@@ -54,6 +62,13 @@ class Mountain:
         """
         return Region.get_region(self.state)
 
+    def vertical_feet(self) -> int | None:
+        """
+        Returns vertical drop in feet, for displa. Vertical is stored
+        in meters.
+        """
+        return round_feet(meters_to_feet(self.vertical))
+
     def bearing(self) -> int:
         """
         Returns what the bearing should be for the top of the map.
@@ -67,6 +82,20 @@ class Mountain:
         if self.direction == "w":
             return 90
         raise ValueError(f"Invalid direction value: {self.direction}")
+
+    def rotate_clockwise(self) -> None:
+        """
+        Rotates the map's orientation 90 degrees clockwise.
+        """
+        order = ["n", "e", "s", "w"]
+        self.direction = order[(order.index(self.direction) + 1) % len(order)]
+
+    def rotate_counterclockwise(self) -> None:
+        """
+        Rotates the map's orientation 90 degrees counter-clockwise.
+        """
+        order = ["n", "e", "s", "w"]
+        self.direction = order[(order.index(self.direction) - 1) % len(order)]
 
     def trail_count(self) -> int:
         """
@@ -101,9 +130,15 @@ class Mountain:
         """
         Gets mountain data from database and returns a Mountain object
         """
+        # sqlite3 can't bind UUID objects directly (mountain_id is a UUID
+        # for OSM-derived mountains); normalize once and reuse below
+        db_mountain_id = (
+            str(mountain_id) if isinstance(mountain_id, uuid.UUID) else mountain_id
+        )
+
         with cursor(db_path=db_path) as cur:
             query = "SELECT * from Mountains WHERE mountain_id = ?"
-            params = (mountain_id,)
+            params = (db_mountain_id,)
             result = cur.execute(query, params).fetchone()
 
         if not result:
@@ -112,10 +147,14 @@ class Mountain:
         result = dict(result)
         result[MountainTable.state] = State(result[MountainTable.state])
         result[MountainTable.coordinates] = wkt.loads(result[MountainTable.coordinates])
-        result[MountainTable.season_passes] = [
-            Season_Pass(value)
-            for value in result[MountainTable.season_passes].split(",")
-        ]
+        result[MountainTable.season_passes] = (
+            [
+                Season_Pass(value)
+                for value in result[MountainTable.season_passes].split(",")
+            ]
+            if result[MountainTable.season_passes]
+            else []
+        )
         result[MountainTable.last_updated] = datetime.fromisoformat(
             result[MountainTable.last_updated]
         )
@@ -123,7 +162,7 @@ class Mountain:
         if include_trails:
             with cursor(db_path=db_path) as cur:
                 query = f"SELECT {TrailTable.trail_id} from Trails WHERE {TrailTable.mountain_id} = ?"
-                params = (mountain_id,)
+                params = (db_mountain_id,)
                 trails_result = cur.execute(query, params).fetchall()
 
             if trails_result:
@@ -137,7 +176,7 @@ class Mountain:
         if include_lifts:
             with cursor(db_path=db_path) as cur:
                 query = f"SELECT {LiftTable.lift_id} from Lifts WHERE {LiftTable.mountain_id} = ?"
-                params = (mountain_id,)
+                params = (db_mountain_id,)
                 lifts_result = cur.execute(query, params).fetchall()
 
             if lifts_result:
@@ -149,6 +188,34 @@ class Mountain:
                 }
 
         return Mountain(**result)
+
+    def from_name(
+        name: str,
+        state: State,
+        db_path: str = DATABASE_PATH,
+        include_trails: bool = True,
+        include_lifts: bool = True,
+    ) -> Self:
+        """
+        Looks up a mountain by (state, name) -- used by routes like
+        /interactive-map/<state>/<name> that don't carry a mountain_id --
+        and returns the same Mountain object from_db would, or None if no
+        mountain matches.
+        """
+        with cursor(db_path=db_path) as cur:
+            query = f"SELECT {MountainTable.mountain_id} from Mountains WHERE {MountainTable.state} = ? AND {MountainTable.name} = ?"
+            params = (state.value, name)
+            result = cur.execute(query, params).fetchone()
+
+        if not result:
+            return None
+
+        return Mountain.from_db(
+            result[MountainTable.mountain_id],
+            db_path=db_path,
+            include_trails=include_trails,
+            include_lifts=include_lifts,
+        )
 
     def to_db(self, db_path: str = DATABASE_PATH) -> None:
         """
@@ -198,7 +265,9 @@ class Mountain:
                     {MountainTable.url} = excluded.{MountainTable.url}
             """
             params = (
-                self.mountain_id,
+                str(self.mountain_id)
+                if isinstance(self.mountain_id, uuid.UUID)
+                else self.mountain_id,
                 self.name,
                 self.state.value,
                 self.direction,
@@ -221,12 +290,59 @@ class Mountain:
         for lift_id in self.lifts:
             self.lifts[lift_id].to_db(db_path)
 
-    def from_osm(filename: str, season_passes: list[Season_Pass], url: str) -> Self:
+    def clear_trails_and_lifts(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes all trails and lifts belonging to a mountain, without
+        touching the mountain row itself or its blacklist entries. Used
+        before a refresh rebuilds the trail/lift set from a re-parsed OSM
+        file, so trails/lifts no longer present in the new parse don't
+        linger as stale rows.
+        """
+        with cursor(db_path=db_path) as cur:
+            cur.execute(
+                f"DELETE FROM Trails WHERE {TrailTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+            cur.execute(
+                f"DELETE FROM Lifts WHERE {LiftTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+
+    def delete_from_db(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes a mountain and all of its trails/lifts/blacklist entries
+        from the DB. The schema declares ON DELETE CASCADE for these, but
+        sqlite3 doesn't enforce foreign keys unless "PRAGMA foreign_keys =
+        ON" is set per-connection (it isn't here), so each table is
+        cleared explicitly instead of relying on that cascade.
+        """
+        Mountain.clear_trails_and_lifts(mountain_id, db_path)
+
+        with cursor(db_path=db_path) as cur:
+            cur.execute(
+                f"DELETE FROM Blacklist WHERE {BlacklistTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+            cur.execute(
+                f"DELETE FROM Mountains WHERE {MountainTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+
+    def from_osm(
+        filename: str,
+        season_passes: list[Season_Pass],
+        url: str,
+        mountain_id: str | None = None,
+    ) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
-        Mountain object
+        Mountain object. Pass the existing mountain_id when re-parsing a
+        file for a mountain that's already in the DB (a refresh) so the
+        reloaded trails/lifts attach to the same mountain row instead of
+        the deterministic ID OSMProcessor would otherwise derive fresh
+        from the file's (possibly slightly shifted) center coordinates.
         """
-        processor = OSMProcessor(filename)
+        processor = OSMProcessor(filename, mountain_id=mountain_id)
 
         mountain = Mountain(
             mountain_id=processor.mountain_id,

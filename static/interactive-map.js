@@ -102,7 +102,7 @@ function run_map(trails, map){
             top: 30,
             right: 30,
             bottom: 50,
-            left: 60
+            left: 75
         }
     }).addTo(map);
 
@@ -123,22 +123,33 @@ function run_map(trails, map){
     function onEachFeature(feature, layer) {
         if (feature.properties && feature.properties.popupContent) {
             layer.bindPopup(feature.properties.popupContent);
-            if (map.getZoom() > 14) {
-                const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
-                layer.setText(feature.properties.label, {
-                    offset: -5, 
-                    center: true, 
-                    orientation: feature.properties.orientation,
-                    attributes: {
-                        fill: textColor,
-                        'font-size': '14px'
-                    }
-                });
-            }
+        }
+        if (feature.properties && feature.properties.label && map.getZoom() > 14) {
+            const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
+            layer.setText(feature.properties.label, {
+                offset: -5,
+                center: true,
+                orientation: feature.properties.orientation,
+                attributes: {
+                    fill: textColor,
+                    'font-size': '14px'
+                }
+            });
         }
     }
 
     function style(feature) {
+        if (feature.properties.isRoute) {
+            return {
+                color: feature.properties.color,
+                weight: 16,
+                opacity: 0.25,
+                interactive: false,
+                lineCap: 'round',
+                lineJoin: 'round',
+                className: 'route-line-soft'
+            }
+        }
         if (feature.properties.gladed) {
             if (feature.properties.gladed == 'True') {
                 return {color: feature.properties.color, weight: 4, dashArray: '5,10'}
@@ -264,14 +275,20 @@ function run_map(trails, map){
     }
 
     function addHeightGraphData(layer) {
-        if(layer.feature.geometry.type == "LineString"){
+        let coordinates = null;
+        if (layer.feature.geometry.type == "LineString") {
+            coordinates = layer.feature.geometry.coordinates;
+        } else if (layer.feature.properties.routeCoordinates) {
+            coordinates = layer.feature.properties.routeCoordinates;
+        }
+
+        if (coordinates) {
             let difficulty_modifier = layer.feature.properties.difficulty_modifier;
-            let coordinates = layer.feature.geometry.coordinates;
             let json_data = [];
             json_data.push(create_height_graph_json(coordinates, difficulty_modifier, "Difficulty"));
             json_data.push(create_height_graph_json(coordinates, 0, "Steepness"));
-            
-            document.querySelector(".heightgraph-svg-title").textContent = layer.feature.properties.label;
+
+            document.querySelector(".heightgraph-svg-title").textContent = layer.feature.properties.name;
             hg.addData(json_data);
         }
         else {
@@ -309,14 +326,17 @@ function run_map(trails, map){
     });
 
     map.on('almost:over', function (e) {
+        if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         e.layer.setStyle({weight: 10, opacity: .7});
     });
 
     map.on('almost:out', function (e){
+        if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         e.layer.setStyle({weight: 4, opacity: 1});
     });
 
     map.on('almost:click', function (e) {
+        if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         e.layer.openPopup();
         const clickedLayer = e.layer;
         if (clickedLayer) {

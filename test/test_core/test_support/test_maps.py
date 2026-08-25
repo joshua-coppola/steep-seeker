@@ -21,7 +21,7 @@ def area_trail_mountain():
     """
     trail = Trail(
         trail_id="w3000",
-        mountain_id=1,
+        mountain_id="1",
         geometry=Polygon(
             [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
         ),
@@ -42,7 +42,7 @@ def area_trail_mountain():
     )
 
     return Mountain(
-        mountain_id=1,
+        mountain_id="1",
         name="Test Area Mountain",
         state=State.VERMONT,
         direction="e",
@@ -89,7 +89,8 @@ class TestGetLabelPlacement:
 
 
 class TestFindMapSize:
-    def test_bounds_include_trail_and_lift_points(self, mountain):
+    def test_bounds_include_trail_and_lift_points(self, mountain_factory):
+        mountain = mountain_factory()
         dimensions = _find_map_size(mountain)
 
         assert dimensions == {
@@ -111,14 +112,16 @@ class TestFindMapSize:
 
 
 class TestCreateMap:
-    def test_create_map_writes_svg(self, mountain, tmp_path):
+    def test_create_map_writes_svg(self, mountain_factory, tmp_path):
+        mountain = mountain_factory()
         create_map(mountain, output_dir=str(tmp_path))
 
         output_file = tmp_path / mountain.state.value / f"{mountain.name}.svg"
         assert output_file.exists()
         assert output_file.read_text().startswith("<?xml")
 
-    def test_create_map_without_labels(self, mountain, tmp_path):
+    def test_create_map_without_labels(self, mountain_factory, tmp_path):
+        mountain = mountain_factory()
         create_map(mountain, output_dir=str(tmp_path), with_labels=False)
 
         output_file = tmp_path / mountain.state.value / f"{mountain.name}.svg"
@@ -136,7 +139,8 @@ class TestCreateMap:
 
 
 class TestCreateThumbnail:
-    def test_create_thumbnail_writes_svg(self, mountain, tmp_path):
+    def test_create_thumbnail_writes_svg(self, mountain_factory, tmp_path):
+        mountain = mountain_factory()
         create_thumbnail(mountain, output_dir=str(tmp_path))
 
         output_file = tmp_path / mountain.state.value / f"{mountain.name}.svg"

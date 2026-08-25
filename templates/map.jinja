@@ -19,7 +19,7 @@
     <div class="map-pane mountain-details" id="mountain-details">
         <div class="mountain-title">
             <h1>{{mountain.name}}</h1>
-            <span class="mountain-location">{{mountain.state}}</span>
+            <span class="mountain-location">{{mountain.state.value}}</span>
         </div>
         <div class="mountain-section">
             <h2>Overview</h2>
@@ -27,15 +27,15 @@
                 {% if mountain.season_passes %}
                 <li>Passes:</li>
                 {% for season_pass in mountain.season_passes %}
-                <li><img alt="{{season_pass}}" src="/icons/{{season_pass}}.png" class="pass-icon"/>{{season_pass}}</li>
+                <li><img alt="{{season_pass.value}}" src="/icons/{{season_pass.value}}.png" class="pass-icon"/>{{season_pass.value}}</li>
                 {% endfor %}
                 {% endif %}
-                <li>Trail Count: {{mountain.trail_count}}</li>
-                <li>Lift Count: {{mountain.lift_count}}</li>
-                <li>Vertical: {{mountain.vertical}} ft</li>
+                <li>Trail Count: {{mountain.trail_count()}}</li>
+                <li>Lift Count: {{mountain.lift_count()}}</li>
+                <li>Vertical: {{mountain.vertical_feet()}} ft</li>
                 <li>Difficulty: {{mountain.difficulty}}</li>
                 <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
-                <li>Last Updated: {{mountain.last_updated}}</li>
+                <li>Last Updated: {{mountain.last_updated.date()}}</li>
                 <li><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button></li>
             </ul>
         </div>
@@ -83,7 +83,7 @@
             <ul>
                 {% for lift in lifts %}
                 {% if not '' == lift.name %}
-                <li>{{lift.name}} - {{lift.length}} ft</li>
+                <li>{{lift.name}} - {{lift.length_feet()}} ft</li>
                 {% endif %}
                 {% endfor %}
             </ul>
@@ -94,7 +94,7 @@
     </div>
 
     <div id="zoom">
-        <img alt="{{mountain.name}} - {{mountain.state}}" src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
+        <img alt="{{mountain.name}} - {{mountain.state.value}}" src="/maps/{{mountain.state.value}}/{{mountain.name}}.svg" id="map" />
     </div>
     <div class="zoom-buttons">
         <button class="button-cta2 zoom-button" id="zoom_out">-</button>
@@ -102,7 +102,7 @@
         <button class="button-cta2 zoom-button" id="zoom_reset">Reset</button>
     </div>
     <div class="map-switch">
-        <button class="button-cta2 map-button" id="interactive"><a href="/interactive-map/{{mountain.state}}/{{mountain.name}}">Interactive Map</a></button>
+        <button class="button-cta2 map-button" id="interactive"><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}">Interactive Map</a></button>
     </div>
     <script>
         document.getElementById("hideButton").addEventListener("click", function() {

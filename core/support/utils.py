@@ -7,6 +7,64 @@ import shapely
 import shapely.ops
 
 COORDINATE_PRECISION = 6
+METERS_TO_FEET = 3.28084
+
+
+def meters_to_feet(value: float | None) -> float | None:
+    """
+    Converts a meters value (how length/vertical are stored internally,
+    matching the elevation API and geometry math) to feet, for display to
+    the end user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return value * METERS_TO_FEET
+
+
+def round_feet(value: float | None) -> int | None:
+    """
+    Rounds a feet value to the nearest whole foot, for display to the end
+    user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return round(value)
+
+
+def round_degrees(value: float | None) -> float | None:
+    """
+    Rounds a degrees value (difficulty, beginner_friendliness, max_slope,
+    average_slope, steepest_Xm) to the nearest 0.1 degree, for display to
+    the end user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return round(value, 1)
+
+
+def trail_color(difficulty: float) -> str:
+    """
+    Maps a difficulty/pitch value (degrees) to the site's standard trail
+    color scale, used for both static map rendering and interactive-map
+    popups.
+    """
+    # 0-18 degrees: green
+    if difficulty < 18:
+        return "green"
+    # 18-27 degrees: blue
+    if difficulty < 27:
+        return "royalblue"
+    # 27-36 degrees: black
+    if difficulty < 36:
+        return "black"
+    # 36-47 degrees: red
+    if difficulty < 47:
+        return "red"
+    # >47 degrees: yellow
+    return "gold"
 
 
 def round_geometry_precision(
@@ -27,6 +85,32 @@ def round_geometry_precision(
         return coords
 
     return shapely.transform(geometry, _round, include_z=geometry.has_z)
+
+
+def get_bounding_box(
+    geometries: list[shapely.geometry.base.BaseGeometry], padding: float = 0
+) -> str:
+    """
+    Returns an Overpass-API-formatted "min_lon,min_lat,max_lon,max_lat"
+    bounding box string covering the given geometries, expanded outward
+    by `padding` as a fraction of each dimension (e.g. 0.5 adds 50% to
+    each side) -- for re-fetching an OSM extract that still covers a
+    mountain after new trails/lifts have been added just past its
+    original edges.
+    """
+    bounds = [geometry.bounds for geometry in geometries]
+    min_lon = min(b[0] for b in bounds)
+    min_lat = min(b[1] for b in bounds)
+    max_lon = max(b[2] for b in bounds)
+    max_lat = max(b[3] for b in bounds)
+
+    lon_adj = (max_lon - min_lon) * padding * 0.5
+    lat_adj = (max_lat - min_lat) * padding * 0.5
+
+    return (
+        f"{min_lon - lon_adj},{min_lat - lat_adj},"
+        f"{max_lon + lon_adj},{max_lat + lat_adj}"
+    )
 
 
 def space_line_points_evenly(
@@ -123,8 +207,7 @@ def get_length(geometry: dict[str, str]) -> float:
     """
     Accepts a geojson LineString blob (flat "coordinates" list of points)
     and calculates the haversine distance of the line. For an area trail,
-    pass its route rather than its boundary polygon -- a ring's nested
-    coordinate structure isn't a line to walk along.
+    pass its route rather than its boundary polygon.
     """
     previous_point = None
     cumulative_dist = 0
@@ -181,8 +264,7 @@ def get_slope_profile(geometry: dict[str, str]) -> list[float]:
     and calculates the slope in degrees between each consecutive pair of
     points, based on elevation change and horizontal (haversine) distance.
     Returns one slope value per segment. For an area trail, pass its route
-    rather than its boundary polygon -- a ring's nested coordinate
-    structure isn't a line to walk along.
+    rather than its boundary polygon.
     """
     coordinates = geometry.get("coordinates") or []
 
@@ -220,6 +302,38 @@ def get_slope_profile(geometry: dict[str, str]) -> list[float]:
     return slopes
 
 
+def build_elevation_profile(
+    coords: list[tuple[float, float, float]],
+) -> list[list[float]]:
+    """
+    Converts an ordered list of (lon, lat, elevation_meters) points, for
+    example from Trail.geometry.coords, Trail.geometry.exterior.coords for an
+    area trail's boundary ring, or Trail.route.coords into the
+    [lon, lat, elevation_feet, slope_degrees] point array the interactive
+    map's elevation profile (leaflet.heightgraph) expects. slope_degrees is
+    the raw point-to-point pitch (no difficulty modifiers applied); the
+    first point's slope is 0.
+    """
+    profile = []
+    previous_point = None
+
+    for lon, lat, elevation_m in coords:
+        slope = 0.0
+        if previous_point is not None:
+            prev_lon, prev_lat, prev_elevation_m = previous_point
+            dist = hs.haversine((prev_lat, prev_lon), (lat, lon), unit=hs.Unit.METERS)
+            elevation_change = prev_elevation_m - elevation_m
+            if dist != 0 and elevation_change != 0:
+                slope = abs(degrees(atan(elevation_change / dist)))
+
+        profile.append(
+            [lon, lat, round_feet(meters_to_feet(elevation_m)), round_degrees(slope)]
+        )
+        previous_point = (lon, lat, elevation_m)
+
+    return profile
+
+
 def get_max_slope(geometry: dict[str, str]) -> float | None:
     """
     Accepts a geojson blob and returns the steepest segment-to-segment
@@ -245,8 +359,7 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     Accepts a geojson LineString blob (flat "coordinates" list of points)
     and returns the steepest slope in degrees found over any contiguous
     window of at least `window_meters` along the line. For an area trail,
-    pass its route rather than its boundary polygon -- a ring's nested
-    coordinate structure isn't a line to walk along.
+    pass its route rather than its boundary polygon.
 
     If the trail is shorter than the window, falls back to the overall
     trail slope for windows of 30m or less (the trail is short enough that
