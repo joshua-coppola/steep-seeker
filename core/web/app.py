@@ -1,7 +1,7 @@
 from flask import Flask
 
 from core.connectors.database import DATABASE_PATH
-from core.web.routes import web
+from core.web.routes import nav_links, web
 
 
 def create_app(db_path: str = DATABASE_PATH) -> Flask:
@@ -17,4 +17,11 @@ def create_app(db_path: str = DATABASE_PATH) -> Flask:
     )
     app.config["DATABASE_PATH"] = db_path
     app.register_blueprint(web)
+
+    @app.context_processor
+    def inject_nav_links():
+        # every page rendered by this app instance gets the same nav,
+        # rather than each route having to pass it explicitly
+        return {"nav_links": nav_links}
+
     return app

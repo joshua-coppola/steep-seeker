@@ -49,17 +49,17 @@ nav_links = [
 
 @web.route("/")
 def index():
-    return render_template("index.jinja", nav_links=nav_links, active_page="index")
+    return render_template("index.jinja", active_page="index")
 
 
 @web.route("/about")
 def about():
-    return render_template("about.jinja", nav_links=nav_links, active_page="about")
+    return render_template("about.jinja", active_page="about")
 
 
 @web.route("/privacy-policy")
 def privacy_policy():
-    return render_template("privacy_policy.jinja", nav_links=nav_links)
+    return render_template("privacy_policy.jinja")
 
 
 @web.route("/random-mountain")
@@ -160,7 +160,6 @@ def search():
 
     return render_template(
         "search.jinja",
-        nav_links=nav_links,
         active_page="search",
         mountains=mountains,
         pages=pages,
@@ -197,7 +196,6 @@ def rankings():
 
     return render_template(
         "rankings.jinja",
-        nav_links=nav_links,
         active_page="rankings",
         mountains=mountains,
         sort=sort,
@@ -252,7 +250,6 @@ def trail_rankings():
 
     return render_template(
         "trail_rankings.jinja",
-        nav_links=nav_links,
         active_page="trail_rankings",
         trails=trails,
         region=region_param,
@@ -307,7 +304,6 @@ def lift_rankings():
 
     return render_template(
         "lift_rankings.jinja",
-        nav_links=nav_links,
         active_page="lift_rankings",
         lifts=lifts,
         region=region_param,
@@ -549,7 +545,6 @@ def explore_map():
 
     return render_template(
         "explore_map.jinja",
-        nav_links=nav_links,
         active_page="explore_map",
         geojson=geojson,
     )
@@ -592,7 +587,6 @@ def static_map(state, name):
 
     return render_template(
         "map.jinja",
-        nav_links=nav_links,
         active_page="map",
         mountain=mountain,
         trails=trails,
@@ -638,7 +632,6 @@ def interactive_map(state, name):
 
     return render_template(
         "interactive_map.jinja",
-        nav_links=nav_links,
         active_page="map",
         geojson=geojson,
         mountain=mountain,
