@@ -232,9 +232,8 @@ def _rebuild_from_osm_file(
     Re-parses the given local OSM file into a fresh trail/lift set for
     the mountain (reusing its existing mountain_id so the reload attaches
     to the same DB row), drops anything blacklisted so a previously
-    deleted item doesn't come back, and -- when ignore_areas is set --
-    drops area trails too. Replaces the mountain's trails/lifts in the DB
-    with this new set.
+    deleted item doesn't come back. Replaces the mountain's trails/lifts 
+    in the DB with this new set.
 
     Returns None (leaving the DB untouched) if the file is missing or the
     parse comes back with zero trails, since rebuilding from an empty or
@@ -281,9 +280,8 @@ def _archive_osm_file(osm_path: str) -> None:
     """
     Moves an existing OSM file aside into data/osm-old/<state>/, named
     with its last-modified date, before it gets overwritten by a fresh
-    extract -- keeps the previous extract around instead of losing it
-    outright when a full refresh replaces it. A no-op if there's no
-    existing file to archive (e.g. the very first full refresh).
+    extract. A no-op if there's no existing file to archive (e.g. the
+    very first full refresh).
     """
     if not os.path.exists(osm_path):
         return
@@ -306,9 +304,7 @@ def _full_refresh(mountain: Mountain, db_path: str) -> Mountain | None:
     "size_increase", for resorts that have grown past their original
     boundary), archives the existing local OSM file and replaces it with
     the new extract, then rebuilds trails/lifts/stats from that new file
-    the same way a stats refresh does -- "ignore_areas" applies here too
-    (the old site's form let you check it for a full refresh, but the
-    old site's full refresh silently ignored it).
+    the same way a stats refresh does -- "ignore_areas" applies here too.
 
     Returns None (leaving the DB and local file untouched) if the fetch
     fails.
@@ -338,7 +334,7 @@ def _apply_refresh(mountain: Mountain, db_path: str) -> Mountain:
     Applies whichever refresh variant(s) were submitted, returning the
     (possibly reloaded) mountain to keep rendering with. full_refresh
     takes priority over stats_refresh if both are somehow submitted at
-    once, matching the old site's if/else.
+    once.
 
     The map/thumbnail are only regenerated when a refresh actually
     changed something: map_refresh always regenerates it (there's

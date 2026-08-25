@@ -11,7 +11,7 @@ def create_management_app(db_path: str = DATABASE_PATH) -> Flask:
     Application factory for the admin/management app. Deliberately kept
     separate from core.web.app.create_app (which app_new.py runs) so
     management routes are never exposed on whatever serves the public
-    site -- this has its own entry point (management_new.py) instead.
+    site: this has its own entry point (management_new.py) instead.
 
     Also registers the public blueprint so links from a management page
     (e.g. the add-resort redirect to /interactive-map) resolve.
@@ -28,8 +28,8 @@ def create_management_app(db_path: str = DATABASE_PATH) -> Flask:
 
     @app.context_processor
     def inject_nav_links():
-        # every page rendered by this app instance -- public routes
-        # included -- gets the Management link too, since you have access
+        # every page rendered by this app instance, public routes
+        # included, gets the Management link too, since you have access
         # to it in this instance
         return {"nav_links": management_nav_links}
 

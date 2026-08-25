@@ -33,13 +33,13 @@ class Lift:
 
     def length_feet(self) -> int | None:
         """
-        Returns length in feet, for display -- length is stored in meters.
+        Returns length in feet, for display. Length is stored in meters.
         """
         return round_feet(meters_to_feet(self.length))
 
     def vertical_feet(self) -> int | None:
         """
-        Returns vertical rise in feet, for display -- vertical is stored
+        Returns vertical rise in feet, for display. Vertical is stored
         in meters.
         """
         return round_feet(meters_to_feet(self.vertical))

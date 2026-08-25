@@ -64,7 +64,7 @@ class Mountain:
 
     def vertical_feet(self) -> int | None:
         """
-        Returns vertical drop in feet, for display -- vertical is stored
+        Returns vertical drop in feet, for displa. Vertical is stored
         in meters.
         """
         return round_feet(meters_to_feet(self.vertical))

@@ -68,9 +68,7 @@ def list_lifts(
     """
     Returns lift summaries (joined with resort name/state) for lifts
     matching the given region/state filter (state takes priority when both
-    are given), sorted descending by `sort` -- a real Lifts column, so
-    filtering/sorting/pagination all happen in SQL -- and paginated. Lifts
-    with no name are excluded, matching the old site's behavior.
+    are given), sorted descending by `sort` and paginated.
 
     Returns (summaries, total_count), where total_count is the number of
     matches before pagination, for building pager UIs.

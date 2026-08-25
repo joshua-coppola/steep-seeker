@@ -207,8 +207,7 @@ def get_length(geometry: dict[str, str]) -> float:
     """
     Accepts a geojson LineString blob (flat "coordinates" list of points)
     and calculates the haversine distance of the line. For an area trail,
-    pass its route rather than its boundary polygon -- a ring's nested
-    coordinate structure isn't a line to walk along.
+    pass its route rather than its boundary polygon.
     """
     previous_point = None
     cumulative_dist = 0
@@ -265,8 +264,7 @@ def get_slope_profile(geometry: dict[str, str]) -> list[float]:
     and calculates the slope in degrees between each consecutive pair of
     points, based on elevation change and horizontal (haversine) distance.
     Returns one slope value per segment. For an area trail, pass its route
-    rather than its boundary polygon -- a ring's nested coordinate
-    structure isn't a line to walk along.
+    rather than its boundary polygon.
     """
     coordinates = geometry.get("coordinates") or []
 

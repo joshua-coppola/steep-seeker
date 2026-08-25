@@ -1,8 +1,7 @@
 """
 Renders a mountain's trails and lifts to an SVG map (create_map) and a
 label-free SVG thumbnail (create_thumbnail), colored by trail difficulty.
-Operates entirely on an already-loaded core.support.mountain.Mountain --
-no DB access happens in this module.
+Operates entirely on an already-loaded core.support.mountain.Mountain
 """
 
 from math import atan2, degrees

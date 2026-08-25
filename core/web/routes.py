@@ -85,9 +85,7 @@ def _parse_state(value: str | None) -> State | None | _InvalidState:
     Returns a State, None (no location given), or _INVALID_STATE (a
     location was given but isn't a real state). Callers filtering by the
     result must treat _INVALID_STATE as "matches nothing", not "no
-    filter" -- an unparseable state should return zero results, the way
-    filtering by a real but non-matching state would, not silently show
-    everything.
+    filter".
     """
     if not value or value in ("None", "%%"):
         return None
@@ -368,18 +366,16 @@ def _trail_features(
     """
     Builds the GeoJSON feature(s) for one trail. A line trail is a single
     LineString feature. An area trail (glade/bowl, sampled as a polygon)
-    is its boundary Polygon feature plus -- when a route (the least-steep
-    path down the area) has been computed for it -- a second, faint/
-    non-interactive LineString feature (styled in interactive-map.js)
-    carrying that route's elevation profile. The polygon's own properties
-    carry the route's profile too (as routeCoordinates), so
+    is its boundary Polygon feature plus -- when a route has been computed
+    for it -- a second, faint/non-interactive LineString feature (styled in
+    interactive-map.js) carrying that route's elevation profile. The polygon's
+    own properties carry the route's profile too (as routeCoordinates), so
     interactive-map.js can show a real heightgraph when the polygon
-    itself is clicked, rather than the "N/A" a bare Polygon feature would
-    otherwise get.
+    itself is clicked.
 
     edit_query, when given (the "<name>, <state>" the management edit
     page's mountain selector uses), appends a gladed/ungroomed tag-edit
-    form to the popup -- only management_routes.py's edit page passes
+    form to the popup: only management_routes.py's edit page passes
     this; the public interactive-map never does.
     """
     if trail.area:
