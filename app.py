@@ -1,3 +1,6 @@
-import core._flask_api as api
+from core.web.app import create_app
 
-api.app.run(host="0.0.0.0", port=5000, debug=False)
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=False)

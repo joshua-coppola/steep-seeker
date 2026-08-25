@@ -22,7 +22,7 @@ def test_identify_trails(osm_file):
     }
     for trail in trails["trails"].values():
         assert "INVALID" not in trail["name"]
-        for key in trail.keys():
+        for key in trail:
             trail_info[key].append(trail[key])
 
     assert len(set(trail_info["name"])) == 128
@@ -57,7 +57,7 @@ def test_identify_lifts(osm_file):
     }
     for lift in lifts["lifts"].values():
         assert "INVALID" not in lift["name"]
-        for key in lift.keys():
+        for key in lift:
             lift_info[key].append(lift[key])
 
     assert len(set(lift_info["name"])) == 20

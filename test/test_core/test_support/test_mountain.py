@@ -92,6 +92,7 @@ def test_mountain_add_trail(mountain_factory, trail_factory):
 
     mountain.add_trail(trail)
     assert mountain.trail_count() == 2
+    assert mountain.trails["w1002"] is trail
 
 
 def test_mountain_from_db(mountain_factory, db_path):
