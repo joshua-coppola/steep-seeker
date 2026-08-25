@@ -232,7 +232,7 @@ def _rebuild_from_osm_file(
     Re-parses the given local OSM file into a fresh trail/lift set for
     the mountain (reusing its existing mountain_id so the reload attaches
     to the same DB row), drops anything blacklisted so a previously
-    deleted item doesn't come back. Replaces the mountain's trails/lifts 
+    deleted item doesn't come back. Replaces the mountain's trails/lifts
     in the DB with this new set.
 
     Returns None (leaving the DB untouched) if the file is missing or the

@@ -5,7 +5,7 @@ from core.datamodels.state import State
 
 
 class Region(Enum):
-    NORTHEAST = [
+    NORTHEAST = (
         State.MAINE,
         State.NEW_HAMPSHIRE,
         State.VERMONT,
@@ -15,8 +15,8 @@ class Region(Enum):
         State.CONNECTICUT,
         State.PENNSYLVANIA,
         State.NEW_JERSEY,
-    ]
-    SOUTHEAST = [
+    )
+    SOUTHEAST = (
         State.MARYLAND,
         State.DELAWARE,
         State.VIRGINIA,
@@ -31,8 +31,8 @@ class Region(Enum):
         State.MISSISSIPPI,
         State.LOUISIANA,
         State.ARKANSAS,
-    ]
-    MIDWEST = [
+    )
+    MIDWEST = (
         State.NORTH_DAKOTA,
         State.SOUTH_DAKOTA,
         State.MINNESOTA,
@@ -47,8 +47,8 @@ class Region(Enum):
         State.MISSOURI,
         State.OKLAHOMA,
         State.TEXAS,
-    ]
-    WEST = [
+    )
+    WEST = (
         State.NEW_MEXICO,
         State.ARIZONA,
         State.CALIFORNIA,
@@ -62,7 +62,7 @@ class Region(Enum):
         State.MONTANA,
         State.ALASKA,
         State.HAWAII,
-    ]
+    )
 
     def get_region(state: State) -> Self:
         if state in Region.NORTHEAST.value:

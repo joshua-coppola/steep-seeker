@@ -1,9 +1,10 @@
 import time
-from typing import List, Tuple, Optional
+
 import requests
 import shapely
 
-from core.connectors.database import cursor, CACHE_DB_PATH
+from core.connectors.database import CACHE_DB_PATH, cursor
+from core.datamodels.database import CacheTable
 
 
 class Elevation:
@@ -14,9 +15,9 @@ class Elevation:
 
     def get(
         self,
-        nodes: List[Tuple[float, float]],
+        nodes: list[tuple[float, float]],
         spacing: int = 100,
-    ) -> Optional[List[Tuple[float, float, float]]]:
+    ) -> list[tuple[float, float, float]] | None:
         """
         Takes in a list of [lon, lat] nodes and queries the elevation API to get
         an elevation for each node. Returns a list of [lon, lat, elevation].
@@ -35,7 +36,7 @@ class Elevation:
         cached_results = {}
         with cursor(CACHE_DB_PATH, dict_cursor=False) as cur:
             placeholders = ",".join("?" * len(node_points))
-            query = f"SELECT point, elevation FROM CachedPoints WHERE point IN ({placeholders})"
+            query = f"SELECT {CacheTable.point}, {CacheTable.elevation} FROM CachedPoints WHERE {CacheTable.point} IN ({placeholders})"
             results = cur.execute(query, tuple(node_points.keys())).fetchall()
 
             for point_str, elevation in results:
@@ -62,7 +63,7 @@ class Elevation:
                     cache_data.append((point_str, elevation))
 
                 cur.executemany(
-                    "INSERT OR REPLACE INTO CachedPoints (point, elevation) VALUES (?, ?)",
+                    f"INSERT OR REPLACE INTO CachedPoints ({CacheTable.point}, {CacheTable.elevation}) VALUES (?, ?)",
                     cache_data,
                 )
 
@@ -80,8 +81,8 @@ class Elevation:
         return results
 
     def _query_api(
-        self, nodes: List[Tuple[float, float]], spacing: int = 100
-    ) -> List[Tuple[float, float, float]]:
+        self, nodes: list[tuple[float, float]], spacing: int = 100
+    ) -> list[tuple[float, float, float]]:
         """
         Internal method to query the elevation API.
         """
@@ -91,7 +92,7 @@ class Elevation:
                 yield full_list[i : i + n]
 
         url = "https://api.opentopodata.org/v1/ned10m?locations={}"
-        results: List[Tuple[float, float, float]] = []
+        results: list[tuple[float, float, float]] = []
 
         for chunk in divide_chunks(nodes, spacing):
             # Build location string like "lat,lon|lat,lon|..."

@@ -113,13 +113,13 @@ class Mountain:
         """
         Inserts a new trail into trails dict
         """
-        self.trails[trail.trail_id] = Trail
+        self.trails[trail.trail_id] = trail
 
     def add_lift(self, lift: Lift) -> None:
         """
         Inserts a new trail into lifts dict
         """
-        self.lifts[lift.lift_id] = Lift
+        self.lifts[lift.lift_id] = lift
 
     def from_db(
         mountain_id: str,
