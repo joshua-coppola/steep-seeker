@@ -359,8 +359,7 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     Accepts a geojson LineString blob (flat "coordinates" list of points)
     and returns the steepest slope in degrees found over any contiguous
     window of at least `window_meters` along the line. For an area trail,
-    pass its route rather than its boundary polygon -- a ring's nested
-    coordinate structure isn't a line to walk along.
+    pass its route rather than its boundary polygon.
 
     If the trail is shorter than the window, falls back to the overall
     trail slope for windows of 30m or less (the trail is short enough that

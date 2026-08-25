@@ -275,10 +275,6 @@ function run_map(trails, map){
     }
 
     function addHeightGraphData(layer) {
-        // An area trail's polygon carries its computed route's elevation
-        // profile as routeCoordinates (the route itself is a separate,
-        // invisible LineString feature -- see style()), so clicking the
-        // polygon still shows a real heightgraph instead of "N/A".
         let coordinates = null;
         if (layer.feature.geometry.type == "LineString") {
             coordinates = layer.feature.geometry.coordinates;
@@ -330,9 +326,6 @@ function run_map(trails, map){
     });
 
     map.on('almost:over', function (e) {
-        // the invisible route line (see style()) shouldn't hover/highlight
-        // -- Leaflet.AlmostOver does its own proximity check and may not
-        // respect the layer's interactive:false option
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         e.layer.setStyle({weight: 10, opacity: .7});
     });
