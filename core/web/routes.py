@@ -1,8 +1,17 @@
+import random
 from dataclasses import dataclass
 from math import atan2, degrees
 from urllib.parse import urlencode
 
-from flask import Blueprint, abort, current_app, render_template, request
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 from core.datamodels.region import Region
 from core.datamodels.state import State
@@ -45,6 +54,17 @@ def index():
 @web.route("/about")
 def about():
     return render_template("about.jinja", nav_links=nav_links, active_page="about")
+
+
+@web.route("/random-mountain")
+def random_mountain():
+    db_path = current_app.config["DATABASE_PATH"]
+    mountains, _ = list_mountains(db_path=db_path)
+    mountain = random.choice(mountains)
+
+    return redirect(
+        url_for("web.interactive_map", state=mountain.state.value, name=mountain.name)
+    )
 
 
 def _parse_state(value: str | None) -> State | None:

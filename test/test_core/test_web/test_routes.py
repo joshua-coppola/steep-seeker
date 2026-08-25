@@ -69,6 +69,18 @@ def seeded_client(client, db_path, mountain_factory, trail_factory):
     return client
 
 
+def test_random_mountain_redirects_to_interactive_map(seeded_client):
+    response = seeded_client.get("/random-mountain")
+
+    assert response.status_code == 302
+    valid_targets = {
+        "/interactive-map/VT/Bolton%20Valley",
+        "/interactive-map/VT/Killington",
+        "/interactive-map/UT/Alta",
+    }
+    assert response.headers["Location"] in valid_targets
+
+
 def test_search_returns_all_mountains_by_default(seeded_client):
     response = seeded_client.get("/search")
 
