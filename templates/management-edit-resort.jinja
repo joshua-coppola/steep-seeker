@@ -65,10 +65,46 @@ Edit Resort
         <li>Last Updated: {{mountain.last_updated.date()}}</li>
         <li><a href="{{mountain.url}}">{{mountain.url}}</a></li>
     </ul>
+    <form id="refresh" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
+        <ul>
+        <li>
+            <input type="checkbox" id="stats" name="stats_refresh" value=True>
+            <label for="stats">From Local OSM & Maps</label>
+        </li>
+        <li>
+            <input type="checkbox" id="maps" name="map_refresh" value=True>
+            <label for="maps">Just Maps</label>
+        </li>
+        <li>
+            <input type="checkbox" id="full" name="full_refresh" value=True>
+            <label for="full">Fresh OSM & Maps</label>
+        </li>
+        <li>
+        <input type="number" value="0" id="map_size" name="size_increase" step=".1" min="0">
+        <label for="map_size">Additional Area</label>
+        </li>
+        <li>
+            <input type="checkbox" id="areas" name="ignore_areas" value=True>
+            <label for="areas">Ignore Areas</label>
+        </li>
+        </ul>
+        <input class="button-cta" id="submit" type="submit" value="Refresh" />
+    </form>
     <form id="rename" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input id="rename" name="rename" type="search" placeholder="New Resort Name" />
         <input class="button-cta" id="submit" type="submit" value="Rename" />
+    </form>
+    <form id="rotate" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
+        <input type="hidden" name="rotate_ccw" value="True">
+        <input class="button-cta" id="rotate_ccw_submit" type="submit" value="&#8634; Rotate Counterclockwise" />
+    </form>
+    <form id="rotate" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
+        <input type="hidden" name="rotate" value="True">
+        <input class="button-cta" id="rotate_cw_submit" type="submit" value="&#8635; Rotate Clockwise" />
     </form>
     <form id="change_url" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
@@ -97,6 +133,13 @@ Edit Resort
         <input class="button-cta" id="submit" type="submit" value="Update" />
     </form>
     <div id='map'></div>
+    <form id="delete_resort" class="search-form">
+        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
+        <input id="confirmation" name="delete_resort" type="search" placeholder="Type 'DELETE' to confirm" />
+        <input type="checkbox" id="delete_osm" name="delete_osm" value="True">
+        <label for="delete_osm">Delete OSM</label>
+        <input class="button-cta" id="submit" type="submit" value="Delete Resort" />
+    </form>
     <div class="mountain-section">
         <h2>Trails - Sorted by Difficulty</h2>
         <ul>

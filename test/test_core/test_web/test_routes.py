@@ -3,7 +3,7 @@ from shapely import LineString, Point, Polygon
 
 from core.datamodels.state import State
 from core.web.app import create_app
-from core.web.routes import _lift_feature, _trail_features
+from core.web.routes import _lift_feature, _sorted_trails_and_lifts, _trail_features
 
 
 @pytest.fixture
@@ -415,6 +415,26 @@ def test_interactive_map_geojson_includes_area_route_feature(mapped_client):
     body = response.data.decode()
     assert "isRoute" in body
     assert "routeCoordinates" in body
+
+
+def test_sorted_trails_and_lifts_includes_unnamed_trails_and_lifts(
+    mountain_factory, trail_factory, lift_factory
+):
+    named_trail = trail_factory(trail_id="w1", name="Named Trail", difficulty=10.0)
+    unnamed_trail = trail_factory(trail_id="w2", name="", difficulty=20.0)
+    named_lift = lift_factory(lift_id="l1", name="Named Lift")
+    unnamed_lift = lift_factory(lift_id="l2", name="")
+
+    mountain = mountain_factory(
+        trails={"w1": named_trail, "w2": unnamed_trail},
+        lifts={"l1": named_lift, "l2": unnamed_lift},
+    )
+
+    trails, lifts = _sorted_trails_and_lifts(mountain)
+
+    # sorted by difficulty descending -- the unnamed trail rates higher
+    assert [t.trail_id for t in trails] == ["w2", "w1"]
+    assert {lift.lift_id for lift in lifts} == {"l1", "l2"}
 
 
 def test_trail_features_line_trail_has_single_linestring_feature(trail_factory):

@@ -3,6 +3,7 @@ import shapely
 from core.support.utils import (
     build_elevation_profile,
     get_average_slope,
+    get_bounding_box,
     get_length,
     get_max_slope,
     get_mountain_rating,
@@ -108,6 +109,22 @@ def test_round_geometry_precision_leaves_elevation_untouched():
         (-72.123457, 43.123457, 1000.123456),
         (-72.2, 43.2, 1001.0),
     ]
+
+
+def test_get_bounding_box_no_padding():
+    geometries = [
+        shapely.LineString([[-72.0, 43.0], [-72.1, 43.1]]),
+        shapely.Point(-72.2, 42.9),
+    ]
+
+    assert get_bounding_box(geometries) == "-72.2,42.9,-72.0,43.1"
+
+
+def test_get_bounding_box_applies_padding():
+    geometries = [shapely.LineString([[-72.0, 43.0], [-71.0, 44.0]])]
+
+    # lon range is 1.0, lat range is 1.0 -- 0.5 padding adds 0.25 to each side
+    assert get_bounding_box(geometries, padding=0.5) == "-72.25,42.75,-70.75,44.25"
 
 
 def test_space_line_points_evenly():

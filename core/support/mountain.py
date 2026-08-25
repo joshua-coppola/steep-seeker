@@ -7,7 +7,12 @@ from shapely import Point, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor
 from core.connectors.weather_api import Weather
-from core.datamodels.database import LiftTable, MountainTable, TrailTable
+from core.datamodels.database import (
+    BlacklistTable,
+    LiftTable,
+    MountainTable,
+    TrailTable,
+)
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
@@ -77,6 +82,20 @@ class Mountain:
         if self.direction == "w":
             return 90
         raise ValueError(f"Invalid direction value: {self.direction}")
+
+    def rotate_clockwise(self) -> None:
+        """
+        Rotates the map's orientation 90 degrees clockwise.
+        """
+        order = ["n", "e", "s", "w"]
+        self.direction = order[(order.index(self.direction) + 1) % len(order)]
+
+    def rotate_counterclockwise(self) -> None:
+        """
+        Rotates the map's orientation 90 degrees counter-clockwise.
+        """
+        order = ["n", "e", "s", "w"]
+        self.direction = order[(order.index(self.direction) - 1) % len(order)]
 
     def trail_count(self) -> int:
         """
@@ -271,12 +290,59 @@ class Mountain:
         for lift_id in self.lifts:
             self.lifts[lift_id].to_db(db_path)
 
-    def from_osm(filename: str, season_passes: list[Season_Pass], url: str) -> Self:
+    def clear_trails_and_lifts(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes all trails and lifts belonging to a mountain, without
+        touching the mountain row itself or its blacklist entries. Used
+        before a refresh rebuilds the trail/lift set from a re-parsed OSM
+        file, so trails/lifts no longer present in the new parse don't
+        linger as stale rows.
+        """
+        with cursor(db_path=db_path) as cur:
+            cur.execute(
+                f"DELETE FROM Trails WHERE {TrailTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+            cur.execute(
+                f"DELETE FROM Lifts WHERE {LiftTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+
+    def delete_from_db(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes a mountain and all of its trails/lifts/blacklist entries
+        from the DB. The schema declares ON DELETE CASCADE for these, but
+        sqlite3 doesn't enforce foreign keys unless "PRAGMA foreign_keys =
+        ON" is set per-connection (it isn't here), so each table is
+        cleared explicitly instead of relying on that cascade.
+        """
+        Mountain.clear_trails_and_lifts(mountain_id, db_path)
+
+        with cursor(db_path=db_path) as cur:
+            cur.execute(
+                f"DELETE FROM Blacklist WHERE {BlacklistTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+            cur.execute(
+                f"DELETE FROM Mountains WHERE {MountainTable.mountain_id} = ?",
+                (mountain_id,),
+            )
+
+    def from_osm(
+        filename: str,
+        season_passes: list[Season_Pass],
+        url: str,
+        mountain_id: str | None = None,
+    ) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
-        Mountain object
+        Mountain object. Pass the existing mountain_id when re-parsing a
+        file for a mountain that's already in the DB (a refresh) so the
+        reloaded trails/lifts attach to the same mountain row instead of
+        the deterministic ID OSMProcessor would otherwise derive fresh
+        from the file's (possibly slightly shifted) center coordinates.
         """
-        processor = OSMProcessor(filename)
+        processor = OSMProcessor(filename, mountain_id=mountain_id)
 
         mountain = Mountain(
             mountain_id=processor.mountain_id,

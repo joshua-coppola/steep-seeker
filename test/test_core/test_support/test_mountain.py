@@ -11,6 +11,7 @@ from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.osm import osm_processor
 from core.support import mountain as mountain_module
+from core.support.blacklist import add_to_blacklist, is_blacklisted
 from core.support.mountain import Mountain
 from test.test_core.conftest import FakeElevation, FakeWeather
 
@@ -41,6 +42,38 @@ def test_mountain_bearing(mountain_factory):
         mountain.bearing()
 
     assert "Invalid direction value:" in exc_info.value.args[0]
+
+
+def test_mountain_rotate_clockwise(mountain_factory):
+    mountain = mountain_factory(direction="n")
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "e"
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "s"
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "w"
+
+    mountain.rotate_clockwise()
+    assert mountain.direction == "n"
+
+
+def test_mountain_rotate_counterclockwise(mountain_factory):
+    mountain = mountain_factory(direction="n")
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "w"
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "s"
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "e"
+
+    mountain.rotate_counterclockwise()
+    assert mountain.direction == "n"
 
 
 def test_mountain_trail_count(mountain_factory):
@@ -245,6 +278,51 @@ def test_mountain_to_db_serializes_uuid_mountain_id(mountain_factory, db_path):
     assert returned_mountain.mountain_id == str(mountain_id)
 
 
+def test_mountain_delete_from_db(mountain_factory, db_path):
+    mountain = mountain_factory(mountain_id="1")
+    mountain.to_db(db_path=db_path)
+
+    assert Mountain.from_db("1", db_path=db_path) is not None
+
+    Mountain.delete_from_db("1", db_path=db_path)
+
+    assert Mountain.from_db("1", db_path=db_path) is None
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        assert cur.execute("SELECT * FROM Trails").fetchall() == []
+        assert cur.execute("SELECT * FROM Lifts").fetchall() == []
+
+
+def test_mountain_delete_from_db_also_clears_blacklist(mountain_factory, db_path):
+    mountain = mountain_factory(mountain_id="1")
+    mountain.to_db(db_path=db_path)
+    add_to_blacklist("1", "w1000", db_path=db_path)
+
+    Mountain.delete_from_db("1", db_path=db_path)
+
+    assert is_blacklisted("1", "w1000", db_path=db_path) is False
+
+
+def test_mountain_delete_from_db_nonexistent_id_is_a_no_op(db_path):
+    Mountain.delete_from_db("nonexistent", db_path=db_path)
+
+
+def test_mountain_clear_trails_and_lifts(mountain_factory, db_path):
+    mountain = mountain_factory(mountain_id="1")
+    mountain.to_db(db_path=db_path)
+    add_to_blacklist("1", "w1000", db_path=db_path)
+
+    Mountain.clear_trails_and_lifts("1", db_path=db_path)
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        assert cur.execute("SELECT * FROM Trails").fetchall() == []
+        assert cur.execute("SELECT * FROM Lifts").fetchall() == []
+
+    # the mountain row and its blacklist entries are untouched
+    assert Mountain.from_db("1", db_path=db_path) is not None
+    assert is_blacklisted("1", "w1000", db_path=db_path) is True
+
+
 def test_mountain_from_osm(osm_file, monkeypatch):
     monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
     monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
@@ -277,3 +355,16 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert mountain.trails["w11"].ungroomed is False
     assert mountain.trails["w11"].steepest_30m == 9.3
     assert mountain.trails["w11"].difficulty == 12.8
+
+
+def test_mountain_from_osm_preserves_given_mountain_id(osm_file, monkeypatch):
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+    monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
+
+    mountain = Mountain.from_osm(
+        osm_file, season_passes=[], url="https://test.com", mountain_id="existing-id"
+    )
+
+    assert mountain.mountain_id == "existing-id"
+    assert all(trail.mountain_id == "existing-id" for trail in mountain.trails.values())
+    assert all(lift.mountain_id == "existing-id" for lift in mountain.lifts.values())

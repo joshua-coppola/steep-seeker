@@ -605,18 +605,20 @@ def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     return mountain
 
 
-def _named_trails_and_lifts(mountain: Mountain) -> tuple[list, list]:
+def _sorted_trails_and_lifts(mountain: Mountain) -> tuple[list, list]:
     """
-    Returns (trails, lifts): named trails sorted by difficulty descending
-    (unnamed connectors are excluded), and named lifts. Shared by /map and
-    /interactive-map's sidebar + (for interactive-map) GeoJSON building.
+    Returns (trails, lifts): all of the mountain's trails sorted by
+    difficulty descending, and all of its lifts -- including unnamed ones
+    (e.g. connector segments), since those still need to be plotted on
+    the map. Shared by /map and /interactive-map's sidebar + (for
+    interactive-map) GeoJSON building.
     """
     trails = sorted(
-        (t for t in mountain.trails.values() if t.name),
+        mountain.trails.values(),
         key=lambda t: t.difficulty if t.difficulty is not None else -1,
         reverse=True,
     )
-    lifts = [lift for lift in mountain.lifts.values() if lift.name]
+    lifts = list(mountain.lifts.values())
 
     return trails, lifts
 
@@ -626,7 +628,7 @@ def static_map(state, name):
     db_path = current_app.config["DATABASE_PATH"]
     mountain = _load_mountain_or_404(state, name, db_path)
 
-    trails, lifts = _named_trails_and_lifts(mountain)
+    trails, lifts = _sorted_trails_and_lifts(mountain)
 
     return render_template(
         "map.jinja",
@@ -641,8 +643,7 @@ def _weather_modifier(trails: list) -> float:
     """
     Recovers the mountain's weather modifier alone (stripping the
     gladed/ungroomed bonus baked into trails[0]'s difficulty), since
-    lifts don't carry their own difficulty_modifier -- matches the old
-    site's approach of reusing an arbitrary trail's numbers for this.
+    lifts don't carry their own difficulty_modifier
     """
     if not trails:
         return 0
@@ -695,7 +696,7 @@ def interactive_map(state, name):
     db_path = current_app.config["DATABASE_PATH"]
     mountain = _load_mountain_or_404(state, name, db_path)
 
-    trails, lifts = _named_trails_and_lifts(mountain)
+    trails, lifts = _sorted_trails_and_lifts(mountain)
     geojson = _build_geojson(mountain, trails, lifts, debug_mode)
 
     return render_template(

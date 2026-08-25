@@ -87,6 +87,32 @@ def round_geometry_precision(
     return shapely.transform(geometry, _round, include_z=geometry.has_z)
 
 
+def get_bounding_box(
+    geometries: list[shapely.geometry.base.BaseGeometry], padding: float = 0
+) -> str:
+    """
+    Returns an Overpass-API-formatted "min_lon,min_lat,max_lon,max_lat"
+    bounding box string covering the given geometries, expanded outward
+    by `padding` as a fraction of each dimension (e.g. 0.5 adds 50% to
+    each side) -- for re-fetching an OSM extract that still covers a
+    mountain after new trails/lifts have been added just past its
+    original edges.
+    """
+    bounds = [geometry.bounds for geometry in geometries]
+    min_lon = min(b[0] for b in bounds)
+    min_lat = min(b[1] for b in bounds)
+    max_lon = max(b[2] for b in bounds)
+    max_lat = max(b[3] for b in bounds)
+
+    lon_adj = (max_lon - min_lon) * padding * 0.5
+    lat_adj = (max_lat - min_lat) * padding * 0.5
+
+    return (
+        f"{min_lon - lon_adj},{min_lat - lat_adj},"
+        f"{max_lon + lon_adj},{max_lat + lat_adj}"
+    )
+
+
 def space_line_points_evenly(
     line: shapely.LineString, spacing_feet: int = 20
 ) -> shapely.LineString:
