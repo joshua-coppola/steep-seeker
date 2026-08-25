@@ -67,7 +67,22 @@ def random_mountain():
     )
 
 
-def _parse_state(value: str | None) -> State | None:
+class _InvalidState:
+    """Sentinel: a state value was given but doesn't parse to a real State."""
+
+
+_INVALID_STATE = _InvalidState()
+
+
+def _parse_state(value: str | None) -> State | None | _InvalidState:
+    """
+    Returns a State, None (no location given), or _INVALID_STATE (a
+    location was given but isn't a real state). Callers filtering by the
+    result must treat _INVALID_STATE as "matches nothing", not "no
+    filter" -- an unparseable state should return zero results, the way
+    filtering by a real but non-matching state would, not silently show
+    everything.
+    """
     if not value or value in ("None", "%%"):
         return None
     try:
@@ -77,7 +92,7 @@ def _parse_state(value: str | None) -> State | None:
     try:
         return State(value)
     except ValueError:
-        return None
+        return _INVALID_STATE
 
 
 def _parse_region(region_param: str, state: State | None) -> Region | None:
@@ -97,8 +112,11 @@ def search():
     limit = int(request.args.get("limit") or 20)
     diffmin = float(request.args.get("diffmin") or 0)
     diffmax = float(request.args.get("diffmax") or 100)
-    trailsmin = int(request.args.get("trailsmin") or 0)
-    trailsmax = int(request.args.get("trailsmax") or 1000)
+    # search.js sends "Infinity" for trailsmax when its slider's upper
+    # handle is maxed out (meaning "no limit"); float() parses that
+    # natively, unlike int()
+    trailsmin = float(request.args.get("trailsmin") or 0)
+    trailsmax = float(request.args.get("trailsmax") or 1000)
     sort = request.args.get("sort") or "name"
     order = request.args.get("order") or "asc"
     state = _parse_state(request.args.get("location"))
@@ -106,19 +124,22 @@ def search():
     offset = limit * (page - 1)
 
     db_path = current_app.config["DATABASE_PATH"]
-    mountains, total_mountain_count = list_mountains(
-        db_path=db_path,
-        name_query=q or None,
-        state=state,
-        difficulty_min=diffmin,
-        difficulty_max=diffmax,
-        trail_count_min=trailsmin,
-        trail_count_max=trailsmax,
-        sort=sort,
-        order=order,
-        limit=limit,
-        offset=offset,
-    )
+    if state is _INVALID_STATE:
+        mountains, total_mountain_count = [], 0
+    else:
+        mountains, total_mountain_count = list_mountains(
+            db_path=db_path,
+            name_query=q or None,
+            state=state,
+            difficulty_min=diffmin,
+            difficulty_max=diffmax,
+            trail_count_min=trailsmin,
+            trail_count_max=trailsmax,
+            sort=sort,
+            order=order,
+            limit=limit,
+            offset=offset,
+        )
 
     def _pagination_url(target_page: int) -> str:
         args = request.args.to_dict()
@@ -154,16 +175,19 @@ def rankings():
         order = "desc"
 
     state = _parse_state(state_param)
-    region = _parse_region(region_param, state)
 
     db_path = current_app.config["DATABASE_PATH"]
-    mountains, _ = list_mountains(
-        db_path=db_path,
-        state=state,
-        region=region,
-        sort=sort_by,
-        order=order,
-    )
+    if state is _INVALID_STATE:
+        mountains = []
+    else:
+        region = _parse_region(region_param, state)
+        mountains, _ = list_mountains(
+            db_path=db_path,
+            state=state,
+            region=region,
+            sort=sort_by,
+            order=order,
+        )
 
     return render_template(
         "rankings.jinja",
@@ -190,17 +214,20 @@ def trail_rankings():
     offset = limit * (page - 1)
 
     state = _parse_state(state_param)
-    region = _parse_region(region_param, state)
 
     db_path = current_app.config["DATABASE_PATH"]
-    trails, total_trail_count = list_trails(
-        db_path=db_path,
-        state=state,
-        region=region,
-        sort=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    if state is _INVALID_STATE:
+        trails, total_trail_count = [], 0
+    else:
+        region = _parse_region(region_param, state)
+        trails, total_trail_count = list_trails(
+            db_path=db_path,
+            state=state,
+            region=region,
+            sort=sort_by,
+            limit=limit,
+            offset=offset,
+        )
 
     def _pagination_url(target_page: int) -> str:
         args = request.args.to_dict()
@@ -242,17 +269,20 @@ def lift_rankings():
     offset = limit * (page - 1)
 
     state = _parse_state(state_param)
-    region = _parse_region(region_param, state)
 
     db_path = current_app.config["DATABASE_PATH"]
-    lifts, total_lift_count = list_lifts(
-        db_path=db_path,
-        state=state,
-        region=region,
-        sort=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    if state is _INVALID_STATE:
+        lifts, total_lift_count = [], 0
+    else:
+        region = _parse_region(region_param, state)
+        lifts, total_lift_count = list_lifts(
+            db_path=db_path,
+            state=state,
+            region=region,
+            sort=sort_by,
+            limit=limit,
+            offset=offset,
+        )
 
     def _pagination_url(target_page: int) -> str:
         args = request.args.to_dict()
@@ -456,7 +486,7 @@ def _lift_feature(
 
 def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     state_enum = _parse_state(state)
-    if state_enum is None:
+    if not isinstance(state_enum, State):
         abort(404)
 
     mountain = Mountain.from_name(name, state_enum, db_path)

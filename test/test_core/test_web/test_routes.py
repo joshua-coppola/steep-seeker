@@ -107,6 +107,18 @@ def test_search_filters_by_state(seeded_client):
     assert "Killington" not in body
 
 
+def test_search_invalid_state_returns_no_results(seeded_client):
+    # an unparseable location should match nothing, not silently show
+    # every mountain the way a missing/empty location does
+    response = seeded_client.get("/search?location=Nonexistent")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Bolton Valley" not in body
+    assert "Killington" not in body
+    assert "Alta" not in body
+
+
 def test_search_paginates(seeded_client):
     response = seeded_client.get("/search?limit=1&sort=name&order=asc")
 
@@ -114,6 +126,18 @@ def test_search_paginates(seeded_client):
     assert "Alta" in body
     assert "Bolton Valley" not in body
     assert "Next Page" in body
+
+
+def test_search_accepts_infinity_trailsmax(seeded_client):
+    # search.js sends trailsmax=Infinity when its slider's upper handle is
+    # maxed out, meaning "no limit"
+    response = seeded_client.get("/search?trailsmax=Infinity")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Bolton Valley" in body
+    assert "Killington" in body
+    assert "Alta" in body
 
 
 def test_rankings_defaults_to_difficulty_desc(seeded_client):
@@ -139,6 +163,16 @@ def test_rankings_filters_by_state(seeded_client):
     body = response.data.decode()
     assert "Alta" in body
     assert "Killington" not in body
+
+
+def test_rankings_invalid_state_returns_no_results(seeded_client):
+    response = seeded_client.get("/rankings?state=Nonexistent")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Bolton Valley" not in body
+    assert "Killington" not in body
+    assert "Alta" not in body
 
 
 def test_rankings_beginner_sort(seeded_client):
@@ -211,6 +245,15 @@ def test_trail_rankings_filters_by_state(ranked_client):
     assert "Trail A" not in body
 
 
+def test_trail_rankings_invalid_state_returns_no_results(ranked_client):
+    response = ranked_client.get("/trail-rankings?state=Nonexistent")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Trail A" not in body
+    assert "Trail B" not in body
+
+
 def test_lift_rankings_defaults_to_vertical_desc(ranked_client):
     response = ranked_client.get("/lift-rankings")
 
@@ -233,6 +276,15 @@ def test_lift_rankings_filters_by_region(ranked_client):
     body = response.data.decode()
     assert "Lift B" in body
     assert "Lift A" not in body
+
+
+def test_lift_rankings_invalid_state_returns_no_results(ranked_client):
+    response = ranked_client.get("/lift-rankings?state=Nonexistent")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Lift A" not in body
+    assert "Lift B" not in body
 
 
 @pytest.fixture
@@ -283,6 +335,12 @@ def mapped_client(client, db_path, mountain_factory, trail_factory, lift_factory
 
 def test_static_map_404_for_unknown_mountain(client):
     response = client.get("/map/VT/Nonexistent")
+
+    assert response.status_code == 404
+
+
+def test_static_map_404_for_invalid_state(client):
+    response = client.get("/map/Nonexistent/Nonexistent")
 
     assert response.status_code == 404
 
