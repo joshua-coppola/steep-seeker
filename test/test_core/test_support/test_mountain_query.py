@@ -1,4 +1,5 @@
 import pytest
+from shapely import Point
 
 from core.datamodels.region import Region
 from core.datamodels.state import State
@@ -131,3 +132,13 @@ def test_mountain_summary_vertical_converted_to_feet(mountain_factory, db_path):
     summaries, _ = list_mountains(db_path=db_path)
 
     assert summaries[0].vertical == round(1024 * 3.28084)
+
+
+def test_mountain_summary_includes_coordinates(mountain_factory, db_path):
+    mountain_factory(
+        mountain_id="6", name="Coordinates Mountain", coordinates=Point(-72.5, 43.5)
+    ).to_db(db_path)
+
+    summaries, _ = list_mountains(db_path=db_path)
+
+    assert summaries[0].coordinates == Point(-72.5, 43.5)

@@ -81,6 +81,18 @@ def test_random_mountain_redirects_to_interactive_map(seeded_client):
     assert response.headers["Location"] in valid_targets
 
 
+def test_explore_map_returns_ok_with_all_mountains(seeded_client):
+    response = seeded_client.get("/explore-map")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Bolton Valley" in body
+    assert "Killington" in body
+    assert "Alta" in body
+    assert '"type": "FeatureCollection"' in body
+    assert '"type": "Point"' in body
+
+
 def test_search_returns_all_mountains_by_default(seeded_client):
     response = seeded_client.get("/search")
 

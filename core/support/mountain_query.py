@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from shapely import Point, wkt
+
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import MountainTable
 from core.datamodels.region import Region
@@ -28,6 +30,7 @@ class MountainSummary:
     mountain_id: str
     name: str
     state: State
+    coordinates: Point
     vertical: int  # feet, converted from the meters Mountain.vertical is stored in
     difficulty: float
     beginner_friendliness: float
@@ -73,6 +76,7 @@ def list_mountains(
             m.{MountainTable.mountain_id},
             m.{MountainTable.name},
             m.{MountainTable.state},
+            m.{MountainTable.coordinates},
             m.{MountainTable.vertical},
             m.{MountainTable.difficulty},
             m.{MountainTable.beginner_friendliness},
@@ -89,6 +93,7 @@ def list_mountains(
             mountain_id=row[MountainTable.mountain_id],
             name=row[MountainTable.name],
             state=State(row[MountainTable.state]),
+            coordinates=wkt.loads(row[MountainTable.coordinates]),
             vertical=round_feet(meters_to_feet(row[MountainTable.vertical])),
             difficulty=round_degrees(row[MountainTable.difficulty]),
             beginner_friendliness=round_degrees(

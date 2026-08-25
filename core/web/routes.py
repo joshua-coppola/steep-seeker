@@ -484,6 +484,71 @@ def _lift_feature(
     }
 
 
+@web.route("/explore-map")
+def explore_map():
+    db_path = current_app.config["DATABASE_PATH"]
+    mountains, _ = list_mountains(db_path=db_path)
+
+    features = []
+    for mountain in mountains:
+        difficulty_color = trail_color(mountain.difficulty)
+
+        beginner_color = "gold"
+        if mountain.beginner_friendliness > -17:
+            beginner_color = "red"
+        if mountain.beginner_friendliness > -6:
+            beginner_color = "black"
+        if mountain.beginner_friendliness > 3:
+            beginner_color = "royalblue"
+        if mountain.beginner_friendliness > 12:
+            beginner_color = "green"
+
+        popup_content = (
+            f'<h3><a href="/interactive-map/{mountain.state.value}/{mountain.name}">'
+            f"{mountain.name}</a></h3>"
+        )
+        for season_pass in mountain.season_passes:
+            popup_content += (
+                f'<img src="icons/{season_pass.value}.png" class="pass-icon"/>'
+            )
+        popup_content += (
+            f"<p>Vertical: {mountain.vertical} ft</p>"
+            f'<p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p>'
+            f'<p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+        )
+
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "name": mountain.name,
+                    "state": mountain.state.value,
+                    "trail_count": mountain.trail_count,
+                    "lift_count": mountain.lift_count,
+                    "vertical": mountain.vertical,
+                    "difficulty": mountain.difficulty,
+                    "beginner_friendliness": mountain.beginner_friendliness,
+                    "size": mountain.vertical ** (1 / 3) / 20,
+                    "popupContent": popup_content,
+                    "icon": f"icons/mountain_{difficulty_color}.png",
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [mountain.coordinates.x, mountain.coordinates.y],
+                },
+            }
+        )
+
+    geojson = {"type": "FeatureCollection", "features": features}
+
+    return render_template(
+        "explore_map.jinja",
+        nav_links=nav_links,
+        active_page="explore_map",
+        geojson=geojson,
+    )
+
+
 def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     state_enum = _parse_state(state)
     if not isinstance(state_enum, State):
