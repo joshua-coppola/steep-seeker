@@ -27,6 +27,13 @@ def test_about_returns_ok(client):
     assert b"About" in response.data
 
 
+def test_privacy_policy_returns_ok(client):
+    response = client.get("/privacy-policy")
+
+    assert response.status_code == 200
+    assert b"Privacy Policy" in response.data
+
+
 def _trails(trail_factory, mountain_id, count):
     return {
         f"{mountain_id}-t{i}": trail_factory(
@@ -79,6 +86,21 @@ def test_random_mountain_redirects_to_interactive_map(seeded_client):
         "/interactive-map/UT/Alta",
     }
     assert response.headers["Location"] in valid_targets
+
+
+def test_sitemap_returns_xml(seeded_client):
+    response = seeded_client.get("/sitemap.xml")
+
+    assert response.status_code == 200
+    assert response.mimetype == "text/xml"
+    body = response.data.decode()
+    assert "<urlset" in body
+    assert "https://steepseeker.com/search" in body
+    assert "https://steepseeker.com/explore-map" in body
+    assert "https://steepseeker.com/trail-rankings" in body
+    assert "https://steepseeker.com/lift-rankings" in body
+    assert "https://steepseeker.com/map/VT/Bolton Valley" in body
+    assert "https://steepseeker.com/interactive-map/UT/Alta" in body
 
 
 def test_explore_map_returns_ok_with_all_mountains(seeded_client):

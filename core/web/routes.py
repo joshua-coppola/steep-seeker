@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 
 from flask import (
     Blueprint,
+    Response,
     abort,
     current_app,
     redirect,
@@ -54,6 +55,11 @@ def index():
 @web.route("/about")
 def about():
     return render_template("about.jinja", nav_links=nav_links, active_page="about")
+
+
+@web.route("/privacy-policy")
+def privacy_policy():
+    return render_template("privacy_policy.jinja", nav_links=nav_links)
 
 
 @web.route("/random-mountain")
@@ -639,3 +645,38 @@ def interactive_map(state, name):
         trails=trails,
         lifts=lifts,
     )
+
+
+@web.route("/sitemap.xml")
+def site_map():
+    db_path = current_app.config["DATABASE_PATH"]
+    mountains, _ = list_mountains(db_path=db_path)
+
+    url_template = (
+        "<url><loc>https://steepseeker.com/{path}</loc>"
+        "<changefreq>monthly</changefreq><priority>{priority}</priority></url>"
+    )
+    static_pages = [
+        ("", 1),
+        ("about", 0.6),
+        ("search", 0.7),
+        ("explore-map", 0.8),
+        ("rankings", 0.9),
+        ("trail-rankings", 0.9),
+        ("lift-rankings", 0.8),
+    ]
+    dynamic_pages = ["map", "interactive-map"]
+    dynamic_priority = 0.3
+
+    xml = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    for path, priority in static_pages:
+        xml += url_template.format(path=path, priority=priority)
+    for page in dynamic_pages:
+        for mountain in mountains:
+            xml += url_template.format(
+                path=f"{page}/{mountain.state.value}/{mountain.name}",
+                priority=dynamic_priority,
+            )
+    xml += "</urlset>"
+
+    return Response(xml, mimetype="text/xml")
