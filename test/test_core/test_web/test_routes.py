@@ -1,7 +1,9 @@
 import pytest
+from shapely import LineString, Point, Polygon
 
 from core.datamodels.state import State
 from core.web.app import create_app
+from core.web.routes import _trail_features
 
 
 @pytest.fixture
@@ -219,3 +221,142 @@ def test_lift_rankings_filters_by_region(ranked_client):
     body = response.data.decode()
     assert "Lift B" in body
     assert "Lift A" not in body
+
+
+@pytest.fixture
+def mapped_client(client, db_path, mountain_factory, trail_factory, lift_factory):
+    line_trail = trail_factory(
+        trail_id="line-1",
+        mountain_id="1",
+        name="Line Trail",
+        area=False,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
+        interior_geometry="",
+        route=None,
+        difficulty=25.0,
+        steepest_30m=20.0,
+    )
+    area_trail = trail_factory(
+        trail_id="area-1",
+        mountain_id="1",
+        name="Area Trail",
+        area=True,
+        geometry=Polygon(
+            [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
+        ),
+        interior_geometry=LineString([[0.4, 0.4, 80], [0.6, 0.6, 70]]),
+        route=LineString([[0, 1, 100], [0.5, 0.5, 75], [1, 0, 50]]),
+        difficulty=30.0,
+        steepest_30m=25.0,
+    )
+    lift = lift_factory(
+        lift_id="lift-1",
+        mountain_id="1",
+        name="Test Lift",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    mountain_factory(
+        mountain_id="1",
+        name="TestMountain",
+        state=State.VERMONT,
+        direction="n",
+        coordinates=Point(-72.0, 43.0),
+        trails={"line-1": line_trail, "area-1": area_trail},
+        lifts={"lift-1": lift},
+    ).to_db(db_path)
+
+    return client
+
+
+def test_interactive_map_404_for_unknown_mountain(client):
+    response = client.get("/interactive-map/VT/Nonexistent")
+
+    assert response.status_code == 404
+
+
+def test_interactive_map_returns_ok(mapped_client):
+    response = mapped_client.get("/interactive-map/VT/TestMountain")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "TestMountain" in body
+    assert "Line Trail" in body
+    assert "Area Trail" in body
+    assert "Test Lift" in body
+
+
+def test_interactive_map_geojson_includes_area_route_feature(mapped_client):
+    response = mapped_client.get("/interactive-map/VT/TestMountain")
+
+    body = response.data.decode()
+    assert "isRoute" in body
+    assert "routeCoordinates" in body
+
+
+def test_trail_features_line_trail_has_single_linestring_feature(trail_factory):
+
+    line_trail = trail_factory(
+        area=False,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
+        interior_geometry="",
+        route=None,
+    )
+
+    features = _trail_features(line_trail, direction="n", debug_mode=False)
+
+    assert len(features) == 1
+    assert features[0]["geometry"]["type"] == "LineString"
+    assert "routeCoordinates" not in features[0]["properties"]
+
+
+def test_trail_features_area_trail_with_route_adds_route_feature(trail_factory):
+    area_trail = trail_factory(
+        area=True,
+        geometry=Polygon(
+            [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
+        ),
+        interior_geometry=LineString([[0.4, 0.4, 80], [0.6, 0.6, 70]]),
+        route=LineString([[0, 1, 100], [0.5, 0.5, 75], [1, 0, 50]]),
+    )
+
+    features = _trail_features(area_trail, direction="n", debug_mode=False)
+
+    assert len(features) == 2
+    polygon_feature, route_feature = features
+    assert polygon_feature["geometry"]["type"] == "Polygon"
+    assert "routeCoordinates" in polygon_feature["properties"]
+    assert route_feature["geometry"]["type"] == "LineString"
+    assert route_feature["properties"]["isRoute"] is True
+    # the route line reuses the polygon's own difficulty color, shown
+    # partially transparent (see interactive-map.js's style())
+    assert (
+        route_feature["properties"]["color"] == polygon_feature["properties"]["color"]
+    )
+    assert "popupContent" not in route_feature["properties"]
+
+    # the name label moves from the polygon's border onto the route line,
+    # which reads much better as a text path
+    assert "label" not in polygon_feature["properties"]
+    assert route_feature["properties"]["label"] == area_trail.name
+
+    # name identifies the trail for the elevation-profile title regardless
+    # of which feature was clicked, unlike label (on-map text only)
+    assert polygon_feature["properties"]["name"] == area_trail.name
+
+
+def test_trail_features_area_trail_without_route_has_single_feature(trail_factory):
+
+    area_trail = trail_factory(
+        area=True,
+        geometry=Polygon(
+            [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
+        ),
+        interior_geometry=LineString([[0.4, 0.4, 80], [0.6, 0.6, 70]]),
+        route=None,
+    )
+
+    features = _trail_features(area_trail, direction="n", debug_mode=False)
+
+    assert len(features) == 1
+    assert "routeCoordinates" not in features[0]["properties"]

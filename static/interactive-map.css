@@ -2,6 +2,11 @@ body {
     background-color: var(--color-map-background);
 }
 
+/* the least-steep route drawn across an area trail (see interactive-map.js style()) */
+.route-line-soft {
+    filter: blur(4px);
+}
+
 nav {
     background-color: white;
     width: 100vw;

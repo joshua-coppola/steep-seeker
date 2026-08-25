@@ -14,7 +14,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from core.support.mountain import Mountain
-from core.support.utils import meters_to_feet, trail_color as _trail_color
+from core.support.utils import meters_to_feet
+from core.support.utils import trail_color as _trail_color
 
 mpl.use("svg")
 

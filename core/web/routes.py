@@ -299,12 +299,13 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     Builds the GeoJSON feature(s) for one trail. A line trail is a single
     LineString feature. An area trail (glade/bowl, sampled as a polygon)
     is its boundary Polygon feature plus -- when a route (the least-steep
-    path down the area) has been computed for it -- a second, fully
-    transparent/non-interactive LineString feature carrying that route's
-    elevation profile. The polygon's own popup carries the route's
-    profile too (as routeCoordinates), so interactive-map.js can show a
-    real heightgraph when the polygon itself is clicked, rather than the
-    "N/A" a bare Polygon feature would otherwise get.
+    path down the area) has been computed for it -- a second, faint/
+    non-interactive LineString feature (styled in interactive-map.js)
+    carrying that route's elevation profile. The polygon's own properties
+    carry the route's profile too (as routeCoordinates), so
+    interactive-map.js can show a real heightgraph when the polygon
+    itself is clicked, rather than the "N/A" a bare Polygon feature would
+    otherwise get.
     """
     if trail.area:
         coords = list(trail.geometry.exterior.coords)
@@ -342,6 +343,11 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
 
     properties = {
         "popupContent": popup_content,
+        # name is the trail's identity (used for the elevation-profile
+        # title regardless of which feature was clicked); label is
+        # specifically the text drawn along the map -- the two diverge for
+        # an area trail, whose label moves onto its route line below
+        "name": trail.name,
         "label": trail.name,
         "orientation": orientation,
         "color": trail_color(trail.difficulty),
@@ -352,12 +358,30 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
 
     if trail.area and trail.route is not None:
-        route_profile = build_elevation_profile(list(trail.route.coords))
+        route_coords = list(trail.route.coords)
+        route_profile = build_elevation_profile(route_coords)
         properties["routeCoordinates"] = route_profile
+
+        # An irregular polygon border reads badly as a text path, so the
+        # name label moves onto the route line instead -- the route has
+        # real start-to-end direction, so its orientation is computed like
+        # a normal line trail's rather than an area trail's fixed 0.
+        del properties["label"]
+        route_lon_points = [c[0] for c in route_coords]
+        route_lat_points = [c[1] for c in route_coords]
+        route_orientation = _orientation(
+            route_lon_points, route_lat_points, False, direction
+        )
+
         features.append(
             {
                 "type": "Feature",
-                "properties": {"isRoute": True, "color": "transparent"},
+                "properties": {
+                    "isRoute": True,
+                    "color": properties["color"],
+                    "label": trail.name,
+                    "orientation": route_orientation,
+                },
                 "geometry": {"type": "LineString", "coordinates": route_profile},
             }
         )
@@ -400,6 +424,7 @@ def _lift_feature(
         "type": "Feature",
         "properties": {
             "popupContent": popup_content,
+            "name": lift.name,
             "label": lift.name,
             "orientation": orientation,
             "color": "grey",

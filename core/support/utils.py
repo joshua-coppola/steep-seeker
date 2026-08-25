@@ -282,8 +282,8 @@ def build_elevation_profile(
     coords: list[tuple[float, float, float]],
 ) -> list[list[float]]:
     """
-    Converts an ordered list of (lon, lat, elevation_meters) points, for 
-    example from Trail.geometry.coords, Trail.geometry.exterior.coords for an 
+    Converts an ordered list of (lon, lat, elevation_meters) points, for
+    example from Trail.geometry.coords, Trail.geometry.exterior.coords for an
     area trail's boundary ring, or Trail.route.coords into the
     [lon, lat, elevation_feet, slope_degrees] point array the interactive
     map's elevation profile (leaflet.heightgraph) expects. slope_degrees is
