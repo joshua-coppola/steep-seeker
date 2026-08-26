@@ -9,6 +9,15 @@ import shapely.ops
 COORDINATE_PRECISION = 6
 METERS_TO_FEET = 3.28084
 
+# Shared WGS84 <-> Albers Equal Area (contiguous US) transformers. Building a
+# pyproj.Transformer is expensive, so these are constructed once at import
+# time rather than per-call in every space_line_points_evenly/
+# polygon_interior_grid invocation.
+_WGS84 = pyproj.CRS("EPSG:4326")
+_ALBERS = pyproj.CRS("EPSG:5070")  # Equal Area projection for contiguous US
+_TO_METERS_PROJ = pyproj.Transformer.from_proj(_WGS84, _ALBERS, always_xy=True)
+_TO_COORDINATES_PROJ = pyproj.Transformer.from_proj(_ALBERS, _WGS84, always_xy=True)
+
 
 def meters_to_feet(value: float | None) -> float | None:
     """
@@ -120,26 +129,17 @@ def space_line_points_evenly(
     Accepts a Shapely LineString, and evenly spaces out points
     every 20 feet along the length of the line
     """
-    wgs84 = pyproj.CRS("EPSG:4326")
-    albers = pyproj.CRS("EPSG:5070")  # Equal Area projection for contiguous US
-
-    to_meters_proj = pyproj.Transformer.from_proj(wgs84, albers, always_xy=True)
-
-    to_coordinates = pyproj.Transformer.from_proj(albers, wgs84, always_xy=True)
-
-    line_proj = shapely.ops.transform(to_meters_proj.transform, line)
+    line_proj = shapely.ops.transform(_TO_METERS_PROJ.transform, line)
 
     # Convert feet to meters because EPSG:5070 is in meters
     spacing_meters = spacing_feet / 3.28084
     num_points = ceil(line_proj.length / spacing_meters)
     distances = [i * spacing_meters for i in range(num_points + 1)]
 
-    points_proj = [line_proj.interpolate(d) for d in distances]
-    points_geo = [
-        shapely.ops.transform(to_coordinates.transform, pt) for pt in points_proj
-    ]
+    points_proj = shapely.LineString([line_proj.interpolate(d) for d in distances])
+    line_geo = shapely.ops.transform(_TO_COORDINATES_PROJ.transform, points_proj)
 
-    return shapely.LineString(points_geo)
+    return line_geo
 
 
 def space_polygon_exterior_points_evenly(
@@ -161,14 +161,7 @@ def polygon_interior_grid(
     Accepts a Shapely Polygon and returns a grid of points that
     fall inside the polygon boundry at a set interval defined in feet.
     """
-    wgs84 = pyproj.CRS("EPSG:4326")
-    albers = pyproj.CRS("EPSG:5070")  # Equal Area projection for contiguous US
-
-    to_meters_proj = pyproj.Transformer.from_proj(wgs84, albers, always_xy=True)
-
-    to_coordinates = pyproj.Transformer.from_proj(albers, wgs84, always_xy=True)
-
-    polygon_proj = shapely.ops.transform(to_meters_proj.transform, polygon)
+    polygon_proj = shapely.ops.transform(_TO_METERS_PROJ.transform, polygon)
 
     minx, miny, maxx, maxy = polygon_proj.bounds
 
@@ -186,7 +179,7 @@ def polygon_interior_grid(
 
     # Intersection keeps only points inside polygon
     inside_proj = polygon_proj.intersection(mp)
-    inside = shapely.ops.transform(to_coordinates.transform, inside_proj)
+    inside = shapely.ops.transform(_TO_COORDINATES_PROJ.transform, inside_proj)
 
     # Normalize return type
     if inside.is_empty:
@@ -373,32 +366,45 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
 
     max_pitch = None
 
+    # Cumulative distance from the first point, so the distance between any
+    # two points is a single subtraction instead of re-walking the line.
+    cumulative_dist = [0.0] * len(coordinates)
+    for i in range(1, len(coordinates)):
+        previous_point, point = coordinates[i - 1], coordinates[i]
+        cumulative_dist[i] = cumulative_dist[i - 1] + hs.haversine(
+            (previous_point[1], previous_point[0]),
+            (point[1], point[0]),
+            unit=hs.Unit.METERS,
+        )
+
+    # The window's end point only moves forward as the start point moves
+    # forward, so a two-pointer sweep finds it in a single pass over the
+    # line rather than re-scanning from each start point.
+    end = 1
     for start, start_point in enumerate(coordinates):
         if len(start_point) < 3 or start_point[2] is None:
             continue
 
-        cumulative_dist = 0
-        previous_point = start_point
+        end = max(end, start + 1)
 
-        for point in coordinates[start + 1 :]:
-            cumulative_dist += hs.haversine(
-                (previous_point[1], previous_point[0]),
-                (point[1], point[0]),
-                unit=hs.Unit.METERS,
-            )
-            previous_point = point
+        while (
+            end < len(coordinates)
+            and cumulative_dist[end] - cumulative_dist[start] < window_meters
+        ):
+            end += 1
 
-            if cumulative_dist >= window_meters:
-                if len(point) >= 3 and point[2] is not None:
-                    elevation_change = start_point[2] - point[2]
-                    pitch = (
-                        abs(degrees(atan(elevation_change / cumulative_dist)))
-                        if elevation_change != 0
-                        else 0.0
-                    )
-                    if max_pitch is None or pitch > max_pitch:
-                        max_pitch = pitch
-                break
+        if end < len(coordinates):
+            point = coordinates[end]
+            window_dist = cumulative_dist[end] - cumulative_dist[start]
+            if len(point) >= 3 and point[2] is not None:
+                elevation_change = start_point[2] - point[2]
+                pitch = (
+                    abs(degrees(atan(elevation_change / window_dist)))
+                    if elevation_change != 0
+                    else 0.0
+                )
+                if max_pitch is None or pitch > max_pitch:
+                    max_pitch = pitch
 
     if max_pitch is not None:
         return round(max_pitch, 1)
