@@ -354,8 +354,10 @@ def _delete_form_html(edit_query: str, item_id: str) -> str:
         '<form id="delete" class="search-form">'
         f'<input type="hidden" name="q" value="{edit_query}">'
         f'<input type="hidden" name="delete" value="{item_id}">'
+        '<span class="checkbox-group">'
         '<input type="checkbox" id="blacklist" name="blacklist" value=True>'
-        '<label for="blacklist">Blacklist</label><br>'
+        '<label for="blacklist">Blacklist</label>'
+        "</span>"
         '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
     )
 
@@ -418,10 +420,14 @@ def _trail_features(
             '<form id="update_tags" class="search-form">'
             f'<input type="hidden" name="q" value="{edit_query}">'
             f'<input type="hidden" name="trail_id" value="{trail.trail_id}">'
+            '<span class="checkbox-group">'
             f'<input type="checkbox" id="gladed" name="gladed" value=True {gladed_checked}>'
             '<label for="gladed">Gladed</label>'
+            "</span>"
+            '<span class="checkbox-group">'
             f'<input type="checkbox" id="ungroomed" name="ungroomed" value=True {ungroomed_checked}>'
             '<label for="ungroomed">Ungroomed</label>'
+            "</span>"
             '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
         )
         popup_content += _delete_form_html(edit_query, trail.trail_id)

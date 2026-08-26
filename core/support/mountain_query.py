@@ -103,7 +103,7 @@ def list_mountains(
             lift_count=row["lift_count"],
             season_passes=[
                 Season_Pass(value)
-                for value in row[MountainTable.season_passes].split(",")
+                for value in (row[MountainTable.season_passes] or "").split(",")
                 if value
             ],
         )
