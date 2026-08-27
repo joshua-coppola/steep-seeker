@@ -2,8 +2,6 @@ import uuid
 from math import atan2, degrees
 
 import shapely
-import shapely.ops
-from rich.progress import track
 from united_states import UnitedStates
 
 from core.connectors.elevation_api import Elevation
@@ -79,6 +77,18 @@ class OSMProcessor:
                 merged_relation_ids.append(relation_id)
                 continue
 
+            # Some member ways get filtered out by identify_trails (wrong
+            # piste:type, excluded tags, etc.) or fall outside the downloaded
+            # extract, so they never make it into self.trails. Drop those
+            # members; if fewer than two remain there's nothing to merge.
+            members = [
+                way_id
+                for way_id in relation_value.get("members")
+                if way_id in self.trails
+            ]
+            if len(members) < 2:
+                continue
+
             trail_info = {
                 "id": [],
                 "nodes": [],
@@ -89,7 +99,7 @@ class OSMProcessor:
                 "ungroomed": [],
                 "park": [],
             }
-            for way_id in relation_value.get("members"):
+            for way_id in members:
                 way = self.trails[way_id]
                 for key, value_list in trail_info.items():
                     if key == "id":
@@ -197,6 +207,31 @@ class OSMProcessor:
 
         self.trails = complete_trails
 
+    def _node_points(self, nodes: list) -> list[shapely.Point]:
+        """
+        Maps a list of OSM node ids to shapely Points in (lon, lat) order.
+        """
+        return [
+            shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
+            for node in nodes
+        ]
+
+    def _build_trail_geometry(
+        self, trail: dict
+    ) -> tuple[shapely.LineString | shapely.Polygon, shapely.MultiPoint | None]:
+        """
+        Builds a trail's evenly-spaced geometry (and, for area trails, the
+        interior sample grid) without any elevation lookups. Returns
+        (geometry, interior_multipoint); interior_multipoint is None for
+        non-area trails.
+        """
+        node_array = self._node_points(trail["nodes"])
+        if not trail["area"]:
+            return space_line_points_evenly(shapely.LineString(node_array)), None
+
+        geometry = space_polygon_exterior_points_evenly(shapely.Polygon(node_array))
+        return geometry, polygon_interior_grid(geometry)
+
     def get_trails(self) -> dict[str, Trail]:
         """
         Transforms the trails dict into a standardized format for the rest of
@@ -204,46 +239,89 @@ class OSMProcessor:
         instead using a geojson string and using the Trail class for each
         trail in the dict. Returns a dict of Trail objects where the dict keys
         are the trail IDs.
+
+        Elevation is fetched up front so the assembly loop never touches the
+        API: phase 1 builds every trail's spaced geometry, phase 2 resolves
+        every elevation lookup (a batched lookup over all trail geometry,
+        then the area-trail routed centerlines, whose points aren't known
+        until the route is computed from that now-cached elevation), and
+        phase 3 assembles each Trail entirely from cache. This keeps the
+        elevation API request count at ~ceil(points / batch) instead of one
+        request per trail, and keeps a single progress bar active at a time.
         """
         trail_objects = {}
         elevation_api = Elevation()
 
-        for trail_id in track(self.trails):
-            trail = self.trails[trail_id]
-            nodes = trail["nodes"]
-            node_array = []
-            for node in nodes:
-                point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
-                node_array.append(point)
+        # Phase 1: build every trail's spaced geometry, no elevation lookups.
+        trail_geometries = {
+            trail_id: self._build_trail_geometry(trail)
+            for trail_id, trail in self.trails.items()
+        }
 
-            interior_geometry = None
-            route = None
-
-            if not trail["area"]:
-                geometry = space_line_points_evenly(shapely.LineString(node_array))
-                geometry_json = {
-                    "coordinates": elevation_api.get(list(geometry.coords))
-                }
+        # Phase 2a: one batched elevation lookup over all trail geometry.
+        prefetch_points = []
+        for trail_id, (geometry, interior_multipoint) in trail_geometries.items():
+            if not self.trails[trail_id]["area"]:
+                prefetch_points.extend(geometry.coords)
             else:
-                geometry = space_polygon_exterior_points_evenly(
-                    shapely.Polygon(node_array)
+                prefetch_points.extend(geometry.exterior.coords)
+                prefetch_points.extend(
+                    point.coords[0] for point in interior_multipoint.geoms
                 )
-                geometry_json = {
+        elevation_api.get(prefetch_points)
+
+        # Phase 2b: route each area trail (elevation for exterior/interior is
+        # now cached), then batch-fetch elevation for every routed centerline.
+        area_routes = {}
+        area_trail_ids = [tid for tid in self.trails if self.trails[tid]["area"]]
+        if area_trail_ids:
+            route_points = []
+            for trail_id in area_trail_ids:
+                geometry, interior_multipoint = trail_geometries[trail_id]
+                exterior_json = {
                     "coordinates": [elevation_api.get(list(geometry.exterior.coords))]
                 }
-                interior_multipoint = polygon_interior_grid(geometry)
-                interior_geometry = {
+                interior_json = {
                     "coordinates": elevation_api.get(
                         [point.coords[0] for point in interior_multipoint.geoms]
                     )
                 }
-                raw_route = get_area_route(geometry_json, interior_geometry)
+                raw_route = get_area_route(exterior_json, interior_json)
                 route_line = space_line_points_evenly(
                     shapely.LineString(
                         [(point[0], point[1]) for point in raw_route["coordinates"]]
                     )
                 )
-                route = {"coordinates": elevation_api.get(list(route_line.coords))}
+                area_routes[trail_id] = route_line
+                route_points.extend(route_line.coords)
+            elevation_api.get(route_points)
+
+        # Phase 3: assemble each Trail entirely from cached elevation.
+        for trail_id in self.trails:
+            trail = self.trails[trail_id]
+            geometry, interior_multipoint = trail_geometries[trail_id]
+
+            interior_geometry = None
+            route = None
+
+            if not trail["area"]:
+                geometry_json = {
+                    "coordinates": elevation_api.get(list(geometry.coords))
+                }
+            else:
+                geometry_json = {
+                    "coordinates": [elevation_api.get(list(geometry.exterior.coords))]
+                }
+                interior_geometry = {
+                    "coordinates": elevation_api.get(
+                        [point.coords[0] for point in interior_multipoint.geoms]
+                    )
+                }
+                route = {
+                    "coordinates": elevation_api.get(
+                        list(area_routes[trail_id].coords)
+                    )
+                }
 
             # Use route for areas since the boundry isn't where people actually ski
             stats_geometry = route if trail["area"] else geometry_json
@@ -298,18 +376,32 @@ class OSMProcessor:
         instead using a geojson string and using the Lift class for each
         lift in the dict. Returns a dict of Lift objects where the dict keys
         are the lift IDs.
+
+        Like get_trails, elevation is fetched in two phases: every lift's
+        spaced geometry is built and batch-looked-up once to warm the cache,
+        then each Lift is assembled from cached elevation.
         """
         elevation_api = Elevation()
         lift_objects = {}
-        for lift_id in track(self.lifts):
-            lift = self.lifts[lift_id]
-            nodes = lift["nodes"]
-            node_array = []
-            for node in nodes:
-                point = shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
-                node_array.append(point)
 
-            geometry = space_line_points_evenly(shapely.LineString(node_array))
+        # Phase 1: build every lift's spaced geometry, no elevation lookups.
+        lift_geometries = {
+            lift_id: space_line_points_evenly(
+                shapely.LineString(self._node_points(lift["nodes"]))
+            )
+            for lift_id, lift in self.lifts.items()
+        }
+
+        # Phase 2: one batched elevation lookup to warm the cache.
+        prefetch_points = []
+        for geometry in lift_geometries.values():
+            prefetch_points.extend(geometry.coords)
+        elevation_api.get(prefetch_points)
+
+        # Phase 3: assemble each Lift; elevation now comes from the cache.
+        for lift_id in self.lifts:
+            lift = self.lifts[lift_id]
+            geometry = lift_geometries[lift_id]
             geometry_json = {"coordinates": elevation_api.get(list(geometry.coords))}
 
             lift_dict = {}
