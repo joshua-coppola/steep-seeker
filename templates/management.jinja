@@ -21,4 +21,26 @@ Management Panel
 {% block insideContent %}
 {% endblock insideContent %}
 </div>
+
+<div id="processing-overlay" hidden>
+    <div class="spinner" role="status" aria-label="Processing"></div>
+    <p>Processing&hellip; this can take a few minutes.</p>
+</div>
+<script>
+    (function () {
+        var overlay = document.getElementById("processing-overlay");
+
+        document.querySelectorAll(".map-pane form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                overlay.hidden = false;
+            });
+        });
+
+        // Hide the overlay if the page is restored from the bfcache
+        // (e.g. the user hits Back), so it isn't left spinning forever.
+        window.addEventListener("pageshow", function () {
+            overlay.hidden = true;
+        });
+    })();
+</script>
 {% endblock content %}
