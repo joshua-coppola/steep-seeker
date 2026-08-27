@@ -1,7 +1,9 @@
 import time
+from math import ceil
 
 import requests
 import shapely
+from rich.progress import track
 
 from core.connectors.database import CACHE_DB_PATH, cursor
 from core.datamodels.database import CacheTable
@@ -94,7 +96,11 @@ class Elevation:
         url = "https://api.opentopodata.org/v1/ned10m?locations={}"
         results: list[tuple[float, float, float]] = []
 
-        for chunk in divide_chunks(nodes, spacing):
+        for chunk in track(
+            divide_chunks(nodes, spacing),
+            total=ceil(len(nodes) / spacing),
+            description=f"Fetching elevation for {len(nodes)} points",
+        ):
             # Build location string like "lat,lon|lat,lon|..."
             coords_str = "|".join(f"{lat},{lon}" for lon, lat in chunk)
 
