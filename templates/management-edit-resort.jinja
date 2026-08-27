@@ -96,16 +96,18 @@ Edit Resort
         <input id="rename" name="rename" type="search" placeholder="New Resort Name" />
         <input class="button-cta" id="submit" type="submit" value="Rename" />
     </form>
-    <form id="rotate" class="search-form">
-        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
-        <input type="hidden" name="rotate_ccw" value="True">
-        <input class="button-cta" id="rotate_ccw_submit" type="submit" value="&#8634; Rotate Counterclockwise" />
-    </form>
-    <form id="rotate" class="search-form">
-        <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
-        <input type="hidden" name="rotate" value="True">
-        <input class="button-cta" id="rotate_cw_submit" type="submit" value="&#8635; Rotate Clockwise" />
-    </form>
+    <div class="rotate-buttons">
+        <form id="rotate_ccw" class="search-form">
+            <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
+            <input type="hidden" name="rotate_ccw" value="True">
+            <input class="button-cta2" id="rotate_ccw_submit" type="submit" value="&#8634; Rotate CCW" />
+        </form>
+        <form id="rotate_cw" class="search-form">
+            <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
+            <input type="hidden" name="rotate" value="True">
+            <input class="button-cta2" id="rotate_cw_submit" type="submit" value="&#8635; Rotate CW" />
+        </form>
+    </div>
     <form id="change_url" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input id="url" name="url" type="search" placeholder="New Resort URL" />
@@ -114,30 +116,48 @@ Edit Resort
     <form id="pass" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input type="hidden" name="update_passes" value="True">
-        <input type="checkbox" id="epic" name="epic" value="True" {% if "Epic" in season_pass_values %}checked{% endif %}>
-        <label for="epic">Epic</label>
-        <input type="checkbox" id="ikon" name="ikon" value="True" {% if "Ikon" in season_pass_values %}checked{% endif %}>
-        <label for="ikon">Ikon</label>
-        <input type="checkbox" id="mountain_collective" name="mountain_collective" value="True" {% if "Mountain Collective" in season_pass_values %}checked{% endif %}>
-        <label for="mountain_collective">Mountain Collective</label>
-        <input type="checkbox" id="indy" name="indy" value="True" {% if "Indy" in season_pass_values %}checked{% endif %}>
-        <label for="indy">Indy</label><br>
-        <input type="checkbox" id="cooper" name="cooper" value="True" {% if "Cooper" in season_pass_values %}checked{% endif %}>
-        <label for="cooper">Cooper</label>
-        <input type="checkbox" id="powder_alliance" name="powder_alliance" value="True" {% if "Powder Alliance" in season_pass_values %}checked{% endif %}>
-        <label for="powder_alliance">Powder Alliance</label>
-        <input type="checkbox" id="freedom" name="freedom" value="True" {% if "Freedom" in season_pass_values %}checked{% endif %}>
-        <label for="freedom">Freedom</label><br>
-        <input type="checkbox" id="power" name="power" value="True" {% if "Power" in season_pass_values %}checked{% endif %}>
-        <label for="power">Power</label>
+        <span class="checkbox-group">
+            <input type="checkbox" id="epic" name="epic" value="True" {% if "Epic" in season_pass_values %}checked{% endif %}>
+            <label for="epic">Epic</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="ikon" name="ikon" value="True" {% if "Ikon" in season_pass_values %}checked{% endif %}>
+            <label for="ikon">Ikon</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="mountain_collective" name="mountain_collective" value="True" {% if "Mountain Collective" in season_pass_values %}checked{% endif %}>
+            <label for="mountain_collective">Mountain Collective</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="indy" name="indy" value="True" {% if "Indy" in season_pass_values %}checked{% endif %}>
+            <label for="indy">Indy</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="cooper" name="cooper" value="True" {% if "Cooper" in season_pass_values %}checked{% endif %}>
+            <label for="cooper">Cooper</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="powder_alliance" name="powder_alliance" value="True" {% if "Powder Alliance" in season_pass_values %}checked{% endif %}>
+            <label for="powder_alliance">Powder Alliance</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="freedom" name="freedom" value="True" {% if "Freedom" in season_pass_values %}checked{% endif %}>
+            <label for="freedom">Freedom</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="power" name="power" value="True" {% if "Power" in season_pass_values %}checked{% endif %}>
+            <label for="power">Power</label>
+        </span>
         <input class="button-cta" id="submit" type="submit" value="Update" />
     </form>
     <div id='map'></div>
     <form id="delete_resort" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input id="confirmation" name="delete_resort" type="search" placeholder="Type 'DELETE' to confirm" />
-        <input type="checkbox" id="delete_osm" name="delete_osm" value="True">
-        <label for="delete_osm">Delete OSM</label>
+        <span class="checkbox-group">
+            <input type="checkbox" id="delete_osm" name="delete_osm" value="True">
+            <label for="delete_osm">Delete OSM</label>
+        </span>
         <input class="button-cta" id="submit" type="submit" value="Delete Resort" />
     </form>
     <div class="mountain-section">

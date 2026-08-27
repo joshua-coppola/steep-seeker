@@ -33,7 +33,7 @@ def test_identify_trails(osm_file):
     assert len(set(trail_info["official_rating"])) == 5
     assert sum(trail_info["gladed"]) == 17
     assert sum(trail_info["area"]) == 8
-    assert sum(trail_info["ungroomed"]) == 13
+    assert sum(trail_info["ungroomed"]) == 11
     assert sum(trail_info["park"]) == 3
 
 

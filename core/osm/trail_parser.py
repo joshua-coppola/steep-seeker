@@ -73,6 +73,10 @@ def identify_trails(ways, relations):
             "man_made", ""
         )
 
+        # if both gladed and ungroomed, only keep gladed
+        if trail["gladed"] and trail["ungroomed"]:
+            trail["ungroomed"] = False
+
         trails[way_id] = trail
 
     trail_relations = {}

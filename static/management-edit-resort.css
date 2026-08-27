@@ -1,17 +1,65 @@
-#update_tags_submit {
-    margin-top: .2rem;
-    margin-bottom: .5rem;
-}
-
 .map-pane {
     padding: 1rem;
 }
 
-.search-form {
-    padding-top: 1rem;
+.map-pane > div {
+    padding: 0;
 }
 
-ul {
+.search-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.search-form ul {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    padding-bottom: 0;
+}
+
+.checkbox-group {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+#refresh {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.rotate-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    width: fit-content;
+}
+
+.rotate-buttons .search-form {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rotate-buttons .button-cta2 {
+    width: 100%;
+}
+
+#refresh ul {
+    align-self: stretch;
+}
+
+#map_size {
+    width: 4rem;
+}
+
+main ul {
     padding-bottom: 1rem;
 }
 
@@ -25,4 +73,23 @@ select {
 
 input:not([type="checkbox"]) {
     height: 32px;
+}
+
+#add-resort-form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .5rem;
+    width: fit-content;
+}
+
+input[type="file"] {
+    display: flex;
+    align-items: center;
+}
+
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+    height: 100%;
+    cursor: pointer;
 }
