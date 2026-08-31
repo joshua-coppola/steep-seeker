@@ -3,7 +3,12 @@ from shapely import LineString, Point, Polygon
 
 from core.datamodels.state import State
 from core.web.app import create_app
-from core.web.routes import _lift_feature, _sorted_trails_and_lifts, _trail_features
+from core.web.routes import (
+    _lift_feature,
+    _orientation,
+    _sorted_trails_and_lifts,
+    _trail_features,
+)
 
 
 @pytest.fixture
@@ -172,6 +177,21 @@ def test_search_accepts_infinity_trailsmax(seeded_client):
     assert "Bolton Valley" in body
     assert "Killington" in body
     assert "Alta" in body
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/search?page=abc",
+        "/search?limit=&diffmin=x",
+        "/search?page=-5",
+        "/trail-rankings?page=abc&limit=nan",
+        "/lift-rankings?page=-3",
+    ],
+)
+def test_list_pages_tolerate_junk_pagination_params(seeded_client, path):
+    # bad query params should fall back to defaults, not 500
+    assert seeded_client.get(path).status_code == 200
 
 
 def test_rankings_defaults_to_difficulty_desc(seeded_client):
@@ -586,3 +606,40 @@ def test_trail_features_area_trail_without_route_has_single_feature(trail_factor
 
     assert len(features) == 1
     assert "routeCoordinates" not in features[0]["properties"]
+
+
+def test_trail_features_escapes_name_in_popup(trail_factory):
+    line_trail = trail_factory(
+        name="<img src=x onerror=alert(1)>",
+        area=False,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
+        interior_geometry="",
+        route=None,
+    )
+
+    popup = _trail_features(line_trail, direction="n", debug_mode=False)[0][
+        "properties"
+    ]["popupContent"]
+
+    assert "<img src=x" not in popup
+    assert "&lt;img src=x onerror=alert(1)&gt;" in popup
+
+
+def test_lift_feature_escapes_name_in_popup(lift_factory):
+    lift = lift_factory(
+        name="<script>alert(1)</script>",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    popup = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)[
+        "properties"
+    ]["popupContent"]
+
+    assert "<script>" not in popup
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in popup
+
+
+@pytest.mark.parametrize("points", [[], [1.0]])
+def test_orientation_handles_degenerate_lines(points):
+    # fewer than two points has no bearing -- return 0, don't IndexError
+    assert _orientation(points, points, is_area=False, direction="s") == 0

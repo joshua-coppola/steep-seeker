@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 from contextlib import contextmanager
 
 DATABASE_PATH = "data/db.db"
@@ -23,6 +24,15 @@ def cursor(db_path: str = DATABASE_PATH, dict_cursor: bool = True):
         conn.commit()
     finally:
         conn.close()
+
+
+def db_id(value):
+    """
+    Normalizes a mountain_id for use as a SQL bind parameter: sqlite3 can't
+    bind a uuid.UUID directly (OSM-derived mountain_ids are UUID3s), so
+    those become str and everything else passes through unchanged.
+    """
+    return str(value) if isinstance(value, uuid.UUID) else value
 
 
 def db_init(db_path: str = DATABASE_PATH, sql_path: str = DATABASE_INIT_SQL) -> None:

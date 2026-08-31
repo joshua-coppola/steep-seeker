@@ -1,11 +1,10 @@
-import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 from typing import Self
 
 from shapely import Point, wkt
 
-from core.connectors.database import DATABASE_PATH, cursor
+from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.connectors.weather_api import Weather
 from core.datamodels.database import (
     BlacklistTable,
@@ -132,9 +131,7 @@ class Mountain:
         """
         # sqlite3 can't bind UUID objects directly (mountain_id is a UUID
         # for OSM-derived mountains); normalize once and reuse below
-        db_mountain_id = (
-            str(mountain_id) if isinstance(mountain_id, uuid.UUID) else mountain_id
-        )
+        db_mountain_id = db_id(mountain_id)
 
         with cursor(db_path=db_path) as cur:
             query = "SELECT * from Mountains WHERE mountain_id = ?"
@@ -265,9 +262,7 @@ class Mountain:
                     {MountainTable.url} = excluded.{MountainTable.url}
             """
             params = (
-                str(self.mountain_id)
-                if isinstance(self.mountain_id, uuid.UUID)
-                else self.mountain_id,
+                db_id(self.mountain_id),
                 self.name,
                 self.state.value,
                 self.direction,
@@ -289,6 +284,42 @@ class Mountain:
 
         for lift_id in self.lifts:
             self.lifts[lift_id].to_db(db_path)
+
+    @staticmethod
+    def _ids_owned_elsewhere(
+        ids,
+        mountain_id: str,
+        table: str,
+        id_column: str,
+        db_path: str = DATABASE_PATH,
+    ) -> set[str]:
+        """
+        Returns the subset of `ids` already stored in `table` (Trails or
+        Lifts) under a different mountain. Trail and lift ids are OSM
+        element ids and globally unique, so an overlap means the feature
+        genuinely belongs to the other ski area (resort bounding boxes
+        routinely overlap, and a feature near a boundary lands in both
+        extracts). The first area to claim an id keeps it; from_osm drops
+        the rest before elevation lookup, so they never enter the API
+        batch, the mountain's vertical/difficulty, or to_db's ON CONFLICT
+        reassignment.
+        """
+        ids = list(ids)
+        if not ids:
+            return set()
+
+        placeholders = ",".join("?" * len(ids))
+        with cursor(db_path=db_path) as cur:
+            rows = cur.execute(
+                f"""
+                SELECT {id_column} FROM {table}
+                WHERE {id_column} IN ({placeholders})
+                    AND {MountainTable.mountain_id} != ?
+                """,
+                (*ids, db_id(mountain_id)),
+            ).fetchall()
+
+        return {row[id_column] for row in rows}
 
     def clear_trails_and_lifts(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
         """
@@ -333,6 +364,7 @@ class Mountain:
         season_passes: list[Season_Pass],
         url: str,
         mountain_id: str | None = None,
+        db_path: str = DATABASE_PATH,
     ) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
@@ -341,8 +373,26 @@ class Mountain:
         reloaded trails/lifts attach to the same mountain row instead of
         the deterministic ID OSMProcessor would otherwise derive fresh
         from the file's (possibly slightly shifted) center coordinates.
+
+        Trails and lifts already owned by another mountain in db_path are
+        dropped from the parse before any elevation lookup (see
+        _ids_owned_elsewhere).
         """
         processor = OSMProcessor(filename, mountain_id=mountain_id)
+
+        for trail_id in Mountain._ids_owned_elsewhere(
+            processor.trails,
+            processor.mountain_id,
+            "Trails",
+            TrailTable.trail_id,
+            db_path,
+        ):
+            del processor.trails[trail_id]
+
+        for lift_id in Mountain._ids_owned_elsewhere(
+            processor.lifts, processor.mountain_id, "Lifts", LiftTable.lift_id, db_path
+        ):
+            del processor.lifts[lift_id]
 
         mountain = Mountain(
             mountain_id=processor.mountain_id,

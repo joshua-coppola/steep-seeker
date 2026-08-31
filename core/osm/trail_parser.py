@@ -107,7 +107,7 @@ def identify_lifts(ways):
     invalid_types = {
         "goods",
         "station",
-        "zip line",
+        "zip_line",
         "explosive",
         "abandoned",
         "pylon",
@@ -139,13 +139,14 @@ def identify_lifts(ways):
 
         lift["lift_type"] = lift_type
 
+        # OSM tag values are free-form; a non-integer ("4;6", "quad", ...)
+        # becomes None rather than raising and aborting the mountain ingest
         occupancy = tags.get("aerialway:occupancy")
-        if occupancy:
-            occupancy = int(occupancy)
-        lift["occupancy"] = occupancy
+        lift["occupancy"] = (
+            int(occupancy) if occupancy and occupancy.isdigit() else None
+        )
         capacity = tags.get("aerialway:capacity")
-        if capacity:
-            capacity = int(capacity)
+        capacity = int(capacity) if capacity and capacity.isdigit() else None
         # if hourly capacity is unrealisticly low,
         # assume that it is mixed up with occupancy
         if capacity and capacity < 150:

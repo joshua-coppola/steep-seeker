@@ -13,7 +13,11 @@ from core.support.maps import create_map, create_thumbnail
 from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail import Trail
-from core.support.utils import get_bounding_box, get_trail_difficulty
+from core.support.utils import (
+    get_bounding_box,
+    get_trail_difficulty,
+    weather_modifier_from_trail,
+)
 from core.web.routes import (
     NavigationLink,
     _build_geojson,
@@ -108,7 +112,10 @@ def management_add_resort():
                 osm_path = os.path.join(OSM_DIR, f"{selection}.osm")
 
         if osm_path:
-            mountain = Mountain.from_osm(osm_path, season_passes=[], url="")
+            db_path = current_app.config["DATABASE_PATH"]
+            mountain = Mountain.from_osm(
+                osm_path, season_passes=[], url="", db_path=db_path
+            )
 
             state_dir = os.path.join(OSM_DIR, mountain.state.value)
             os.makedirs(state_dir, exist_ok=True)
@@ -116,7 +123,6 @@ def management_add_resort():
             if os.path.abspath(osm_path) != os.path.abspath(final_osm_path):
                 os.replace(osm_path, final_osm_path)
 
-            db_path = current_app.config["DATABASE_PATH"]
             mountain.to_db(db_path)
             create_map(mountain)
             create_thumbnail(mountain)
@@ -197,8 +203,7 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     if trail is None:
         return
 
-    old_bonus = (5.5 if trail.gladed else 0) + (2.5 if trail.ungroomed else 0)
-    weather_modifier = (trail.difficulty or 0) - (trail.steepest_30m or 0) - old_bonus
+    weather_modifier = weather_modifier_from_trail(trail)
 
     trail.gladed = bool(request.args.get("gladed"))
     trail.ungroomed = bool(request.args.get("ungroomed"))
@@ -247,6 +252,7 @@ def _rebuild_from_osm_file(
         season_passes=mountain.season_passes,
         url=mountain.url,
         mountain_id=mountain.mountain_id,
+        db_path=db_path,
     )
 
     if ignore_areas:

@@ -1,10 +1,9 @@
-import uuid
 from dataclasses import dataclass, fields
 from typing import Self
 
 from shapely import LineString, wkt
 
-from core.connectors.database import DATABASE_PATH, cursor
+from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.datamodels.database import LiftTable
 from core.support.utils import meters_to_feet, round_feet, round_geometry_precision
 
@@ -131,9 +130,7 @@ class Lift:
             """
             params = (
                 self.lift_id,
-                str(self.mountain_id)
-                if isinstance(self.mountain_id, uuid.UUID)
-                else self.mountain_id,
+                db_id(self.mountain_id),
                 str(round_geometry_precision(self.geometry)),
                 self.name,
                 self.lift_type,

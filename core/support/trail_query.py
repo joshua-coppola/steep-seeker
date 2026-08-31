@@ -4,6 +4,7 @@ from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import MountainTable, TrailTable
 from core.datamodels.region import Region
 from core.datamodels.state import State
+from core.support.query_common import name_and_location_where
 from core.support.utils import meters_to_feet, round_degrees, round_feet
 
 VALID_SORT_FIELDS = {
@@ -47,22 +48,6 @@ class TrailSummary:
     steepest_1000m: float | None
 
 
-def _where_clause(state: State | None, region: Region | None) -> tuple[str, list]:
-    where_clauses = [f'Trails.{TrailTable.name} <> ""']
-    params: list = []
-
-    if state is not None:
-        where_clauses.append(f"Mountains.{MountainTable.state} = ?")
-        params.append(state.value)
-    elif region is not None:
-        state_values = [s.value for s in region.value]
-        placeholders = ",".join("?" * len(state_values))
-        where_clauses.append(f"Mountains.{MountainTable.state} IN ({placeholders})")
-        params.extend(state_values)
-
-    return " AND ".join(where_clauses), params
-
-
 def list_trails(
     db_path: str = DATABASE_PATH,
     state: State | None = None,
@@ -82,7 +67,9 @@ def list_trails(
     if sort not in VALID_SORT_FIELDS:
         sort = "difficulty"
 
-    where_sql, params = _where_clause(state, region)
+    where_sql, params = name_and_location_where(
+        "Trails", TrailTable.name, state, region
+    )
 
     with cursor(db_path=db_path) as cur:
         count_query = f"""

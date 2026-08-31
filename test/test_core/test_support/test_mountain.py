@@ -279,6 +279,79 @@ def test_mountain_to_db_serializes_uuid_mountain_id(mountain_factory, db_path):
     assert returned_mountain.mountain_id == str(mountain_id)
 
 
+def test_mountain_from_osm_drops_trails_and_lifts_owned_by_another_mountain(
+    osm_file, mountain_factory, trail_factory, lift_factory, db_path, monkeypatch
+):
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+    monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
+
+    # another ski area already owns trail w11 and lift w113, both of which
+    # are also in this extract
+    other = mountain_factory(
+        mountain_id="other",
+        trails={
+            "w11": trail_factory(
+                **{TrailTable.trail_id: "w11", TrailTable.mountain_id: "other"}
+            )
+        },
+        lifts={
+            "w113": lift_factory(
+                **{LiftTable.lift_id: "w113", LiftTable.mountain_id: "other"}
+            )
+        },
+    )
+    other.to_db(db_path=db_path)
+
+    mountain = Mountain.from_osm(osm_file, season_passes=[], url="", db_path=db_path)
+
+    # both are dropped from this parse and left with their original mountain
+    assert "w11" not in mountain.trails
+    assert "w113" not in mountain.lifts
+
+    with cursor(db_path=db_path, dict_cursor=True) as cur:
+        trail_owner = cur.execute(
+            f"SELECT {TrailTable.mountain_id} FROM Trails "
+            f"WHERE {TrailTable.trail_id} = 'w11'"
+        ).fetchone()
+        lift_owner = cur.execute(
+            f"SELECT {LiftTable.mountain_id} FROM Lifts "
+            f"WHERE {LiftTable.lift_id} = 'w113'"
+        ).fetchone()
+
+    assert trail_owner[TrailTable.mountain_id] == "other"
+    assert lift_owner[LiftTable.mountain_id] == "other"
+
+
+def test_mountain_from_osm_keeps_trails_and_lifts_it_already_owns(
+    osm_file, mountain_factory, trail_factory, lift_factory, db_path, monkeypatch
+):
+    monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
+    monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
+
+    # a refresh: w11/w113 are already in the DB under the mountain being re-parsed
+    existing = mountain_factory(
+        mountain_id="m1",
+        trails={
+            "w11": trail_factory(
+                **{TrailTable.trail_id: "w11", TrailTable.mountain_id: "m1"}
+            )
+        },
+        lifts={
+            "w113": lift_factory(
+                **{LiftTable.lift_id: "w113", LiftTable.mountain_id: "m1"}
+            )
+        },
+    )
+    existing.to_db(db_path=db_path)
+
+    mountain = Mountain.from_osm(
+        osm_file, season_passes=[], url="", mountain_id="m1", db_path=db_path
+    )
+
+    assert "w11" in mountain.trails
+    assert "w113" in mountain.lifts
+
+
 def test_mountain_delete_from_db(mountain_factory, db_path):
     mountain = mountain_factory(mountain_id="1")
     mountain.to_db(db_path=db_path)
@@ -324,13 +397,13 @@ def test_mountain_clear_trails_and_lifts(mountain_factory, db_path):
     assert is_blacklisted("1", "w1000", db_path=db_path) is True
 
 
-def test_mountain_from_osm(osm_file, monkeypatch):
+def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
     monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
 
     season_passes = [Season_Pass.EPIC, Season_Pass.IKON]
     url = "https://test.com"
-    mountain = Mountain.from_osm(osm_file, season_passes, url)
+    mountain = Mountain.from_osm(osm_file, season_passes, url, db_path=db_path)
 
     assert mountain.mountain_id == UUID("9dbdb8fe-1bea-3fa8-9505-18f2171c4f50")
     assert mountain.name == "test"
@@ -358,12 +431,16 @@ def test_mountain_from_osm(osm_file, monkeypatch):
     assert mountain.trails["w11"].difficulty == 12.8
 
 
-def test_mountain_from_osm_preserves_given_mountain_id(osm_file, monkeypatch):
+def test_mountain_from_osm_preserves_given_mountain_id(osm_file, db_path, monkeypatch):
     monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
     monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
 
     mountain = Mountain.from_osm(
-        osm_file, season_passes=[], url="https://test.com", mountain_id="existing-id"
+        osm_file,
+        season_passes=[],
+        url="https://test.com",
+        mountain_id="existing-id",
+        db_path=db_path,
     )
 
     assert mountain.mountain_id == "existing-id"

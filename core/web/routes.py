@@ -13,6 +13,7 @@ from flask import (
     request,
     url_for,
 )
+from markupsafe import escape
 
 from core.datamodels.region import Region
 from core.datamodels.state import State
@@ -20,7 +21,12 @@ from core.support.lift_query import list_lifts
 from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail_query import list_trails
-from core.support.utils import build_elevation_profile, round_degrees, trail_color
+from core.support.utils import (
+    build_elevation_profile,
+    round_degrees,
+    trail_color,
+    weather_modifier_from_trail,
+)
 
 web = Blueprint("web", __name__)
 
@@ -109,18 +115,56 @@ def _parse_region(region_param: str, state: State | None) -> Region | None:
         return None
 
 
+def _int_arg(
+    name: str, default: int, minimum: int | None = None, maximum: int | None = None
+) -> int:
+    """
+    Reads an int query param, falling back to `default` when it's missing,
+    blank, or not a number (rather than 500ing), then clamping to
+    [minimum, maximum] when those are given.
+    """
+    try:
+        value = int(request.args.get(name) or default)
+    except (TypeError, ValueError):
+        value = default
+    if minimum is not None:
+        value = max(value, minimum)
+    if maximum is not None:
+        value = min(value, maximum)
+    return value
+
+
+def _float_arg(name: str, default: float) -> float:
+    """
+    Reads a float query param, falling back to `default` when it's missing,
+    blank, or not a number. "Infinity" parses natively (search.js sends it
+    for a maxed-out slider handle).
+    """
+    try:
+        return float(request.args.get(name) or default)
+    except (TypeError, ValueError):
+        return default
+
+
+def _pagination_url(base_path: str, target_page: int) -> str:
+    """
+    Current request's query string with `page` swapped to target_page,
+    for a list page's prev/next links.
+    """
+    args = request.args.to_dict()
+    args["page"] = str(target_page)
+    return f"{base_path}?{urlencode(args)}"
+
+
 @web.route("/search", methods=["GET", "POST"])
 def search():
     q = (request.args.get("q") or "").strip()
-    page = int(request.args.get("page") or 1)
-    limit = int(request.args.get("limit") or 20)
-    diffmin = float(request.args.get("diffmin") or 0)
-    diffmax = float(request.args.get("diffmax") or 100)
-    # search.js sends "Infinity" for trailsmax when its slider's upper
-    # handle is maxed out (meaning "no limit"); float() parses that
-    # natively, unlike int()
-    trailsmin = float(request.args.get("trailsmin") or 0)
-    trailsmax = float(request.args.get("trailsmax") or 1000)
+    page = _int_arg("page", 1, minimum=1)
+    limit = _int_arg("limit", 20, minimum=1)
+    diffmin = _float_arg("diffmin", 0)
+    diffmax = _float_arg("diffmax", 100)
+    trailsmin = _float_arg("trailsmin", 0)
+    trailsmax = _float_arg("trailsmax", 1000)
     sort = request.args.get("sort") or "name"
     order = request.args.get("order") or "asc"
     state = _parse_state(request.args.get("location"))
@@ -145,16 +189,11 @@ def search():
             offset=offset,
         )
 
-    def _pagination_url(target_page: int) -> str:
-        args = request.args.to_dict()
-        args["page"] = str(target_page)
-        return f"/search?{urlencode(args)}"
-
     pages = {}
     if total_mountain_count > limit and (limit * page) < total_mountain_count:
-        pages["next"] = _pagination_url(page + 1)
+        pages["next"] = _pagination_url("/search", page + 1)
     if offset != 0:
-        pages["prev"] = _pagination_url(page - 1)
+        pages["prev"] = _pagination_url("/search", page - 1)
 
     return render_template(
         "search.jinja",
@@ -209,8 +248,8 @@ def trail_rankings():
     state_param = request.args.get("state")
     if state_param == "None":
         state_param = None
-    page = int(request.args.get("page") or 1)
-    limit = min(int(request.args.get("limit") or 50), 200)
+    page = _int_arg("page", 1, minimum=1)
+    limit = _int_arg("limit", 50, minimum=1, maximum=200)
     sort_by = request.args.get("sort") or "difficulty"
 
     offset = limit * (page - 1)
@@ -231,16 +270,11 @@ def trail_rankings():
             offset=offset,
         )
 
-    def _pagination_url(target_page: int) -> str:
-        args = request.args.to_dict()
-        args["page"] = str(target_page)
-        return f"/trail-rankings?{urlencode(args)}"
-
     pages = {"offset": offset}
     if total_trail_count > limit and (limit * page) < total_trail_count:
-        pages["next"] = _pagination_url(page + 1)
+        pages["next"] = _pagination_url("/trail-rankings", page + 1)
     if offset != 0:
-        pages["prev"] = _pagination_url(page - 1)
+        pages["prev"] = _pagination_url("/trail-rankings", page - 1)
     first_args = {"region": region_param, "limit": limit}
     if state_param:
         first_args["state"] = state_param
@@ -263,8 +297,8 @@ def lift_rankings():
     state_param = request.args.get("state")
     if state_param == "None":
         state_param = None
-    page = int(request.args.get("page") or 1)
-    limit = min(int(request.args.get("limit") or 50), 200)
+    page = _int_arg("page", 1, minimum=1)
+    limit = _int_arg("limit", 50, minimum=1, maximum=200)
     sort_by = request.args.get("sort") or "vertical"
 
     offset = limit * (page - 1)
@@ -285,16 +319,11 @@ def lift_rankings():
             offset=offset,
         )
 
-    def _pagination_url(target_page: int) -> str:
-        args = request.args.to_dict()
-        args["page"] = str(target_page)
-        return f"/lift-rankings?{urlencode(args)}"
-
     pages = {"offset": offset}
     if total_lift_count > limit and (limit * page) < total_lift_count:
-        pages["next"] = _pagination_url(page + 1)
+        pages["next"] = _pagination_url("/lift-rankings", page + 1)
     if offset != 0:
-        pages["prev"] = _pagination_url(page - 1)
+        pages["prev"] = _pagination_url("/lift-rankings", page - 1)
     first_args = {"region": region_param, "limit": limit}
     if state_param:
         first_args["state"] = state_param
@@ -321,6 +350,9 @@ def _orientation(
     (mountain.direction). Area trails' polygon outlines don't have a
     single meaningful direction, so they're never flipped.
     """
+    if len(lon_points) < 2:
+        return 0
+
     midpoint = int(len(lon_points) / 2)
     dx = (
         lon_points[max(midpoint - 5, 0)]
@@ -352,8 +384,8 @@ def _delete_form_html(edit_query: str, item_id: str) -> str:
     """
     return (
         '<form id="delete" class="search-form">'
-        f'<input type="hidden" name="q" value="{edit_query}">'
-        f'<input type="hidden" name="delete" value="{item_id}">'
+        f'<input type="hidden" name="q" value="{escape(edit_query)}">'
+        f'<input type="hidden" name="delete" value="{escape(item_id)}">'
         '<span class="checkbox-group">'
         '<input type="checkbox" id="blacklist" name="blacklist" value=True>'
         '<label for="blacklist">Blacklist</label>'
@@ -395,7 +427,7 @@ def _trail_features(
 
     gladed_icon = '<i class="icon gladed"></i>' if trail.gladed else ""
     ungroomed_icon = '<i class="icon ungroomed"></i>' if trail.ungroomed else ""
-    popup_content = f"<h3>{trail.name}{gladed_icon}{ungroomed_icon}</h3>"
+    popup_content = f"<h3>{escape(trail.name)}{gladed_icon}{ungroomed_icon}</h3>"
     popup_content += (
         f"<p>Rating: {trail.difficulty}"
         f'<span class="icon difficulty-{trail_color(trail.difficulty)}"></span></p>'
@@ -412,14 +444,14 @@ def _trail_features(
                 f'<span class="icon difficulty-{trail_color(value)}"></span></p>'
             )
     if debug_mode:
-        popup_content += f"<p>Trail ID: {trail.trail_id}</p>"
+        popup_content += f"<p>Trail ID: {escape(trail.trail_id)}</p>"
     if edit_query is not None:
         gladed_checked = "checked" if trail.gladed else ""
         ungroomed_checked = "checked" if trail.ungroomed else ""
         popup_content += (
             '<form id="update_tags" class="search-form">'
-            f'<input type="hidden" name="q" value="{edit_query}">'
-            f'<input type="hidden" name="trail_id" value="{trail.trail_id}">'
+            f'<input type="hidden" name="q" value="{escape(edit_query)}">'
+            f'<input type="hidden" name="trail_id" value="{escape(trail.trail_id)}">'
             '<span class="checkbox-group">'
             f'<input type="checkbox" id="gladed" name="gladed" value=True {gladed_checked}>'
             '<label for="gladed">Gladed</label>'
@@ -493,7 +525,7 @@ def _lift_feature(
     lat_points = [c[1] for c in coords]
     orientation = _orientation(lon_points, lat_points, False, direction)
 
-    popup_content = f"<h3>{lift.name}</h3>"
+    popup_content = f"<h3>{escape(lift.name)}</h3>"
     if lift.occupancy:
         if lift.occupancy <= 4:
             popup_content += (
@@ -513,7 +545,7 @@ def _lift_feature(
     if lift.heating:
         popup_content += "<p>&#x2705; Heated</p>"
     if debug_mode:
-        popup_content += f"<p>Lift ID: {lift.lift_id}</p>"
+        popup_content += f"<p>Lift ID: {escape(lift.lift_id)}</p>"
     if edit_query is not None:
         popup_content += _delete_form_html(edit_query, lift.lift_id)
 
@@ -551,8 +583,8 @@ def explore_map():
             beginner_color = "green"
 
         popup_content = (
-            f'<h3><a href="/interactive-map/{mountain.state.value}/{mountain.name}">'
-            f"{mountain.name}</a></h3>"
+            f'<h3><a href="/interactive-map/{mountain.state.value}/{escape(mountain.name)}">'
+            f"{escape(mountain.name)}</a></h3>"
         )
         for season_pass in mountain.season_passes:
             popup_content += (
@@ -650,16 +682,7 @@ def _weather_modifier(trails: list) -> float:
     if not trails:
         return 0
 
-    first = trails[0]
-    if first.difficulty is None or first.steepest_30m is None:
-        return 0
-
-    return (
-        first.difficulty
-        - first.steepest_30m
-        - (5.5 if first.gladed else 0)
-        - (2.5 if first.ungroomed else 0)
-    )
+    return weather_modifier_from_trail(trails[0])
 
 
 def _build_geojson(
