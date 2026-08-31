@@ -321,6 +321,26 @@ def _populate_map(
                 )
 
 
+def _hide_axes() -> None:
+    """Strips the axis box and tick marks -- a map, not a plot."""
+    plt.axis("off")
+    plt.xticks([])
+    plt.yticks([])
+
+
+def _save_map_svg(mountain: Mountain, output_dir: str) -> None:
+    """
+    Writes the current figure to <output_dir>/<state>/<name>.svg (creating
+    the state dir if needed) and closes it. Shared tail of create_map and
+    create_thumbnail.
+    """
+    state_dir = f"{output_dir}/{mountain.state.value}"
+    if not exists(state_dir):
+        makedirs(state_dir)
+    plt.savefig(f"{state_dir}/{mountain.name}.svg", format="svg")
+    plt.close()
+
+
 def create_map(
     mountain: Mountain,
     output_dir: str = "static/maps",
@@ -344,9 +364,7 @@ def create_map(
     plt.subplots_adjust(
         left=0, bottom=bottom_loc, right=1, top=top_loc, wspace=0, hspace=0
     )
-    plt.axis("off")
-    plt.xticks([])
-    plt.yticks([])
+    _hide_axes()
 
     font_size = min(font_size, 16)
     if font_size == 5:
@@ -378,12 +396,7 @@ def create_map(
 
     _populate_map(mountain, with_labels, debug_mode)
 
-    # save map
-    state_dir = f"{output_dir}/{mountain.state.value}"
-    if not exists(state_dir):
-        makedirs(state_dir)
-    plt.savefig(f"{state_dir}/{mountain.name}.svg", format="svg")
-    plt.close()
+    _save_map_svg(mountain, output_dir)
 
 
 def create_thumbnail(mountain: Mountain, output_dir: str = "static/thumbnails") -> None:
@@ -398,15 +411,8 @@ def create_thumbnail(mountain: Mountain, output_dir: str = "static/thumbnails") 
     plt.subplots(figsize=(x_length * 2, (y_length * 2)))
 
     plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-    plt.axis("off")
-    plt.xticks([])
-    plt.yticks([])
+    _hide_axes()
 
     _populate_map(mountain, False)
 
-    # save map
-    state_dir = f"{output_dir}/{mountain.state.value}"
-    if not exists(state_dir):
-        makedirs(state_dir)
-    plt.savefig(f"{state_dir}/{mountain.name}.svg", format="svg")
-    plt.close()
+    _save_map_svg(mountain, output_dir)

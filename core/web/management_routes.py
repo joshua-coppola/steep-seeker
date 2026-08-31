@@ -13,7 +13,11 @@ from core.support.maps import create_map, create_thumbnail
 from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail import Trail
-from core.support.utils import get_bounding_box, get_trail_difficulty
+from core.support.utils import (
+    get_bounding_box,
+    get_trail_difficulty,
+    weather_modifier_from_trail,
+)
 from core.web.routes import (
     NavigationLink,
     _build_geojson,
@@ -197,8 +201,7 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     if trail is None:
         return
 
-    old_bonus = (5.5 if trail.gladed else 0) + (2.5 if trail.ungroomed else 0)
-    weather_modifier = (trail.difficulty or 0) - (trail.steepest_30m or 0) - old_bonus
+    weather_modifier = weather_modifier_from_trail(trail)
 
     trail.gladed = bool(request.args.get("gladed"))
     trail.ungroomed = bool(request.args.get("ungroomed"))

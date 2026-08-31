@@ -16,6 +16,8 @@ from core.support.utils import (
     round_feet,
     round_geometry_precision,
     space_line_points_evenly,
+    surface_difficulty_bonus,
+    weather_modifier_from_trail,
 )
 
 
@@ -274,6 +276,31 @@ def test_get_trail_difficulty_no_steepest_30m_returns_none():
         get_trail_difficulty(None, gladed=True, ungroomed=True, weather_modifier=3.0)
         is None
     )
+
+
+def test_surface_difficulty_bonus():
+    assert surface_difficulty_bonus(gladed=False, ungroomed=False) == 0.0
+    assert surface_difficulty_bonus(gladed=True, ungroomed=False) == 5.5
+    assert surface_difficulty_bonus(gladed=False, ungroomed=True) == 2.5
+    # gladed wins, no stacking
+    assert surface_difficulty_bonus(gladed=True, ungroomed=True) == 5.5
+
+
+class _FakeTrail:
+    def __init__(self, difficulty, steepest_30m, gladed=False, ungroomed=False):
+        self.difficulty = difficulty
+        self.steepest_30m = steepest_30m
+        self.gladed = gladed
+        self.ungroomed = ungroomed
+
+
+def test_weather_modifier_from_trail_inverts_get_trail_difficulty():
+    for gladed, ungroomed in [(False, False), (True, False), (False, True)]:
+        difficulty = get_trail_difficulty(
+            20.0, gladed=gladed, ungroomed=ungroomed, weather_modifier=3.0
+        )
+        trail = _FakeTrail(difficulty, 20.0, gladed=gladed, ungroomed=ungroomed)
+        assert weather_modifier_from_trail(trail) == 3.0
 
 
 def test_get_mountain_rating_no_trails_returns_none():

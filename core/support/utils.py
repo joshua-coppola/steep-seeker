@@ -435,6 +435,39 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     )
 
 
+# Difficulty (degrees) a trail's surface adds on top of its raw pitch.
+# Gladed wins when a trail is somehow both -- the two never stack (see
+# surface_difficulty_bonus).
+GLADED_BONUS = 5.5
+UNGROOMED_BONUS = 2.5
+
+
+def surface_difficulty_bonus(gladed: bool, ungroomed: bool) -> float:
+    """
+    The difficulty bump a trail earns for its surface: GLADED_BONUS for a
+    gladed trail, UNGROOMED_BONUS for an ungroomed-but-not-gladed one, 0
+    otherwise. Gladed wins when both flags are set; the bonuses don't stack.
+    """
+    if gladed:
+        return GLADED_BONUS
+    if ungroomed:
+        return UNGROOMED_BONUS
+    return 0.0
+
+
+def weather_modifier_from_trail(trail) -> float:
+    """
+    Recovers the mountain's weather modifier from one already-rated trail,
+    inverting get_trail_difficulty:
+        difficulty == steepest_30m + weather_modifier + surface bonus
+    """
+    return (
+        trail.difficulty
+        - trail.steepest_30m
+        - surface_difficulty_bonus(trail.gladed, trail.ungroomed)
+    )
+
+
 def get_trail_difficulty(
     steepest_30m: float | None,
     gladed: bool,
@@ -453,12 +486,9 @@ def get_trail_difficulty(
     if steepest_30m is None:
         return None
 
-    difficulty = steepest_30m + weather_modifier
-
-    if gladed:
-        difficulty += 5.5
-    elif ungroomed:
-        difficulty += 2.5
+    difficulty = (
+        steepest_30m + weather_modifier + surface_difficulty_bonus(gladed, ungroomed)
+    )
 
     return round(difficulty, 1)
 

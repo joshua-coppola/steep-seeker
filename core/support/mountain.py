@@ -1,11 +1,10 @@
-import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 from typing import Self
 
 from shapely import Point, wkt
 
-from core.connectors.database import DATABASE_PATH, cursor
+from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.connectors.weather_api import Weather
 from core.datamodels.database import (
     BlacklistTable,
@@ -132,9 +131,7 @@ class Mountain:
         """
         # sqlite3 can't bind UUID objects directly (mountain_id is a UUID
         # for OSM-derived mountains); normalize once and reuse below
-        db_mountain_id = (
-            str(mountain_id) if isinstance(mountain_id, uuid.UUID) else mountain_id
-        )
+        db_mountain_id = db_id(mountain_id)
 
         with cursor(db_path=db_path) as cur:
             query = "SELECT * from Mountains WHERE mountain_id = ?"
@@ -265,9 +262,7 @@ class Mountain:
                     {MountainTable.url} = excluded.{MountainTable.url}
             """
             params = (
-                str(self.mountain_id)
-                if isinstance(self.mountain_id, uuid.UUID)
-                else self.mountain_id,
+                db_id(self.mountain_id),
                 self.name,
                 self.state.value,
                 self.direction,

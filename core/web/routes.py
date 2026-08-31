@@ -21,7 +21,12 @@ from core.support.lift_query import list_lifts
 from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail_query import list_trails
-from core.support.utils import build_elevation_profile, round_degrees, trail_color
+from core.support.utils import (
+    build_elevation_profile,
+    round_degrees,
+    trail_color,
+    weather_modifier_from_trail,
+)
 
 web = Blueprint("web", __name__)
 
@@ -141,6 +146,16 @@ def _float_arg(name: str, default: float) -> float:
         return default
 
 
+def _pagination_url(base_path: str, target_page: int) -> str:
+    """
+    Current request's query string with `page` swapped to target_page,
+    for a list page's prev/next links.
+    """
+    args = request.args.to_dict()
+    args["page"] = str(target_page)
+    return f"{base_path}?{urlencode(args)}"
+
+
 @web.route("/search", methods=["GET", "POST"])
 def search():
     q = (request.args.get("q") or "").strip()
@@ -174,16 +189,11 @@ def search():
             offset=offset,
         )
 
-    def _pagination_url(target_page: int) -> str:
-        args = request.args.to_dict()
-        args["page"] = str(target_page)
-        return f"/search?{urlencode(args)}"
-
     pages = {}
     if total_mountain_count > limit and (limit * page) < total_mountain_count:
-        pages["next"] = _pagination_url(page + 1)
+        pages["next"] = _pagination_url("/search", page + 1)
     if offset != 0:
-        pages["prev"] = _pagination_url(page - 1)
+        pages["prev"] = _pagination_url("/search", page - 1)
 
     return render_template(
         "search.jinja",
@@ -260,16 +270,11 @@ def trail_rankings():
             offset=offset,
         )
 
-    def _pagination_url(target_page: int) -> str:
-        args = request.args.to_dict()
-        args["page"] = str(target_page)
-        return f"/trail-rankings?{urlencode(args)}"
-
     pages = {"offset": offset}
     if total_trail_count > limit and (limit * page) < total_trail_count:
-        pages["next"] = _pagination_url(page + 1)
+        pages["next"] = _pagination_url("/trail-rankings", page + 1)
     if offset != 0:
-        pages["prev"] = _pagination_url(page - 1)
+        pages["prev"] = _pagination_url("/trail-rankings", page - 1)
     first_args = {"region": region_param, "limit": limit}
     if state_param:
         first_args["state"] = state_param
@@ -314,16 +319,11 @@ def lift_rankings():
             offset=offset,
         )
 
-    def _pagination_url(target_page: int) -> str:
-        args = request.args.to_dict()
-        args["page"] = str(target_page)
-        return f"/lift-rankings?{urlencode(args)}"
-
     pages = {"offset": offset}
     if total_lift_count > limit and (limit * page) < total_lift_count:
-        pages["next"] = _pagination_url(page + 1)
+        pages["next"] = _pagination_url("/lift-rankings", page + 1)
     if offset != 0:
-        pages["prev"] = _pagination_url(page - 1)
+        pages["prev"] = _pagination_url("/lift-rankings", page - 1)
     first_args = {"region": region_param, "limit": limit}
     if state_param:
         first_args["state"] = state_param
@@ -682,16 +682,7 @@ def _weather_modifier(trails: list) -> float:
     if not trails:
         return 0
 
-    first = trails[0]
-    if first.difficulty is None or first.steepest_30m is None:
-        return 0
-
-    return (
-        first.difficulty
-        - first.steepest_30m
-        - (5.5 if first.gladed else 0)
-        - (2.5 if first.ungroomed else 0)
-    )
+    return weather_modifier_from_trail(trails[0])
 
 
 def _build_geojson(
