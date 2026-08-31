@@ -286,35 +286,40 @@ class Mountain:
             self.lifts[lift_id].to_db(db_path)
 
     @staticmethod
-    def _trail_ids_owned_elsewhere(
-        trail_ids, mountain_id: str, db_path: str = DATABASE_PATH
+    def _ids_owned_elsewhere(
+        ids,
+        mountain_id: str,
+        table: str,
+        id_column: str,
+        db_path: str = DATABASE_PATH,
     ) -> set[str]:
         """
-        Returns the subset of trail_ids already stored in the DB under a
-        different mountain. Trail ids are OSM element ids and globally
-        unique, so an overlap means the trail genuinely belongs to the
-        other ski area (resort bounding boxes routinely overlap, and a
-        trail near a boundary lands in both extracts). The first area to
-        claim a trail keeps it; from_osm drops the rest before elevation
-        lookup, so they never enter the API batch, the mountain's
-        vertical/difficulty, or Trail.to_db's ON CONFLICT reassignment.
+        Returns the subset of `ids` already stored in `table` (Trails or
+        Lifts) under a different mountain. Trail and lift ids are OSM
+        element ids and globally unique, so an overlap means the feature
+        genuinely belongs to the other ski area (resort bounding boxes
+        routinely overlap, and a feature near a boundary lands in both
+        extracts). The first area to claim an id keeps it; from_osm drops
+        the rest before elevation lookup, so they never enter the API
+        batch, the mountain's vertical/difficulty, or to_db's ON CONFLICT
+        reassignment.
         """
-        trail_ids = list(trail_ids)
-        if not trail_ids:
+        ids = list(ids)
+        if not ids:
             return set()
 
-        placeholders = ",".join("?" * len(trail_ids))
+        placeholders = ",".join("?" * len(ids))
         with cursor(db_path=db_path) as cur:
             rows = cur.execute(
                 f"""
-                SELECT {TrailTable.trail_id} FROM Trails
-                WHERE {TrailTable.trail_id} IN ({placeholders})
-                    AND {TrailTable.mountain_id} != ?
+                SELECT {id_column} FROM {table}
+                WHERE {id_column} IN ({placeholders})
+                    AND {MountainTable.mountain_id} != ?
                 """,
-                (*trail_ids, db_id(mountain_id)),
+                (*ids, db_id(mountain_id)),
             ).fetchall()
 
-        return {row[TrailTable.trail_id] for row in rows}
+        return {row[id_column] for row in rows}
 
     def clear_trails_and_lifts(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
         """
@@ -369,16 +374,25 @@ class Mountain:
         the deterministic ID OSMProcessor would otherwise derive fresh
         from the file's (possibly slightly shifted) center coordinates.
 
-        Trails already owned by another mountain in db_path are dropped
-        from the parse before any elevation lookup (see
-        _trail_ids_owned_elsewhere).
+        Trails and lifts already owned by another mountain in db_path are
+        dropped from the parse before any elevation lookup (see
+        _ids_owned_elsewhere).
         """
         processor = OSMProcessor(filename, mountain_id=mountain_id)
 
-        for trail_id in Mountain._trail_ids_owned_elsewhere(
-            processor.trails, processor.mountain_id, db_path
+        for trail_id in Mountain._ids_owned_elsewhere(
+            processor.trails,
+            processor.mountain_id,
+            "Trails",
+            TrailTable.trail_id,
+            db_path,
         ):
             del processor.trails[trail_id]
+
+        for lift_id in Mountain._ids_owned_elsewhere(
+            processor.lifts, processor.mountain_id, "Lifts", LiftTable.lift_id, db_path
+        ):
+            del processor.lifts[lift_id]
 
         mountain = Mountain(
             mountain_id=processor.mountain_id,

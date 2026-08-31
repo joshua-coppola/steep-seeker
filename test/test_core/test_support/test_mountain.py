@@ -279,13 +279,14 @@ def test_mountain_to_db_serializes_uuid_mountain_id(mountain_factory, db_path):
     assert returned_mountain.mountain_id == str(mountain_id)
 
 
-def test_mountain_from_osm_drops_trails_owned_by_another_mountain(
-    osm_file, mountain_factory, trail_factory, db_path, monkeypatch
+def test_mountain_from_osm_drops_trails_and_lifts_owned_by_another_mountain(
+    osm_file, mountain_factory, trail_factory, lift_factory, db_path, monkeypatch
 ):
     monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
     monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
 
-    # another ski area already owns trail w11, which is also in this extract
+    # another ski area already owns trail w11 and lift w113, both of which
+    # are also in this extract
     other = mountain_factory(
         mountain_id="other",
         trails={
@@ -293,31 +294,41 @@ def test_mountain_from_osm_drops_trails_owned_by_another_mountain(
                 **{TrailTable.trail_id: "w11", TrailTable.mountain_id: "other"}
             )
         },
-        lifts={},
+        lifts={
+            "w113": lift_factory(
+                **{LiftTable.lift_id: "w113", LiftTable.mountain_id: "other"}
+            )
+        },
     )
     other.to_db(db_path=db_path)
 
     mountain = Mountain.from_osm(osm_file, season_passes=[], url="", db_path=db_path)
 
-    # w11 is dropped from this parse and left with its original mountain
+    # both are dropped from this parse and left with their original mountain
     assert "w11" not in mountain.trails
+    assert "w113" not in mountain.lifts
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:
-        row = cur.execute(
+        trail_owner = cur.execute(
             f"SELECT {TrailTable.mountain_id} FROM Trails "
             f"WHERE {TrailTable.trail_id} = 'w11'"
         ).fetchone()
+        lift_owner = cur.execute(
+            f"SELECT {LiftTable.mountain_id} FROM Lifts "
+            f"WHERE {LiftTable.lift_id} = 'w113'"
+        ).fetchone()
 
-    assert row[TrailTable.mountain_id] == "other"
+    assert trail_owner[TrailTable.mountain_id] == "other"
+    assert lift_owner[LiftTable.mountain_id] == "other"
 
 
-def test_mountain_from_osm_keeps_trails_it_already_owns(
-    osm_file, mountain_factory, trail_factory, db_path, monkeypatch
+def test_mountain_from_osm_keeps_trails_and_lifts_it_already_owns(
+    osm_file, mountain_factory, trail_factory, lift_factory, db_path, monkeypatch
 ):
     monkeypatch.setattr(osm_processor, "Elevation", FakeElevation)
     monkeypatch.setattr(mountain_module, "Weather", FakeWeather)
 
-    # a refresh: w11 is already in the DB under the mountain being re-parsed
+    # a refresh: w11/w113 are already in the DB under the mountain being re-parsed
     existing = mountain_factory(
         mountain_id="m1",
         trails={
@@ -325,7 +336,11 @@ def test_mountain_from_osm_keeps_trails_it_already_owns(
                 **{TrailTable.trail_id: "w11", TrailTable.mountain_id: "m1"}
             )
         },
-        lifts={},
+        lifts={
+            "w113": lift_factory(
+                **{LiftTable.lift_id: "w113", LiftTable.mountain_id: "m1"}
+            )
+        },
     )
     existing.to_db(db_path=db_path)
 
@@ -334,6 +349,7 @@ def test_mountain_from_osm_keeps_trails_it_already_owns(
     )
 
     assert "w11" in mountain.trails
+    assert "w113" in mountain.lifts
 
 
 def test_mountain_delete_from_db(mountain_factory, db_path):
