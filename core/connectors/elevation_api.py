@@ -69,9 +69,7 @@ class Elevation:
                     cache_data,
                 )
 
-        # Combine cached and API results in original order. Check key
-        # presence rather than truthiness so a real elevation of 0.0 (sea
-        # level) isn't discarded and refetched as None.
+        # Combine cached and API results in original order
         results = []
         for lon, lat in nodes:
             point_str = str(shapely.Point(lon, lat))
