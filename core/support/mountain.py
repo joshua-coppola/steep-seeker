@@ -285,6 +285,37 @@ class Mountain:
         for lift_id in self.lifts:
             self.lifts[lift_id].to_db(db_path)
 
+    @staticmethod
+    def _trail_ids_owned_elsewhere(
+        trail_ids, mountain_id: str, db_path: str = DATABASE_PATH
+    ) -> set[str]:
+        """
+        Returns the subset of trail_ids already stored in the DB under a
+        different mountain. Trail ids are OSM element ids and globally
+        unique, so an overlap means the trail genuinely belongs to the
+        other ski area (resort bounding boxes routinely overlap, and a
+        trail near a boundary lands in both extracts). The first area to
+        claim a trail keeps it; from_osm drops the rest before elevation
+        lookup, so they never enter the API batch, the mountain's
+        vertical/difficulty, or Trail.to_db's ON CONFLICT reassignment.
+        """
+        trail_ids = list(trail_ids)
+        if not trail_ids:
+            return set()
+
+        placeholders = ",".join("?" * len(trail_ids))
+        with cursor(db_path=db_path) as cur:
+            rows = cur.execute(
+                f"""
+                SELECT {TrailTable.trail_id} FROM Trails
+                WHERE {TrailTable.trail_id} IN ({placeholders})
+                    AND {TrailTable.mountain_id} != ?
+                """,
+                (*trail_ids, db_id(mountain_id)),
+            ).fetchall()
+
+        return {row[TrailTable.trail_id] for row in rows}
+
     def clear_trails_and_lifts(mountain_id: str, db_path: str = DATABASE_PATH) -> None:
         """
         Removes all trails and lifts belonging to a mountain, without
@@ -328,6 +359,7 @@ class Mountain:
         season_passes: list[Season_Pass],
         url: str,
         mountain_id: str | None = None,
+        db_path: str = DATABASE_PATH,
     ) -> Self:
         """
         Gets mountain data from the provided OSM file and returns a
@@ -336,8 +368,17 @@ class Mountain:
         reloaded trails/lifts attach to the same mountain row instead of
         the deterministic ID OSMProcessor would otherwise derive fresh
         from the file's (possibly slightly shifted) center coordinates.
+
+        Trails already owned by another mountain in db_path are dropped
+        from the parse before any elevation lookup (see
+        _trail_ids_owned_elsewhere).
         """
         processor = OSMProcessor(filename, mountain_id=mountain_id)
+
+        for trail_id in Mountain._trail_ids_owned_elsewhere(
+            processor.trails, processor.mountain_id, db_path
+        ):
+            del processor.trails[trail_id]
 
         mountain = Mountain(
             mountain_id=processor.mountain_id,

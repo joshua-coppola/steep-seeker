@@ -112,7 +112,10 @@ def management_add_resort():
                 osm_path = os.path.join(OSM_DIR, f"{selection}.osm")
 
         if osm_path:
-            mountain = Mountain.from_osm(osm_path, season_passes=[], url="")
+            db_path = current_app.config["DATABASE_PATH"]
+            mountain = Mountain.from_osm(
+                osm_path, season_passes=[], url="", db_path=db_path
+            )
 
             state_dir = os.path.join(OSM_DIR, mountain.state.value)
             os.makedirs(state_dir, exist_ok=True)
@@ -120,7 +123,6 @@ def management_add_resort():
             if os.path.abspath(osm_path) != os.path.abspath(final_osm_path):
                 os.replace(osm_path, final_osm_path)
 
-            db_path = current_app.config["DATABASE_PATH"]
             mountain.to_db(db_path)
             create_map(mountain)
             create_thumbnail(mountain)
@@ -250,6 +252,7 @@ def _rebuild_from_osm_file(
         season_passes=mountain.season_passes,
         url=mountain.url,
         mountain_id=mountain.mountain_id,
+        db_path=db_path,
     )
 
     if ignore_areas:
