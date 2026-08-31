@@ -78,3 +78,21 @@ def test_identify_lifts(osm_file):
     assert sum(lift_info["detachable"]) == 5
     assert sum(lift_info["bubble"]) == 2
     assert sum(lift_info["heating"]) == 1
+
+
+def test_identify_lifts_tolerates_non_integer_occupancy_and_capacity():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "aerialway": "chair_lift",
+                "aerialway:occupancy": "4;6",
+                "aerialway:capacity": "quad",
+            },
+        }
+    }
+
+    lift = identify_lifts(ways)["lifts"]["w1"]
+
+    assert lift["occupancy"] is None
+    assert lift["capacity"] is None

@@ -12,8 +12,8 @@ from core.datamodels.database import CacheTable
 class Elevation:
     last_called = 0.0
 
-    def __init__(self):
-        pass
+    def __init__(self, timeout: int = 30):
+        self.timeout = timeout
 
     def get(
         self,
@@ -69,11 +69,16 @@ class Elevation:
                     cache_data,
                 )
 
-        # Combine cached and API results in original order
+        # Combine cached and API results in original order. Check key
+        # presence rather than truthiness so a real elevation of 0.0 (sea
+        # level) isn't discarded and refetched as None.
         results = []
         for lon, lat in nodes:
             point_str = str(shapely.Point(lon, lat))
-            elevation = cached_results.get(point_str) or api_results.get(point_str)
+            if point_str in cached_results:
+                elevation = cached_results[point_str]
+            else:
+                elevation = api_results.get(point_str)
             results.append([lon, lat, elevation])
 
         if len(results) != len(nodes):
@@ -109,7 +114,7 @@ class Elevation:
             if elapsed < 1.0:
                 time.sleep(1.0 - elapsed)
 
-            response = requests.get(url.format(coords_str))
+            response = requests.get(url.format(coords_str), timeout=self.timeout)
             Elevation.last_called = time.monotonic()
 
             if response.status_code != 200:

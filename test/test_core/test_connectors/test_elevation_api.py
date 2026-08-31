@@ -16,7 +16,7 @@ def test_get_elevation_success(monkeypatch, cache_db_path):
         {"elevation": 1700},
     ]
 
-    def fake_get(url):
+    def fake_get(url, **kwargs):
         return FakeResponse(200, fake_results)
 
     # Monkeypatch requests.get
@@ -31,12 +31,28 @@ def test_get_elevation_success(monkeypatch, cache_db_path):
     assert result[1] == [-106.0, 41.0, 1700]
 
 
+def test_get_elevation_passes_timeout(monkeypatch, cache_db_path):
+    monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
+
+    seen = {}
+
+    def fake_get(url, **kwargs):
+        seen.update(kwargs)
+        return FakeResponse(200, [{"elevation": 100}])
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    Elevation(timeout=7).get([(-105.0, 40.0)])
+
+    assert seen["timeout"] == 7
+
+
 def test_get_elevation_api_failure(monkeypatch, cache_db_path):
     monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
 
     nodes = [(-105.1, 40.0)]
 
-    def fake_get(url):
+    def fake_get(url, **kwargs):
         return FakeResponse(status_code=500)
 
     monkeypatch.setattr(requests, "get", fake_get)
@@ -52,10 +68,31 @@ def test_get_elevation_empty_nodes():
     assert Elevation().get([]) == []
 
 
+def test_get_elevation_preserves_zero_elevation(monkeypatch, cache_db_path):
+    # A real sea-level reading of 0 must survive both the fresh API fetch
+    # and a subsequent cache hit -- it used to be treated as "missing" and
+    # come back as None.
+    monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
+
+    def fake_get(url, **kwargs):
+        return FakeResponse(200, [{"elevation": 0}])
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    assert Elevation().get([(-70.0, 43.0)]) == [[-70.0, 43.0, 0]]
+
+    def fail_get(url, **kwargs):
+        raise AssertionError("should not hit the API on a cache hit")
+
+    monkeypatch.setattr(requests, "get", fail_get)
+
+    assert Elevation().get([(-70.0, 43.0)]) == [[-70.0, 43.0, 0]]
+
+
 def test_get_elevation_rounds_before_cache_lookup(monkeypatch, cache_db_path):
     monkeypatch.setattr(elevation_api, "CACHE_DB_PATH", cache_db_path)
 
-    def fake_get(url):
+    def fake_get(url, **kwargs):
         return FakeResponse(200, [{"elevation": 1600}])
 
     monkeypatch.setattr(requests, "get", fake_get)
@@ -67,7 +104,7 @@ def test_get_elevation_rounds_before_cache_lookup(monkeypatch, cache_db_path):
     # the kind reprojection/resampling math produces for what is really the
     # same point -- must still round to the cached point and hit the cache
     # rather than re-querying the API.
-    def fail_get(url):
+    def fail_get(url, **kwargs):
         raise AssertionError("should not hit the API on a cache hit")
 
     monkeypatch.setattr(requests, "get", fail_get)
