@@ -1,4 +1,51 @@
-function run_map(trails, map){
+function run_map(trails, map, editable = false){
+    // Delete-mode state (management edit page only, when editable is true):
+    // a set of flagged trail/lift OSM ids and a toggle for whether a click
+    // flags a line for deletion instead of opening its popup.
+    let deleteMode = false;
+    const flagged = new Set();
+    // Orange dash-dot ( -- - -- - ) -- deliberately unlike the red
+    // difficulty lines and the gladed lines' even dashes (dashArray '5,10').
+    const FLAGGED_STYLE = {
+        color: '#ff7f0e',
+        weight: 7,
+        opacity: 0.95,
+        dashArray: '20,10,10,10',
+        lineCap: 'round',
+    };
+
+    function updateBulkDeleteForm() {
+        const count = document.getElementById('bulk-delete-count');
+        if (count) count.textContent = flagged.size + ' flagged';
+        const submit = document.getElementById('bulk-delete-submit');
+        if (submit) submit.disabled = flagged.size === 0;
+    }
+
+    // A direct click on a line fires both the layer's own "click" and
+    // Leaflet.AlmostOver's "almost:click"; this collapses that pair (and
+    // any accidental double-click) into a single flag toggle per id.
+    let lastToggle = {id: null, at: 0};
+
+    function toggleFlag(layer) {
+        const id = layer.feature && layer.feature.properties.item_id;
+        if (!id) return;
+        const now = Date.now();
+        if (lastToggle.id === id && now - lastToggle.at < 400) return;
+        lastToggle = {id: id, at: now};
+        if (flagged.has(id)) {
+            flagged.delete(id);
+            geojson_features.resetStyle(layer);
+        } else {
+            flagged.add(id);
+            layer.setStyle(FLAGGED_STYLE);
+        }
+        updateBulkDeleteForm();
+    }
+
+    function isFlagged(layer) {
+        return layer.feature && flagged.has(layer.feature.properties.item_id);
+    }
+
     // Define two basemaps
     const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
@@ -305,8 +352,15 @@ function run_map(trails, map){
 
         geojson_features.eachLayer(function (layer) {
             layer.on("click", function () {
+                if (editable && deleteMode) {
+                    toggleFlag(layer);
+                    return;
+                }
                 addHeightGraphData(layer);
             });
+            if (editable && isFlagged(layer)) {
+                layer.setStyle(FLAGGED_STYLE);
+            }
         });
     }
 
@@ -325,6 +379,13 @@ function run_map(trails, map){
         addTrails();
     });
 
+    // In delete mode a click flags the line -- suppress the bound popup
+    // that Leaflet would otherwise open (covers every click path,
+    // including polygons and direct layer clicks).
+    map.on('popupopen', function () {
+        if (editable && deleteMode) map.closePopup();
+    });
+
     map.on('almost:over', function (e) {
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         e.layer.setStyle({weight: 10, opacity: .7});
@@ -332,11 +393,19 @@ function run_map(trails, map){
 
     map.on('almost:out', function (e){
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
+        if (editable && isFlagged(e.layer)) {
+            e.layer.setStyle(FLAGGED_STYLE);
+            return;
+        }
         e.layer.setStyle({weight: 4, opacity: 1});
     });
 
     map.on('almost:click', function (e) {
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
+        if (editable && deleteMode) {
+            toggleFlag(e.layer);
+            return;
+        }
         e.layer.openPopup();
         const clickedLayer = e.layer;
         if (clickedLayer) {
@@ -360,4 +429,65 @@ function run_map(trails, map){
     legend.addTo(map);
 
     L.control.locate().addTo(map);
+
+    if (editable) {
+        const bulkForm = document.getElementById('bulk-delete');
+
+        // Delete-mode toggle: while on, clicking a trail/lift line flags it
+        // (orange dash-dot) instead of opening its popup. The #bulk-delete
+        // form sits right below this button (adopted into a Leaflet control
+        // below), shown only while the mode is on, and submits every flagged
+        // id at once so the server regenerates the map/thumbnail only once.
+        L.Control.DeleteModeToggle = L.Control.extend({
+            onAdd: function () {
+                const button = L.DomUtil.create('button');
+                button.innerHTML = 'Delete Mode: Off';
+                button.className = 'basemap-toggle-btn delete-mode-btn';
+                L.DomEvent.disableClickPropagation(button);
+                button.onclick = function () {
+                    deleteMode = !deleteMode;
+                    button.innerHTML = deleteMode ? 'Delete Mode: On' : 'Delete Mode: Off';
+                    button.classList.toggle('active', deleteMode);
+                    if (bulkForm) bulkForm.hidden = !deleteMode;
+                };
+                return button;
+            }
+        });
+        L.control.deleteModeToggle = function (opts) {
+            return new L.Control.DeleteModeToggle(opts);
+        };
+        L.control.deleteModeToggle({ position: 'topright' }).addTo(map);
+
+        if (bulkForm) {
+            // Move the (template-rendered) form into a Leaflet control so it
+            // stacks directly under the Delete Mode button on the map.
+            const BulkDeleteControl = L.Control.extend({
+                onAdd: function () {
+                    L.DomEvent.disableClickPropagation(bulkForm);
+                    L.DomEvent.disableScrollPropagation(bulkForm);
+                    return bulkForm;
+                }
+            });
+            new BulkDeleteControl({ position: 'topright' }).addTo(map);
+
+            bulkForm.addEventListener('submit', function (e) {
+                bulkForm.querySelectorAll('input[name="ids"]').forEach(function (n) {
+                    n.remove();
+                });
+                if (flagged.size === 0) {
+                    e.preventDefault();
+                    return;
+                }
+                flagged.forEach(function (id) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ids';
+                    input.value = id;
+                    bulkForm.appendChild(input);
+                });
+            });
+        }
+
+        updateBulkDeleteForm();
+    }
 }

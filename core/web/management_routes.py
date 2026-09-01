@@ -394,6 +394,32 @@ def _delete_resort(mountain: Mountain, db_path: str) -> None:
             os.remove(osm_path)
 
 
+def _delete_item(
+    mountain: Mountain, item_id: str, db_path: str, blacklist: bool
+) -> bool:
+    """
+    Removes one trail or lift (identified by its OSM id) from the mountain
+    and the DB, optionally blacklisting it so a future refresh won't
+    re-add it. Returns True if something was deleted.
+
+    Does not regenerate the map/thumbnail -- callers do that once after
+    all deletions so a bulk delete only pays that cost a single time.
+    """
+    if item_id in mountain.trails:
+        Trail.delete_from_db(item_id, db_path)
+        del mountain.trails[item_id]
+    elif item_id in mountain.lifts:
+        Lift.delete_from_db(item_id, db_path)
+        del mountain.lifts[item_id]
+    else:
+        return False
+
+    if blacklist:
+        add_to_blacklist(mountain.mountain_id, item_id, db_path)
+
+    return True
+
+
 def _apply_delete(mountain: Mountain, db_path: str) -> None:
     """
     Deletes a trail or lift (identified by its OSM id) from the mountain,
@@ -403,34 +429,60 @@ def _apply_delete(mountain: Mountain, db_path: str) -> None:
     if not item_id:
         return
 
-    if item_id in mountain.trails:
-        Trail.delete_from_db(item_id, db_path)
-        del mountain.trails[item_id]
-    elif item_id in mountain.lifts:
-        Lift.delete_from_db(item_id, db_path)
-        del mountain.lifts[item_id]
-    else:
-        return
+    if _delete_item(mountain, item_id, db_path, bool(request.args.get("blacklist"))):
+        create_map(mountain)
+        create_thumbnail(mountain)
 
-    if request.args.get("blacklist"):
-        add_to_blacklist(mountain.mountain_id, item_id, db_path)
 
-    create_map(mountain)
-    create_thumbnail(mountain)
+def _load_mountain(q: str | None, db_path: str) -> Mountain | None:
+    """
+    Resolves the "<name>, <state>" the edit page's resort selector uses
+    into a Mountain, or None if it's missing/unparseable/unknown.
+    """
+    if not q:
+        return None
+
+    parts = q.split(",", 1)
+    if len(parts) != 2:
+        return None
+
+    state = _parse_state(parts[1].strip())
+    if not isinstance(state, State):
+        return None
+
+    return Mountain.from_name(parts[0].strip(), state, db_path)
+
+
+@management_web.route("/management-edit-resort/bulk-delete", methods=["POST"])
+def management_bulk_delete():
+    """
+    Deletes every trail/lift id in the "ids" form field in one shot,
+    regenerating the map/thumbnail only once at the end, then returns to
+    the edit page. Backs the map's delete-mode (see interactive-map.js).
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+    q = request.form.get("q")
+    mountain = _load_mountain(q, db_path)
+
+    if mountain is not None:
+        blacklist = bool(request.form.get("blacklist"))
+        deleted = False
+        for item_id in request.form.getlist("ids"):
+            if _delete_item(mountain, item_id, db_path, blacklist):
+                deleted = True
+
+        if deleted:
+            create_map(mountain)
+            create_thumbnail(mountain)
+
+    return redirect(url_for("management_web.management_edit_resort", q=q))
 
 
 @management_web.route("/management-edit-resort")
 def management_edit_resort():
     db_path = current_app.config["DATABASE_PATH"]
 
-    q = request.args.get("q")
-    mountain = None
-    if q:
-        parts = q.split(",", 1)
-        if len(parts) == 2:
-            state = _parse_state(parts[1].strip())
-            if isinstance(state, State):
-                mountain = Mountain.from_name(parts[0].strip(), state, db_path)
+    mountain = _load_mountain(request.args.get("q"), db_path)
 
     if mountain is not None:
         if request.args.get("delete_resort") == "DELETE":

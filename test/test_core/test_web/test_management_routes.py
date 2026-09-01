@@ -462,6 +462,99 @@ def test_management_edit_resort_deletes_and_blacklists(
     assert is_blacklisted("1", "w42", db_path) is True
 
 
+def test_management_bulk_delete_removes_all_ids_and_regenerates_once(
+    management_client,
+    db_path,
+    mountain_factory,
+    trail_factory,
+    lift_factory,
+    monkeypatch,
+):
+    calls = {"map": 0, "thumbnail": 0}
+    monkeypatch.setattr(
+        management_routes,
+        "create_map",
+        lambda *a, **k: calls.__setitem__("map", calls["map"] + 1),
+    )
+    monkeypatch.setattr(
+        management_routes,
+        "create_thumbnail",
+        lambda *a, **k: calls.__setitem__("thumbnail", calls["thumbnail"] + 1),
+    )
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={
+            "w1": trail_factory(trail_id="w1", mountain_id="1", name="A"),
+            "w2": trail_factory(trail_id="w2", mountain_id="1", name="B"),
+        },
+        lifts={"w3": lift_factory(lift_id="w3", mountain_id="1", name="C")},
+    ).to_db(db_path)
+
+    response = management_client.post(
+        "/management-edit-resort/bulk-delete",
+        data={"q": "Bolton Valley, VT", "ids": ["w1", "w2", "w3"]},
+    )
+
+    assert response.status_code == 302
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert mountain.trails == {}
+    assert mountain.lifts == {}
+    # regenerated once for the whole batch, not once per deleted item
+    assert calls == {"map": 1, "thumbnail": 1}
+
+
+def test_management_bulk_delete_blacklists_when_checked(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    monkeypatch.setattr(management_routes, "create_map", lambda *a, **k: None)
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w1": trail_factory(trail_id="w1", mountain_id="1", name="A")},
+    ).to_db(db_path)
+
+    management_client.post(
+        "/management-edit-resort/bulk-delete",
+        data={"q": "Bolton Valley, VT", "ids": ["w1"], "blacklist": "True"},
+    )
+
+    assert is_blacklisted("1", "w1", db_path) is True
+
+
+def test_management_bulk_delete_no_ids_leaves_map_untouched(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    calls = {"n": 0}
+    monkeypatch.setattr(
+        management_routes,
+        "create_map",
+        lambda *a, **k: calls.__setitem__("n", calls["n"] + 1),
+    )
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w1": trail_factory(trail_id="w1", mountain_id="1", name="A")},
+    ).to_db(db_path)
+
+    response = management_client.post(
+        "/management-edit-resort/bulk-delete", data={"q": "Bolton Valley, VT"}
+    )
+
+    assert response.status_code == 302
+    assert calls["n"] == 0
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert "w1" in mountain.trails
+
+
 def test_management_edit_resort_delete_nonexistent_id_is_a_no_op(
     management_client, db_path, mountain_factory, trail_factory, monkeypatch
 ):

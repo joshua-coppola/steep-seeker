@@ -466,6 +466,9 @@ def _trail_features(
 
     properties = {
         "popupContent": popup_content,
+        # only set on the management edit map -- lets its delete-mode
+        # flag a trail by clicking its line (see interactive-map.js)
+        **({"item_id": trail.trail_id} if edit_query is not None else {}),
         # name is the trail's identity (used for the elevation-profile
         # title regardless of which feature was clicked); label is
         # specifically the text drawn along the map -- the two diverge for
@@ -549,16 +552,22 @@ def _lift_feature(
     if edit_query is not None:
         popup_content += _delete_form_html(edit_query, lift.lift_id)
 
+    properties = {
+        "popupContent": popup_content,
+        "name": lift.name,
+        "label": lift.name,
+        "orientation": orientation,
+        "color": "grey",
+        "difficulty_modifier": weather_modifier,
+    }
+    if edit_query is not None:
+        # only set on the management edit map -- lets its delete-mode
+        # flag a lift by clicking its line (see interactive-map.js)
+        properties["item_id"] = lift.lift_id
+
     return {
         "type": "Feature",
-        "properties": {
-            "popupContent": popup_content,
-            "name": lift.name,
-            "label": lift.name,
-            "orientation": orientation,
-            "color": "grey",
-            "difficulty_modifier": weather_modifier,
-        },
+        "properties": properties,
         "geometry": {"type": "LineString", "coordinates": profile},
     }
 

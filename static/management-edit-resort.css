@@ -59,6 +59,41 @@
     width: 4rem;
 }
 
+.delete-mode-btn.active {
+    background-color: #ff7f0e;
+    color: white;
+}
+
+/* #bulk-delete is a .search-form (display: flex), so it needs an explicit
+   rule to stay hidden while delete mode is off. It's moved into a Leaflet
+   control at the top-right of the map, directly under the Delete Mode
+   button (see interactive-map.js). */
+#bulk-delete {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .4rem;
+    /* no margin override -- Leaflet's .leaflet-control margins keep this
+       panel aligned with the buttons above it on the map's right edge */
+    padding: 8px 12px;
+    background-color: white;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background-clip: padding-box;
+}
+
+#bulk-delete[hidden] {
+    display: none;
+}
+
+#bulk-delete-count {
+    font-weight: 600;
+}
+
+#bulk-delete-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 main ul {
     padding-bottom: 1rem;
 }

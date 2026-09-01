@@ -151,6 +151,16 @@ Edit Resort
         <input class="button-cta" id="submit" type="submit" value="Update" />
     </form>
     <div id='map'></div>
+    <form id="bulk-delete" class="search-form" method="post"
+          action="/management-edit-resort/bulk-delete" hidden>
+        <input type="hidden" name="q" value="{{mountain.name}}, {{mountain.state.value}}">
+        <span id="bulk-delete-count">0 flagged</span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="bulk_blacklist" name="blacklist" value="True">
+            <label for="bulk_blacklist">Blacklist</label>
+        </span>
+        <input class="button-cta" id="bulk-delete-submit" type="submit" value="Delete Flagged" />
+    </form>
     <form id="delete_resort" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input id="confirmation" name="delete_resort" type="search" placeholder="Type 'DELETE' to confirm" />
@@ -221,7 +231,7 @@ Edit Resort
             almostOnMouseMove: mouseOver,
         }).setView([{{mountain.coordinates.y}},{{mountain.coordinates.x}}], 13);
 
-        run_map(trails, map);
+        run_map(trails, map, true);
     </script>
     {% else %}
     <p>Select a resort above to view it.</p>
