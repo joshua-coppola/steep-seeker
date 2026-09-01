@@ -285,6 +285,63 @@ class Mountain:
         for lift_id in self.lifts:
             self.lifts[lift_id].to_db(db_path)
 
+    def recalculate_stats(self) -> None:
+        """
+        Recomputes vertical, difficulty and beginner_friendliness from the
+        current in-memory trail set. from_osm calls this at the end of a full
+        rebuild; management edits call it after a trail is deleted or has its
+        difficulty changed, so the mountain-level numbers don't go stale
+        between refreshes.
+        """
+        elevations = []
+        for trail in self.trails.values():
+            if trail.area:
+                elevations.extend(coord[2] for coord in trail.geometry.exterior.coords)
+                elevations.extend(point.z for point in trail.interior_geometry.geoms)
+            else:
+                elevations.extend(coord[2] for coord in trail.geometry.coords)
+
+        if elevations:
+            self.vertical = int(max(elevations) - min(elevations))
+
+        # only rate the mountain off trails long enough to be meaningful
+        rated_trail_difficulties = [
+            trail.difficulty
+            for trail in self.trails.values()
+            if trail.length > 100 and trail.difficulty is not None
+        ]
+        difficulty, beginner_friendliness = get_mountain_rating(rated_trail_difficulties)
+
+        # leave the last known rating in place if nothing rateable remains --
+        # to_db / update_stats_in_db treat these columns as non-null
+        if difficulty is not None:
+            self.difficulty = difficulty
+            self.beginner_friendliness = beginner_friendliness
+
+    def update_stats_in_db(self, db_path: str = DATABASE_PATH) -> None:
+        """
+        Persists only the recalculated stat columns (vertical, difficulty,
+        beginner_friendliness). Unlike to_db this touches no trail/lift rows
+        and doesn't require every other field to be populated, so it's safe
+        to call from a management edit that only changed one trail.
+        """
+        with cursor(db_path=db_path) as cur:
+            cur.execute(
+                f"""
+                UPDATE Mountains SET
+                    {MountainTable.vertical} = ?,
+                    {MountainTable.difficulty} = ?,
+                    {MountainTable.beginner_friendliness} = ?
+                WHERE {MountainTable.mountain_id} = ?
+                """,
+                (
+                    self.vertical,
+                    self.difficulty,
+                    self.beginner_friendliness,
+                    db_id(self.mountain_id),
+                ),
+            )
+
     @staticmethod
     def _ids_owned_elsewhere(
         ids,
@@ -406,19 +463,6 @@ class Mountain:
             url=url,
         )
 
-        elevation_set = set()
-        for trail_id in mountain.trails:
-            trail = mountain.trails[trail_id]
-            if trail.area:
-                elevation_set.update(
-                    coord[2] for coord in trail.geometry.exterior.coords
-                )
-                elevation_set.update(point.z for point in trail.interior_geometry.geoms)
-            else:
-                elevation_set.update(coord[2] for coord in trail.geometry.coords)
-
-        mountain.vertical = int(max(elevation_set) - min(elevation_set))
-
         weather = Weather().get(mountain.coordinates)
 
         mountain.average_icy_days = weather["icy_days"]
@@ -431,14 +475,6 @@ class Mountain:
                 trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier
             )
 
-        # only rate the mountain off trails long enough to be meaningful
-        rated_trail_difficulties = [
-            trail.difficulty
-            for trail in mountain.trails.values()
-            if trail.length > 100 and trail.difficulty is not None
-        ]
-        mountain.difficulty, mountain.beginner_friendliness = get_mountain_rating(
-            rated_trail_difficulties
-        )
+        mountain.recalculate_stats()
 
         return mountain

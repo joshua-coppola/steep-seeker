@@ -72,6 +72,16 @@ class CacheTable:
 
 
 @dataclass
+class CachedWeatherTable:
+    point: str = "point"
+    season: str = "season"
+    month: str = "month"
+    icy_days: str = "icy_days"
+    rain: str = "rain"
+    snow: str = "snow"
+
+
+@dataclass
 class BlacklistTable:
     item_id: str = "item_id"
     mountain_id: str = "mountain_id"
