@@ -11,6 +11,10 @@ from core.datamodels.state import State
 from core.support.lift import Lift
 from core.support.mountain import Mountain
 from core.support.trail import Trail
+from core.support.weather_calibration import WeatherCalibration
+
+# What FakeWeather reports for every location.
+FAKE_WEATHER_STATS = {"icy_days": 50.1, "rain": 10.01, "snow": 125.00}
 
 
 @pytest.fixture
@@ -25,6 +29,21 @@ def db_path(tmpdir):
     open(db_path, "w").close()
 
     db_init(db_path=db_path, sql_path=DATABASE_INIT_SQL)
+
+    # Seed a 3-point calibration whose middle value is exactly FakeWeather's
+    # reading for each metric, so any from_osm run in the tests gets a clean
+    # weather modifier of 2*0.5 + 2*0.5 + 2*(1 - 0.5) = 3.0.
+    WeatherCalibration(
+        icy_days=[
+            0.0,
+            FAKE_WEATHER_STATS["icy_days"],
+            2 * FAKE_WEATHER_STATS["icy_days"],
+        ],
+        rain=[0.0, FAKE_WEATHER_STATS["rain"], 2 * FAKE_WEATHER_STATS["rain"]],
+        snow=[0.0, FAKE_WEATHER_STATS["snow"], 2 * FAKE_WEATHER_STATS["snow"]],
+        n_resorts=3,
+        created="2024-01-01T00:00:00+00:00",
+    ).save(db_path)
 
     return db_path
 
@@ -75,7 +94,7 @@ class FakeElevation:
 
 class FakeWeather(Weather):
     def get(self, coordinates: Point):
-        return {"icy_days": 50.1, "rain": 10.01, "snow": 125.00}
+        return dict(FAKE_WEATHER_STATS)
 
 
 @pytest.fixture

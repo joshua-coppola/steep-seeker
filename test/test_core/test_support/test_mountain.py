@@ -416,8 +416,11 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     # FakeElevation descends 1 unit per point within each trail/area segment;
     # the mountain's vertical is the max-min elevation across all trail points
     assert mountain.vertical == 1215
-    assert mountain.difficulty == 18.3
-    assert mountain.beginner_friendliness == 12.8
+    # weather_modifier is 3.0 here: FakeWeather's reading is the midpoint of the
+    # 3-point calibration the db_path fixture seeds (see conftest), so every
+    # metric ranks at 0.5
+    assert mountain.difficulty == 17.8
+    assert mountain.beginner_friendliness == 12.3
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
@@ -428,7 +431,7 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.trails["w11"].gladed is False
     assert mountain.trails["w11"].ungroomed is False
     assert mountain.trails["w11"].steepest_30m == 9.3
-    assert mountain.trails["w11"].difficulty == 12.8
+    assert mountain.trails["w11"].difficulty == 12.3
 
 
 def test_mountain_from_osm_preserves_given_mountain_id(osm_file, db_path, monkeypatch):

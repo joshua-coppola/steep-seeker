@@ -6,6 +6,30 @@
     padding: 0;
 }
 
+.management-nav {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: 0;
+}
+
+.management-nav h1 {
+    margin: 0 0 0.5rem;
+}
+
+.management-nav .nav-list {
+    margin-top: 0;
+    flex-wrap: wrap;
+}
+
+.mountain-details{
+    top: calc(92px + 1rem);
+}
+
+#map {
+    top: calc(140px + 1rem);
+}
+
 .search-form {
     display: flex;
     align-items: center;
@@ -94,10 +118,6 @@
 #bulk-delete-submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-main ul {
-    padding-bottom: 1rem;
 }
 
 h2 {

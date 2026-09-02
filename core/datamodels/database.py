@@ -85,3 +85,13 @@ class CachedWeatherTable:
 class BlacklistTable:
     item_id: str = "item_id"
     mountain_id: str = "mountain_id"
+
+
+@dataclass
+class WeatherCalibrationTable:
+    id: str = "id"
+    created: str = "created"
+    n_resorts: str = "n_resorts"
+    icy_days: str = "icy_days"
+    rain: str = "rain"
+    snow: str = "snow"

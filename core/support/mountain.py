@@ -25,6 +25,7 @@ from core.support.utils import (
     round_feet,
     round_geometry_precision,
 )
+from core.support.weather_calibration import WeatherCalibration
 
 
 @dataclass
@@ -469,7 +470,7 @@ class Mountain:
         mountain.average_rain = weather["rain"]
         mountain.average_snow = weather["snow"]
 
-        weather_modifier = Weather.get_modifier(weather)
+        weather_modifier = WeatherCalibration.load(db_path).modifier(weather)
         for trail in mountain.trails.values():
             trail.difficulty = get_trail_difficulty(
                 trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier

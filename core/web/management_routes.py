@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from rich.progress import track
 
 from core.connectors.osm_api import OSM
 from core.datamodels.season_pass import Season_Pass
@@ -18,6 +19,7 @@ from core.support.utils import (
     get_trail_difficulty,
     weather_modifier_from_trail,
 )
+from core.support.weather_calibration import recalibrate
 from core.web.routes import (
     NavigationLink,
     _build_geojson,
@@ -58,6 +60,7 @@ class ManagementLink:
 management_links = [
     ManagementLink("Add Resort", "/management-add-resort"),
     ManagementLink("Edit Resort", "/management-edit-resort"),
+    ManagementLink("Bulk Operations", "/management-bulk-operations"),
 ]
 
 OSM_DIR = "data/osm"
@@ -504,6 +507,51 @@ def management_bulk_delete():
             create_thumbnail(mountain)
 
     return redirect(url_for("management_web.management_edit_resort", q=q))
+
+
+def _regenerate_maps(mountain_ids: list[str], db_path: str) -> int:
+    """
+    Rebuilds the static map + thumbnail SVGs for the given mountains (their
+    trails are coloured by difficulty, so they go stale after a recalibration).
+    Progress prints to the management process's console.
+    """
+    regenerated = 0
+    for mountain_id in track(
+        mountain_ids, description="Regenerating maps", total=len(mountain_ids)
+    ):
+        mountain = Mountain.from_db(mountain_id, db_path=db_path)
+        if mountain is None:
+            continue
+        create_map(mountain)
+        create_thumbnail(mountain)
+        regenerated += 1
+    return regenerated
+
+
+@management_web.route("/management-bulk-operations", methods=["GET", "POST"])
+def management_bulk_operations():
+    """
+    Site-wide maintenance actions that touch every resort at once, kept off
+    the per-resort edit page. Currently: recalibrate the weather modifier
+    (rebuild WeatherCalibration from the current population, re-rate every trail
+    against it -- see core.support.weather_calibration.recalibrate -- then
+    regenerate the now-stale static maps).
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+
+    result = None
+    if request.method == "POST" and request.form.get("action") == "recalibrate":
+        result = recalibrate(db_path)
+        result["n_maps_regenerated"] = _regenerate_maps(
+            result["rerated_mountain_ids"], db_path
+        )
+
+    return render_template(
+        "management-bulk-operations.jinja",
+        management_links=management_links,
+        active_page="Bulk Operations",
+        recalibrate_result=result,
+    )
 
 
 @management_web.route("/management-edit-resort")

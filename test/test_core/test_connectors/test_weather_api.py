@@ -262,35 +262,3 @@ class TestGet:
             Weather(num_seasons=1).get(Point(-72.0, 44.0))
 
 
-# ---------------------------------------------------------------------------
-# Weather.get_modifier
-# ---------------------------------------------------------------------------
-
-
-class TestGetModifier:
-    def test_calmest_conditions_give_minimum_modifier(self):
-        # No rain, no icy days, and max snow (best possible conditions) -> 0
-        modifier = Weather.get_modifier({"icy_days": 2.5, "rain": 0, "snow": 202.44})
-        assert modifier == 0
-
-    def test_no_snow_still_gives_partial_modifier(self):
-        # Zero snow is worse than average, but icy_days/rain are still at
-        # their minimum, so only the snow component contributes
-        modifier = Weather.get_modifier({"icy_days": 2.5, "rain": 0, "snow": 0})
-        assert modifier == 2.0
-
-    def test_harshest_conditions_give_maximum_modifier(self):
-        modifier = Weather.get_modifier({"icy_days": 100, "rain": 20, "snow": 0})
-        assert modifier == 6.0
-
-    def test_out_of_range_values_are_clamped(self):
-        # icy_days/rain far above their max should clamp to the same
-        # result as the harshest-conditions case
-        clamped = Weather.get_modifier({"icy_days": 1000, "rain": 1000, "snow": 0})
-        assert clamped == 6.0
-
-    def test_typical_conditions(self):
-        modifier = Weather.get_modifier(
-            {"icy_days": 50.1, "rain": 10.01, "snow": 125.00}
-        )
-        assert round(modifier, 4) == 3.4627
