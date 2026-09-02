@@ -318,9 +318,7 @@ class OSMProcessor:
                     )
                 }
                 route = {
-                    "coordinates": elevation_api.get(
-                        list(area_routes[trail_id].coords)
-                    )
+                    "coordinates": elevation_api.get(list(area_routes[trail_id].coords))
                 }
 
             # Use route for areas since the boundry isn't where people actually ski

@@ -1,0 +1,27 @@
+{% extends "management.jinja" %}
+
+{% block title %}
+Bulk Operations
+{% endblock title %}
+
+{% block pagehead %}
+<link href="/interactive-map.css" rel="stylesheet" />
+<link href="/management-edit-resort.css" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block insideContent %}
+    <form class="search-form" method="POST">
+        <input type="hidden" name="action" value="recalibrate" />
+        <input class="button-cta" type="submit" value="Recalibrate Weather Modifiers" />
+    </form>
+
+    {% if recalibrate_result %}
+    <p>
+        Recalibrated against {{ recalibrate_result.n_resorts }} resorts;
+        re-rated {{ recalibrate_result.n_trails_rerated }} trails and
+        regenerated {{ recalibrate_result.n_maps_regenerated }} maps.
+        Mean weather modifier {{ recalibrate_result.mean_modifier_before }}
+        &rarr; {{ recalibrate_result.mean_modifier_after }}.
+    </p>
+    {% endif %}
+{% endblock insideContent %}

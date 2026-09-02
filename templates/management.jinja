@@ -7,17 +7,18 @@ Management Panel
 {% endblock pagehead %}
 
 {% block content %}
-<div class="map-pane mountain-details">
-    <h1>Management Panel</h1>
-
+<div class="map-pane management-nav">
     <ul class="nav-list">
+        <p id="home-link">Management Pages</p>
         {% for link in management_links %}
         <li><div class="button"><a href="{{link.to}}" {% if active_page == link.title %} class="button-cta" {% else %} class="button-cta2" {% endif %}>
                         {{link.title}}
                     </a></div></li>
         {% endfor %}
     </ul>
+</div>
 
+<div class="map-pane mountain-details">
 {% block insideContent %}
 {% endblock insideContent %}
 </div>

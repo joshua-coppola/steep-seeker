@@ -88,3 +88,16 @@ CREATE TABLE "Blacklist"
 );
 
 CREATE INDEX "ix_Blacklist_mountain_id" ON "Blacklist" ("mountain_id");
+
+
+DROP TABLE IF EXISTS WeatherCalibration;
+
+CREATE TABLE "WeatherCalibration"
+(
+    "id" INTEGER PRIMARY KEY CHECK ("id" = 1),
+    "created" TIMESTAMP NOT NULL,
+    "n_resorts" INTEGER NOT NULL,
+    "icy_days" TEXT NOT NULL,
+    "rain" TEXT NOT NULL,
+    "snow" TEXT NOT NULL
+);

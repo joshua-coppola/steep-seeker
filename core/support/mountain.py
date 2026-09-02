@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Self
 
 from shapely import Point, wkt
@@ -25,6 +25,7 @@ from core.support.utils import (
     round_feet,
     round_geometry_precision,
 )
+from core.support.weather_calibration import WeatherCalibration
 
 
 @dataclass
@@ -48,9 +49,7 @@ class Mountain:
     average_icy_days: float | None = None
     average_snow: float | None = None
     average_rain: float | None = None
-    last_updated: datetime | None = field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    last_updated: datetime | None = field(default_factory=lambda: datetime.now(UTC))
     trails: dict[str, Trail] | None = field(default_factory=dict)
     lifts: dict[str, Lift] | None = field(default_factory=dict)
 
@@ -310,7 +309,9 @@ class Mountain:
             for trail in self.trails.values()
             if trail.length > 100 and trail.difficulty is not None
         ]
-        difficulty, beginner_friendliness = get_mountain_rating(rated_trail_difficulties)
+        difficulty, beginner_friendliness = get_mountain_rating(
+            rated_trail_difficulties
+        )
 
         # leave the last known rating in place if nothing rateable remains --
         # to_db / update_stats_in_db treat these columns as non-null
@@ -469,7 +470,7 @@ class Mountain:
         mountain.average_rain = weather["rain"]
         mountain.average_snow = weather["snow"]
 
-        weather_modifier = Weather.get_modifier(weather)
+        weather_modifier = WeatherCalibration.load(db_path).modifier(weather)
         for trail in mountain.trails.values():
             trail.difficulty = get_trail_difficulty(
                 trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier

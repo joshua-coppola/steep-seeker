@@ -60,6 +60,75 @@ def test_management_nav_link_absent_from_public_app(db_path):
     assert 'href="/management-add-resort"' not in body
 
 
+def test_management_bulk_operations_page_renders(management_client):
+    response = management_client.get("/management-bulk-operations")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Recalibrate" in body
+    # same shell / sidebar CSS as the other management pages
+    assert '<div class="map-pane mountain-details">' in body
+    assert 'href="/management-edit-resort.css"' in body
+
+
+def test_management_bulk_operations_recalibrate_reports_summary(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    maps = {"map": 0, "thumbnail": 0}
+    monkeypatch.setattr(
+        management_routes,
+        "create_map",
+        lambda *a, **k: maps.__setitem__("map", maps["map"] + 1),
+    )
+    monkeypatch.setattr(
+        management_routes,
+        "create_thumbnail",
+        lambda *a, **k: maps.__setitem__("thumbnail", maps["thumbnail"] + 1),
+    )
+
+    mountain_factory(
+        mountain_id="a",
+        name="Alpha",
+        average_icy_days=10.0,
+        average_rain=2.0,
+        average_snow=200.0,
+        trails={
+            "w1": trail_factory(
+                trail_id="w1",
+                mountain_id="a",
+                gladed=False,
+                ungroomed=False,
+                steepest_30m=20.0,
+                difficulty=99.0,
+                length=200,
+            )
+        },
+    ).to_db(db_path)
+    mountain_factory(
+        mountain_id="b",
+        name="Beta",
+        average_icy_days=90.0,
+        average_rain=12.0,
+        average_snow=10.0,
+    ).to_db(db_path)
+
+    response = management_client.post(
+        "/management-bulk-operations", data={"action": "recalibrate"}
+    )
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "2 resorts" in body and "2 trails" in body
+    assert "2 maps" in body
+
+    # both resorts had their maps + thumbnails regenerated
+    assert maps == {"map": 2, "thumbnail": 2}
+
+    # Alpha holds the population-min weather -> modifier 0 -> difficulty == pitch
+    updated = Mountain.from_db("a", db_path=db_path)
+    assert updated.trails["w1"].difficulty == 20.0
+
+
 def test_management_add_resort_lists_available_osm_files(
     management_client, tmp_path, monkeypatch
 ):

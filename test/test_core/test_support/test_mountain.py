@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -18,7 +18,7 @@ from test.test_core.conftest import FakeElevation, FakeWeather
 
 def test_mountain(mountain_factory):
     mountain = mountain_factory()
-    expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc)
+    expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=UTC)
     assert mountain.last_updated.date() == expected.date()
 
 
@@ -201,7 +201,7 @@ def test_mountain_to_db(mountain_factory, db_path):
         MountainTable.average_snow: 150.0,
         MountainTable.average_rain: 10.0,
         MountainTable.last_updated: datetime(
-            2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc
+            2000, 2, 5, 12, 30, 5, tzinfo=UTC
         ).isoformat(),
         MountainTable.url: "https://test.com",
     }
@@ -416,8 +416,11 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     # FakeElevation descends 1 unit per point within each trail/area segment;
     # the mountain's vertical is the max-min elevation across all trail points
     assert mountain.vertical == 1215
-    assert mountain.difficulty == 18.3
-    assert mountain.beginner_friendliness == 12.8
+    # weather_modifier is 3.0 here: FakeWeather's reading is the midpoint of the
+    # 3-point calibration the db_path fixture seeds (see conftest), so every
+    # metric ranks at 0.5
+    assert mountain.difficulty == 17.8
+    assert mountain.beginner_friendliness == 12.3
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
@@ -428,7 +431,7 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.trails["w11"].gladed is False
     assert mountain.trails["w11"].ungroomed is False
     assert mountain.trails["w11"].steepest_30m == 9.3
-    assert mountain.trails["w11"].difficulty == 12.8
+    assert mountain.trails["w11"].difficulty == 12.3
 
 
 def test_mountain_from_osm_preserves_given_mountain_id(osm_file, db_path, monkeypatch):
