@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from shapely import LineString, Point
@@ -166,9 +166,7 @@ def mountain_factory(trail_factory, lift_factory):
             MountainTable.average_rain: 10,
             MountainTable.trails: trails,
             MountainTable.lifts: lifts,
-            MountainTable.last_updated: datetime(
-                2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc
-            ),
+            MountainTable.last_updated: datetime(2000, 2, 5, 12, 30, 5, tzinfo=UTC),
         }
         mountain_dict.update(overrides)
         return Mountain(**mountain_dict)

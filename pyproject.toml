@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "steep-seeker"
+version = "0.0.0"
+description = "Standardized, cross-resort ski trail difficulty ratings (steepseeker.com)"
+requires-python = ">=3.11"
+
+# Runtime dependencies are managed separately via requirements.in / requirements.txt
+# (pipreqs + pip-compile); this file exists so `pip install -e .` puts `core` on
+# sys.path regardless of the working directory (notebooks, scripts, ad-hoc REPLs).
+
+[tool.setuptools.packages.find]
+include = ["core*"]

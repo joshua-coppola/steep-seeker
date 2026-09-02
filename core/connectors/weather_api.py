@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import ClassVar
 
 import requests
@@ -54,7 +54,7 @@ class Weather:
         year N+1. Only winters that have fully finished (we are past April)
         are eligible, so cached seasons never hold in-progress data.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         last_winter_month = self.WINTER_MONTHS[-1]  # April
 
         # If we're past April, the winter that ended this April is complete;

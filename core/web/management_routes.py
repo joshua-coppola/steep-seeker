@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
 
@@ -315,9 +315,7 @@ def _archive_osm_file(osm_path: str) -> None:
 
     state_dir, filename = os.path.split(osm_path)
     state = os.path.basename(state_dir)
-    old_date = datetime.fromtimestamp(
-        os.stat(osm_path).st_mtime, tz=timezone.utc
-    ).date()
+    old_date = datetime.fromtimestamp(os.stat(osm_path).st_mtime, tz=UTC).date()
 
     archive_dir = os.path.join(OSM_OLD_DIR, state)
     os.makedirs(archive_dir, exist_ok=True)

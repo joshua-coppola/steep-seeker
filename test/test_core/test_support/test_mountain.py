@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -18,7 +18,7 @@ from test.test_core.conftest import FakeElevation, FakeWeather
 
 def test_mountain(mountain_factory):
     mountain = mountain_factory()
-    expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc)
+    expected = datetime(2000, 2, 5, 12, 30, 5, tzinfo=UTC)
     assert mountain.last_updated.date() == expected.date()
 
 
@@ -201,7 +201,7 @@ def test_mountain_to_db(mountain_factory, db_path):
         MountainTable.average_snow: 150.0,
         MountainTable.average_rain: 10.0,
         MountainTable.last_updated: datetime(
-            2000, 2, 5, 12, 30, 5, tzinfo=timezone.utc
+            2000, 2, 5, 12, 30, 5, tzinfo=UTC
         ).isoformat(),
         MountainTable.url: "https://test.com",
     }

@@ -1,5 +1,6 @@
 """Unit tests for the Weather class."""
 
+from datetime import UTC
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -150,9 +151,9 @@ class TestNeededSeasons:
 
     def test_latest_season_is_a_completed_winter(self):
         # The most recent season must have finished (we are past its April).
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         latest = Weather()._latest_season()
         # Winter `latest` ends in April of latest + 1; that April is in the past.
         assert (latest + 1, 4) <= (now.year, now.month)
