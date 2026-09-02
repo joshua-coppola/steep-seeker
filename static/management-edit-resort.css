@@ -55,9 +55,6 @@
     align-self: stretch;
 }
 
-/* sub-options of the refresh row above them (Additional Area under Fresh
-   OSM & Maps, Blacklist Ignored Areas under Ignore Areas) -- indented so
-   the dependency reads at a glance */
 #refresh .nested-option {
     margin-left: 1rem;
 }
@@ -79,8 +76,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: .4rem;
-    /* no margin override -- Leaflet's .leaflet-control margins keep this
-       panel aligned with the buttons above it on the map's right edge */
     padding: 8px 12px;
     background-color: white;
     border: 2px solid rgba(0, 0, 0, 0.2);
