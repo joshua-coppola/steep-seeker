@@ -49,6 +49,11 @@ CREATE TABLE "Trails"
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 
+CREATE INDEX "ix_Trails_mountain_id" ON "Trails" ("mountain_id");
+-- trail-rankings (the /trail-rankings nav link) scans every trail and
+-- sorts by difficulty; this lets that page read straight down the index
+CREATE INDEX "ix_Trails_difficulty" ON "Trails" ("difficulty");
+
 
 DROP TABLE IF EXISTS Lifts;
 
@@ -70,6 +75,8 @@ CREATE TABLE "Lifts"
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 
+CREATE INDEX "ix_Lifts_mountain_id" ON "Lifts" ("mountain_id");
+
 
 DROP TABLE IF EXISTS Blacklist;
 
@@ -79,3 +86,5 @@ CREATE TABLE "Blacklist"
     "mountain_id" TEXT NOT NULL,
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
+
+CREATE INDEX "ix_Blacklist_mountain_id" ON "Blacklist" ("mountain_id");
