@@ -1,6 +1,7 @@
 import shutil
 
 import pytest
+from shapely import LineString
 
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
@@ -8,6 +9,7 @@ from core.osm import osm_processor
 from core.support import mountain as mountain_module
 from core.support.blacklist import add_to_blacklist, is_blacklisted
 from core.support.mountain import Mountain
+from core.support.utils import get_mountain_rating
 from core.web import management_routes
 from core.web.app import create_app
 from core.web.management_app import create_management_app
@@ -414,6 +416,87 @@ def test_management_edit_resort_deletes_trail(
     assert response.status_code == 200
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
     assert "w42" not in mountain.trails
+
+
+def test_management_edit_resort_delete_trail_recalculates_mountain_stats(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    monkeypatch.setattr(management_routes, "create_map", lambda *a, **k: None)
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    keep = trail_factory(
+        trail_id="w1",
+        mountain_id="1",
+        name="Easy",
+        geometry=LineString([[0, 0, 0], [1, 1, 100]]),
+        length=200,
+        difficulty=20.0,
+    )
+    drop = trail_factory(
+        trail_id="w2",
+        mountain_id="1",
+        name="Hard",
+        geometry=LineString([[0, 0, 0], [1, 1, 500]]),
+        length=200,
+        difficulty=40.0,
+    )
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        difficulty=30.0,
+        beginner_friendliness=30.0,
+        vertical=500,
+        trails={"w1": keep, "w2": drop},
+    ).to_db(db_path)
+
+    management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "delete": "w2"},
+    )
+
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert mountain.difficulty == 20.0
+    assert mountain.beginner_friendliness == 20.0
+    assert mountain.vertical == 100
+
+
+def test_management_edit_resort_trail_difficulty_edit_recalculates_mountain_stats(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    monkeypatch.setattr(management_routes, "create_map", lambda *a, **k: None)
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    trail = trail_factory(
+        trail_id="w42",
+        mountain_id="1",
+        name="Test Trail",
+        length=200,
+        difficulty=25.0,
+        steepest_30m=20.0,
+        gladed=False,
+        ungroomed=False,
+    )
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        difficulty=25.0,
+        beginner_friendliness=25.0,
+        trails={"w42": trail},
+    ).to_db(db_path)
+
+    management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "trail_id": "w42", "gladed": "True"},
+    )
+
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    # trail difficulty 25.0 -> 30.5 (gladed bonus), and it's the only rated
+    # trail, so the mountain rating follows it
+    assert mountain.trails["w42"].difficulty == 30.5
+    assert mountain.difficulty == 30.5
+    assert mountain.beginner_friendliness == 30.5
 
 
 def test_management_edit_resort_deletes_lift(
@@ -829,6 +912,44 @@ def test_management_edit_resort_blacklist_areas_without_ignore_areas_is_a_no_op(
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
     assert "w10" in mountain.trails
     assert is_blacklisted("1", "w10", db_path) is False
+
+
+def test_management_edit_resort_stats_refresh_rates_off_kept_trails_only(
+    management_client, db_path, refresh_setup
+):
+    # A plain refresh rates the mountain off all 159 parsed trails.
+    management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "stats_refresh": "True"},
+    )
+    full = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+
+    # Refreshing again with ignore_areas drops the area trails; the persisted
+    # rating must reflect only what was actually saved, not the full parse.
+    management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "stats_refresh": "True",
+            "ignore_areas": "True",
+        },
+    )
+    no_areas = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+
+    assert not any(t.area for t in no_areas.trails.values())
+    assert len(no_areas.trails) < len(full.trails)
+    recomputed = get_mountain_rating(
+        [
+            t.difficulty
+            for t in no_areas.trails.values()
+            if t.length > 100 and t.difficulty is not None
+        ]
+    )
+    assert (no_areas.difficulty, no_areas.beginner_friendliness) == recomputed
+    assert (no_areas.difficulty, no_areas.beginner_friendliness) != (
+        full.difficulty,
+        full.beginner_friendliness,
+    )
 
 
 def test_management_edit_resort_stats_refresh_missing_file_is_a_no_op(

@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from shapely import Point
 
+from core.connectors import weather_api
 from core.connectors.weather_api import Weather
 
 # ---------------------------------------------------------------------------
@@ -91,11 +92,11 @@ class TestCountFreezeThawDays:
 
 
 # ---------------------------------------------------------------------------
-# _process_weather
+# _month_stats
 # ---------------------------------------------------------------------------
 
 
-class TestProcessWeather:
+class TestMonthStats:
     def setup_method(self):
         self.w = Weather(num_seasons=2)
 
@@ -109,22 +110,70 @@ class TestProcessWeather:
         ]
         return {k: [r[k] for r in rows] for k in keys}
 
-    def test_averages_over_num_seasons(self):
-        # 2 winter days total, 2 seasons → each metric divided by 2
+    def test_totals_are_bucketed_by_month(self):
+        # _month_stats sums each winter month separately; averaging over
+        # seasons happens later in _average
         rows = [
             make_row("2022-12-01", 36, 30, 0.5, 3.0),
-            make_row("2023-01-15", 36, 30, 0.5, 3.0),
+            make_row("2022-12-20", 36, 30, 0.5, 3.0),
+            make_row("2023-01-15", 36, 30, 0.4, 2.0),
         ]
-        result = self.w._process_weather(self._make_daily_dict(rows))
-        assert result["rain"] == round(1.0 / 2, 2)
-        assert result["snow"] == round(6.0 / 2, 2)
-        assert result["icy_days"] == round(2 / 2, 2)
+        result = self.w._month_stats(self._make_daily_dict(rows))
 
-    def test_empty_after_filter_returns_zeros(self):
-        # Only summer months → filtered out → zeros
+        assert result[12] == {"icy_days": 2, "rain": 1.0, "snow": 6.0}
+        assert result[1] == {"icy_days": 1, "rain": 0.4, "snow": 2.0}
+
+    def test_every_winter_month_present_even_when_empty(self):
+        rows = [make_row("2023-01-15", 36, 30, 0.4, 2.0)]
+        result = self.w._month_stats(self._make_daily_dict(rows))
+
+        assert set(result) == set(Weather.WINTER_MONTHS)
+        assert result[11] == {"icy_days": 0, "rain": 0, "snow": 0}
+
+    def test_summer_only_input_yields_all_zero_months(self):
         rows = [make_row("2023-07-01", 80, 65, 0.1, 0)]
-        result = self.w._process_weather(self._make_daily_dict(rows))
-        assert result == {"icy_days": 0, "rain": 0, "snow": 0}
+        result = self.w._month_stats(self._make_daily_dict(rows))
+        assert all(m == {"icy_days": 0, "rain": 0, "snow": 0} for m in result.values())
+
+
+# ---------------------------------------------------------------------------
+# _needed_seasons / _average
+# ---------------------------------------------------------------------------
+
+
+class TestNeededSeasons:
+    def test_returns_num_seasons_consecutive_completed_winters(self):
+        seasons = Weather(num_seasons=5)._needed_seasons()
+        assert len(seasons) == 5
+        assert seasons == sorted(seasons)
+        assert seasons[-1] - seasons[0] == 4
+
+    def test_latest_season_is_a_completed_winter(self):
+        # The most recent season must have finished (we are past its April).
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        latest = Weather()._latest_season()
+        # Winter `latest` ends in April of latest + 1; that April is in the past.
+        assert (latest + 1, 4) <= (now.year, now.month)
+
+
+class TestAverage:
+    def test_sums_months_within_season_then_divides_by_season_count(self):
+        w = Weather(num_seasons=2)
+        stats = {
+            2022: {
+                12: {"icy_days": 6, "rain": 1.5, "snow": 25.0},
+                1: {"icy_days": 4, "rain": 0.5, "snow": 15.0},
+            },
+            2023: {
+                12: {"icy_days": 12, "rain": 3.0, "snow": 40.0},
+                1: {"icy_days": 8, "rain": 1.0, "snow": 20.0},
+            },
+        }
+        result = w._average(stats, [2022, 2023])
+        # per-season totals: 2022 -> (10, 2.0, 40.0), 2023 -> (20, 4.0, 60.0)
+        assert result == {"icy_days": 15.0, "rain": 3.0, "snow": 50.0}
 
 
 # ---------------------------------------------------------------------------
@@ -132,30 +181,58 @@ class TestProcessWeather:
 # ---------------------------------------------------------------------------
 
 
-class TestGet:
-    def setup_method(self):
-        self.w = Weather(num_seasons=1)
-
-    def _fake_api_response(self):
-        return {
-            "daily": {
-                "time": ["2023-12-01"],
-                "temperature_2m_max": [36.0],
-                "temperature_2m_min": [30.0],
-                "rain_sum": [0.2],
-                "snowfall_sum": [4.0],
-            }
+def _daily_payload(*, rain=0.2, snow=4.0):
+    return {
+        "daily": {
+            "time": ["2023-12-01"],
+            "temperature_2m_max": [36.0],
+            "temperature_2m_min": [30.0],
+            "rain_sum": [rain],
+            "snowfall_sum": [snow],
         }
+    }
+
+
+class TestGet:
+    @pytest.fixture(autouse=True)
+    def _cache(self, monkeypatch, cache_db_path):
+        monkeypatch.setattr(weather_api, "CACHE_DB_PATH", cache_db_path)
 
     @patch("core.connectors.weather_api.requests.get")
-    def test_returns_processed_dict(self, mock_get):
+    def test_returns_averaged_dict(self, mock_get):
         mock_resp = MagicMock()
-        mock_resp.json.return_value = self._fake_api_response()
+        mock_resp.json.return_value = _daily_payload()
         mock_resp.raise_for_status.return_value = None
         mock_get.return_value = mock_resp
 
-        result = self.w.get(Point(-72.0, 44.0))
+        result = Weather(num_seasons=3).get(Point(-72.0, 44.0))
         assert set(result.keys()) == {"icy_days", "rain", "snow"}
+
+    @patch("core.connectors.weather_api.requests.get")
+    def test_one_api_call_per_needed_season(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = _daily_payload()
+        mock_resp.raise_for_status.return_value = None
+        mock_get.return_value = mock_resp
+
+        Weather(num_seasons=4).get(Point(-72.0, 44.0))
+        assert mock_get.call_count == 4
+
+    @patch("core.connectors.weather_api.requests.get")
+    def test_second_call_is_served_from_cache(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = _daily_payload()
+        mock_resp.raise_for_status.return_value = None
+        mock_get.return_value = mock_resp
+
+        first = Weather(num_seasons=3).get(Point(-72.0, 44.0))
+        calls_after_first = mock_get.call_count
+
+        # Float noise past the 6th decimal rounds to the same cached point.
+        second = Weather(num_seasons=3).get(Point(-72.0 + 3e-9, 44.0 - 4e-9))
+
+        assert mock_get.call_count == calls_after_first  # no new API calls
+        assert second == first
 
     @patch("core.connectors.weather_api.requests.get")
     def test_http_error_raises_value_error(self, mock_get):
@@ -168,7 +245,7 @@ class TestGet:
         mock_get.return_value = mock_resp
 
         with pytest.raises(ValueError, match="Weather API call failed"):
-            self.w.get(Point(-72.0, 44.0))
+            Weather(num_seasons=1).get(Point(-72.0, 44.0))
 
     @patch("core.connectors.weather_api.requests.get")
     def test_daily_limit_exceeded_raises_value_error(self, mock_get):
@@ -181,7 +258,7 @@ class TestGet:
         mock_get.return_value = mock_resp
 
         with pytest.raises(ValueError, match="Daily API request limit exceeded"):
-            self.w.get(Point(-72.0, 44.0))
+            Weather(num_seasons=1).get(Point(-72.0, 44.0))
 
 
 # ---------------------------------------------------------------------------

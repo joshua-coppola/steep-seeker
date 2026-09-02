@@ -212,6 +212,9 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     )
     trail.to_db(db_path)
 
+    mountain.recalculate_stats()
+    mountain.update_stats_in_db(db_path)
+
 
 def _apply_rotate(mountain: Mountain, db_path: str) -> None:
     """
@@ -291,6 +294,8 @@ def _rebuild_from_osm_file(
         for lift_id, lift in refreshed.lifts.items()
         if not is_blacklisted(mountain.mountain_id, lift_id, db_path)
     }
+
+    refreshed.recalculate_stats()
 
     Mountain.clear_trails_and_lifts(mountain.mountain_id, db_path)
     refreshed.to_db(db_path)
@@ -431,6 +436,8 @@ def _delete_item(
     if item_id in mountain.trails:
         Trail.delete_from_db(item_id, db_path)
         del mountain.trails[item_id]
+        mountain.recalculate_stats()
+        mountain.update_stats_in_db(db_path)
     elif item_id in mountain.lifts:
         Lift.delete_from_db(item_id, db_path)
         del mountain.lifts[item_id]
