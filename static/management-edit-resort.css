@@ -55,6 +55,13 @@
     align-self: stretch;
 }
 
+/* sub-options of the refresh row above them (Additional Area under Fresh
+   OSM & Maps, Blacklist Ignored Areas under Ignore Areas) -- indented so
+   the dependency reads at a glance */
+#refresh .nested-option {
+    margin-left: 1rem;
+}
+
 #map_size {
     width: 4rem;
 }
@@ -103,10 +110,6 @@ h2 {
 }
 
 select {
-    height: 32px;
-}
-
-input:not([type="checkbox"]) {
     height: 32px;
 }
 

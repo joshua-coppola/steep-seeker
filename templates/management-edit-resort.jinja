@@ -80,17 +80,48 @@ Edit Resort
             <input type="checkbox" id="full" name="full_refresh" value=True>
             <label for="full">Fresh OSM & Maps</label>
         </li>
-        <li>
-        <input type="number" value="0" id="map_size" name="size_increase" step=".1" min="0">
+        <li class="nested-option">
+        <input type="number" value="0" id="map_size" name="size_increase" step=".1" min="0" disabled>
         <label for="map_size">Additional Area</label>
         </li>
         <li>
             <input type="checkbox" id="areas" name="ignore_areas" value=True>
             <label for="areas">Ignore Areas</label>
         </li>
+        <li class="nested-option">
+            <input type="checkbox" id="blacklist_areas" name="blacklist_areas" value=True disabled>
+            <label for="blacklist_areas">Blacklist Ignored Areas</label>
+        </li>
         </ul>
         <input class="button-cta" id="submit" type="submit" value="Refresh" />
     </form>
+    <script>
+        (function () {
+            // each [parent checkbox, dependent sub-option] pair: the
+            // sub-option is only usable while its parent is checked, and
+            // is reset when the parent is unchecked
+            const dependents = [
+                ["areas", "blacklist_areas"],
+                ["full", "map_size"],
+            ];
+            for (const [parentId, childId] of dependents) {
+                const parent = document.getElementById(parentId);
+                const child = document.getElementById(childId);
+                const sync = () => {
+                    child.disabled = !parent.checked;
+                    if (!parent.checked) {
+                        if (child.type === "checkbox") {
+                            child.checked = false;
+                        } else {
+                            child.value = child.defaultValue;
+                        }
+                    }
+                };
+                parent.addEventListener("change", sync);
+                sync();
+            }
+        })();
+    </script>
     <form id="rename" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input id="rename" name="rename" type="search" placeholder="New Resort Name" />

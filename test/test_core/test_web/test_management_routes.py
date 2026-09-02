@@ -730,6 +730,30 @@ def test_management_edit_resort_stats_refresh_rebuilds_trails_and_lifts(
     assert refresh_setup["calls"]["create_thumbnail"] == 1
 
 
+def test_management_edit_resort_stats_refresh_keeps_map_orientation(
+    management_client, db_path, refresh_setup, mountain_factory, trail_factory
+):
+    # the OSM file parses to direction "w"; a refresh must not override an
+    # orientation that was already set (e.g. by an admin rotating the map)
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        direction="s",
+        trails={"old-trail": trail_factory(trail_id="old-trail", mountain_id="1")},
+        lifts={},
+    ).to_db(db_path)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "stats_refresh": "True"},
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert mountain.direction == "s"
+
+
 def test_management_edit_resort_stats_refresh_respects_blacklist(
     management_client, db_path, refresh_setup
 ):
@@ -763,6 +787,48 @@ def test_management_edit_resort_stats_refresh_ignore_areas(
     # w10 is an area trail, w11 is a line trail
     assert "w10" not in mountain.trails
     assert "w11" in mountain.trails
+    # ignoring areas alone doesn't blacklist them
+    assert is_blacklisted("1", "w10", db_path) is False
+
+
+def test_management_edit_resort_stats_refresh_blacklist_ignored_areas(
+    management_client, db_path, refresh_setup
+):
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "stats_refresh": "True",
+            "ignore_areas": "True",
+            "blacklist_areas": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    # w10 is an area trail, w11 is a line trail
+    assert "w10" not in mountain.trails
+    assert "w11" in mountain.trails
+    assert is_blacklisted("1", "w10", db_path) is True
+    assert is_blacklisted("1", "w11", db_path) is False
+
+
+def test_management_edit_resort_blacklist_areas_without_ignore_areas_is_a_no_op(
+    management_client, db_path, refresh_setup
+):
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "stats_refresh": "True",
+            "blacklist_areas": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert "w10" in mountain.trails
+    assert is_blacklisted("1", "w10", db_path) is False
 
 
 def test_management_edit_resort_stats_refresh_missing_file_is_a_no_op(
@@ -852,6 +918,35 @@ def test_management_edit_resort_full_refresh_ignore_areas(
     # w10 is an area trail, w11 is a line trail
     assert "w10" not in mountain.trails
     assert "w11" in mountain.trails
+
+
+def test_management_edit_resort_full_refresh_blacklist_ignored_areas(
+    management_client, db_path, refresh_setup, osm_file, monkeypatch
+):
+    class FakeOSM:
+        def get(self, bounding_box):
+            with open(osm_file, "rb") as f:
+                return f.read()
+
+    monkeypatch.setattr(management_routes, "OSM", FakeOSM)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "full_refresh": "True",
+            "ignore_areas": "True",
+            "blacklist_areas": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    # w10 is an area trail, w11 is a line trail
+    assert "w10" not in mountain.trails
+    assert "w11" in mountain.trails
+    assert is_blacklisted("1", "w10", db_path) is True
+    assert is_blacklisted("1", "w11", db_path) is False
 
 
 def test_management_edit_resort_full_refresh_archives_old_osm_file(

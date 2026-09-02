@@ -231,7 +231,11 @@ def _apply_rotate(mountain: Mountain, db_path: str) -> None:
 
 
 def _rebuild_from_osm_file(
-    mountain: Mountain, osm_path: str, db_path: str, ignore_areas: bool = False
+    mountain: Mountain,
+    osm_path: str,
+    db_path: str,
+    ignore_areas: bool = False,
+    blacklist_areas: bool = False,
 ) -> Mountain | None:
     """
     Re-parses the given local OSM file into a fresh trail/lift set for
@@ -239,6 +243,10 @@ def _rebuild_from_osm_file(
     to the same DB row), drops anything blacklisted so a previously
     deleted item doesn't come back. Replaces the mountain's trails/lifts
     in the DB with this new set.
+
+    When "ignore_areas" is set, glade/bowl (area) trails are dropped from
+    the rebuild; "blacklist_areas" additionally blacklists those ids so
+    they stay gone on future refreshes even without "ignore_areas".
 
     Returns None (leaving the DB untouched) if the file is missing or the
     parse comes back with zero trails, since rebuilding from an empty or
@@ -255,12 +263,20 @@ def _rebuild_from_osm_file(
         db_path=db_path,
     )
 
+    # keep the map orientation the mountain already had -- it's only
+    # meant to change when an admin explicitly rotates the map, not as a
+    # side effect of a refresh re-deriving it from (possibly shifted) OSM
+    # geometry
+    refreshed.direction = mountain.direction
+
     if ignore_areas:
-        refreshed.trails = {
-            trail_id: trail
-            for trail_id, trail in refreshed.trails.items()
-            if not trail.area
-        }
+        area_trail_ids = [
+            trail_id for trail_id, trail in refreshed.trails.items() if trail.area
+        ]
+        for trail_id in area_trail_ids:
+            if blacklist_areas:
+                add_to_blacklist(mountain.mountain_id, trail_id, db_path)
+            del refreshed.trails[trail_id]
 
     if not refreshed.trails:
         return None
@@ -310,7 +326,8 @@ def _full_refresh(mountain: Mountain, db_path: str) -> Mountain | None:
     "size_increase", for resorts that have grown past their original
     boundary), archives the existing local OSM file and replaces it with
     the new extract, then rebuilds trails/lifts/stats from that new file
-    the same way a stats refresh does -- "ignore_areas" applies here too.
+    the same way a stats refresh does -- "ignore_areas" and
+    "blacklist_areas" apply here too.
 
     Returns None (leaving the DB and local file untouched) if the fetch
     fails.
@@ -332,7 +349,10 @@ def _full_refresh(mountain: Mountain, db_path: str) -> Mountain | None:
         f.write(extract)
 
     ignore_areas = bool(request.args.get("ignore_areas"))
-    return _rebuild_from_osm_file(mountain, osm_path, db_path, ignore_areas)
+    blacklist_areas = bool(request.args.get("blacklist_areas"))
+    return _rebuild_from_osm_file(
+        mountain, osm_path, db_path, ignore_areas, blacklist_areas
+    )
 
 
 def _apply_refresh(mountain: Mountain, db_path: str) -> Mountain:
@@ -355,7 +375,10 @@ def _apply_refresh(mountain: Mountain, db_path: str) -> Mountain:
     elif request.args.get("stats_refresh"):
         osm_path = os.path.join(OSM_DIR, mountain.state.value, f"{mountain.name}.osm")
         ignore_areas = bool(request.args.get("ignore_areas"))
-        refreshed = _rebuild_from_osm_file(mountain, osm_path, db_path, ignore_areas)
+        blacklist_areas = bool(request.args.get("blacklist_areas"))
+        refreshed = _rebuild_from_osm_file(
+            mountain, osm_path, db_path, ignore_areas, blacklist_areas
+        )
 
     if refreshed is not None:
         mountain = refreshed
