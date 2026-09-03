@@ -59,7 +59,10 @@ Lift Rankings - Compare Chairlifts Across the USA
             "length": "Length",
             "average_slope": "Average Pitch",
             "occupancy": "Occupancy",
+            "capacity": "Capacity",
             "bubble": "Has Bubble",
+            "detachable": "Is Detachable",
+            "heating": "Has Heating",
         } %}
 
         {% for key, label in sorts.items() %}
@@ -123,10 +126,25 @@ Lift Rankings - Compare Chairlifts Across the USA
                 {% else %}
                 <th><a href="{{pages.first}}&sort=occupancy">Occupancy</a></th>
                 {% endif %}
+                {% if sort_by == "capacity"%}
+                <th><a class="active">Capacity</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=capacity">Capacity</a></th>
+                {% endif %}
                 {% if sort_by == "bubble"%}
                 <th><a class="active">Bubble</a></th>
                 {% else %}
                 <th><a href="{{pages.first}}&sort=bubble">Bubble</a></th>
+                {% endif %}
+                {% if sort_by == "detachable"%}
+                <th><a class="active">Detachable</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=detachable">Detachable</a></th>
+                {% endif %}
+                {% if sort_by == "heating"%}
+                <th><a class="active">Heating</a></th>
+                {% else %}
+                <th><a href="{{pages.first}}&sort=heating">Heating</a></th>
                 {% endif %}
             {% for lift in lifts %}
             {% if not '' == lift.name %}
@@ -161,13 +179,10 @@ Lift Rankings - Compare Chairlifts Across the USA
                 {% else %}
                 <td></td>
                 {% endif%}
-                <td>
-                {% if lift.bubble %}
-                    Yes
-                {% else %}
-                    No
-                {% endif %}
-                </td>
+                <td>{% if lift.capacity %}{{lift.capacity}}<span class="small-spacer"></span><span class="icon person"></span>/hr{% endif %}</td>
+                <td>{% if lift.bubble %}Yes{% else %}No{% endif %}</td>
+                <td>{% if lift.detachable %}Yes{% else %}No{% endif %}</td>
+                <td>{% if lift.heating %}Yes{% else %}No{% endif %}</td>
             </tr>
             {% endif %}
             {% endfor %}
@@ -246,6 +261,20 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <td>--</td>
                 {% endif %}
             </tr>
+            {% if sort_by == "capacity"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
+            <tr>
+            {% endif %}
+                <td>Capacity</td>
+                <td>
+                {% if lift.capacity %}
+                    {{lift.capacity}}<span class="small-spacer"></span><span class="icon person"></span>/hr
+                {% else %}
+                    --
+                {% endif %}
+                </td>
+            </tr>
             {% if sort_by == "bubble"%}
             <tr style="background-color: var(--color-accent-very-light)">
             {% else %}
@@ -254,6 +283,34 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <td>Bubble</td>
                 <td>
                 {% if lift.bubble %}
+                    Yes
+                {% else %}
+                    No
+                {% endif %}
+                </td>
+            </tr>
+            {% if sort_by == "detachable"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
+            <tr>
+            {% endif %}
+                <td>Detachable</td>
+                <td>
+                {% if lift.detachable %}
+                    Yes
+                {% else %}
+                    No
+                {% endif %}
+                </td>
+            </tr>
+            {% if sort_by == "heating"%}
+            <tr style="background-color: var(--color-accent-very-light)">
+            {% else %}
+            <tr>
+            {% endif %}
+                <td>Heating</td>
+                <td>
+                {% if lift.heating %}
                     Yes
                 {% else %}
                     No

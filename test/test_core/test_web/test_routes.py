@@ -263,6 +263,8 @@ def ranked_client(client, db_path, mountain_factory, trail_factory, lift_factory
                 vertical=500,
                 length=2000,
                 average_slope=25,
+                capacity=3000,
+                heating=True,
             ),
         },
     ).to_db(db_path)
@@ -283,6 +285,8 @@ def ranked_client(client, db_path, mountain_factory, trail_factory, lift_factory
                 vertical=800,
                 length=2500,
                 average_slope=20,
+                capacity=1200,
+                heating=False,
             ),
         },
     ).to_db(db_path)
@@ -328,6 +332,26 @@ def test_lift_rankings_sorts_by_average_slope(ranked_client):
 
     assert response.status_code == 200
     body = response.data.decode()
+    assert body.index("Lift A") < body.index("Lift B")
+
+
+def test_lift_rankings_shows_capacity_detachable_heating(ranked_client):
+    body = ranked_client.get("/lift-rankings").data.decode()
+
+    assert "Capacity" in body
+    assert "Detachable" in body
+    assert "Heating" in body
+    assert (
+        '3000<span class="small-spacer"></span><span class="icon person"></span>/hr'
+        in body
+    )
+
+
+def test_lift_rankings_sorts_by_capacity(ranked_client):
+    # Lift A has the higher capacity but lower vertical, so this is the
+    # reverse of the default vertical order
+    body = ranked_client.get("/lift-rankings?sort=capacity").data.decode()
+
     assert body.index("Lift A") < body.index("Lift B")
 
 
