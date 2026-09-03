@@ -1,6 +1,7 @@
 import pytest
 
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.support.lift_query import list_lifts
 
@@ -126,6 +127,12 @@ def test_list_lifts_includes_resort_name_and_state(seeded_db_path):
 
     assert summaries[0].resort_name == "Alta"
     assert summaries[0].state == State.UTAH
+
+
+def test_list_lifts_includes_resort_season_passes(seeded_db_path):
+    summaries, _ = list_lifts(db_path=seeded_db_path, state=State.UTAH)
+
+    assert summaries[0].season_passes == [Season_Pass.EPIC, Season_Pass.IKON]
 
 
 def test_list_lifts_vertical_and_length_converted_to_feet(seeded_db_path):

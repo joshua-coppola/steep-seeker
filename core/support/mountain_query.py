@@ -7,6 +7,7 @@ from core.datamodels.database import MountainTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
+from core.support.query_common import parse_season_passes
 from core.support.utils import meters_to_feet, round_degrees, round_feet
 
 VALID_SORT_FIELDS = {
@@ -101,11 +102,7 @@ def list_mountains(
             ),
             trail_count=row["trail_count"],
             lift_count=row["lift_count"],
-            season_passes=[
-                Season_Pass(value)
-                for value in (row[MountainTable.season_passes] or "").split(",")
-                if value
-            ],
+            season_passes=parse_season_passes(row[MountainTable.season_passes]),
         )
         for row in rows
     ]

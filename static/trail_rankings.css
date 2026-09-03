@@ -81,6 +81,12 @@ th:last-child, td:last-child {
     border-right: none;
 }
 
+.pass-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
 tr:nth-child(even) {
     background-color: rgb(243, 242, 242);
 }
