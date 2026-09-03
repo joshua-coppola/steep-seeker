@@ -50,12 +50,17 @@ def _trails(trail_factory, mountain_id, count):
 
 @pytest.fixture
 def seeded_client(client, db_path, mountain_factory, trail_factory):
+    # beginner_friendliness is stored as the raw "easiest trails" pitch
+    # (lower = gentler); the rankings page shows and sorts on 30 - raw, so
+    # Bolton (raw 1) is the friendliest and Alta (raw 5) the least. That
+    # order is deliberately the reverse of the difficulty order below, so
+    # the beginner-sort test can't pass by accidentally sorting on difficulty.
     mountain_factory(
         mountain_id="1",
         name="Bolton Valley",
         state=State.VERMONT,
         difficulty=40,
-        beginner_friendliness=5,
+        beginner_friendliness=1,
         trails=_trails(trail_factory, "1", 3),
         lifts={},
     ).to_db(db_path)
@@ -73,7 +78,7 @@ def seeded_client(client, db_path, mountain_factory, trail_factory):
         name="Alta",
         state=State.UTAH,
         difficulty=90,
-        beginner_friendliness=1,
+        beginner_friendliness=5,
         trails=_trails(trail_factory, "3", 5),
         lifts={},
     ).to_db(db_path)
@@ -230,6 +235,8 @@ def test_rankings_invalid_state_returns_no_results(seeded_client):
 
 
 def test_rankings_beginner_sort(seeded_client):
+    # order=desc on beginner friendliness means friendliest first, i.e.
+    # the lowest raw beginner_friendliness (highest 30 - raw)
     response = seeded_client.get("/rankings?sort=beginner&order=desc")
 
     assert response.status_code == 200
@@ -416,6 +423,41 @@ def test_interactive_map_404_for_unknown_mountain(client):
     response = client.get("/interactive-map/VT/Nonexistent")
 
     assert response.status_code == 404
+
+
+def test_map_sidebar_shows_lift_occupancy(
+    client, db_path, mountain_factory, trail_factory, lift_factory
+):
+    mountain_factory(
+        mountain_id="1",
+        name="OccMountain",
+        state=State.VERMONT,
+        trails={"t1": trail_factory(trail_id="t1", mountain_id="1")},
+        lifts={
+            "double": lift_factory(
+                lift_id="double", mountain_id="1", name="Double", occupancy=2
+            ),
+            "six": lift_factory(
+                lift_id="six", mountain_id="1", name="Six Pack", occupancy=6
+            ),
+            "unknown": lift_factory(
+                lift_id="unknown", mountain_id="1", name="Mystery", occupancy=None
+            ),
+        },
+    ).to_db(db_path)
+
+    body = client.get("/map/VT/OccMountain").data.decode()
+
+    def lift_li(name):
+        end = body.index(f"{name} -")
+        return body[body.rindex("<li>", 0, end) : end]
+
+    # occupancy <= 2 repeats the person icon; > 2 shows the number beside one
+    assert lift_li("Double").count('class="icon person"') == 2
+    six = lift_li("Six Pack")
+    assert six.count('class="icon person"') == 1
+    assert "6<span" in six
+    assert 'class="icon person"' not in lift_li("Mystery")
 
 
 def test_interactive_map_returns_ok(mapped_client):

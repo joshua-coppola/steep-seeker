@@ -76,6 +76,23 @@ def trail_color(difficulty: float) -> str:
     return "gold"
 
 
+def beginner_color(beginner_friendliness: float) -> str:
+    """
+    Maps a mountain's displayed beginner_friendliness score to the site's
+    color scale. Unlike trail_color this runs on the flipped score (higher
+    = friendlier), so the scale is inverted: high scores are green.
+    """
+    if beginner_friendliness > 12:
+        return "green"
+    if beginner_friendliness > 3:
+        return "royalblue"
+    if beginner_friendliness > -6:
+        return "black"
+    if beginner_friendliness > -17:
+        return "red"
+    return "gold"
+
+
 def round_geometry_precision(
     geometry: shapely.geometry.base.BaseGeometry,
     ndigits: int = COORDINATE_PRECISION,

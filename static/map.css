@@ -1,14 +1,3 @@
-body {
-    background-color: var(--color-map-background);
-}
-
-nav {
-    background-color: white;
-    width: 100vw;
-    position:absolute;
-    z-index: 1;
-}
-
 #map {
     height: 100vh;
     width: 100vw;
@@ -30,82 +19,6 @@ nav {
     cursor: grab;
 }
 
-main {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    z-index: 0;
-    pointer-events: none;
-}
-
-main > * {
-    pointer-events: all;
-}
-
-.map-pane {
-    background-color: var(--color-background);
-    border-radius: 4px;
-    box-shadow: 0 0 8px var(--color-shadow);
-}
-.map-pane > div {
-    padding: 16px;
-    border-bottom: 1px solid var(--color-border);
-}
-.map-pane h1 {
-    font-size: 1.9rem;
-}
-.map-pane h2 {
-    font-size: 1.25rem;
-}
-
-.mountain-details {
-    position: absolute;
-    top: 28px;
-    bottom: 0;
-    left: 0;
-    width: 400px;
-    height: auto;
-    overflow-y: scroll;
-}
-.mountain-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-.mountain-title .mountain-location {
-    font-size: 1.25rem;
-    color: var(--color-tertiary);
-}
-.mountain-section {
-    font-size: 1rem;
-}
-.mountain-section ul li {
-    margin-top: 16px;
-    color: var(--color-primary);
-    display: flex;
-}
-
-.selected-details {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 256px;
-}
-.selected-details .selected-title {
-    display: flex;
-}
-.selected-details table {
-    width: 100%;
-    color: var(--color-primary);
-}
-.selected-details td {
-    padding-bottom: 16px;
-}
-.selected-details .selected-difficulty {
-    color: var(--color-primary);
-}
 .difficulty-meter {
     width: 100%;
     height: 16px;
@@ -159,87 +72,7 @@ main > * {
     font-size: 1.2rem;
 }
 
-.map-button a {
-    color: white;
-    text-decoration: none;
-}
-
-.map-button a:hover {
-    opacity: 1;
-}
-
-#url a {
-    color: white;
-    text-decoration: none;
-}
-
-#url a:hover {
-    opacity: 1;
-}
-
-.hover-details {
-    position: absolute;
-    padding: 8px;
-    font-size: 1.25rem;
-    display: flex;
-}
-
-.icon.gladed{
-    margin-left: 1ch
-}
-
-.pass-icon {
-    width: 2rem;
-    height: 2rem;
-    margin-right: .5rem;
-}
-
-#hideButton {
-    display: none;
-}
-
-@media screen and (max-width: 1116px){
-    .zoom-button {
-        width: auto;
-    }
-
-    .map-button {
-        width: auto;
-    }
-
-    #url {
-        width: auto;
-    }
-}
-
-
 @media screen and (max-width: 950px) {
-    main {
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-    }
-
-    .mountain-details {
-        float: none;
-        display: none;
-        width: 100%;
-        z-index: 8;
-    }
-
-    .mountain-title {
-        display: block;
-    }
-
-    .mountain-title h1 {
-        max-width: calc(100% - 111px);
-    }
-
-    .mountain-location {
-        margin-top: 8px;
-    }
-
     #map {
         padding-left: 16px;
     }
@@ -250,23 +83,5 @@ main > * {
 
     .zoom-button {
         width: auto;
-    }
-
-    .map-button {
-        left: 10px;
-        right: auto;
-        width: auto;
-        font-size: 1rem;
-        height: 34px
-    }
-
-    #hideButton {
-        display: inline-flex;
-        bottom: auto;
-        top: 38px;
-        left: auto;
-        right: 10px;
-        z-index: 10;
-        align-items: flex-end;
     }
 }

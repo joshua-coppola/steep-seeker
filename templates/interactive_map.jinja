@@ -20,6 +20,7 @@
 </script>
 
 <link href="/interactive-map.css" rel="stylesheet" />
+<link href="/map_shared.css" rel="stylesheet" />
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
@@ -60,8 +61,8 @@
                 <li>Trail Count: {{mountain.trail_count()}}</li>
                 <li>Lift Count: {{mountain.lift_count()}}</li>
                 <li>Vertical: {{mountain.vertical_feet()}} ft</li>
-                <li>Difficulty: {{mountain.difficulty}}</li>
-                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
+                <li>Difficulty: {{mountain.difficulty}}<span class="icon difficulty-{{ trail_color(mountain.difficulty) }}"></span></li>
+                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
                 <li>Last Updated: {{mountain.last_updated.date()}}</li>
                 <li><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button></li>
             </ul>
@@ -72,31 +73,17 @@
         <div class="mountain-section">
             <h2>Trails - Sorted by Difficulty</h2>
             <ul>
-                <li><span class="icon gladed"></span>Gladed</li>
-                <li><span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>Ungroomed/Moguls</li>
+                <li><span class="sidebar-badge"><span class="icon gladed"></span></span>Gladed</li>
+                <li><span class="sidebar-badge"><span class="icon ungroomed"></span></span>Ungroomed/Moguls</li>
                 {% for trail in trails %}
                 {% if not '' == trail.name %}
                 <li>
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}° - {{trail.name}}
-                                    {% if trail.gladed == True %}
-                                    <span> </span><span class="icon gladed"></span>
-                                    {% endif %}
-                                    {% if trail.ungroomed == True %}
-                                    <span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>
-                                    {% endif %}
+                    <span class="sidebar-badge">
+                        {{trail.steepest_30m}}°<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    </span>
+                    {{trail.name}}
+                    {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}
+                    {% if trail.ungroomed %}<span class="icon ungroomed"></span>{% endif %}
                 </li>
                 {% endif %}
                 {% endfor %}
@@ -110,7 +97,18 @@
             <ul>
                 {% for lift in lifts %}
                 {% if not '' == lift.name %}
-                <li>{{lift.name}} - {{lift.length_feet()}} ft</li>
+                <li>
+                    <span class="sidebar-badge">
+                        {% if lift.occupancy %}
+                        {% if lift.occupancy <= 2 %}
+                        {% for i in range(lift.occupancy) %}<span class="icon person"></span>{% endfor %}
+                        {% else %}
+                        {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
+                        {% endif %}
+                        {% endif %}
+                    </span>
+                    {{lift.name}} - {{lift.length_feet()}} ft
+                </li>
                 {% endif %}
                 {% endfor %}
             </ul>

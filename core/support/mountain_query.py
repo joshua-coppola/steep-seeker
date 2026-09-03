@@ -97,7 +97,7 @@ def list_mountains(
             vertical=round_feet(meters_to_feet(row[MountainTable.vertical])),
             difficulty=round_degrees(row[MountainTable.difficulty]),
             beginner_friendliness=round_degrees(
-                row[MountainTable.beginner_friendliness]
+                30 - row[MountainTable.beginner_friendliness]
             ),
             trail_count=row["trail_count"],
             lift_count=row["lift_count"],
