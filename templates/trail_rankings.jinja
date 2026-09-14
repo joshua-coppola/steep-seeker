@@ -169,7 +169,12 @@ Trail Rankings - Find the Hardest Trails in the USA
                             {% endif %}
                         </a></p>
                 </td>
-                <td><a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
+                <td>
+                    <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}">{{trail.resort_name}}</a>
+                    {% for season_pass in trail.season_passes %}
+                    <img src="icons/{{season_pass.value}}.png" class="pass-icon" alt="{{season_pass.value}}"/>
+                    {% endfor %}
+                </td>
                 <td>{{trail.state.value}}</td>
                 <td>
                     {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
@@ -325,7 +330,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                                 {% if trail.ungroomed == True%}
                                 <span class="icon ungroomed"></span>
                                 {% endif %}
-                            </a></p>
+                            </a>
+                            {% for season_pass in trail.season_passes %}
+                            <img src="icons/{{season_pass.value}}.png" class="pass-icon" alt="{{season_pass.value}}"/>
+                            {% endfor %}
+                        </p>
                     </td>
                 </tr>
             </table>

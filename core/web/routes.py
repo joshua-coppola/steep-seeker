@@ -22,6 +22,7 @@ from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail_query import list_trails
 from core.support.utils import (
+    beginner_color,
     build_elevation_profile,
     round_degrees,
     trail_color,
@@ -29,6 +30,13 @@ from core.support.utils import (
 )
 
 web = Blueprint("web", __name__)
+
+
+@web.app_context_processor
+def inject_rating_colors():
+    # so templates can color a difficulty / beginner-friendliness number
+    # the same way the Python serving code does
+    return {"trail_color": trail_color, "beginner_color": beginner_color}
 
 
 @dataclass
@@ -580,16 +588,7 @@ def explore_map():
     features = []
     for mountain in mountains:
         difficulty_color = trail_color(mountain.difficulty)
-
-        beginner_color = "gold"
-        if mountain.beginner_friendliness > -17:
-            beginner_color = "red"
-        if mountain.beginner_friendliness > -6:
-            beginner_color = "black"
-        if mountain.beginner_friendliness > 3:
-            beginner_color = "royalblue"
-        if mountain.beginner_friendliness > 12:
-            beginner_color = "green"
+        beginner_col = beginner_color(mountain.beginner_friendliness)
 
         popup_content = (
             f'<h3><a href="/interactive-map/{mountain.state.value}/{escape(mountain.name)}">'
@@ -602,7 +601,7 @@ def explore_map():
         popup_content += (
             f"<p>Vertical: {mountain.vertical} ft</p>"
             f'<p>Difficulty: {mountain.difficulty}<span class="icon difficulty-{difficulty_color}"></span></p>'
-            f'<p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_color}"></span></p>'
+            f'<p>Beginner Friendliness: {mountain.beginner_friendliness}<span class="icon difficulty-{beginner_col}"></span></p>'
         )
 
         features.append(
@@ -644,6 +643,7 @@ def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     mountain = Mountain.from_name(name, state_enum, db_path)
     if mountain is None:
         abort(404)
+    mountain.beginner_friendliness = round_degrees(30 - mountain.beginner_friendliness)
 
     return mountain
 

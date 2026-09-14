@@ -1,6 +1,15 @@
 from core.datamodels.database import MountainTable
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
+
+
+def parse_season_passes(value: str | None) -> list[Season_Pass]:
+    """
+    Turns the comma-joined season_passes column into a list of Season_Pass,
+    dropping blanks. Shared by the mountain/trail/lift ranking queries.
+    """
+    return [Season_Pass(item) for item in (value or "").split(",") if item]
 
 
 def name_and_location_where(

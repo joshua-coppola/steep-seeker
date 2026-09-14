@@ -3,8 +3,9 @@ from dataclasses import dataclass
 from core.connectors.database import DATABASE_PATH, cursor
 from core.datamodels.database import MountainTable, TrailTable
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
-from core.support.query_common import name_and_location_where
+from core.support.query_common import name_and_location_where, parse_season_passes
 from core.support.utils import meters_to_feet, round_degrees, round_feet
 
 VALID_SORT_FIELDS = {
@@ -34,6 +35,7 @@ class TrailSummary:
     name: str
     resort_name: str
     state: State
+    season_passes: list[Season_Pass]
     gladed: bool
     ungroomed: bool
     length: int | None
@@ -87,6 +89,7 @@ def list_trails(
                 Trails.{TrailTable.name},
                 Mountains.{MountainTable.name} AS resort_name,
                 Mountains.{MountainTable.state} AS resort_state,
+                Mountains.{MountainTable.season_passes} AS resort_season_passes,
                 Trails.{TrailTable.gladed},
                 Trails.{TrailTable.ungroomed},
                 Trails.{TrailTable.length},
@@ -115,6 +118,7 @@ def list_trails(
             name=row[TrailTable.name],
             resort_name=row["resort_name"],
             state=State(row["resort_state"]),
+            season_passes=parse_season_passes(row["resort_season_passes"]),
             gladed=bool(row[TrailTable.gladed]),
             ungroomed=bool(row[TrailTable.ungroomed]),
             length=round_feet(meters_to_feet(row[TrailTable.length])),

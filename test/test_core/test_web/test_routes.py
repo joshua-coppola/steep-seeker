@@ -55,7 +55,7 @@ def seeded_client(client, db_path, mountain_factory, trail_factory):
         name="Bolton Valley",
         state=State.VERMONT,
         difficulty=40,
-        beginner_friendliness=5,
+        beginner_friendliness=1,
         trails=_trails(trail_factory, "1", 3),
         lifts={},
     ).to_db(db_path)
@@ -73,7 +73,7 @@ def seeded_client(client, db_path, mountain_factory, trail_factory):
         name="Alta",
         state=State.UTAH,
         difficulty=90,
-        beginner_friendliness=1,
+        beginner_friendliness=5,
         trails=_trails(trail_factory, "3", 5),
         lifts={},
     ).to_db(db_path)
@@ -230,6 +230,8 @@ def test_rankings_invalid_state_returns_no_results(seeded_client):
 
 
 def test_rankings_beginner_sort(seeded_client):
+    # order=desc on beginner friendliness means friendliest first, i.e.
+    # the lowest raw beginner_friendliness (highest 30 - raw)
     response = seeded_client.get("/rankings?sort=beginner&order=desc")
 
     assert response.status_code == 200
@@ -256,6 +258,8 @@ def ranked_client(client, db_path, mountain_factory, trail_factory, lift_factory
                 vertical=500,
                 length=2000,
                 average_slope=25,
+                capacity=3000,
+                heating=True,
             ),
         },
     ).to_db(db_path)
@@ -276,6 +280,8 @@ def ranked_client(client, db_path, mountain_factory, trail_factory, lift_factory
                 vertical=800,
                 length=2500,
                 average_slope=20,
+                capacity=1200,
+                heating=False,
             ),
         },
     ).to_db(db_path)
@@ -321,6 +327,26 @@ def test_lift_rankings_sorts_by_average_slope(ranked_client):
 
     assert response.status_code == 200
     body = response.data.decode()
+    assert body.index("Lift A") < body.index("Lift B")
+
+
+def test_lift_rankings_shows_capacity_detachable_heating(ranked_client):
+    body = ranked_client.get("/lift-rankings").data.decode()
+
+    assert "Capacity" in body
+    assert "Detachable" in body
+    assert "Heating" in body
+    assert (
+        '3000<span class="small-spacer"></span><span class="icon person"></span>/hr'
+        in body
+    )
+
+
+def test_lift_rankings_sorts_by_capacity(ranked_client):
+    # Lift A has the higher capacity but lower vertical, so this is the
+    # reverse of the default vertical order
+    body = ranked_client.get("/lift-rankings?sort=capacity").data.decode()
+
     assert body.index("Lift A") < body.index("Lift B")
 
 
@@ -416,6 +442,41 @@ def test_interactive_map_404_for_unknown_mountain(client):
     response = client.get("/interactive-map/VT/Nonexistent")
 
     assert response.status_code == 404
+
+
+def test_map_sidebar_shows_lift_occupancy(
+    client, db_path, mountain_factory, trail_factory, lift_factory
+):
+    mountain_factory(
+        mountain_id="1",
+        name="OccMountain",
+        state=State.VERMONT,
+        trails={"t1": trail_factory(trail_id="t1", mountain_id="1")},
+        lifts={
+            "double": lift_factory(
+                lift_id="double", mountain_id="1", name="Double", occupancy=2
+            ),
+            "six": lift_factory(
+                lift_id="six", mountain_id="1", name="Six Pack", occupancy=6
+            ),
+            "unknown": lift_factory(
+                lift_id="unknown", mountain_id="1", name="Mystery", occupancy=None
+            ),
+        },
+    ).to_db(db_path)
+
+    body = client.get("/map/VT/OccMountain").data.decode()
+
+    def lift_li(name):
+        end = body.index(f"{name} -")
+        return body[body.rindex("<li>", 0, end) : end]
+
+    # occupancy <= 2 repeats the person icon; > 2 shows the number beside one
+    assert lift_li("Double").count('class="icon person"') == 2
+    six = lift_li("Six Pack")
+    assert six.count('class="icon person"') == 1
+    assert "6<span" in six
+    assert 'class="icon person"' not in lift_li("Mystery")
 
 
 def test_interactive_map_returns_ok(mapped_client):
