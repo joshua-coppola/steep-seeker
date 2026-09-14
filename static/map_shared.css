@@ -1,8 +1,3 @@
-/* Shared by the static (/map) and interactive (/interactive-map) map pages.
-   Loaded by both templates AFTER their page-specific sheet, so the shared
-   responsive overrides here win over each page's unconditional base rules
-   (e.g. .map-button positioning). */
-
 body {
     background-color: var(--color-map-background);
 }
@@ -71,9 +66,6 @@ main > * {
     display: flex;
 }
 
-/* Fixed-width leading column for a list row's difficulty / occupancy
-   indicator, so every trail and lift name lines up regardless of the
-   indicator's contents. */
 .sidebar-badge {
     flex: 0 0 4.5em;
     display: flex;

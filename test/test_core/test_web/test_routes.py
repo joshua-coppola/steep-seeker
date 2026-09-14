@@ -50,11 +50,6 @@ def _trails(trail_factory, mountain_id, count):
 
 @pytest.fixture
 def seeded_client(client, db_path, mountain_factory, trail_factory):
-    # beginner_friendliness is stored as the raw "easiest trails" pitch
-    # (lower = gentler); the rankings page shows and sorts on 30 - raw, so
-    # Bolton (raw 1) is the friendliest and Alta (raw 5) the least. That
-    # order is deliberately the reverse of the difficulty order below, so
-    # the beginner-sort test can't pass by accidentally sorting on difficulty.
     mountain_factory(
         mountain_id="1",
         name="Bolton Valley",
