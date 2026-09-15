@@ -206,50 +206,32 @@ function run_map(trails, map, editable = false){
     }
 
     function point_color(point) {
-        if(point < 18){
+        var k = window.DIFFICULTY_CONSTANTS;
+        if(point < k.beginner_max){
             return "green";
         };
-        if(point < 27){
+        if(point < k.intermediate_max){
             return "royalblue";
         };
-        if(point < 36){
+        if(point < k.advanced_max){
             return "black";
         };
-        if(point < 47){
+        if(point < k.expert_max){
             return "red";
         };
         return "gold";
     }
 
     function point_pitch(point){
-        if(point < 9){
-            return "0-9";
-        };
-        if(point < 18){
-            return "9-18";
-        };
-        if(point < 23){
-            return "18-23";
-        };
-        if(point < 27){
-            return "23-27";
-        };
-        if(point < 32){
-            return "27-32";
-        };
-        if(point < 36){
-            return "32-36";
-        };
-        if(point < 42){
-            return "36-42";
-        };
-        if(point < 47){
-            return "42-47";
-        };
-        if(point < 55){
-            return "47-55";
-        };
-        return "55+";
+        // matches the bands buildSteepnessMapping (mappings.js) builds,
+        // from the same steepnessBoundaries()
+        var bounds = steepnessBoundaries();
+        for (var i = 0; i < bounds.length; i++) {
+            if (point < bounds[i]) {
+                return (i === 0 ? 0 : bounds[i - 1]) + "-" + bounds[i];
+            }
+        }
+        return bounds[bounds.length - 1] + "+";
     }
 
     function create_height_graph_json(coordinates, modifier, label) {

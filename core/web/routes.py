@@ -1,5 +1,5 @@
 import random
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from math import atan2, degrees
 from urllib.parse import urlencode
 
@@ -44,7 +44,10 @@ def inject_rating_colors():
     return {
         "trail_color": trail_color,
         "beginner_color": beginner_color,
-        "difficulty_thresholds": DIFFICULTY_CONSTANTS,
+        # a dict (not the dataclass instance) so it works with both Jinja's
+        # dot-access convenience and the |tojson filter that hands it to
+        # search.js/interactive-map.js via page_base.jinja
+        "difficulty_thresholds": asdict(DIFFICULTY_CONSTANTS),
         "beginner_friendliness_max": BEGINNER_FRIENDLINESS_FLIP,
         "display_beginner_friendliness": display_beginner_friendliness,
     }
