@@ -37,27 +37,27 @@ About Steep Seeker
                 </thead>
                 <tbody>
                     <tr>
-                        <td>0°-18°</td>
+                        <td>0°-{{ "%g" % difficulty_thresholds.beginner_max }}°</td>
                         <td>Beginner</td>
                         <td><span class="icon difficulty-green"></span>Green</td>
                     </tr>
                     <tr>
-                        <td>18°-27°</td>
+                        <td>{{ "%g" % difficulty_thresholds.beginner_max }}°-{{ "%g" % difficulty_thresholds.intermediate_max }}°</td>
                         <td>Intermediate</td>
                         <td><span class="icon difficulty-royalblue"></span>Blue</td>
                     </tr>
                     <tr>
-                        <td>27°-36°</td>
+                        <td>{{ "%g" % difficulty_thresholds.intermediate_max }}°-{{ "%g" % difficulty_thresholds.advanced_max }}°</td>
                         <td>Advanced</td>
                         <td><span class="icon difficulty-black"></span>Black</td>
                     </tr>
                     <tr>
-                        <td>36°-47°</td>
+                        <td>{{ "%g" % difficulty_thresholds.advanced_max }}°-{{ "%g" % difficulty_thresholds.expert_max }}°</td>
                         <td>Expert</td>
                         <td><span class="icon difficulty-red"></span>Red</td>
                     </tr>
                     <tr>
-                        <td>47°+</td>
+                        <td>{{ "%g" % difficulty_thresholds.expert_max }}°+</td>
                         <td>Extreme Terrain</td>
                         <td><span class="icon difficulty-gold"></span>Yellow</td>
                     </tr>
@@ -73,15 +73,15 @@ About Steep Seeker
                 <tbody>
                     <tr>
                         <td>Gladed</td>
-                        <td>+5.5°</td>
+                        <td>+{{ "%g" % difficulty_thresholds.gladed_bonus }}°</td>
                     </tr>
                     <tr>
                         <td>Ungroomed / Moguls</td>
-                        <td>+2.5°</td>
+                        <td>+{{ "%g" % difficulty_thresholds.ungroomed_bonus }}°</td>
                     </tr>
                     <tr>
                         <td>Typical Weather</td>
-                        <td>Between +0° and + 6°</td>
+                        <td>Between +0° and +6°</td>
                     </tr>
                 </tbody>
             </table>
