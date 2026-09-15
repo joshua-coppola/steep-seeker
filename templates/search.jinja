@@ -64,26 +64,26 @@ Search Ski Resorts
             <h2><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>
             <div>
                 {% if mountain.difficulty > 0 %}
-                {% if mountain.beginner_friendliness > 12 %}
+                {% if mountain.beginner_friendliness > display_beginner_friendliness(difficulty_thresholds.beginner_max) %}
                 <span class="icon difficulty-green"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 18 %}
-                {% if mountain.beginner_friendliness > 3 %}
+                {% if mountain.difficulty >= difficulty_thresholds.beginner_max %}
+                {% if mountain.beginner_friendliness > display_beginner_friendliness(difficulty_thresholds.intermediate_max) %}
                 <span class="icon difficulty-royalblue"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 27 %}
-                {% if mountain.beginner_friendliness > -6 %}
+                {% if mountain.difficulty >= difficulty_thresholds.intermediate_max %}
+                {% if mountain.beginner_friendliness > display_beginner_friendliness(difficulty_thresholds.advanced_max) %}
                 <span class="icon difficulty-black"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 36 %}
-                {% if mountain.beginner_friendliness > -17 %}
+                {% if mountain.difficulty >= difficulty_thresholds.advanced_max %}
+                {% if mountain.beginner_friendliness > display_beginner_friendliness(difficulty_thresholds.expert_max) %}
                 <span class="icon difficulty-red"></span>
                 {% endif %}
                 {% endif %}
-                {% if mountain.difficulty >= 47 %}
+                {% if mountain.difficulty >= difficulty_thresholds.expert_max %}
                 <span class="icon difficulty-gold"></span>
                 {% endif %}
             </div>

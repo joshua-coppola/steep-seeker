@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from math import atan, ceil, degrees
 
 import haversine as hs
@@ -8,6 +9,37 @@ import shapely.ops
 
 COORDINATE_PRECISION = 6
 METERS_TO_FEET = 3.28084
+BEGINNER_FRIENDLINESS_FLIP = 30  # see display_beginner_friendliness
+
+
+@dataclass(frozen=True)
+class DifficultyConstants:
+    """
+    Every hand-tuned constant behind the site's difficulty rating, in one
+    place -- trail_color, beginner_color, and surface_difficulty_bonus all
+    read from DIFFICULTY_CONSTANTS below live, so recalibrating the site
+    is just constructing a new instance and assigning it there.
+    """
+
+    # degrees at the top of each tier's range: below beginner_max is green,
+    # below intermediate_max is royalblue, below advanced_max is black,
+    # below expert_max is red, above expert_max is gold
+    beginner_max: float
+    intermediate_max: float
+    advanced_max: float
+    expert_max: float
+    gladed_bonus: float
+    ungroomed_bonus: float
+
+
+DIFFICULTY_CONSTANTS = DifficultyConstants(
+    beginner_max=18.0,
+    intermediate_max=27.0,
+    advanced_max=36.0,
+    expert_max=47.0,
+    gladed_bonus=5.5,
+    ungroomed_bonus=2.5,
+)
 
 # Shared WGS84 <-> Albers Equal Area (contiguous US) transformers. Building a
 # pyproj.Transformer is expensive, so these are constructed once at import
@@ -60,19 +92,14 @@ def trail_color(difficulty: float) -> str:
     color scale, used for both static map rendering and interactive-map
     popups.
     """
-    # 0-18 degrees: green
-    if difficulty < 18:
+    if difficulty < DIFFICULTY_CONSTANTS.beginner_max:
         return "green"
-    # 18-27 degrees: blue
-    if difficulty < 27:
+    if difficulty < DIFFICULTY_CONSTANTS.intermediate_max:
         return "royalblue"
-    # 27-36 degrees: black
-    if difficulty < 36:
+    if difficulty < DIFFICULTY_CONSTANTS.advanced_max:
         return "black"
-    # 36-47 degrees: red
-    if difficulty < 47:
+    if difficulty < DIFFICULTY_CONSTANTS.expert_max:
         return "red"
-    # >47 degrees: yellow
     return "gold"
 
 
@@ -87,7 +114,7 @@ def display_beginner_friendliness(beginner_friendliness: float | None) -> float 
     if beginner_friendliness is None:
         return None
 
-    return round_degrees(30 - beginner_friendliness)
+    return round_degrees(BEGINNER_FRIENDLINESS_FLIP - beginner_friendliness)
 
 
 def beginner_color(beginner_friendliness: float) -> str:
@@ -96,13 +123,14 @@ def beginner_color(beginner_friendliness: float) -> str:
     color scale. Unlike trail_color this runs on the flipped score (higher
     = friendlier), so the scale is inverted: high scores are green.
     """
-    if beginner_friendliness > 12:
+    flip = BEGINNER_FRIENDLINESS_FLIP
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.beginner_max:
         return "green"
-    if beginner_friendliness > 3:
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.intermediate_max:
         return "royalblue"
-    if beginner_friendliness > -6:
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.advanced_max:
         return "black"
-    if beginner_friendliness > -17:
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.expert_max:
         return "red"
     return "gold"
 
@@ -466,23 +494,16 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     )
 
 
-# Difficulty (degrees) a trail's surface adds on top of its raw pitch.
-# Gladed wins when a trail is somehow both -- the two never stack (see
-# surface_difficulty_bonus).
-GLADED_BONUS = 5.5
-UNGROOMED_BONUS = 2.5
-
-
 def surface_difficulty_bonus(gladed: bool, ungroomed: bool) -> float:
     """
-    The difficulty bump a trail earns for its surface: GLADED_BONUS for a
-    gladed trail, UNGROOMED_BONUS for an ungroomed-but-not-gladed one, 0
+    The difficulty bump a trail earns for its surface: gladed_bonus for a
+    gladed trail, ungroomed_bonus for an ungroomed-but-not-gladed one, 0
     otherwise. Gladed wins when both flags are set; the bonuses don't stack.
     """
     if gladed:
-        return GLADED_BONUS
+        return DIFFICULTY_CONSTANTS.gladed_bonus
     if ungroomed:
-        return UNGROOMED_BONUS
+        return DIFFICULTY_CONSTANTS.ungroomed_bonus
     return 0.0
 
 

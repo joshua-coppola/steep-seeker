@@ -22,6 +22,8 @@ from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail_query import list_trails
 from core.support.utils import (
+    BEGINNER_FRIENDLINESS_FLIP,
+    DIFFICULTY_CONSTANTS,
     beginner_color,
     build_elevation_profile,
     display_beginner_friendliness,
@@ -36,8 +38,16 @@ web = Blueprint("web", __name__)
 @web.app_context_processor
 def inject_rating_colors():
     # so templates can color a difficulty / beginner-friendliness number
-    # the same way the Python serving code does
-    return {"trail_color": trail_color, "beginner_color": beginner_color}
+    # the same way the Python serving code does, and build their own
+    # threshold comparisons (search/rankings) from the same live constants
+    # instead of hardcoding copies of them
+    return {
+        "trail_color": trail_color,
+        "beginner_color": beginner_color,
+        "difficulty_thresholds": DIFFICULTY_CONSTANTS,
+        "beginner_friendliness_max": BEGINNER_FRIENDLINESS_FLIP,
+        "display_beginner_friendliness": display_beginner_friendliness,
+    }
 
 
 @dataclass
