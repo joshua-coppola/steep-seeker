@@ -24,6 +24,7 @@ from core.support.trail_query import list_trails
 from core.support.utils import (
     beginner_color,
     build_elevation_profile,
+    display_beginner_friendliness,
     round_degrees,
     trail_color,
     weather_modifier_from_trail,
@@ -643,7 +644,9 @@ def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     mountain = Mountain.from_name(name, state_enum, db_path)
     if mountain is None:
         abort(404)
-    mountain.beginner_friendliness = round_degrees(30 - mountain.beginner_friendliness)
+    mountain.beginner_friendliness = display_beginner_friendliness(
+        mountain.beginner_friendliness
+    )
 
     return mountain
 

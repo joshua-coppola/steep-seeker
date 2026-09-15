@@ -15,6 +15,7 @@ from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail import Trail
 from core.support.utils import (
+    display_beginner_friendliness,
     get_bounding_box,
     get_trail_difficulty,
     weather_modifier_from_trail,
@@ -570,6 +571,9 @@ def management_edit_resort():
             _apply_rotate(mountain, db_path)
             _apply_trail_edit(mountain, db_path)
             _apply_delete(mountain, db_path)
+            mountain.beginner_friendliness = display_beginner_friendliness(
+                mountain.beginner_friendliness
+            )
 
     all_mountains, _ = list_mountains(db_path=db_path)
     resorts = sorted(f"{m.name}, {m.state.value}" for m in all_mountains)

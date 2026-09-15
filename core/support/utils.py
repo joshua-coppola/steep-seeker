@@ -76,6 +76,20 @@ def trail_color(difficulty: float) -> str:
     return "gold"
 
 
+def display_beginner_friendliness(beginner_friendliness: float | None) -> float | None:
+    """
+    Flips Mountain.beginner_friendliness as stored (the raw weighted average
+    of a mountain's easiest rateable trails, in difficulty degrees -- lower
+    means friendlier) into the site's display scale, where higher means
+    friendlier -- matching the thresholds beginner_color checks against.
+    Passes None through unchanged.
+    """
+    if beginner_friendliness is None:
+        return None
+
+    return round_degrees(30 - beginner_friendliness)
+
+
 def beginner_color(beginner_friendliness: float) -> str:
     """
     Maps a mountain's displayed beginner_friendliness score to the site's
