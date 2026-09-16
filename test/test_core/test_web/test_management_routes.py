@@ -98,7 +98,7 @@ def test_management_bulk_operations_recalibrate_reports_summary(
                 mountain_id="a",
                 gladed=False,
                 ungroomed=False,
-                steepest_30m=20.0,
+                steepest_50m=20.0,
                 difficulty=99.0,
                 length=200,
             )
@@ -362,7 +362,7 @@ def test_management_edit_resort_updates_trail_gladed_and_recomputes_difficulty(
         mountain_id="1",
         name="Test Trail",
         difficulty=25.0,
-        steepest_30m=20.0,
+        steepest_50m=20.0,
         gladed=False,
         ungroomed=False,
     )
@@ -388,8 +388,8 @@ def test_management_edit_resort_updates_trail_gladed_and_recomputes_difficulty(
     assert updated_trail.gladed is True
     assert updated_trail.ungroomed is False
     # weather_modifier recovered as 25.0 - 20.0 - 0 = 5.0, then
-    # 20.0 + 5.0 + 5.5 (gladed bonus) = 30.5
-    assert updated_trail.difficulty == 30.5
+    # 20.0 + 5.0 + 8.0 (gladed bonus) = 33.0
+    assert updated_trail.difficulty == 33.0
 
 
 def test_management_edit_resort_unchecking_gladed_removes_bonus(
@@ -399,8 +399,8 @@ def test_management_edit_resort_unchecking_gladed_removes_bonus(
         trail_id="w42",
         mountain_id="1",
         name="Test Trail",
-        difficulty=30.5,
-        steepest_30m=20.0,
+        difficulty=33.0,
+        steepest_50m=20.0,
         gladed=True,
         ungroomed=False,
     )
@@ -542,7 +542,7 @@ def test_management_edit_resort_trail_difficulty_edit_recalculates_mountain_stat
         name="Test Trail",
         length=200,
         difficulty=25.0,
-        steepest_30m=20.0,
+        steepest_50m=20.0,
         gladed=False,
         ungroomed=False,
     )
@@ -561,11 +561,11 @@ def test_management_edit_resort_trail_difficulty_edit_recalculates_mountain_stat
     )
 
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
-    # trail difficulty 25.0 -> 30.5 (gladed bonus), and it's the only rated
+    # trail difficulty 25.0 -> 33.0 (gladed bonus), and it's the only rated
     # trail, so the mountain rating follows it
-    assert mountain.trails["w42"].difficulty == 30.5
-    assert mountain.difficulty == 30.5
-    assert mountain.beginner_friendliness == 30.5
+    assert mountain.trails["w42"].difficulty == 33.0
+    assert mountain.difficulty == 33.0
+    assert mountain.beginner_friendliness == 33.0
 
 
 def test_management_edit_resort_deletes_lift(

@@ -63,6 +63,7 @@ Edit Resort
         <li>Vertical: {{mountain.vertical_feet()}} ft</li>
         <li>Difficulty: {{mountain.difficulty}}</li>
         <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
+        <li>Weather Modifier: {{weather_modifier}}°</li>
         <li>Last Updated: {{mountain.last_updated.date()}}</li>
         <li><a href="{{mountain.url}}">{{mountain.url}}</a></li>
     </ul>
@@ -211,7 +212,7 @@ Edit Resort
             {% if not '' == trail.name %}
             <li>
                 <span class="sidebar-badge">
-                    {{trail.steepest_30m}}°<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    {{trail.difficulty_pitch()}}°<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
                 </span>
                 {{trail.name}}
                 {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}

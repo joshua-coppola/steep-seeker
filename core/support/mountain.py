@@ -19,6 +19,7 @@ from core.osm.osm_processor import OSMProcessor
 from core.support.lift import Lift
 from core.support.trail import Trail
 from core.support.utils import (
+    difficulty_pitch_field,
     get_mountain_rating,
     get_trail_difficulty,
     meters_to_feet,
@@ -471,9 +472,13 @@ class Mountain:
         mountain.average_snow = weather["snow"]
 
         weather_modifier = WeatherCalibration.load(db_path).modifier(weather)
+        pitch_field = difficulty_pitch_field()
         for trail in mountain.trails.values():
             trail.difficulty = get_trail_difficulty(
-                trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier
+                getattr(trail, pitch_field),
+                trail.gladed,
+                trail.ungroomed,
+                weather_modifier,
             )
 
         mountain.recalculate_stats()

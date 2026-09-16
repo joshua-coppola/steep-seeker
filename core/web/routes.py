@@ -26,6 +26,7 @@ from core.support.utils import (
     DIFFICULTY_CONSTANTS,
     beginner_color,
     build_elevation_profile,
+    difficulty_pitch_field,
     display_beginner_friendliness,
     round_degrees,
     trail_color,
@@ -500,7 +501,8 @@ def _trail_features(
         "orientation": orientation,
         "color": trail_color(trail.difficulty),
         "gladed": str(trail.gladed),
-        "difficulty_modifier": (trail.difficulty or 0) - (trail.steepest_30m or 0),
+        "difficulty_modifier": (trail.difficulty or 0)
+        - (getattr(trail, difficulty_pitch_field()) or 0),
     }
 
     features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
@@ -695,6 +697,7 @@ def static_map(state, name):
         mountain=mountain,
         trails=trails,
         lifts=lifts,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
     )
 
 
@@ -756,6 +759,7 @@ def interactive_map(state, name):
         mountain=mountain,
         trails=trails,
         lifts=lifts,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
     )
 
 

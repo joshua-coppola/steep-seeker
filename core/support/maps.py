@@ -294,7 +294,7 @@ def _populate_map(
         # add label names
         if with_labels:
             label_text = "{} {:.1f}{}".format(
-                trail.name.strip(), trail.steepest_30m, "\N{DEGREE SIGN}"
+                trail.name.strip(), trail.difficulty_pitch(), "\N{DEGREE SIGN}"
             )
             length_feet = meters_to_feet(trail.length) or 0
             point, angle, label_length = _get_label_placement(

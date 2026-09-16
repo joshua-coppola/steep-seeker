@@ -53,7 +53,9 @@ def test_get_trails(osm_file, monkeypatch):
     assert round(trails["w10"].max_slope, 3) == 11.655
     assert round(trails["w10"].average_slope, 3) == 10.018
     assert trails["w10"].steepest_30m == 9.9
-    assert trails["w10"].steepest_50m is None
+    # w10 is ~34m long: shorter than pitch_window_meters (50m), so
+    # steepest_50m also falls back to the whole-trail slope; 100m doesn't
+    assert trails["w10"].steepest_50m == 9.9
     assert trails["w10"].steepest_100m is None
 
     assert round(trails["w11"].length, 3) == 105.677

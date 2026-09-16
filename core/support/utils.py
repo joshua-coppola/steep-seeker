@@ -30,16 +30,32 @@ class DifficultyConstants:
     expert_max: float
     gladed_bonus: float
     ungroomed_bonus: float
+    # which steepest_Xm column (see osm.osm_processor.STEEPEST_PITCH_WINDOWS_METERS
+    # for the ones that exist) feeds the difficulty rating -- see
+    # difficulty_pitch_field()
+    pitch_window_meters: int
 
 
 DIFFICULTY_CONSTANTS = DifficultyConstants(
-    beginner_max=18.0,
-    intermediate_max=27.0,
+    beginner_max=16.0,
+    intermediate_max=26.0,
     advanced_max=36.0,
-    expert_max=47.0,
-    gladed_bonus=5.5,
-    ungroomed_bonus=2.5,
+    expert_max=46.0,
+    gladed_bonus=8.0,
+    ungroomed_bonus=5.0,
+    pitch_window_meters=50,
 )
+
+
+def difficulty_pitch_field() -> str:
+    """
+    Name of the Trail attribute / Trails column holding the pitch that
+    feeds the site's difficulty rating -- "steepest_Xm" for
+    DIFFICULTY_CONSTANTS.pitch_window_meters. Recalibrating to a different
+    window is just changing that one field.
+    """
+    return f"steepest_{DIFFICULTY_CONSTANTS.pitch_window_meters}m"
+
 
 # Shared WGS84 <-> Albers Equal Area (contiguous US) transformers. Building a
 # pyproj.Transformer is expensive, so these are constructed once at import
@@ -414,9 +430,12 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     pass its route rather than its boundary polygon.
 
     If the trail is shorter than the window, falls back to the overall
-    trail slope for windows of 30m or less (the trail is short enough that
-    its whole length is a reasonable stand-in); for longer windows there's
-    no meaningful window-sized measurement, so `None` is returned.
+    trail slope for windows up to DIFFICULTY_CONSTANTS.pitch_window_meters
+    (the trail is short enough that its whole length is a reasonable
+    stand-in -- and this window is the one that must produce a value for
+    every ratable trail, since it feeds the difficulty rating); for longer
+    windows there's no meaningful window-sized measurement, so `None` is
+    returned.
     """
     coordinates = geometry.get("coordinates") or []
 
@@ -468,7 +487,7 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     if max_pitch is not None:
         return round(max_pitch, 1)
 
-    if window_meters > 30:
+    if window_meters > DIFFICULTY_CONSTANTS.pitch_window_meters:
         return None
 
     first_point, last_point = coordinates[0], coordinates[-1]
@@ -511,35 +530,38 @@ def weather_modifier_from_trail(trail) -> float:
     """
     Recovers the mountain's weather modifier from one already-rated trail,
     inverting get_trail_difficulty:
-        difficulty == steepest_30m + weather_modifier + surface bonus
+        difficulty == steepest_pitch + weather_modifier + surface bonus
+    where steepest_pitch is the trail's steepest_Xm attribute named by
+    difficulty_pitch_field().
     """
     return (
         trail.difficulty
-        - trail.steepest_30m
+        - getattr(trail, difficulty_pitch_field())
         - surface_difficulty_bonus(trail.gladed, trail.ungroomed)
     )
 
 
 def get_trail_difficulty(
-    steepest_30m: float | None,
+    steepest_pitch: float | None,
     gladed: bool,
     ungroomed: bool,
     weather_modifier: float,
 ) -> float | None:
     """
-    Accepts a trail's steepest 30m pitch, its gladed/ungroomed flags, and
-    the mountain's weather modifier (see connectors.weather_api), and
-    returns the trail's overall difficulty rating. Returns `None` if
-    steepest_30m couldn't be calculated.
+    Accepts a trail's steepest pitch (over DIFFICULTY_CONSTANTS.pitch_window_meters
+    -- see difficulty_pitch_field()), its gladed/ungroomed flags, and the
+    mountain's weather modifier (see connectors.weather_api), and returns
+    the trail's overall difficulty rating. Returns `None` if steepest_pitch
+    couldn't be calculated.
 
     A trail that is both gladed and ungroomed only gets the gladed modifier;
     the two aren't stacked.
     """
-    if steepest_30m is None:
+    if steepest_pitch is None:
         return None
 
     difficulty = (
-        steepest_30m + weather_modifier + surface_difficulty_bonus(gladed, ungroomed)
+        steepest_pitch + weather_modifier + surface_difficulty_bonus(gladed, ungroomed)
     )
 
     return round(difficulty, 1)
