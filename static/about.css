@@ -52,8 +52,24 @@ main {
 
 .blurb td {
     padding: 16px;
-    /* text-align: center; */
+    text-align: left;
     vertical-align: center;
+}
+
+.blurb td:first-child {
+    padding-left: 24px;
+}
+
+.blurb td.icon-cell {
+    display: flex;
+    align-items: center;
+}
+
+.blurb .sidebar-badge {
+    flex: 0 0 2em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .blurb h2 {
@@ -105,6 +121,10 @@ main {
 
     .blurb table {
         margin-top: 0px;
+    }
+
+    .blurb table + table {
+        margin-top: 24px;
     }
 
     .blurb.blurb-dark h2 {

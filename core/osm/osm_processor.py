@@ -185,16 +185,15 @@ class OSMProcessor:
         for trail_id, trail_value in self.trails.items():
             found_match = False
             for existing_data in complete_trails.values():
-                matching_parts = 0
-                for key, value in existing_data.items():
-                    # skip the unique parts
-                    if key == "id" or key == "nodes":
-                        continue
-                    if trail_value[key] == value:
-                        matching_parts += 1
+                metadata_keys = [
+                    key for key in existing_data if key not in ("id", "nodes")
+                ]
+                matching_parts = sum(
+                    1 for key in metadata_keys if trail_value[key] == existing_data[key]
+                )
 
                 # if all metadata is matching, then check if the start/end points line up
-                if matching_parts == 6:
+                if matching_parts == len(metadata_keys):
                     if trail_value["nodes"][0] == existing_data["nodes"][-1]:
                         existing_data["nodes"] = (
                             existing_data["nodes"] + trail_value["nodes"][1:]

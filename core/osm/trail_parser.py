@@ -73,6 +73,11 @@ def identify_trails(ways, relations):
             "man_made", ""
         )
 
+        # Hazardous is never OSM-derived -- only set manually from the
+        # management edit-resort popup, so every freshly parsed trail starts
+        # unflagged
+        trail["hazardous"] = False
+
         # if both gladed and ungroomed, only keep gladed
         if trail["gladed"] and trail["ungroomed"]:
             trail["ungroomed"] = False

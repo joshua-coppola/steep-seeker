@@ -260,5 +260,3 @@ class TestGet:
 
         with pytest.raises(ValueError, match="Daily API request limit exceeded"):
             Weather(num_seasons=1).get(Point(-72.0, 44.0))
-
-

@@ -30,6 +30,7 @@ class Trail:
     area: bool
     ungroomed: bool
     park: bool
+    hazardous: bool
     length: float | None
     vertical: float | None = None
     difficulty: float | None = None
@@ -91,6 +92,7 @@ class Trail:
         result[TrailTable.area] = bool(result[TrailTable.area])
         result[TrailTable.ungroomed] = bool(result[TrailTable.ungroomed])
         result[TrailTable.park] = bool(result[TrailTable.park])
+        result[TrailTable.hazardous] = bool(result[TrailTable.hazardous])
 
         return Trail(**result)
 
@@ -145,6 +147,7 @@ class Trail:
                     {TrailTable.area},
                     {TrailTable.ungroomed},
                     {TrailTable.park},
+                    {TrailTable.hazardous},
                     {TrailTable.length},
                     {TrailTable.vertical},
                     {TrailTable.difficulty},
@@ -157,7 +160,7 @@ class Trail:
                     {TrailTable.steepest_500m},
                     {TrailTable.steepest_1000m}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
@@ -169,6 +172,7 @@ class Trail:
                     {TrailTable.area} = excluded.{TrailTable.area},
                     {TrailTable.ungroomed} = excluded.{TrailTable.ungroomed},
                     {TrailTable.park} = excluded.{TrailTable.park},
+                    {TrailTable.hazardous} = excluded.{TrailTable.hazardous},
                     {TrailTable.length} = excluded.{TrailTable.length},
                     {TrailTable.vertical} = excluded.{TrailTable.vertical},
                     {TrailTable.difficulty} = excluded.{TrailTable.difficulty},
@@ -197,6 +201,7 @@ class Trail:
                 self.area,
                 self.ungroomed,
                 self.park,
+                self.hazardous,
                 self.length,
                 self.vertical,
                 self.difficulty,

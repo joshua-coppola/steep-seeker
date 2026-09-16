@@ -208,6 +208,7 @@ Edit Resort
         <ul>
             <li><span class="sidebar-badge"><span class="icon gladed"></span></span>Gladed</li>
             <li><span class="sidebar-badge"><span class="icon ungroomed"></span></span>Ungroomed/Moguls</li>
+            <li><span class="sidebar-badge"><span class="icon hazardous"></span></span>Hazardous</li>
             {% for trail in trails %}
             {% if not '' == trail.name %}
             <li>
@@ -217,6 +218,7 @@ Edit Resort
                 {{trail.name}}
                 {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}
                 {% if trail.ungroomed %}<span class="icon ungroomed"></span>{% endif %}
+                {% if trail.hazardous %}<span class="icon hazardous"></span>{% endif %}
             </li>
             {% endif %}
             {% endfor %}

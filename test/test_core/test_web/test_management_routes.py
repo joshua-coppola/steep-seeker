@@ -423,6 +423,76 @@ def test_management_edit_resort_unchecking_gladed_removes_bonus(
     assert updated_trail.difficulty == 25.0
 
 
+def test_management_edit_resort_updates_trail_hazardous_and_recomputes_difficulty(
+    management_client, db_path, mountain_factory, trail_factory
+):
+    trail = trail_factory(
+        trail_id="w42",
+        mountain_id="1",
+        name="Test Trail",
+        difficulty=25.0,
+        steepest_50m=20.0,
+        gladed=False,
+        ungroomed=False,
+        hazardous=False,
+    )
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w42": trail},
+    ).to_db(db_path)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "trail_id": "w42",
+            "hazardous": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    updated_trail = mountain.trails["w42"]
+    assert updated_trail.hazardous is True
+    # weather_modifier recovered as 25.0 - 20.0 - 0 = 5.0, then
+    # 20.0 + 5.0 + 5.0 (hazardous bonus) = 30.0
+    assert updated_trail.difficulty == 30.0
+
+
+def test_management_edit_resort_unchecking_hazardous_removes_bonus(
+    management_client, db_path, mountain_factory, trail_factory
+):
+    trail = trail_factory(
+        trail_id="w42",
+        mountain_id="1",
+        name="Test Trail",
+        difficulty=30.0,
+        steepest_50m=20.0,
+        gladed=False,
+        ungroomed=False,
+        hazardous=True,
+    )
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w42": trail},
+    ).to_db(db_path)
+
+    # hazardous omitted entirely -- an unchecked checkbox isn't sent at all
+    management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "trail_id": "w42"},
+    )
+
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    updated_trail = mountain.trails["w42"]
+    assert updated_trail.hazardous is False
+    assert updated_trail.difficulty == 25.0
+
+
 def test_management_edit_resort_rotates_clockwise(
     management_client, db_path, mountain_factory, monkeypatch
 ):

@@ -196,11 +196,11 @@ def _apply_mountain_edits(mountain: Mountain, db_path: str) -> None:
 
 def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     """
-    Applies a gladed/ungroomed tag edit to one trail (identified by
-    trail_id), recomputing its difficulty by reverse-engineering the weather
-    modifier from the trail's current stored difficulty/steepest pitch
-    (see difficulty_pitch_field)/gladed/ungroomed, then reapplying that
-    pitch + the modifier + the new gladed/ungroomed bonus.
+    Applies a gladed/ungroomed/hazardous tag edit to one trail (identified
+    by trail_id), recomputing its difficulty by reverse-engineering the
+    weather modifier from the trail's current stored difficulty/steepest
+    pitch (see difficulty_pitch_field)/gladed/ungroomed/hazardous, then
+    reapplying that pitch + the modifier + the new bonuses.
     """
     trail_id = request.args.get("trail_id")
     if not trail_id:
@@ -214,10 +214,12 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
 
     trail.gladed = bool(request.args.get("gladed"))
     trail.ungroomed = bool(request.args.get("ungroomed"))
+    trail.hazardous = bool(request.args.get("hazardous"))
     trail.difficulty = get_trail_difficulty(
         getattr(trail, difficulty_pitch_field()),
         trail.gladed,
         trail.ungroomed,
+        trail.hazardous,
         weather_modifier,
     )
     trail.to_db(db_path)

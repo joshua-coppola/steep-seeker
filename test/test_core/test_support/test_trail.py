@@ -36,6 +36,7 @@ def test_trail_from_db(trail_factory, db_path):
                 {TrailTable.area},
                 {TrailTable.ungroomed},
                 {TrailTable.park},
+                {TrailTable.hazardous},
                 {TrailTable.length},
                 {TrailTable.vertical},
                 {TrailTable.difficulty},
@@ -48,7 +49,7 @@ def test_trail_from_db(trail_factory, db_path):
                 {TrailTable.steepest_500m},
                 {TrailTable.steepest_1000m}
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             trail.trail_id,
@@ -61,6 +62,7 @@ def test_trail_from_db(trail_factory, db_path):
             trail.area,
             trail.ungroomed,
             trail.park,
+            trail.hazardous,
             trail.length,
             trail.vertical,
             trail.difficulty,
@@ -105,6 +107,7 @@ def test_trail_to_db(trail_factory, db_path):
         TrailTable.area: 0,
         TrailTable.ungroomed: 0,
         TrailTable.park: 0,
+        TrailTable.hazardous: 0,
         TrailTable.length: 1.0,
         TrailTable.vertical: 1.0,
         TrailTable.difficulty: 1.0,

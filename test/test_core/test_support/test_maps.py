@@ -33,6 +33,7 @@ def area_trail_mountain():
         area=True,
         ungroomed=False,
         park=False,
+        hazardous=False,
         length=200,
         vertical=4,
         difficulty=40.0,

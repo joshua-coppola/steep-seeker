@@ -478,6 +478,7 @@ class Mountain:
                 getattr(trail, pitch_field),
                 trail.gladed,
                 trail.ungroomed,
+                trail.hazardous,
                 weather_modifier,
             )
 

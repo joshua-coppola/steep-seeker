@@ -431,9 +431,9 @@ def _trail_features(
     itself is clicked.
 
     edit_query, when given (the "<name>, <state>" the management edit
-    page's mountain selector uses), appends a gladed/ungroomed tag-edit
-    form to the popup: only management_routes.py's edit page passes
-    this; the public interactive-map never does.
+    page's mountain selector uses), appends a gladed/ungroomed/hazardous
+    tag-edit form to the popup: only management_routes.py's edit page
+    passes this; the public interactive-map never does.
     """
     if trail.area:
         coords = list(trail.geometry.exterior.coords)
@@ -450,7 +450,10 @@ def _trail_features(
 
     gladed_icon = '<i class="icon gladed"></i>' if trail.gladed else ""
     ungroomed_icon = '<i class="icon ungroomed"></i>' if trail.ungroomed else ""
-    popup_content = f"<h3>{escape(trail.name)}{gladed_icon}{ungroomed_icon}</h3>"
+    hazardous_icon = '<i class="icon hazardous"></i>' if trail.hazardous else ""
+    popup_content = (
+        f"<h3>{escape(trail.name)}{gladed_icon}{ungroomed_icon}{hazardous_icon}</h3>"
+    )
     popup_content += (
         f"<p>Rating: {trail.difficulty}"
         f'<span class="icon difficulty-{trail_color(trail.difficulty)}"></span></p>'
@@ -471,6 +474,7 @@ def _trail_features(
     if edit_query is not None:
         gladed_checked = "checked" if trail.gladed else ""
         ungroomed_checked = "checked" if trail.ungroomed else ""
+        hazardous_checked = "checked" if trail.hazardous else ""
         popup_content += (
             '<form id="update_tags" class="search-form">'
             f'<input type="hidden" name="q" value="{escape(edit_query)}">'
@@ -482,6 +486,10 @@ def _trail_features(
             '<span class="checkbox-group">'
             f'<input type="checkbox" id="ungroomed" name="ungroomed" value=True {ungroomed_checked}>'
             '<label for="ungroomed">Ungroomed</label>'
+            "</span>"
+            '<span class="checkbox-group">'
+            f'<input type="checkbox" id="hazardous" name="hazardous" value=True {hazardous_checked}>'
+            '<label for="hazardous">Hazardous</label>'
             "</span>"
             '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
         )

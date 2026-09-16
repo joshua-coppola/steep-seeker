@@ -35,6 +35,7 @@ class TrailTable:
     area: str = "area"
     ungroomed: str = "ungroomed"
     park: str = "park"
+    hazardous: str = "hazardous"
     length: str = "length"
     vertical: str = "vertical"
     difficulty: str = "difficulty"
