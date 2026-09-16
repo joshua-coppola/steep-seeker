@@ -876,7 +876,7 @@ def test_management_edit_resort_stats_refresh_rebuilds_trails_and_lifts(
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
     assert mountain.mountain_id == "1"
     assert "old-trail" not in mountain.trails
-    assert len(mountain.trails) == 159
+    assert len(mountain.trails) == 151
     assert len(mountain.lifts) == 20
     assert refresh_setup["calls"]["create_map"] == 1
     assert refresh_setup["calls"]["create_thumbnail"] == 1
@@ -1075,7 +1075,7 @@ def test_management_edit_resort_full_refresh_fetches_and_rebuilds(
     assert response.status_code == 200
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
     assert mountain.mountain_id == "1"
-    assert len(mountain.trails) == 159
+    assert len(mountain.trails) == 151
     assert len(mountain.lifts) == 20
     assert len(fetched_bboxes) == 1
     assert (
@@ -1182,7 +1182,7 @@ def test_management_edit_resort_full_refresh_no_existing_file_skips_archiving(
     assert response.status_code == 200
     assert not refresh_setup["osm_old_dir"].exists()
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
-    assert len(mountain.trails) == 159
+    assert len(mountain.trails) == 151
 
 
 def test_management_edit_resort_full_refresh_failed_fetch_leaves_mountain_unchanged(

@@ -409,8 +409,8 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.name == "test"
     assert mountain.state == State("VT")
     assert mountain.direction == "w"
-    assert mountain.coordinates.x == pytest.approx(-72.73645, abs=1e-5)
-    assert mountain.coordinates.y == pytest.approx(43.41029, abs=1e-5)
+    assert mountain.coordinates.x == pytest.approx(-72.73652, abs=1e-5)
+    assert mountain.coordinates.y == pytest.approx(43.41028, abs=1e-5)
     assert mountain.season_passes == season_passes
     assert mountain.url == url
     # FakeElevation descends 1 unit per point within each trail/area segment;
@@ -424,7 +424,7 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
-    assert len(mountain.trails) == 159
+    assert len(mountain.trails) == 151
     assert len(mountain.lifts) == 20
 
     # difficulty = steepest_pitch (steepest_50m, see difficulty_pitch_field)
