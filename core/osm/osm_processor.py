@@ -170,13 +170,7 @@ class OSMProcessor:
         Merges any trails that have the same metadata and have an overlapping
         start/end point. Updates the self.trails object with the new trail list.
 
-        Runs to a fixed point: a single pass only extends an
-        already-accumulated trail by one adjoining segment (a segment
-        that's been folded in stops being considered for further merges in
-        that same pass -- see the `break` below), so a trail split into 3+
-        ways needs one pass per extra segment before they've all landed in
-        the same trail, and doesn't depend on self.trails happening to be
-        ordered along the path.
+        This loops until no more merges occur.
         """
         while self._merge_trails_pass():
             pass

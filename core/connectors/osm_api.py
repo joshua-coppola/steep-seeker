@@ -7,8 +7,6 @@ class OSM:
     """Fetches raw OSM XML extracts from the Overpass API."""
 
     BASE_URL = "https://overpass-api.de/api/map"
-    # Overpass rejects the default "python-requests/x.y.z" User-Agent with a
-    # 406, so a descriptive one is required, not just polite.
     HEADERS: ClassVar[dict[str, str]] = {
         "User-Agent": "SteepSeeker/1.0 (+https://steepseeker.com)"
     }

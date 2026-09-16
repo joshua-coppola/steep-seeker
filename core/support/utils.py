@@ -21,9 +21,7 @@ class DifficultyConstants:
     is just constructing a new instance and assigning it there.
     """
 
-    # degrees at the top of each tier's range: below beginner_max is green,
-    # below intermediate_max is royalblue, below advanced_max is black,
-    # below expert_max is red, above expert_max is gold
+    # degrees at the top of each tier's range
     beginner_max: float
     intermediate_max: float
     advanced_max: float
@@ -51,8 +49,7 @@ def difficulty_pitch_field() -> str:
     """
     Name of the Trail attribute / Trails column holding the pitch that
     feeds the site's difficulty rating -- "steepest_Xm" for
-    DIFFICULTY_CONSTANTS.pitch_window_meters. Recalibrating to a different
-    window is just changing that one field.
+    DIFFICULTY_CONSTANTS.pitch_window_meters.
     """
     return f"steepest_{DIFFICULTY_CONSTANTS.pitch_window_meters}m"
 
