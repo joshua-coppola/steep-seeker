@@ -15,8 +15,11 @@ from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail import Trail
 from core.support.utils import (
+    difficulty_pitch_field,
+    display_beginner_friendliness,
     get_bounding_box,
     get_trail_difficulty,
+    round_degrees,
     weather_modifier_from_trail,
 )
 from core.support.weather_calibration import recalibrate
@@ -25,6 +28,7 @@ from core.web.routes import (
     _build_geojson,
     _parse_state,
     _sorted_trails_and_lifts,
+    _weather_modifier,
 )
 from core.web.routes import nav_links as public_nav_links
 
@@ -194,9 +198,9 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     """
     Applies a gladed/ungroomed tag edit to one trail (identified by
     trail_id), recomputing its difficulty by reverse-engineering the weather
-    modifier from the trail's current stored
-    difficulty/steepest_30m/gladed/ungroomed,
-    then reapply steepest_30m + that modifier + the new gladed/ungroomed bonus.
+    modifier from the trail's current stored difficulty/steepest pitch
+    (see difficulty_pitch_field)/gladed/ungroomed, then reapplying that
+    pitch + the modifier + the new gladed/ungroomed bonus.
     """
     trail_id = request.args.get("trail_id")
     if not trail_id:
@@ -211,7 +215,10 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     trail.gladed = bool(request.args.get("gladed"))
     trail.ungroomed = bool(request.args.get("ungroomed"))
     trail.difficulty = get_trail_difficulty(
-        trail.steepest_30m, trail.gladed, trail.ungroomed, weather_modifier
+        getattr(trail, difficulty_pitch_field()),
+        trail.gladed,
+        trail.ungroomed,
+        weather_modifier,
     )
     trail.to_db(db_path)
 
@@ -570,6 +577,9 @@ def management_edit_resort():
             _apply_rotate(mountain, db_path)
             _apply_trail_edit(mountain, db_path)
             _apply_delete(mountain, db_path)
+            mountain.beginner_friendliness = display_beginner_friendliness(
+                mountain.beginner_friendliness
+            )
 
     all_mountains, _ = list_mountains(db_path=db_path)
     resorts = sorted(f"{m.name}, {m.state.value}" for m in all_mountains)
@@ -616,4 +626,5 @@ def management_edit_resort():
         next_mountain=next_mountain,
         trails=trails,
         lifts=lifts,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
     )

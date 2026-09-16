@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from math import atan, ceil, degrees
 
 import haversine as hs
@@ -8,6 +9,50 @@ import shapely.ops
 
 COORDINATE_PRECISION = 6
 METERS_TO_FEET = 3.28084
+BEGINNER_FRIENDLINESS_FLIP = 30  # see display_beginner_friendliness
+
+
+@dataclass(frozen=True)
+class DifficultyConstants:
+    """
+    Every hand-tuned constant behind the site's difficulty rating, in one
+    place -- trail_color, beginner_color, and surface_difficulty_bonus all
+    read from DIFFICULTY_CONSTANTS below live, so recalibrating the site
+    is just constructing a new instance and assigning it there.
+    """
+
+    # degrees at the top of each tier's range
+    beginner_max: float
+    intermediate_max: float
+    advanced_max: float
+    expert_max: float
+    gladed_bonus: float
+    ungroomed_bonus: float
+    # which steepest_Xm column (see osm.osm_processor.STEEPEST_PITCH_WINDOWS_METERS
+    # for the ones that exist) feeds the difficulty rating -- see
+    # difficulty_pitch_field()
+    pitch_window_meters: int
+
+
+DIFFICULTY_CONSTANTS = DifficultyConstants(
+    beginner_max=16.0,
+    intermediate_max=26.0,
+    advanced_max=36.0,
+    expert_max=46.0,
+    gladed_bonus=8.0,
+    ungroomed_bonus=5.0,
+    pitch_window_meters=50,
+)
+
+
+def difficulty_pitch_field() -> str:
+    """
+    Name of the Trail attribute / Trails column holding the pitch that
+    feeds the site's difficulty rating -- "steepest_Xm" for
+    DIFFICULTY_CONSTANTS.pitch_window_meters.
+    """
+    return f"steepest_{DIFFICULTY_CONSTANTS.pitch_window_meters}m"
+
 
 # Shared WGS84 <-> Albers Equal Area (contiguous US) transformers. Building a
 # pyproj.Transformer is expensive, so these are constructed once at import
@@ -60,20 +105,29 @@ def trail_color(difficulty: float) -> str:
     color scale, used for both static map rendering and interactive-map
     popups.
     """
-    # 0-18 degrees: green
-    if difficulty < 18:
+    if difficulty < DIFFICULTY_CONSTANTS.beginner_max:
         return "green"
-    # 18-27 degrees: blue
-    if difficulty < 27:
+    if difficulty < DIFFICULTY_CONSTANTS.intermediate_max:
         return "royalblue"
-    # 27-36 degrees: black
-    if difficulty < 36:
+    if difficulty < DIFFICULTY_CONSTANTS.advanced_max:
         return "black"
-    # 36-47 degrees: red
-    if difficulty < 47:
+    if difficulty < DIFFICULTY_CONSTANTS.expert_max:
         return "red"
-    # >47 degrees: yellow
     return "gold"
+
+
+def display_beginner_friendliness(beginner_friendliness: float | None) -> float | None:
+    """
+    Flips Mountain.beginner_friendliness as stored (the raw weighted average
+    of a mountain's easiest rateable trails, in difficulty degrees -- lower
+    means friendlier) into the site's display scale, where higher means
+    friendlier -- matching the thresholds beginner_color checks against.
+    Passes None through unchanged.
+    """
+    if beginner_friendliness is None:
+        return None
+
+    return round_degrees(BEGINNER_FRIENDLINESS_FLIP - beginner_friendliness)
 
 
 def beginner_color(beginner_friendliness: float) -> str:
@@ -82,13 +136,14 @@ def beginner_color(beginner_friendliness: float) -> str:
     color scale. Unlike trail_color this runs on the flipped score (higher
     = friendlier), so the scale is inverted: high scores are green.
     """
-    if beginner_friendliness > 12:
+    flip = BEGINNER_FRIENDLINESS_FLIP
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.beginner_max:
         return "green"
-    if beginner_friendliness > 3:
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.intermediate_max:
         return "royalblue"
-    if beginner_friendliness > -6:
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.advanced_max:
         return "black"
-    if beginner_friendliness > -17:
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.expert_max:
         return "red"
     return "gold"
 
@@ -372,9 +427,12 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     pass its route rather than its boundary polygon.
 
     If the trail is shorter than the window, falls back to the overall
-    trail slope for windows of 30m or less (the trail is short enough that
-    its whole length is a reasonable stand-in); for longer windows there's
-    no meaningful window-sized measurement, so `None` is returned.
+    trail slope for windows up to DIFFICULTY_CONSTANTS.pitch_window_meters
+    (the trail is short enough that its whole length is a reasonable
+    stand-in -- and this window is the one that must produce a value for
+    every ratable trail, since it feeds the difficulty rating); for longer
+    windows there's no meaningful window-sized measurement, so `None` is
+    returned.
     """
     coordinates = geometry.get("coordinates") or []
 
@@ -426,7 +484,7 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     if max_pitch is not None:
         return round(max_pitch, 1)
 
-    if window_meters > 30:
+    if window_meters > DIFFICULTY_CONSTANTS.pitch_window_meters:
         return None
 
     first_point, last_point = coordinates[0], coordinates[-1]
@@ -452,23 +510,16 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     )
 
 
-# Difficulty (degrees) a trail's surface adds on top of its raw pitch.
-# Gladed wins when a trail is somehow both -- the two never stack (see
-# surface_difficulty_bonus).
-GLADED_BONUS = 5.5
-UNGROOMED_BONUS = 2.5
-
-
 def surface_difficulty_bonus(gladed: bool, ungroomed: bool) -> float:
     """
-    The difficulty bump a trail earns for its surface: GLADED_BONUS for a
-    gladed trail, UNGROOMED_BONUS for an ungroomed-but-not-gladed one, 0
+    The difficulty bump a trail earns for its surface: gladed_bonus for a
+    gladed trail, ungroomed_bonus for an ungroomed-but-not-gladed one, 0
     otherwise. Gladed wins when both flags are set; the bonuses don't stack.
     """
     if gladed:
-        return GLADED_BONUS
+        return DIFFICULTY_CONSTANTS.gladed_bonus
     if ungroomed:
-        return UNGROOMED_BONUS
+        return DIFFICULTY_CONSTANTS.ungroomed_bonus
     return 0.0
 
 
@@ -476,35 +527,38 @@ def weather_modifier_from_trail(trail) -> float:
     """
     Recovers the mountain's weather modifier from one already-rated trail,
     inverting get_trail_difficulty:
-        difficulty == steepest_30m + weather_modifier + surface bonus
+        difficulty == steepest_pitch + weather_modifier + surface bonus
+    where steepest_pitch is the trail's steepest_Xm attribute named by
+    difficulty_pitch_field().
     """
     return (
         trail.difficulty
-        - trail.steepest_30m
+        - getattr(trail, difficulty_pitch_field())
         - surface_difficulty_bonus(trail.gladed, trail.ungroomed)
     )
 
 
 def get_trail_difficulty(
-    steepest_30m: float | None,
+    steepest_pitch: float | None,
     gladed: bool,
     ungroomed: bool,
     weather_modifier: float,
 ) -> float | None:
     """
-    Accepts a trail's steepest 30m pitch, its gladed/ungroomed flags, and
-    the mountain's weather modifier (see connectors.weather_api), and
-    returns the trail's overall difficulty rating. Returns `None` if
-    steepest_30m couldn't be calculated.
+    Accepts a trail's steepest pitch (over DIFFICULTY_CONSTANTS.pitch_window_meters
+    -- see difficulty_pitch_field()), its gladed/ungroomed flags, and the
+    mountain's weather modifier (see connectors.weather_api), and returns
+    the trail's overall difficulty rating. Returns `None` if steepest_pitch
+    couldn't be calculated.
 
     A trail that is both gladed and ungroomed only gets the gladed modifier;
     the two aren't stacked.
     """
-    if steepest_30m is None:
+    if steepest_pitch is None:
         return None
 
     difficulty = (
-        steepest_30m + weather_modifier + surface_difficulty_bonus(gladed, ungroomed)
+        steepest_pitch + weather_modifier + surface_difficulty_bonus(gladed, ungroomed)
     )
 
     return round(difficulty, 1)

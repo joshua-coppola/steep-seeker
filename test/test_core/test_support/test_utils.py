@@ -2,6 +2,7 @@ import shapely
 
 from core.support.utils import (
     build_elevation_profile,
+    difficulty_pitch_field,
     get_average_slope,
     get_bounding_box,
     get_length,
@@ -253,21 +254,21 @@ def test_get_trail_difficulty_gladed_and_ungroomed_only_applies_gladed():
     # gladed and ungroomed don't stack; gladed wins
     assert (
         get_trail_difficulty(20.0, gladed=True, ungroomed=True, weather_modifier=3.0)
-        == 28.5
+        == 31.0
     )
 
 
 def test_get_trail_difficulty_gladed_only():
     assert (
         get_trail_difficulty(20.0, gladed=True, ungroomed=False, weather_modifier=0)
-        == 25.5
+        == 28.0
     )
 
 
 def test_get_trail_difficulty_ungroomed_only():
     assert (
         get_trail_difficulty(20.0, gladed=False, ungroomed=True, weather_modifier=0)
-        == 22.5
+        == 25.0
     )
 
 
@@ -280,16 +281,17 @@ def test_get_trail_difficulty_no_steepest_30m_returns_none():
 
 def test_surface_difficulty_bonus():
     assert surface_difficulty_bonus(gladed=False, ungroomed=False) == 0.0
-    assert surface_difficulty_bonus(gladed=True, ungroomed=False) == 5.5
-    assert surface_difficulty_bonus(gladed=False, ungroomed=True) == 2.5
+    assert surface_difficulty_bonus(gladed=True, ungroomed=False) == 8.0
+    assert surface_difficulty_bonus(gladed=False, ungroomed=True) == 5.0
     # gladed wins, no stacking
-    assert surface_difficulty_bonus(gladed=True, ungroomed=True) == 5.5
+    assert surface_difficulty_bonus(gladed=True, ungroomed=True) == 8.0
 
 
 class _FakeTrail:
-    def __init__(self, difficulty, steepest_30m, gladed=False, ungroomed=False):
+    def __init__(self, difficulty, steepest_pitch, gladed=False, ungroomed=False):
         self.difficulty = difficulty
-        self.steepest_30m = steepest_30m
+        # whichever steepest_Xm attribute currently feeds difficulty
+        setattr(self, difficulty_pitch_field(), steepest_pitch)
         self.gladed = gladed
         self.ungroomed = ungroomed
 

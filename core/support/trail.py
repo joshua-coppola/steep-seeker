@@ -5,7 +5,12 @@ from shapely import LineString, Polygon, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.datamodels.database import TrailTable
-from core.support.utils import meters_to_feet, round_feet, round_geometry_precision
+from core.support.utils import (
+    difficulty_pitch_field,
+    meters_to_feet,
+    round_feet,
+    round_geometry_precision,
+)
 
 
 @dataclass
@@ -51,6 +56,14 @@ class Trail:
         in meters.
         """
         return round_feet(meters_to_feet(self.vertical))
+
+    def difficulty_pitch(self) -> float | None:
+        """
+        The steepest_Xm value that fed this trail's difficulty rating (see
+        difficulty_pitch_field) -- the pitch to show alongside a
+        trail_color(self.difficulty) badge so the two stay consistent.
+        """
+        return getattr(self, difficulty_pitch_field())
 
     def from_db(trail_id: str, db_path: str = DATABASE_PATH) -> Self:
         """

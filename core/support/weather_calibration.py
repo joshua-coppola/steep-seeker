@@ -12,6 +12,7 @@ from core.datamodels.database import (
     WeatherCalibrationTable,
 )
 from core.support.utils import (
+    difficulty_pitch_field,
     get_mountain_rating,
     get_trail_difficulty,
     surface_difficulty_bonus,
@@ -168,7 +169,7 @@ def _recovered_modifier(trail: sqlite3.Row) -> float:
     """The weather modifier baked into an already-rated trail's difficulty."""
     return (
         trail[TrailTable.difficulty]
-        - trail[TrailTable.steepest_30m]
+        - trail[difficulty_pitch_field()]
         - surface_difficulty_bonus(
             bool(trail[TrailTable.gladed]), bool(trail[TrailTable.ungroomed])
         )
@@ -212,10 +213,12 @@ def recalibrate(db_path: str = DATABASE_PATH) -> dict:
         trail_updates: list[tuple[float | None, str]] = []
         mountain_updates: list[tuple[float, float, str]] = []
 
+        pitch_field = difficulty_pitch_field()
+        pitch_column = getattr(TrailTable, pitch_field)
         for mountain in mountains:
             trails = cur.execute(
                 f"""
-                SELECT {TrailTable.trail_id}, {TrailTable.steepest_30m},
+                SELECT {TrailTable.trail_id}, {pitch_column},
                        {TrailTable.gladed}, {TrailTable.ungroomed},
                        {TrailTable.length}, {TrailTable.difficulty}
                 FROM Trails WHERE {TrailTable.mountain_id} = ?
@@ -230,7 +233,7 @@ def recalibrate(db_path: str = DATABASE_PATH) -> dict:
                 trail
                 for trail in trails
                 if trail[TrailTable.difficulty] is not None
-                and trail[TrailTable.steepest_30m] is not None
+                and trail[pitch_field] is not None
             ]
             if rated:
                 before.append(_recovered_modifier(rated[0]))
@@ -247,7 +250,7 @@ def recalibrate(db_path: str = DATABASE_PATH) -> dict:
             rerated: list[float] = []
             for trail in trails:
                 difficulty = get_trail_difficulty(
-                    trail[TrailTable.steepest_30m],
+                    trail[pitch_field],
                     bool(trail[TrailTable.gladed]),
                     bool(trail[TrailTable.ungroomed]),
                     modifier,

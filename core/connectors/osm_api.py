@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import requests
 
 
@@ -5,6 +7,9 @@ class OSM:
     """Fetches raw OSM XML extracts from the Overpass API."""
 
     BASE_URL = "https://overpass-api.de/api/map"
+    HEADERS: ClassVar[dict[str, str]] = {
+        "User-Agent": "SteepSeeker/1.0 (+https://steepseeker.com)"
+    }
 
     def __init__(self, timeout: int = 60):
         self.timeout = timeout
@@ -20,7 +25,9 @@ class OSM:
         params = {"bbox": bounding_box}
 
         for _ in range(3):
-            response = requests.get(self.BASE_URL, params=params, timeout=self.timeout)
+            response = requests.get(
+                self.BASE_URL, params=params, timeout=self.timeout, headers=self.HEADERS
+            )
             if response.status_code == 200:
                 return response.content
             if response.status_code != 504:

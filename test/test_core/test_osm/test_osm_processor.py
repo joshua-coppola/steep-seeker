@@ -15,7 +15,7 @@ def test_OSMProcessor(osm_file):
     assert len(osm_processor.ways) == 829
     assert len(osm_processor.relations) == 17
 
-    assert len(osm_processor.trails) == 159
+    assert len(osm_processor.trails) == 151
     assert len(osm_processor.trail_relations) == 1
 
     assert len(osm_processor.lifts) == 20
@@ -29,7 +29,7 @@ def test_get_trails(osm_file, monkeypatch):
 
     trails = osm_processor_instance.get_trails()
 
-    assert len(trails) == 159
+    assert len(trails) == 151
     assert isinstance(trails, dict)
     # Non Area Example
     assert len(list(trails["w11"].geometry.coords)) == 19
@@ -53,7 +53,9 @@ def test_get_trails(osm_file, monkeypatch):
     assert round(trails["w10"].max_slope, 3) == 11.655
     assert round(trails["w10"].average_slope, 3) == 10.018
     assert trails["w10"].steepest_30m == 9.9
-    assert trails["w10"].steepest_50m is None
+    # w10 is ~34m long: shorter than pitch_window_meters (50m), so
+    # steepest_50m also falls back to the whole-trail slope; 100m doesn't
+    assert trails["w10"].steepest_50m == 9.9
     assert trails["w10"].steepest_100m is None
 
     assert round(trails["w11"].length, 3) == 105.677
@@ -120,7 +122,7 @@ def test_get_lifts(osm_file, monkeypatch):
 def test_get_center(osm_file):
     osm_processor = OSMProcessor(osm_file)
 
-    actual_center = Point(-72.73644922151608, 43.4102903790286)
+    actual_center = Point(-72.73652460768172, 43.41027958070422)
 
     assert osm_processor.get_center() == actual_center
 

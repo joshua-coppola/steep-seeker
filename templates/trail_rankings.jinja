@@ -177,136 +177,52 @@ Trail Rankings - Find the Hardest Trails in the USA
                 </td>
                 <td>{{trail.state.value}}</td>
                 <td>
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.difficulty}}
+                    <span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    {{trail.difficulty}}
                 </td>
                 <td>
-                    {% if trail.steepest_30m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_30m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_30m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_30m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}°
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_30m) }}"></span>
+                    {{trail.steepest_30m}}°
                 </td>
                 <td>
                     {% if trail.steepest_50m != None %}
-                    {% if trail.steepest_50m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_50m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_50m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_50m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_50m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_50m) }}"></span>
+                    {{trail.steepest_50m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
                 <td>
                     {% if trail.steepest_100m != None %}
-                    {% if trail.steepest_100m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_100m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_100m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_100m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_100m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_100m) }}"></span>
+                    {{trail.steepest_100m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
                 <td>
                     {% if trail.steepest_200m != None %}
-                    {% if trail.steepest_200m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_200m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_200m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_200m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_200m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_200m) }}"></span>
+                    {{trail.steepest_200m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
                 <td>
                     {% if trail.steepest_500m != None %}
-                    {% if trail.steepest_500m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_500m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_500m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_500m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_500m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_500m) }}"></span>
+                    {{trail.steepest_500m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
                 <td>
                     {% if trail.steepest_1000m != None %}
-                    {% if trail.steepest_1000m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_1000m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_1000m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_1000m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_1000m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_1000m) }}"></span>
+                    {{trail.steepest_1000m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
             {% endif %}
@@ -347,20 +263,8 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% endif %}
                 <td style="width:50%">Difficulty</td>
                 <td style="width:50%">
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.difficulty}}
+                    <span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    {{trail.difficulty}}
                 </td>
             </tr>
             {% if sort_by == "steepest_30m"%}
@@ -370,20 +274,8 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% endif %}
                 <td>30m Pitch</td>
                 <td>
-                    {% if trail.steepest_30m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_30m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_30m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_30m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}°
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_30m) }}"></span>
+                    {{trail.steepest_30m}}°
                 </td>
             </tr>
             {% if sort_by == "steepest_50m"%}
@@ -394,23 +286,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                 <td>50m Pitch</td>
                 <td>
                     {% if trail.steepest_50m != None %}
-                    {% if trail.steepest_50m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_50m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_50m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_50m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_50m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_50m) }}"></span>
+                    {{trail.steepest_50m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
             {% if sort_by == "steepest_100m"%}
@@ -421,23 +301,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                 <td>100m Pitch</td>
                 <td>
                     {% if trail.steepest_100m != None %}
-                    {% if trail.steepest_100m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_100m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_100m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_100m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_100m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_100m) }}"></span>
+                    {{trail.steepest_100m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
             {% if sort_by == "steepest_200m"%}
@@ -448,23 +316,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                 <td>200m Pitch</td>
                 <td>
                     {% if trail.steepest_200m != None %}
-                    {% if trail.steepest_200m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_200m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_200m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_200m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_200m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_200m) }}"></span>
+                    {{trail.steepest_200m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
             {% if sort_by == "steepest_500m"%}
@@ -475,23 +331,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                 <td>500m Pitch</td>
                 <td>
                     {% if trail.steepest_500m != None %}
-                    {% if trail.steepest_500m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_500m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_500m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_500m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_500m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_500m) }}"></span>
+                    {{trail.steepest_500m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
             {% if sort_by == "steepest_1000m"%}
@@ -502,23 +346,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                 <td>1000m Pitch</td>
                 <td>
                     {% if trail.steepest_1000m != None %}
-                    {% if trail.steepest_1000m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_1000m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_1000m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_1000m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_1000m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    <span class="icon difficulty-{{ trail_color(trail.steepest_1000m) }}"></span>
+                    {{trail.steepest_1000m}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
         </table>

@@ -1,5 +1,5 @@
 import random
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from math import atan2, degrees
 from urllib.parse import urlencode
 
@@ -22,8 +22,12 @@ from core.support.mountain import Mountain
 from core.support.mountain_query import list_mountains
 from core.support.trail_query import list_trails
 from core.support.utils import (
+    BEGINNER_FRIENDLINESS_FLIP,
+    DIFFICULTY_CONSTANTS,
     beginner_color,
     build_elevation_profile,
+    difficulty_pitch_field,
+    display_beginner_friendliness,
     round_degrees,
     trail_color,
     weather_modifier_from_trail,
@@ -35,8 +39,19 @@ web = Blueprint("web", __name__)
 @web.app_context_processor
 def inject_rating_colors():
     # so templates can color a difficulty / beginner-friendliness number
-    # the same way the Python serving code does
-    return {"trail_color": trail_color, "beginner_color": beginner_color}
+    # the same way the Python serving code does, and build their own
+    # threshold comparisons (search/rankings) from the same live constants
+    # instead of hardcoding copies of them
+    return {
+        "trail_color": trail_color,
+        "beginner_color": beginner_color,
+        # a dict (not the dataclass instance) so it works with both Jinja's
+        # dot-access convenience and the |tojson filter that hands it to
+        # search.js/interactive-map.js via page_base.jinja
+        "difficulty_thresholds": asdict(DIFFICULTY_CONSTANTS),
+        "beginner_friendliness_max": BEGINNER_FRIENDLINESS_FLIP,
+        "display_beginner_friendliness": display_beginner_friendliness,
+    }
 
 
 @dataclass
@@ -486,7 +501,8 @@ def _trail_features(
         "orientation": orientation,
         "color": trail_color(trail.difficulty),
         "gladed": str(trail.gladed),
-        "difficulty_modifier": (trail.difficulty or 0) - (trail.steepest_30m or 0),
+        "difficulty_modifier": (trail.difficulty or 0)
+        - (getattr(trail, difficulty_pitch_field()) or 0),
     }
 
     features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
@@ -643,7 +659,9 @@ def _load_mountain_or_404(state: str, name: str, db_path: str) -> Mountain:
     mountain = Mountain.from_name(name, state_enum, db_path)
     if mountain is None:
         abort(404)
-    mountain.beginner_friendliness = round_degrees(30 - mountain.beginner_friendliness)
+    mountain.beginner_friendliness = display_beginner_friendliness(
+        mountain.beginner_friendliness
+    )
 
     return mountain
 
@@ -679,6 +697,7 @@ def static_map(state, name):
         mountain=mountain,
         trails=trails,
         lifts=lifts,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
     )
 
 
@@ -740,6 +759,7 @@ def interactive_map(state, name):
         mountain=mountain,
         trails=trails,
         lifts=lifts,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
     )
 
 

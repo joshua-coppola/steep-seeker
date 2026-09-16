@@ -39,6 +39,7 @@ def area_trail_mountain():
         max_slope=40.0,
         average_slope=20.0,
         steepest_30m=40.0,
+        steepest_50m=40.0,
     )
 
     return Mountain(
@@ -67,7 +68,7 @@ class TestTrailColor:
         assert _trail_color(40) == "red"
 
     def test_gold_above_47(self):
-        assert _trail_color(50) == "gold"
+        assert _trail_color(60) == "gold"
 
 
 class TestGetLabelPlacement:

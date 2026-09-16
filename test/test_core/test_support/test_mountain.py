@@ -409,8 +409,8 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.name == "test"
     assert mountain.state == State("VT")
     assert mountain.direction == "w"
-    assert mountain.coordinates.x == pytest.approx(-72.73645, abs=1e-5)
-    assert mountain.coordinates.y == pytest.approx(43.41029, abs=1e-5)
+    assert mountain.coordinates.x == pytest.approx(-72.73652, abs=1e-5)
+    assert mountain.coordinates.y == pytest.approx(43.41028, abs=1e-5)
     assert mountain.season_passes == season_passes
     assert mountain.url == url
     # FakeElevation descends 1 unit per point within each trail/area segment;
@@ -419,19 +419,21 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     # weather_modifier is 3.0 here: FakeWeather's reading is the midpoint of the
     # 3-point calibration the db_path fixture seeds (see conftest), so every
     # metric ranks at 0.5
-    assert mountain.difficulty == 17.8
+    assert mountain.difficulty == 20.5
     assert mountain.beginner_friendliness == 12.3
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
-    assert len(mountain.trails) == 159
+    assert len(mountain.trails) == 151
     assert len(mountain.lifts) == 20
 
-    # difficulty = steepest_30m + weather_modifier (+ gladed/ungroomed bonus)
+    # difficulty = steepest_pitch (steepest_50m, see difficulty_pitch_field)
+    # + weather_modifier (+ gladed/ungroomed bonus)
     assert mountain.trails["w11"].gladed is False
     assert mountain.trails["w11"].ungroomed is False
     assert mountain.trails["w11"].steepest_30m == 9.3
-    assert mountain.trails["w11"].difficulty == 12.3
+    assert mountain.trails["w11"].steepest_50m == 10.0
+    assert mountain.trails["w11"].difficulty == 13.0
 
 
 def test_mountain_from_osm_preserves_given_mountain_id(osm_file, db_path, monkeypatch):

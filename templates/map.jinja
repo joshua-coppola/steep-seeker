@@ -36,6 +36,7 @@
                 <li>Vertical: {{mountain.vertical_feet()}} ft</li>
                 <li>Difficulty: {{mountain.difficulty}}<span class="icon difficulty-{{ trail_color(mountain.difficulty) }}"></span></li>
                 <li>Beginner Friendliness: {{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
+                <li>Weather Modifier: {{weather_modifier}}°</li>
                 <li>Last Updated: {{mountain.last_updated.date()}}</li>
                 <li><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button></li>
             </ul>
@@ -52,7 +53,7 @@
                 {% if not '' == trail.name %}
                 <li>
                     <span class="sidebar-badge">
-                        {{trail.steepest_30m}}°<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                        {{trail.difficulty_pitch()}}°<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
                     </span>
                     {{trail.name}}
                     {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}

@@ -169,15 +169,18 @@ class OSMProcessor:
         """
         Merges any trails that have the same metadata and have an overlapping
         start/end point. Updates the self.trails object with the new trail list.
+
+        This loops until no more merges occur.
         """
-        start_dict = {}
-        end_dict = {}
+        while self._merge_trails_pass():
+            pass
 
+    def _merge_trails_pass(self) -> bool:
+        """
+        One merge pass over self.trails; returns whether anything merged.
+        """
         complete_trails = {}
-
-        for trail_id, trail_value in self.trails.items():
-            start_dict[trail_value["nodes"][0]] = trail_id
-            end_dict[trail_value["nodes"][-1]] = trail_id
+        merged_any = False
 
         for trail_id, trail_value in self.trails.items():
             found_match = False
@@ -193,7 +196,9 @@ class OSMProcessor:
                 # if all metadata is matching, then check if the start/end points line up
                 if matching_parts == 6:
                     if trail_value["nodes"][0] == existing_data["nodes"][-1]:
-                        existing_data["nodes"] += trail_value["nodes"][1:]
+                        existing_data["nodes"] = (
+                            existing_data["nodes"] + trail_value["nodes"][1:]
+                        )
                     elif trail_value["nodes"][-1] == existing_data["nodes"][0]:
                         existing_data["nodes"] = (
                             trail_value["nodes"][:-1] + existing_data["nodes"]
@@ -201,11 +206,17 @@ class OSMProcessor:
                     else:
                         continue
                     found_match = True
+                    merged_any = True
+                    # trail_value now belongs to existing_data -- stop
+                    # checking it against the other accumulated trails, or
+                    # its nodes would get folded into more than one of them
+                    break
 
             if not found_match:
                 complete_trails[trail_id] = trail_value
 
         self.trails = complete_trails
+        return merged_any
 
     def _node_points(self, nodes: list) -> list[shapely.Point]:
         """

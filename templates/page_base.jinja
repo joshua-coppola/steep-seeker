@@ -2,6 +2,11 @@
 
 {% block head %}
 <link href="/page.css" rel="stylesheet" />
+<script>
+    // the site's difficulty-color calibration (core.support.utils.DIFFICULTY_CONSTANTS),
+    // for any static JS that needs to match the same boundaries the server rates trails by
+    window.DIFFICULTY_CONSTANTS = {{ difficulty_thresholds | tojson }};
+</script>
 {% block pagehead %}
 {% endblock %}
 {% endblock %}

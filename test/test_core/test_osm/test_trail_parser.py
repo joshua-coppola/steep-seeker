@@ -28,7 +28,7 @@ def test_identify_trails(osm_file):
     assert len(set(trail_info["name"])) == 128
 
     node_lengths = [len(nodes) for nodes in trail_info["nodes"]]
-    assert sum(node_lengths) == 2251
+    assert sum(node_lengths) == 2224
 
     assert len(set(trail_info["official_rating"])) == 5
     assert sum(trail_info["gladed"]) == 17
