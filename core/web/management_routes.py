@@ -245,12 +245,73 @@ def _apply_rotate(mountain: Mountain, db_path: str) -> None:
     create_thumbnail(mountain)
 
 
+def _snapshot_modifiers(mountain: Mountain) -> dict[str, tuple[bool, bool, bool]]:
+    """
+    Captures every trail's gladed/ungroomed/hazardous flags right before a
+    refresh overwrites them from a fresh OSM parse, so _fill_cached_modifiers
+    can restore manual edits made on the edit-resort page afterward. Lives
+    only for the duration of one refresh call -- not persisted anywhere.
+    """
+    return {
+        trail_id: (trail.gladed, trail.ungroomed, trail.hazardous)
+        for trail_id, trail in mountain.trails.items()
+    }
+
+
+def _fill_cached_modifiers(
+    mountain: Mountain, cached: dict[str, tuple[bool, bool, bool]]
+) -> None:
+    """
+    Fills in gladed/ungroomed/hazardous on every trail of "mountain" from a
+    _snapshot_modifiers taken just before the refresh that overwrote them.
+    A flag the fresh OSM parse already set True is left alone -- current
+    OSM data always wins over a stale manual edit; only a flag the parse
+    came back without gets filled in from the cache. Trails with no cached
+    snapshot (new since the snapshot) are left untouched. Recomputes
+    difficulty for any trail whose flags actually changed.
+    """
+    pitch_field = difficulty_pitch_field()
+    for trail_id, trail in mountain.trails.items():
+        snapshot = cached.get(trail_id)
+        if snapshot is None:
+            continue
+
+        gladed, ungroomed, hazardous = snapshot
+        gladed = trail.gladed or gladed
+        ungroomed = trail.ungroomed or ungroomed
+        hazardous = trail.hazardous or hazardous
+        # gladed and ungroomed don't stack -- gladed wins, same as the OSM
+        # parser's own rule
+        if gladed and ungroomed:
+            ungroomed = False
+
+        if (gladed, ungroomed, hazardous) == (
+            trail.gladed,
+            trail.ungroomed,
+            trail.hazardous,
+        ):
+            continue
+
+        weather_modifier = weather_modifier_from_trail(trail)
+        trail.gladed = gladed
+        trail.ungroomed = ungroomed
+        trail.hazardous = hazardous
+        trail.difficulty = get_trail_difficulty(
+            getattr(trail, pitch_field),
+            trail.gladed,
+            trail.ungroomed,
+            trail.hazardous,
+            weather_modifier,
+        )
+
+
 def _rebuild_from_osm_file(
     mountain: Mountain,
     osm_path: str,
     db_path: str,
     ignore_areas: bool = False,
     blacklist_areas: bool = False,
+    preserve_modifiers: bool = False,
 ) -> Mountain | None:
     """
     Re-parses the given local OSM file into a fresh trail/lift set for
@@ -263,12 +324,19 @@ def _rebuild_from_osm_file(
     the rebuild; "blacklist_areas" additionally blacklists those ids so
     they stay gone on future refreshes even without "ignore_areas".
 
+    When "preserve_modifiers" is set, gladed/ungroomed/hazardous flags that
+    were manually set on the edit-resort page (and so would otherwise be
+    lost when the fresh OSM parse comes back without them) are restored --
+    see _snapshot_modifiers/_fill_cached_modifiers.
+
     Returns None (leaving the DB untouched) if the file is missing or the
     parse comes back with zero trails, since rebuilding from an empty or
     failed parse would wipe out real data.
     """
     if not os.path.exists(osm_path):
         return None
+
+    cached_modifiers = _snapshot_modifiers(mountain) if preserve_modifiers else {}
 
     refreshed = Mountain.from_osm(
         osm_path,
@@ -307,6 +375,9 @@ def _rebuild_from_osm_file(
         if not is_blacklisted(mountain.mountain_id, lift_id, db_path)
     }
 
+    if preserve_modifiers:
+        _fill_cached_modifiers(refreshed, cached_modifiers)
+
     refreshed.recalculate_stats()
 
     Mountain.clear_trails_and_lifts(mountain.mountain_id, db_path)
@@ -341,8 +412,8 @@ def _full_refresh(mountain: Mountain, db_path: str) -> Mountain | None:
     "size_increase", for resorts that have grown past their original
     boundary), archives the existing local OSM file and replaces it with
     the new extract, then rebuilds trails/lifts/stats from that new file
-    the same way a stats refresh does -- "ignore_areas" and
-    "blacklist_areas" apply here too.
+    the same way a stats refresh does -- "ignore_areas", "blacklist_areas",
+    and "preserve_modifiers" apply here too.
 
     Returns None (leaving the DB and local file untouched) if the fetch
     fails.
@@ -365,8 +436,9 @@ def _full_refresh(mountain: Mountain, db_path: str) -> Mountain | None:
 
     ignore_areas = bool(request.args.get("ignore_areas"))
     blacklist_areas = bool(request.args.get("blacklist_areas"))
+    preserve_modifiers = bool(request.args.get("preserve_modifiers"))
     return _rebuild_from_osm_file(
-        mountain, osm_path, db_path, ignore_areas, blacklist_areas
+        mountain, osm_path, db_path, ignore_areas, blacklist_areas, preserve_modifiers
     )
 
 
@@ -391,8 +463,14 @@ def _apply_refresh(mountain: Mountain, db_path: str) -> Mountain:
         osm_path = os.path.join(OSM_DIR, mountain.state.value, f"{mountain.name}.osm")
         ignore_areas = bool(request.args.get("ignore_areas"))
         blacklist_areas = bool(request.args.get("blacklist_areas"))
+        preserve_modifiers = bool(request.args.get("preserve_modifiers"))
         refreshed = _rebuild_from_osm_file(
-            mountain, osm_path, db_path, ignore_areas, blacklist_areas
+            mountain,
+            osm_path,
+            db_path,
+            ignore_areas,
+            blacklist_areas,
+            preserve_modifiers,
         )
 
     if refreshed is not None:
