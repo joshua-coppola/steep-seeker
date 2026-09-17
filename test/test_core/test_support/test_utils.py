@@ -245,7 +245,9 @@ def test_get_steepest_pitch_too_few_points():
 
 def test_get_trail_difficulty_plain():
     assert (
-        get_trail_difficulty(20.0, gladed=False, ungroomed=False, weather_modifier=3.0)
+        get_trail_difficulty(
+            20.0, gladed=False, ungroomed=False, hazardous=False, weather_modifier=3.0
+        )
         == 23.0
     )
 
@@ -253,55 +255,113 @@ def test_get_trail_difficulty_plain():
 def test_get_trail_difficulty_gladed_and_ungroomed_only_applies_gladed():
     # gladed and ungroomed don't stack; gladed wins
     assert (
-        get_trail_difficulty(20.0, gladed=True, ungroomed=True, weather_modifier=3.0)
+        get_trail_difficulty(
+            20.0, gladed=True, ungroomed=True, hazardous=False, weather_modifier=3.0
+        )
         == 31.0
     )
 
 
 def test_get_trail_difficulty_gladed_only():
     assert (
-        get_trail_difficulty(20.0, gladed=True, ungroomed=False, weather_modifier=0)
+        get_trail_difficulty(
+            20.0, gladed=True, ungroomed=False, hazardous=False, weather_modifier=0
+        )
         == 28.0
     )
 
 
 def test_get_trail_difficulty_ungroomed_only():
     assert (
-        get_trail_difficulty(20.0, gladed=False, ungroomed=True, weather_modifier=0)
+        get_trail_difficulty(
+            20.0, gladed=False, ungroomed=True, hazardous=False, weather_modifier=0
+        )
         == 25.0
+    )
+
+
+def test_get_trail_difficulty_hazardous_only():
+    assert (
+        get_trail_difficulty(
+            20.0, gladed=False, ungroomed=False, hazardous=True, weather_modifier=0
+        )
+        == 25.0
+    )
+
+
+def test_get_trail_difficulty_hazardous_stacks_with_gladed():
+    # unlike gladed/ungroomed, hazardous is a separate axis and always stacks
+    assert (
+        get_trail_difficulty(
+            20.0, gladed=True, ungroomed=False, hazardous=True, weather_modifier=0
+        )
+        == 33.0
     )
 
 
 def test_get_trail_difficulty_no_steepest_30m_returns_none():
     assert (
-        get_trail_difficulty(None, gladed=True, ungroomed=True, weather_modifier=3.0)
+        get_trail_difficulty(
+            None, gladed=True, ungroomed=True, hazardous=True, weather_modifier=3.0
+        )
         is None
     )
 
 
 def test_surface_difficulty_bonus():
-    assert surface_difficulty_bonus(gladed=False, ungroomed=False) == 0.0
-    assert surface_difficulty_bonus(gladed=True, ungroomed=False) == 8.0
-    assert surface_difficulty_bonus(gladed=False, ungroomed=True) == 5.0
+    assert (
+        surface_difficulty_bonus(gladed=False, ungroomed=False, hazardous=False) == 0.0
+    )
+    assert (
+        surface_difficulty_bonus(gladed=True, ungroomed=False, hazardous=False) == 8.0
+    )
+    assert (
+        surface_difficulty_bonus(gladed=False, ungroomed=True, hazardous=False) == 5.0
+    )
     # gladed wins, no stacking
-    assert surface_difficulty_bonus(gladed=True, ungroomed=True) == 8.0
+    assert surface_difficulty_bonus(gladed=True, ungroomed=True, hazardous=False) == 8.0
+    # hazardous is additive on top of whichever surface bonus applies
+    assert (
+        surface_difficulty_bonus(gladed=False, ungroomed=False, hazardous=True) == 5.0
+    )
+    assert (
+        surface_difficulty_bonus(gladed=True, ungroomed=False, hazardous=True) == 13.0
+    )
+    assert (
+        surface_difficulty_bonus(gladed=False, ungroomed=True, hazardous=True) == 10.0
+    )
 
 
 class _FakeTrail:
-    def __init__(self, difficulty, steepest_pitch, gladed=False, ungroomed=False):
+    def __init__(
+        self, difficulty, steepest_pitch, gladed=False, ungroomed=False, hazardous=False
+    ):
         self.difficulty = difficulty
         # whichever steepest_Xm attribute currently feeds difficulty
         setattr(self, difficulty_pitch_field(), steepest_pitch)
         self.gladed = gladed
         self.ungroomed = ungroomed
+        self.hazardous = hazardous
 
 
 def test_weather_modifier_from_trail_inverts_get_trail_difficulty():
-    for gladed, ungroomed in [(False, False), (True, False), (False, True)]:
+    for gladed, ungroomed, hazardous in [
+        (False, False, False),
+        (True, False, False),
+        (False, True, False),
+        (False, False, True),
+        (True, False, True),
+    ]:
         difficulty = get_trail_difficulty(
-            20.0, gladed=gladed, ungroomed=ungroomed, weather_modifier=3.0
+            20.0,
+            gladed=gladed,
+            ungroomed=ungroomed,
+            hazardous=hazardous,
+            weather_modifier=3.0,
         )
-        trail = _FakeTrail(difficulty, 20.0, gladed=gladed, ungroomed=ungroomed)
+        trail = _FakeTrail(
+            difficulty, 20.0, gladed=gladed, ungroomed=ungroomed, hazardous=hazardous
+        )
         assert weather_modifier_from_trail(trail) == 3.0
 
 

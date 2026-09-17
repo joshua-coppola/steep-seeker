@@ -35,6 +35,7 @@ CREATE TABLE "Trails"
     "area" BOOLEAN NOT NULL,
     "ungroomed" BOOLEAN NOT NULL,
     "park" BOOLEAN NOT NULL,
+    "hazardous" BOOLEAN NOT NULL,
     "length" REAL,
     "vertical" REAL,
     "difficulty" REAL,

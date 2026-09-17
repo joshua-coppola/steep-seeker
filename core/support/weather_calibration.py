@@ -171,7 +171,9 @@ def _recovered_modifier(trail: sqlite3.Row) -> float:
         trail[TrailTable.difficulty]
         - trail[difficulty_pitch_field()]
         - surface_difficulty_bonus(
-            bool(trail[TrailTable.gladed]), bool(trail[TrailTable.ungroomed])
+            bool(trail[TrailTable.gladed]),
+            bool(trail[TrailTable.ungroomed]),
+            bool(trail[TrailTable.hazardous]),
         )
     )
 
@@ -220,6 +222,7 @@ def recalibrate(db_path: str = DATABASE_PATH) -> dict:
                 f"""
                 SELECT {TrailTable.trail_id}, {pitch_column},
                        {TrailTable.gladed}, {TrailTable.ungroomed},
+                       {TrailTable.hazardous},
                        {TrailTable.length}, {TrailTable.difficulty}
                 FROM Trails WHERE {TrailTable.mountain_id} = ?
                 """,
@@ -253,6 +256,7 @@ def recalibrate(db_path: str = DATABASE_PATH) -> dict:
                     trail[pitch_field],
                     bool(trail[TrailTable.gladed]),
                     bool(trail[TrailTable.ungroomed]),
+                    bool(trail[TrailTable.hazardous]),
                     modifier,
                 )
                 trail_updates.append((difficulty, trail[TrailTable.trail_id]))

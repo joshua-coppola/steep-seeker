@@ -113,6 +113,7 @@ def trail_factory():
             TrailTable.area: False,
             TrailTable.ungroomed: False,
             TrailTable.park: False,
+            TrailTable.hazardous: False,
             TrailTable.length: 1,
             TrailTable.vertical: 1,
             TrailTable.difficulty: 1.0,

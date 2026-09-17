@@ -28,6 +28,7 @@ class DifficultyConstants:
     expert_max: float
     gladed_bonus: float
     ungroomed_bonus: float
+    hazardous_bonus: float
     # which steepest_Xm column (see osm.osm_processor.STEEPEST_PITCH_WINDOWS_METERS
     # for the ones that exist) feeds the difficulty rating -- see
     # difficulty_pitch_field()
@@ -41,6 +42,7 @@ DIFFICULTY_CONSTANTS = DifficultyConstants(
     expert_max=46.0,
     gladed_bonus=8.0,
     ungroomed_bonus=5.0,
+    hazardous_bonus=5.0,
     pitch_window_meters=50,
 )
 
@@ -510,17 +512,27 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     )
 
 
-def surface_difficulty_bonus(gladed: bool, ungroomed: bool) -> float:
+def surface_difficulty_bonus(gladed: bool, ungroomed: bool, hazardous: bool) -> float:
     """
-    The difficulty bump a trail earns for its surface: gladed_bonus for a
-    gladed trail, ungroomed_bonus for an ungroomed-but-not-gladed one, 0
-    otherwise. Gladed wins when both flags are set; the bonuses don't stack.
+    The difficulty bump a trail earns for its surface and hazards:
+    gladed_bonus for a gladed trail, ungroomed_bonus for an
+    ungroomed-but-not-gladed one, 0 otherwise -- gladed wins when both flags
+    are set, the two don't stack. hazardous_bonus is added on top of that
+    when the trail is hazardous; unlike gladed/ungroomed it's a separate
+    axis (a manually-set hazard warning, not a surface type) and always
+    stacks.
     """
     if gladed:
-        return DIFFICULTY_CONSTANTS.gladed_bonus
-    if ungroomed:
-        return DIFFICULTY_CONSTANTS.ungroomed_bonus
-    return 0.0
+        bonus = DIFFICULTY_CONSTANTS.gladed_bonus
+    elif ungroomed:
+        bonus = DIFFICULTY_CONSTANTS.ungroomed_bonus
+    else:
+        bonus = 0.0
+
+    if hazardous:
+        bonus += DIFFICULTY_CONSTANTS.hazardous_bonus
+
+    return bonus
 
 
 def weather_modifier_from_trail(trail) -> float:
@@ -534,7 +546,7 @@ def weather_modifier_from_trail(trail) -> float:
     return (
         trail.difficulty
         - getattr(trail, difficulty_pitch_field())
-        - surface_difficulty_bonus(trail.gladed, trail.ungroomed)
+        - surface_difficulty_bonus(trail.gladed, trail.ungroomed, trail.hazardous)
     )
 
 
@@ -542,23 +554,27 @@ def get_trail_difficulty(
     steepest_pitch: float | None,
     gladed: bool,
     ungroomed: bool,
+    hazardous: bool,
     weather_modifier: float,
 ) -> float | None:
     """
     Accepts a trail's steepest pitch (over DIFFICULTY_CONSTANTS.pitch_window_meters
-    -- see difficulty_pitch_field()), its gladed/ungroomed flags, and the
-    mountain's weather modifier (see connectors.weather_api), and returns
-    the trail's overall difficulty rating. Returns `None` if steepest_pitch
-    couldn't be calculated.
+    -- see difficulty_pitch_field()), its gladed/ungroomed/hazardous flags,
+    and the mountain's weather modifier (see connectors.weather_api), and
+    returns the trail's overall difficulty rating. Returns `None` if
+    steepest_pitch couldn't be calculated.
 
     A trail that is both gladed and ungroomed only gets the gladed modifier;
-    the two aren't stacked.
+    the two aren't stacked. hazardous is a separate axis and always stacks
+    on top.
     """
     if steepest_pitch is None:
         return None
 
     difficulty = (
-        steepest_pitch + weather_modifier + surface_difficulty_bonus(gladed, ungroomed)
+        steepest_pitch
+        + weather_modifier
+        + surface_difficulty_bonus(gladed, ungroomed, hazardous)
     )
 
     return round(difficulty, 1)

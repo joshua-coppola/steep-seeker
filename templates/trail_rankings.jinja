@@ -94,6 +94,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             <li><span class="icon difficulty-gold"></span>Extreme</li>
             <li><span class="icon gladed"></span>Gladed</li>
             <li><span class="icon ungroomed"></span>Ungroomed</li>
+            <li><span class="icon hazardous"></span>Hazardous</li>
         </ul>
     </div>
 
@@ -166,6 +167,9 @@ Trail Rankings - Find the Hardest Trails in the USA
                             {% endif %}
                             {% if trail.ungroomed == True%}
                             <span class="icon ungroomed"></span>
+                            {% endif %}
+                            {% if trail.hazardous == True%}
+                            <span class="icon hazardous"></span>
                             {% endif %}
                         </a></p>
                 </td>
@@ -245,6 +249,9 @@ Trail Rankings - Find the Hardest Trails in the USA
                                 {% endif %}
                                 {% if trail.ungroomed == True%}
                                 <span class="icon ungroomed"></span>
+                                {% endif %}
+                                {% if trail.hazardous == True%}
+                                <span class="icon hazardous"></span>
                                 {% endif %}
                             </a>
                             {% for season_pass in trail.season_passes %}

@@ -19,6 +19,7 @@ def test_identify_trails(osm_file):
         "area": [],
         "ungroomed": [],
         "park": [],
+        "hazardous": [],
     }
     for trail in trails["trails"].values():
         assert "INVALID" not in trail["name"]
@@ -35,6 +36,8 @@ def test_identify_trails(osm_file):
     assert sum(trail_info["area"]) == 8
     assert sum(trail_info["ungroomed"]) == 11
     assert sum(trail_info["park"]) == 3
+    # hazardous is never OSM-derived -- always False at parse time
+    assert sum(trail_info["hazardous"]) == 0
 
 
 def test_identify_lifts(osm_file):

@@ -423,6 +423,76 @@ def test_management_edit_resort_unchecking_gladed_removes_bonus(
     assert updated_trail.difficulty == 25.0
 
 
+def test_management_edit_resort_updates_trail_hazardous_and_recomputes_difficulty(
+    management_client, db_path, mountain_factory, trail_factory
+):
+    trail = trail_factory(
+        trail_id="w42",
+        mountain_id="1",
+        name="Test Trail",
+        difficulty=25.0,
+        steepest_50m=20.0,
+        gladed=False,
+        ungroomed=False,
+        hazardous=False,
+    )
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w42": trail},
+    ).to_db(db_path)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "trail_id": "w42",
+            "hazardous": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    updated_trail = mountain.trails["w42"]
+    assert updated_trail.hazardous is True
+    # weather_modifier recovered as 25.0 - 20.0 - 0 = 5.0, then
+    # 20.0 + 5.0 + 5.0 (hazardous bonus) = 30.0
+    assert updated_trail.difficulty == 30.0
+
+
+def test_management_edit_resort_unchecking_hazardous_removes_bonus(
+    management_client, db_path, mountain_factory, trail_factory
+):
+    trail = trail_factory(
+        trail_id="w42",
+        mountain_id="1",
+        name="Test Trail",
+        difficulty=30.0,
+        steepest_50m=20.0,
+        gladed=False,
+        ungroomed=False,
+        hazardous=True,
+    )
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w42": trail},
+    ).to_db(db_path)
+
+    # hazardous omitted entirely -- an unchecked checkbox isn't sent at all
+    management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "trail_id": "w42"},
+    )
+
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    updated_trail = mountain.trails["w42"]
+    assert updated_trail.hazardous is False
+    assert updated_trail.difficulty == 25.0
+
+
 def test_management_edit_resort_rotates_clockwise(
     management_client, db_path, mountain_factory, monkeypatch
 ):
@@ -981,6 +1051,103 @@ def test_management_edit_resort_blacklist_areas_without_ignore_areas_is_a_no_op(
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
     assert "w10" in mountain.trails
     assert is_blacklisted("1", "w10", db_path) is False
+
+
+def test_management_edit_resort_stats_refresh_without_preserve_modifiers_loses_manual_tag(
+    management_client, db_path, refresh_setup, mountain_factory, trail_factory
+):
+    # w11 (piste:type snow_park, no gladed/ungroomed/hazardous tags) parses
+    # from OSM with hazardous=False; a manual hazardous flag set on it
+    # before a plain refresh is lost, same as today
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={
+            "w11": trail_factory(
+                trail_id="w11", mountain_id="1", gladed=False, hazardous=True
+            )
+        },
+        lifts={},
+    ).to_db(db_path)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={"q": "Bolton Valley, VT", "stats_refresh": "True"},
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert mountain.trails["w11"].hazardous is False
+
+
+def test_management_edit_resort_stats_refresh_preserve_modifiers_fills_missing_tag(
+    management_client, db_path, refresh_setup, mountain_factory, trail_factory
+):
+    # same starting point as above, but with preserve_modifiers set -- the
+    # manual hazardous flag (which OSM never tags, so the fresh parse always
+    # comes back False) should survive the refresh
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={
+            "w11": trail_factory(
+                trail_id="w11", mountain_id="1", gladed=False, hazardous=True
+            )
+        },
+        lifts={},
+    ).to_db(db_path)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "stats_refresh": "True",
+            "preserve_modifiers": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    trail = mountain.trails["w11"]
+    assert trail.hazardous is True
+    assert trail.gladed is False
+    assert trail.difficulty == trail.steepest_50m + 3.0 + 5.0  # weather + hazard bonus
+
+
+def test_management_edit_resort_stats_refresh_preserve_modifiers_never_double_stacks_surface_bonus(
+    management_client, db_path, refresh_setup, mountain_factory, trail_factory
+):
+    # w9 (natural=wood) parses from OSM as gladed=True on its own; a stale
+    # cached ungroomed=True from before the refresh must not get applied on
+    # top, since gladed/ungroomed don't stack
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={
+            "w9": trail_factory(
+                trail_id="w9", mountain_id="1", gladed=False, ungroomed=True
+            )
+        },
+        lifts={},
+    ).to_db(db_path)
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "stats_refresh": "True",
+            "preserve_modifiers": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    trail = mountain.trails["w9"]
+    assert trail.gladed is True
+    assert trail.ungroomed is False
 
 
 def test_management_edit_resort_stats_refresh_rates_off_kept_trails_only(
