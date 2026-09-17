@@ -222,25 +222,26 @@ def test_get_steepest_pitch_finds_window():
 
 
 def test_get_steepest_pitch_no_window_long_returns_none():
-    # trail is ~556m; no 1000m window exists and 1000 > 30, so no fallback
-    assert get_steepest_pitch(STEADY_GRADE_LINE, 1000) is None
+    # trail is ~556m (~1824ft); no 2000ft window fits and 2000 > 150, so no
+    # fallback
+    assert get_steepest_pitch(STEADY_GRADE_LINE, 2000) is None
 
 
 def test_get_steepest_pitch_short_trail_falls_back_to_overall_slope():
-    # trail is ~14m, shorter than the 30m window, so falls back to the
-    # whole-trail slope instead of returning None
+    # trail is ~14m (~46ft), shorter than the 150ft window, so falls back
+    # to the whole-trail slope instead of returning None
     geometry = {"coordinates": [[-120.0, 40.0, 100], [-120.0001, 40.0001, 105]]}
-    assert get_steepest_pitch(geometry, 30) == 19.6
+    assert get_steepest_pitch(geometry, 150) == 19.6
 
 
 def test_get_steepest_pitch_no_elevations():
     geometry = {"coordinates": [[-120.0, 40.0, None], [-120.01, 40.01, None]]}
-    assert get_steepest_pitch(geometry, 30) is None
+    assert get_steepest_pitch(geometry, 150) is None
 
 
 def test_get_steepest_pitch_too_few_points():
     geometry = {"coordinates": [[-120.0, 40.0, 100]]}
-    assert get_steepest_pitch(geometry, 30) is None
+    assert get_steepest_pitch(geometry, 150) is None
 
 
 def test_get_trail_difficulty_plain():
@@ -299,7 +300,7 @@ def test_get_trail_difficulty_hazardous_stacks_with_gladed():
     )
 
 
-def test_get_trail_difficulty_no_steepest_30m_returns_none():
+def test_get_trail_difficulty_no_steepest_pitch_returns_none():
     assert (
         get_trail_difficulty(
             None, gladed=True, ungroomed=True, hazardous=True, weather_modifier=3.0
@@ -337,7 +338,7 @@ class _FakeTrail:
         self, difficulty, steepest_pitch, gladed=False, ungroomed=False, hazardous=False
     ):
         self.difficulty = difficulty
-        # whichever steepest_Xm attribute currently feeds difficulty
+        # whichever steepest_Xft attribute currently feeds difficulty
         setattr(self, difficulty_pitch_field(), steepest_pitch)
         self.gladed = gladed
         self.ungroomed = ungroomed

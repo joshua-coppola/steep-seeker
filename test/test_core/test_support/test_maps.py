@@ -39,8 +39,8 @@ def area_trail_mountain():
         difficulty=40.0,
         max_slope=40.0,
         average_slope=20.0,
-        steepest_30m=40.0,
-        steepest_50m=40.0,
+        steepest_100ft=40.0,
+        steepest_150ft=40.0,
     )
 
     return Mountain(

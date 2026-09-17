@@ -119,12 +119,13 @@ def trail_factory():
             TrailTable.difficulty: 1.0,
             TrailTable.max_slope: 1.0,
             TrailTable.average_slope: 1.0,
-            TrailTable.steepest_30m: 1.0,
-            TrailTable.steepest_50m: 1.0,
-            TrailTable.steepest_100m: 1.0,
-            TrailTable.steepest_200m: 1.0,
-            TrailTable.steepest_500m: 1.0,
-            TrailTable.steepest_1000m: 1.0,
+            TrailTable.steepest_100ft: 1.0,
+            TrailTable.steepest_150ft: 1.0,
+            TrailTable.steepest_300ft: 1.0,
+            TrailTable.steepest_500ft: 1.0,
+            TrailTable.steepest_1320ft: 1.0,
+            TrailTable.steepest_2640ft: 1.0,
+            TrailTable.steepest_5280ft: 1.0,
         }
         trail_dict.update(overrides)
         return Trail(**trail_dict)

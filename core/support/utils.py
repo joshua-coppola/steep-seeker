@@ -29,10 +29,10 @@ class DifficultyConstants:
     gladed_bonus: float
     ungroomed_bonus: float
     hazardous_bonus: float
-    # which steepest_Xm column (see osm.osm_processor.STEEPEST_PITCH_WINDOWS_METERS
+    # which steepest_Xft column (see osm.osm_processor.STEEPEST_PITCH_WINDOWS_FEET
     # for the ones that exist) feeds the difficulty rating -- see
     # difficulty_pitch_field()
-    pitch_window_meters: int
+    pitch_window_feet: int
 
 
 DIFFICULTY_CONSTANTS = DifficultyConstants(
@@ -43,17 +43,32 @@ DIFFICULTY_CONSTANTS = DifficultyConstants(
     gladed_bonus=8.0,
     ungroomed_bonus=5.0,
     hazardous_bonus=5.0,
-    pitch_window_meters=50,
+    pitch_window_feet=150,
 )
 
 
 def difficulty_pitch_field() -> str:
     """
     Name of the Trail attribute / Trails column holding the pitch that
-    feeds the site's difficulty rating -- "steepest_Xm" for
-    DIFFICULTY_CONSTANTS.pitch_window_meters.
+    feeds the site's difficulty rating -- "steepest_Xft" for
+    DIFFICULTY_CONSTANTS.pitch_window_feet.
     """
-    return f"steepest_{DIFFICULTY_CONSTANTS.pitch_window_meters}m"
+    return f"steepest_{DIFFICULTY_CONSTANTS.pitch_window_feet}ft"
+
+
+# Display label for each steepest_Xft column (see
+# osm.osm_processor.STEEPEST_PITCH_WINDOWS_FEET for the windows themselves),
+# shared by the interactive-map popup and trail_rankings so column/label
+# order only needs to change in one place.
+PITCH_WINDOW_LABELS: list[tuple[str, str]] = [
+    ("steepest_100ft", "100ft"),
+    ("steepest_150ft", "150ft"),
+    ("steepest_300ft", "300ft"),
+    ("steepest_500ft", "500ft"),
+    ("steepest_1320ft", "¼mi"),
+    ("steepest_2640ft", "½mi"),
+    ("steepest_5280ft", "1mi"),
+]
 
 
 # Shared WGS84 <-> Albers Equal Area (contiguous US) transformers. Building a
@@ -92,7 +107,7 @@ def round_feet(value: float | None) -> int | None:
 def round_degrees(value: float | None) -> float | None:
     """
     Rounds a degrees value (difficulty, beginner_friendliness, max_slope,
-    average_slope, steepest_Xm) to the nearest 0.1 degree, for display to
+    average_slope, steepest_Xft) to the nearest 0.1 degree, for display to
     the end user. Passes None through unchanged.
     """
     if value is None:
@@ -421,15 +436,15 @@ def get_average_slope(geometry: dict[str, str]) -> float | None:
     return sum(slopes) / len(slopes) if slopes else None
 
 
-def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float | None:
+def get_steepest_pitch(geometry: dict[str, str], window_feet: float) -> float | None:
     """
     Accepts a geojson LineString blob (flat "coordinates" list of points)
     and returns the steepest slope in degrees found over any contiguous
-    window of at least `window_meters` along the line. For an area trail,
+    window of at least `window_feet` along the line. For an area trail,
     pass its route rather than its boundary polygon.
 
     If the trail is shorter than the window, falls back to the overall
-    trail slope for windows up to DIFFICULTY_CONSTANTS.pitch_window_meters
+    trail slope for windows up to DIFFICULTY_CONSTANTS.pitch_window_feet
     (the trail is short enough that its whole length is a reasonable
     stand-in -- and this window is the one that must produce a value for
     every ratable trail, since it feeds the difficulty rating); for longer
@@ -440,6 +455,8 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
 
     if len(coordinates) < 2:
         return None
+
+    window_meters = window_feet / METERS_TO_FEET
 
     max_pitch = None
 
@@ -486,7 +503,7 @@ def get_steepest_pitch(geometry: dict[str, str], window_meters: float) -> float 
     if max_pitch is not None:
         return round(max_pitch, 1)
 
-    if window_meters > DIFFICULTY_CONSTANTS.pitch_window_meters:
+    if window_feet > DIFFICULTY_CONSTANTS.pitch_window_feet:
         return None
 
     first_point, last_point = coordinates[0], coordinates[-1]
@@ -540,7 +557,7 @@ def weather_modifier_from_trail(trail) -> float:
     Recovers the mountain's weather modifier from one already-rated trail,
     inverting get_trail_difficulty:
         difficulty == steepest_pitch + weather_modifier + surface bonus
-    where steepest_pitch is the trail's steepest_Xm attribute named by
+    where steepest_pitch is the trail's steepest_Xft attribute named by
     difficulty_pitch_field().
     """
     return (
@@ -558,7 +575,7 @@ def get_trail_difficulty(
     weather_modifier: float,
 ) -> float | None:
     """
-    Accepts a trail's steepest pitch (over DIFFICULTY_CONSTANTS.pitch_window_meters
+    Accepts a trail's steepest pitch (over DIFFICULTY_CONSTANTS.pitch_window_feet
     -- see difficulty_pitch_field()), its gladed/ungroomed/hazardous flags,
     and the mountain's weather modifier (see connectors.weather_api), and
     returns the trail's overall difficulty rating. Returns `None` if

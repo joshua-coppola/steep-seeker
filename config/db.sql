@@ -41,12 +41,13 @@ CREATE TABLE "Trails"
     "difficulty" REAL,
     "max_slope" REAL,
     "average_slope" REAL,
-    "steepest_30m" REAL,
-    "steepest_50m" REAL,
-    "steepest_100m" REAL,
-    "steepest_200m" REAL,
-    "steepest_500m" REAL,
-    "steepest_1000m" REAL,
+    "steepest_100ft" REAL,
+    "steepest_150ft" REAL,
+    "steepest_300ft" REAL,
+    "steepest_500ft" REAL,
+    "steepest_1320ft" REAL,
+    "steepest_2640ft" REAL,
+    "steepest_5280ft" REAL,
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 

@@ -13,12 +13,13 @@ VALID_SORT_FIELDS = {
     "difficulty",
     "max_slope",
     "average_slope",
-    "steepest_30m",
-    "steepest_50m",
-    "steepest_100m",
-    "steepest_200m",
-    "steepest_500m",
-    "steepest_1000m",
+    "steepest_100ft",
+    "steepest_150ft",
+    "steepest_300ft",
+    "steepest_500ft",
+    "steepest_1320ft",
+    "steepest_2640ft",
+    "steepest_5280ft",
 }
 
 
@@ -28,7 +29,7 @@ class TrailSummary:
     Lightweight view of a Trail for the trail-rankings list page, joined
     with its mountain's name/state. Display-rounded: length to the nearest
     foot (Trail stores it in meters); difficulty/max_slope/average_slope/
-    steepest_Xm (degrees, not a distance unit) to the nearest 0.1 degree.
+    steepest_Xft (degrees, not a distance unit) to the nearest 0.1 degree.
     """
 
     trail_id: str
@@ -42,12 +43,13 @@ class TrailSummary:
     difficulty: float | None
     max_slope: float | None
     average_slope: float | None
-    steepest_30m: float | None
-    steepest_50m: float | None
-    steepest_100m: float | None
-    steepest_200m: float | None
-    steepest_500m: float | None
-    steepest_1000m: float | None
+    steepest_100ft: float | None
+    steepest_150ft: float | None
+    steepest_300ft: float | None
+    steepest_500ft: float | None
+    steepest_1320ft: float | None
+    steepest_2640ft: float | None
+    steepest_5280ft: float | None
 
 
 def list_trails(
@@ -96,12 +98,13 @@ def list_trails(
                 Trails.{TrailTable.difficulty},
                 Trails.{TrailTable.max_slope},
                 Trails.{TrailTable.average_slope},
-                Trails.{TrailTable.steepest_30m},
-                Trails.{TrailTable.steepest_50m},
-                Trails.{TrailTable.steepest_100m},
-                Trails.{TrailTable.steepest_200m},
-                Trails.{TrailTable.steepest_500m},
-                Trails.{TrailTable.steepest_1000m}
+                Trails.{TrailTable.steepest_100ft},
+                Trails.{TrailTable.steepest_150ft},
+                Trails.{TrailTable.steepest_300ft},
+                Trails.{TrailTable.steepest_500ft},
+                Trails.{TrailTable.steepest_1320ft},
+                Trails.{TrailTable.steepest_2640ft},
+                Trails.{TrailTable.steepest_5280ft}
             FROM Trails
             INNER JOIN Mountains
                 ON Trails.{TrailTable.mountain_id} = Mountains.{MountainTable.mountain_id}
@@ -125,12 +128,13 @@ def list_trails(
             difficulty=round_degrees(row[TrailTable.difficulty]),
             max_slope=round_degrees(row[TrailTable.max_slope]),
             average_slope=round_degrees(row[TrailTable.average_slope]),
-            steepest_30m=round_degrees(row[TrailTable.steepest_30m]),
-            steepest_50m=round_degrees(row[TrailTable.steepest_50m]),
-            steepest_100m=round_degrees(row[TrailTable.steepest_100m]),
-            steepest_200m=round_degrees(row[TrailTable.steepest_200m]),
-            steepest_500m=round_degrees(row[TrailTable.steepest_500m]),
-            steepest_1000m=round_degrees(row[TrailTable.steepest_1000m]),
+            steepest_100ft=round_degrees(row[TrailTable.steepest_100ft]),
+            steepest_150ft=round_degrees(row[TrailTable.steepest_150ft]),
+            steepest_300ft=round_degrees(row[TrailTable.steepest_300ft]),
+            steepest_500ft=round_degrees(row[TrailTable.steepest_500ft]),
+            steepest_1320ft=round_degrees(row[TrailTable.steepest_1320ft]),
+            steepest_2640ft=round_degrees(row[TrailTable.steepest_2640ft]),
+            steepest_5280ft=round_degrees(row[TrailTable.steepest_5280ft]),
         )
         for row in rows
     ]

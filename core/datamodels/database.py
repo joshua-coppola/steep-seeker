@@ -41,12 +41,13 @@ class TrailTable:
     difficulty: str = "difficulty"
     max_slope: str = "max_slope"
     average_slope: str = "average_slope"
-    steepest_30m: str = "steepest_30m"
-    steepest_50m: str = "steepest_50m"
-    steepest_100m: str = "steepest_100m"
-    steepest_200m: str = "steepest_200m"
-    steepest_500m: str = "steepest_500m"
-    steepest_1000m: str = "steepest_1000m"
+    steepest_100ft: str = "steepest_100ft"
+    steepest_150ft: str = "steepest_150ft"
+    steepest_300ft: str = "steepest_300ft"
+    steepest_500ft: str = "steepest_500ft"
+    steepest_1320ft: str = "steepest_1320ft"
+    steepest_2640ft: str = "steepest_2640ft"
+    steepest_5280ft: str = "steepest_5280ft"
 
 
 @dataclass

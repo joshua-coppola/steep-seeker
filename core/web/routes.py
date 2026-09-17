@@ -24,6 +24,7 @@ from core.support.trail_query import list_trails
 from core.support.utils import (
     BEGINNER_FRIENDLINESS_FLIP,
     DIFFICULTY_CONSTANTS,
+    PITCH_WINDOW_LABELS,
     beginner_color,
     build_elevation_profile,
     difficulty_pitch_field,
@@ -311,6 +312,7 @@ def trail_rankings():
         state=state_param,
         pages=pages,
         sort_by=sort_by,
+        pitch_fields=PITCH_WINDOW_LABELS,
     )
 
 
@@ -462,11 +464,11 @@ def _trail_features(
         f"<p>Length: {trail.length_feet()} ft</p>"
         f"<p>Vertical Drop: {trail.vertical_feet()} ft</p>"
     )
-    for window in ("30m", "50m", "100m", "200m", "500m", "1000m"):
-        value = getattr(trail, f"steepest_{window}")
+    for field, label in PITCH_WINDOW_LABELS:
+        value = getattr(trail, field)
         if value:
             popup_content += (
-                f"<p>{window} Pitch: {value}\N{DEGREE SIGN}"
+                f"<p>{label} Pitch: {value}\N{DEGREE SIGN}"
                 f'<span class="icon difficulty-{trail_color(value)}"></span></p>'
             )
     if debug_mode:

@@ -36,12 +36,13 @@ class Trail:
     difficulty: float | None = None
     max_slope: float | None = None
     average_slope: float | None = None
-    steepest_30m: float | None = None
-    steepest_50m: float | None = None
-    steepest_100m: float | None = None
-    steepest_200m: float | None = None
-    steepest_500m: float | None = None
-    steepest_1000m: float | None = None
+    steepest_100ft: float | None = None
+    steepest_150ft: float | None = None
+    steepest_300ft: float | None = None
+    steepest_500ft: float | None = None
+    steepest_1320ft: float | None = None
+    steepest_2640ft: float | None = None
+    steepest_5280ft: float | None = None
     interior_geometry: LineString | Polygon | None = ""
     route: LineString | None = None
 
@@ -60,7 +61,7 @@ class Trail:
 
     def difficulty_pitch(self) -> float | None:
         """
-        The steepest_Xm value that fed this trail's difficulty rating (see
+        The steepest_Xft value that fed this trail's difficulty rating (see
         difficulty_pitch_field) -- the pitch to show alongside a
         trail_color(self.difficulty) badge so the two stay consistent.
         """
@@ -100,19 +101,20 @@ class Trail:
         """
         Updates DB record with the values in the dataclass
         """
-        # steepest_Xm fields may legitimately be None: a trail shorter than
+        # steepest_Xft fields may legitimately be None: a trail shorter than
         # the window has no segment of that length to measure. route and
         # interior_geometry are only meaningful for area trails (OSMProcessor
         # leaves them None for line trails); required-when-area is enforced
         # separately below. official_rating comes from OSM's
         # piste:difficulty tag, which many trails simply aren't tagged with
         nullable_fields = {
-            "steepest_30m",
-            "steepest_50m",
-            "steepest_100m",
-            "steepest_200m",
-            "steepest_500m",
-            "steepest_1000m",
+            "steepest_100ft",
+            "steepest_150ft",
+            "steepest_300ft",
+            "steepest_500ft",
+            "steepest_1320ft",
+            "steepest_2640ft",
+            "steepest_5280ft",
             "route",
             "interior_geometry",
             "official_rating",
@@ -153,14 +155,15 @@ class Trail:
                     {TrailTable.difficulty},
                     {TrailTable.max_slope},
                     {TrailTable.average_slope},
-                    {TrailTable.steepest_30m},
-                    {TrailTable.steepest_50m},
-                    {TrailTable.steepest_100m},
-                    {TrailTable.steepest_200m},
-                    {TrailTable.steepest_500m},
-                    {TrailTable.steepest_1000m}
+                    {TrailTable.steepest_100ft},
+                    {TrailTable.steepest_150ft},
+                    {TrailTable.steepest_300ft},
+                    {TrailTable.steepest_500ft},
+                    {TrailTable.steepest_1320ft},
+                    {TrailTable.steepest_2640ft},
+                    {TrailTable.steepest_5280ft}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
@@ -178,12 +181,13 @@ class Trail:
                     {TrailTable.difficulty} = excluded.{TrailTable.difficulty},
                     {TrailTable.max_slope} = excluded.{TrailTable.max_slope},
                     {TrailTable.average_slope} = excluded.{TrailTable.average_slope},
-                    {TrailTable.steepest_30m} = excluded.{TrailTable.steepest_30m},
-                    {TrailTable.steepest_50m} = excluded.{TrailTable.steepest_50m},
-                    {TrailTable.steepest_100m} = excluded.{TrailTable.steepest_100m},
-                    {TrailTable.steepest_200m} = excluded.{TrailTable.steepest_200m},
-                    {TrailTable.steepest_500m} = excluded.{TrailTable.steepest_500m},
-                    {TrailTable.steepest_1000m} = excluded.{TrailTable.steepest_1000m}
+                    {TrailTable.steepest_100ft} = excluded.{TrailTable.steepest_100ft},
+                    {TrailTable.steepest_150ft} = excluded.{TrailTable.steepest_150ft},
+                    {TrailTable.steepest_300ft} = excluded.{TrailTable.steepest_300ft},
+                    {TrailTable.steepest_500ft} = excluded.{TrailTable.steepest_500ft},
+                    {TrailTable.steepest_1320ft} = excluded.{TrailTable.steepest_1320ft},
+                    {TrailTable.steepest_2640ft} = excluded.{TrailTable.steepest_2640ft},
+                    {TrailTable.steepest_5280ft} = excluded.{TrailTable.steepest_5280ft}
             """
             params = (
                 self.trail_id,
@@ -207,12 +211,13 @@ class Trail:
                 self.difficulty,
                 self.max_slope,
                 self.average_slope,
-                self.steepest_30m,
-                self.steepest_50m,
-                self.steepest_100m,
-                self.steepest_200m,
-                self.steepest_500m,
-                self.steepest_1000m,
+                self.steepest_100ft,
+                self.steepest_150ft,
+                self.steepest_300ft,
+                self.steepest_500ft,
+                self.steepest_1320ft,
+                self.steepest_2640ft,
+                self.steepest_5280ft,
             )
             cur.execute(query, params)
 

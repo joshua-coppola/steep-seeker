@@ -24,7 +24,7 @@ from core.support.utils import (
 
 ## Todo: handle multiline relations
 
-STEEPEST_PITCH_WINDOWS_METERS = (30, 50, 100, 200, 500, 1000)
+STEEPEST_PITCH_WINDOWS_FEET = (100, 150, 300, 500, 1320, 2640, 5280)
 
 
 class OSMProcessor:
@@ -341,9 +341,9 @@ class OSMProcessor:
             trail_dict["vertical"] = get_vertical_drop(geometry_json)
             trail_dict["max_slope"] = get_max_slope(stats_geometry)
             trail_dict["average_slope"] = get_average_slope(stats_geometry)
-            for window_meters in STEEPEST_PITCH_WINDOWS_METERS:
-                trail_dict[f"steepest_{window_meters}m"] = get_steepest_pitch(
-                    stats_geometry, window_meters
+            for window_feet in STEEPEST_PITCH_WINDOWS_FEET:
+                trail_dict[f"steepest_{window_feet}ft"] = get_steepest_pitch(
+                    stats_geometry, window_feet
                 )
 
             # geometry_json/interior_geometry/route are geojson blobs (the

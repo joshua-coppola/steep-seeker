@@ -119,7 +119,7 @@ class TestRecalibrate:
                     mountain_id="a",
                     gladed=False,
                     ungroomed=False,
-                    steepest_50m=20.0,
+                    steepest_150ft=20.0,
                     difficulty=99.0,  # stale, should be overwritten
                     length=200,
                 )
@@ -137,7 +137,7 @@ class TestRecalibrate:
                     mountain_id="b",
                     gladed=False,
                     ungroomed=False,
-                    steepest_50m=20.0,
+                    steepest_150ft=20.0,
                     difficulty=99.0,
                     length=200,
                 )
