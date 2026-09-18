@@ -246,8 +246,8 @@ def _populate_map(
                     bbox={"boxstyle": "square,pad=0.01", "fc": "white", "ec": "none"},
                 )
 
-    # trails
-    for trail in mountain.trails.values():
+    # trails -- area trails first so ordinary trails always draw on top of them
+    for trail in sorted(mountain.trails.values(), key=lambda t: not t.area):
         coords = trail.geometry.exterior.coords if trail.area else trail.geometry.coords
         lons, lats = _xy_from_coords(coords)
         if x_data == "lat":

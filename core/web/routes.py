@@ -733,8 +733,11 @@ def _build_geojson(
     weather_modifier = _weather_modifier(trails)
     edit_query = f"{mountain.name}, {mountain.state.value}" if editable else None
 
+    # Area trails first so ordinary trails always render on top of them.
+    ordered_trails = [t for t in trails if t.area] + [t for t in trails if not t.area]
+
     features = []
-    for trail in trails:
+    for trail in ordered_trails:
         features.extend(
             _trail_features(trail, mountain.direction, debug_mode, edit_query)
         )

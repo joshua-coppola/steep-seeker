@@ -22216,7 +22216,6 @@
     <nd ref="2630140275"/>
     <nd ref="5420230849"/>
     <tag k="name" v="INVALID"/>
-    <tag k="piste:difficulty" v="easy"/>
     <tag k="piste:type" v="downhill"/>
     <tag k="mtb:scale:imba" v="2"/>
   </way>

@@ -21,9 +21,16 @@ def identify_trails(ways, relations):
         if piste_type not in valid_types:
             continue
 
-        # Skip irrelevant features
+        # Skip irrelevant features. A dual-tagged bike/ski trail
+        # (mtb:scale:imba alongside piste:type) is only trusted as a real
+        # ski trail if it also carries piste:difficulty or piste:name --
+        # otherwise the piste:type is assumed incidental to a trail that's
+        # really just mapped for mountain biking.
+        is_untrusted_bike_trail = "mtb:scale:imba" in tags and not (
+            tags.get("piste:difficulty") or tags.get("piste:name")
+        )
         if (
-            "mtb:scale:imba" in tags
+            is_untrusted_bike_trail
             or tags.get("landuse") == "grass"
             or excluded_tags.intersection(tags)
         ):
