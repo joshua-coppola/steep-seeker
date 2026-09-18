@@ -42,14 +42,15 @@ def test_trail_from_db(trail_factory, db_path):
                 {TrailTable.difficulty},
                 {TrailTable.max_slope},
                 {TrailTable.average_slope},
-                {TrailTable.steepest_30m},
-                {TrailTable.steepest_50m},
-                {TrailTable.steepest_100m},
-                {TrailTable.steepest_200m},
-                {TrailTable.steepest_500m},
-                {TrailTable.steepest_1000m}
+                {TrailTable.steepest_100ft},
+                {TrailTable.steepest_150ft},
+                {TrailTable.steepest_300ft},
+                {TrailTable.steepest_500ft},
+                {TrailTable.steepest_1320ft},
+                {TrailTable.steepest_2640ft},
+                {TrailTable.steepest_5280ft}
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             trail.trail_id,
@@ -68,12 +69,13 @@ def test_trail_from_db(trail_factory, db_path):
             trail.difficulty,
             trail.max_slope,
             trail.average_slope,
-            trail.steepest_30m,
-            trail.steepest_50m,
-            trail.steepest_100m,
-            trail.steepest_200m,
-            trail.steepest_500m,
-            trail.steepest_1000m,
+            trail.steepest_100ft,
+            trail.steepest_150ft,
+            trail.steepest_300ft,
+            trail.steepest_500ft,
+            trail.steepest_1320ft,
+            trail.steepest_2640ft,
+            trail.steepest_5280ft,
         )
         cur.execute(query, params)
 
@@ -113,12 +115,13 @@ def test_trail_to_db(trail_factory, db_path):
         TrailTable.difficulty: 1.0,
         TrailTable.max_slope: 1.0,
         TrailTable.average_slope: 1.0,
-        TrailTable.steepest_30m: 1.0,
-        TrailTable.steepest_50m: 1.0,
-        TrailTable.steepest_100m: 1.0,
-        TrailTable.steepest_200m: 1.0,
-        TrailTable.steepest_500m: 1.0,
-        TrailTable.steepest_1000m: 1.0,
+        TrailTable.steepest_100ft: 1.0,
+        TrailTable.steepest_150ft: 1.0,
+        TrailTable.steepest_300ft: 1.0,
+        TrailTable.steepest_500ft: 1.0,
+        TrailTable.steepest_1320ft: 1.0,
+        TrailTable.steepest_2640ft: 1.0,
+        TrailTable.steepest_5280ft: 1.0,
     }
 
     assert dict(result[0]) == expected_result
@@ -171,16 +174,16 @@ def test_trail_to_db_allows_missing_steepest_pitch(trail_factory, db_path):
     trail = trail_factory()
     # A trail shorter than a given window legitimately has no steepest
     # pitch for it, so these fields should not block saving
-    trail.steepest_500m = None
-    trail.steepest_1000m = None
+    trail.steepest_2640ft = None
+    trail.steepest_5280ft = None
 
     trail.to_db(db_path=db_path)
 
     with cursor(db_path=db_path, dict_cursor=True) as cur:
         result = cur.execute("SELECT * FROM Trails").fetchall()
 
-    assert dict(result[0])[TrailTable.steepest_500m] is None
-    assert dict(result[0])[TrailTable.steepest_1000m] is None
+    assert dict(result[0])[TrailTable.steepest_2640ft] is None
+    assert dict(result[0])[TrailTable.steepest_5280ft] is None
 
 
 def test_trail_to_db_allows_none_interior_geometry_for_line_trail(

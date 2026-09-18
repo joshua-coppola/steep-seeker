@@ -12,6 +12,7 @@ from core.support.area_routes import get_area_route
 from core.support.lift import Lift
 from core.support.trail import Trail
 from core.support.utils import (
+    compute_geometry_stats,
     get_average_slope,
     get_length,
     get_max_slope,
@@ -24,7 +25,7 @@ from core.support.utils import (
 
 ## Todo: handle multiline relations
 
-STEEPEST_PITCH_WINDOWS_METERS = (30, 50, 100, 200, 500, 1000)
+STEEPEST_PITCH_WINDOWS_FEET = (100, 150, 300, 500, 1320, 2640, 5280)
 
 
 class OSMProcessor:
@@ -337,13 +338,14 @@ class OSMProcessor:
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
             trail_dict["mountain_id"] = self.mountain_id
-            trail_dict["length"] = get_length(stats_geometry)
+            stats = compute_geometry_stats(stats_geometry)
+            trail_dict["length"] = get_length(stats_geometry, stats=stats)
             trail_dict["vertical"] = get_vertical_drop(geometry_json)
-            trail_dict["max_slope"] = get_max_slope(stats_geometry)
-            trail_dict["average_slope"] = get_average_slope(stats_geometry)
-            for window_meters in STEEPEST_PITCH_WINDOWS_METERS:
-                trail_dict[f"steepest_{window_meters}m"] = get_steepest_pitch(
-                    stats_geometry, window_meters
+            trail_dict["max_slope"] = get_max_slope(stats_geometry, stats=stats)
+            trail_dict["average_slope"] = get_average_slope(stats_geometry, stats=stats)
+            for window_feet in STEEPEST_PITCH_WINDOWS_FEET:
+                trail_dict[f"steepest_{window_feet}ft"] = get_steepest_pitch(
+                    stats_geometry, window_feet, cumulative_dist=stats.cumulative_dist
                 )
 
             # geometry_json/interior_geometry/route are geojson blobs (the
@@ -419,9 +421,12 @@ class OSMProcessor:
             # it round-trips through to_db/from_db as WKT
             lift_dict["geometry"] = shapely.LineString(geometry_json["coordinates"])
             lift_dict["mountain_id"] = self.mountain_id
-            lift_dict["length"] = get_length(geometry_json)
+            lift_stats = compute_geometry_stats(geometry_json)
+            lift_dict["length"] = get_length(geometry_json, stats=lift_stats)
             lift_dict["vertical"] = get_vertical_drop(geometry_json)
-            lift_dict["average_slope"] = get_average_slope(geometry_json)
+            lift_dict["average_slope"] = get_average_slope(
+                geometry_json, stats=lift_stats
+            )
 
             for key in lift:
                 if key == "nodes" or key == "id":

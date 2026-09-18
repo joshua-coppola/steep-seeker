@@ -10,12 +10,18 @@ class FakeOSMResponse:
 
 
 def test_get_returns_content_on_success(monkeypatch):
-    def fake_get(url, params=None, timeout=None, headers=None):
-        assert params == {"bbox": "-72.7,43.3,-72.6,43.4"}
+    def fake_post(url, data=None, timeout=None, headers=None):
+        assert url == OSM.BASE_URL
         assert headers == OSM.HEADERS
+        # bbox reordered from min_lon,min_lat,max_lon,max_lat to Overpass
+        # QL's south,west,north,east
+        assert "(43.3,-72.7,43.4,-72.6)" in data["data"]
+        assert 'way["piste:type"]' in data["data"]
+        assert 'way["aerialway"]' in data["data"]
+        assert 'relation["piste:type"]' in data["data"]
         return FakeOSMResponse(200, b"<osm></osm>")
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(requests, "post", fake_post)
 
     result = OSM().get("-72.7,43.3,-72.6,43.4")
 
@@ -25,11 +31,11 @@ def test_get_returns_content_on_success(monkeypatch):
 def test_get_returns_none_on_non_retryable_failure(monkeypatch):
     calls = []
 
-    def fake_get(url, params=None, timeout=None, headers=None):
+    def fake_post(url, data=None, timeout=None, headers=None):
         calls.append(1)
         return FakeOSMResponse(500)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(requests, "post", fake_post)
 
     result = OSM().get("-72.7,43.3,-72.6,43.4")
 
@@ -44,10 +50,10 @@ def test_get_retries_on_504_then_succeeds(monkeypatch):
         FakeOSMResponse(200, b"ok"),
     ]
 
-    def fake_get(url, params=None, timeout=None, headers=None):
+    def fake_post(url, data=None, timeout=None, headers=None):
         return responses.pop(0)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(requests, "post", fake_post)
 
     result = OSM().get("-72.7,43.3,-72.6,43.4")
 
@@ -57,11 +63,11 @@ def test_get_retries_on_504_then_succeeds(monkeypatch):
 def test_get_gives_up_after_three_504s(monkeypatch):
     calls = []
 
-    def fake_get(url, params=None, timeout=None, headers=None):
+    def fake_post(url, data=None, timeout=None, headers=None):
         calls.append(1)
         return FakeOSMResponse(504)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(requests, "post", fake_post)
 
     result = OSM().get("-72.7,43.3,-72.6,43.4")
 

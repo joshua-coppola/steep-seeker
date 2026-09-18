@@ -378,7 +378,7 @@ def mapped_client(client, db_path, mountain_factory, trail_factory, lift_factory
         interior_geometry="",
         route=None,
         difficulty=25.0,
-        steepest_30m=20.0,
+        steepest_100ft=20.0,
     )
     area_trail = trail_factory(
         trail_id="area-1",
@@ -391,7 +391,7 @@ def mapped_client(client, db_path, mountain_factory, trail_factory, lift_factory
         interior_geometry=LineString([[0.4, 0.4, 80], [0.6, 0.6, 70]]),
         route=LineString([[0, 1, 100], [0.5, 0.5, 75], [1, 0, 50]]),
         difficulty=30.0,
-        steepest_30m=25.0,
+        steepest_100ft=25.0,
     )
     lift = lift_factory(
         lift_id="lift-1",

@@ -98,7 +98,7 @@ def test_management_bulk_operations_recalibrate_reports_summary(
                 mountain_id="a",
                 gladed=False,
                 ungroomed=False,
-                steepest_50m=20.0,
+                steepest_150ft=20.0,
                 difficulty=99.0,
                 length=200,
             )
@@ -362,7 +362,7 @@ def test_management_edit_resort_updates_trail_gladed_and_recomputes_difficulty(
         mountain_id="1",
         name="Test Trail",
         difficulty=25.0,
-        steepest_50m=20.0,
+        steepest_150ft=20.0,
         gladed=False,
         ungroomed=False,
     )
@@ -400,7 +400,7 @@ def test_management_edit_resort_unchecking_gladed_removes_bonus(
         mountain_id="1",
         name="Test Trail",
         difficulty=33.0,
-        steepest_50m=20.0,
+        steepest_150ft=20.0,
         gladed=True,
         ungroomed=False,
     )
@@ -431,7 +431,7 @@ def test_management_edit_resort_updates_trail_hazardous_and_recomputes_difficult
         mountain_id="1",
         name="Test Trail",
         difficulty=25.0,
-        steepest_50m=20.0,
+        steepest_150ft=20.0,
         gladed=False,
         ungroomed=False,
         hazardous=False,
@@ -469,7 +469,7 @@ def test_management_edit_resort_unchecking_hazardous_removes_bonus(
         mountain_id="1",
         name="Test Trail",
         difficulty=30.0,
-        steepest_50m=20.0,
+        steepest_150ft=20.0,
         gladed=False,
         ungroomed=False,
         hazardous=True,
@@ -612,7 +612,7 @@ def test_management_edit_resort_trail_difficulty_edit_recalculates_mountain_stat
         name="Test Trail",
         length=200,
         difficulty=25.0,
-        steepest_50m=20.0,
+        steepest_150ft=20.0,
         gladed=False,
         ungroomed=False,
     )
@@ -1113,7 +1113,9 @@ def test_management_edit_resort_stats_refresh_preserve_modifiers_fills_missing_t
     trail = mountain.trails["w11"]
     assert trail.hazardous is True
     assert trail.gladed is False
-    assert trail.difficulty == trail.steepest_50m + 3.0 + 5.0  # weather + hazard bonus
+    assert (
+        trail.difficulty == trail.steepest_150ft + 3.0 + 5.0
+    )  # weather + hazard bonus
 
 
 def test_management_edit_resort_stats_refresh_preserve_modifiers_never_double_stacks_surface_bonus(

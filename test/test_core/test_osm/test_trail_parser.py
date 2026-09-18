@@ -83,6 +83,49 @@ def test_identify_lifts(osm_file):
     assert sum(lift_info["heating"]) == 1
 
 
+def test_identify_trails_excludes_bike_trail_with_no_ski_signal():
+    # mtb:scale:imba alone, with neither piste:difficulty nor piste:name,
+    # reads as a bike trail with an incidental/mistaken piste:type
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "downhill", "mtb:scale:imba": "3"},
+        }
+    }
+
+    assert identify_trails(ways, {})["trails"] == {}
+
+
+def test_identify_trails_keeps_dual_tagged_trail_with_piste_difficulty():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "piste:type": "downhill",
+                "piste:difficulty": "advanced",
+                "mtb:scale:imba": "4",
+            },
+        }
+    }
+
+    assert "w1" in identify_trails(ways, {})["trails"]
+
+
+def test_identify_trails_keeps_dual_tagged_trail_with_piste_name():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "piste:type": "downhill",
+                "piste:name": "East Bowl",
+                "mtb:scale:imba": "4",
+            },
+        }
+    }
+
+    assert "w1" in identify_trails(ways, {})["trails"]
+
+
 def test_identify_lifts_tolerates_non_integer_occupancy_and_capacity():
     ways = {
         "w1": {

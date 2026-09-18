@@ -52,25 +52,26 @@ def test_get_trails(osm_file, monkeypatch):
     assert trails["w10"].vertical == 34.0
     assert round(trails["w10"].max_slope, 3) == 11.655
     assert round(trails["w10"].average_slope, 3) == 10.018
-    assert trails["w10"].steepest_30m == 9.9
-    # w10 is ~34m long: shorter than pitch_window_meters (50m), so
-    # steepest_50m also falls back to the whole-trail slope; 100m doesn't
-    assert trails["w10"].steepest_50m == 9.9
-    assert trails["w10"].steepest_100m is None
+    assert trails["w10"].steepest_100ft == 9.9
+    # w10 is ~34m (~112ft) long: shorter than pitch_window_feet (150ft), so
+    # steepest_150ft also falls back to the whole-trail slope; 300ft doesn't
+    assert trails["w10"].steepest_150ft == 9.9
+    assert trails["w10"].steepest_300ft is None
 
     assert round(trails["w11"].length, 3) == 105.677
     # FakeElevation descends 1 unit per point, so w11 (19 points) drops 18
     assert trails["w11"].vertical == 18.0
     assert round(trails["w11"].max_slope, 3) == 27.127
     assert round(trails["w11"].average_slope, 3) == 10.298
-    # w11 is ~106m long: 30/50/100m windows exist, longer windows don't fit
-    # so they fall back to None
-    assert trails["w11"].steepest_30m == 9.3
-    assert trails["w11"].steepest_50m == 10.0
-    assert trails["w11"].steepest_100m == 9.3
-    assert trails["w11"].steepest_200m is None
-    assert trails["w11"].steepest_500m is None
-    assert trails["w11"].steepest_1000m is None
+    # w11 is ~106m (~347ft) long: 100/150/300ft windows exist, longer
+    # windows don't fit so they fall back to None
+    assert trails["w11"].steepest_100ft == 9.3
+    assert trails["w11"].steepest_150ft == 9.3
+    assert trails["w11"].steepest_300ft == 9.3
+    assert trails["w11"].steepest_500ft is None
+    assert trails["w11"].steepest_1320ft is None
+    assert trails["w11"].steepest_2640ft is None
+    assert trails["w11"].steepest_5280ft is None
 
     for trail_id, trail in trails.items():
         # Polygons expose their ring via .exterior.coords; lines via .coords
