@@ -549,6 +549,34 @@ def _trail_features(
     return features
 
 
+LIFT_TYPE_LABELS = {
+    "cable_car": "Tram",
+    "gondola": "Gondola",
+    "mixed_lift": "Mixed Lift",
+    "chair_lift": "Chairlift",
+    "drag_lift": "Drag Lift",
+    "t-bar": "T-Bar",
+    "j-bar": "J-Bar",
+    "platter": "Platter Lift",
+    "rope_tow": "Rope Tow",
+    "magic_carpet": "Magic Carpet",
+    "hike": "Hike-to Access",
+}
+
+
+def _lift_type_label(lift_type: str) -> str:
+    """
+    Human-readable label for a Lift's lift_type -- OSM's aerialway tag
+    values, plus "hike" for hike-to access routes stored as lifts (see
+    core.osm.trail_parser.identify_hikes). Falls back to a titlecased
+    version of the raw value for any aerialway type not in
+    LIFT_TYPE_LABELS, since OSM tagging isn't a closed enum.
+    """
+    return LIFT_TYPE_LABELS.get(
+        lift_type, lift_type.replace("_", " ").replace("-", " ").title()
+    )
+
+
 def _lift_feature(
     lift,
     direction: str,
@@ -574,6 +602,7 @@ def _lift_feature(
                 '<span class="small-spacer"></span>'
                 '<span class="icon person"></span></p>'
             )
+    popup_content += f"<p>Type: {escape(_lift_type_label(lift.lift_type))}</p>"
     popup_content += f"<p>Length: {lift.length_feet()} ft</p>"
     popup_content += f"<p>Vertical Rise: {lift.vertical_feet()} ft</p>"
     popup_content += f"<p>Average Pitch: {round_degrees(lift.average_slope)}°</p>"
