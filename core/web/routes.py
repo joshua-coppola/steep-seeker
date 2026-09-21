@@ -592,6 +592,7 @@ def _lift_feature(
         "label": lift.name,
         "orientation": orientation,
         "color": "grey",
+        "lift_type": lift.lift_type,
         "difficulty_modifier": weather_modifier,
     }
     if edit_query is not None:

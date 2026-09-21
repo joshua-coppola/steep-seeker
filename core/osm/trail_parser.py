@@ -109,6 +109,63 @@ def identify_trails(ways, relations):
     return {"trails": trails, "relations": trail_relations}
 
 
+def identify_hikes(ways, relations):
+    """
+    Accepts a dict of ways and relations and identifies hike-to access
+    routes (piste:type=hike -- bootpacks, ridge walks, backcountry gate
+    access, etc). Returns a dict containing the valid hikes and relations.
+
+    Hikes are deliberately shaped like lift dicts (id, nodes, name,
+    lift_type, occupancy/capacity/detachable/bubble/heating), not trail
+    dicts -- they carry no difficulty rating or ski-specific metadata, and
+    are assembled into Lift objects (lift_type="hike") alongside real lifts.
+    """
+    hikes = {}
+
+    excluded_tags = {"disused", "abandoned", "proposed"}
+    invalid_name_substrings = ["closed"]
+
+    for way_id, way_values in ways.items():
+        tags = way_values.get("tags", {})
+
+        if tags.get("piste:type") != "hike":
+            continue
+
+        if excluded_tags.intersection(tags):
+            continue
+
+        name = tags.get("piste:name") or tags.get("name") or ""
+        if name and any(substr in name.lower() for substr in invalid_name_substrings):
+            continue
+
+        hikes[way_id] = {
+            "id": way_id,
+            "nodes": way_values.get("nodes"),
+            "name": name,
+            "lift_type": "hike",
+            "occupancy": None,
+            "capacity": None,
+            "detachable": None,
+            "bubble": None,
+            "heating": None,
+        }
+
+    hike_relations = {}
+    for relation_id, relation_values in relations.items():
+        tags = relation_values.get("tags", {})
+
+        if tags.get("piste:type") != "hike":
+            continue
+
+        hike_relations[relation_id] = {
+            "id": relation_id,
+            "members": relation_values.get("members"),
+            "type": tags.get("type"),
+        }
+
+    return {"hikes": hikes, "relations": hike_relations}
+
+
 def identify_lifts(ways):
     """
     Accepts a dict of ways and identifies the valid trails.

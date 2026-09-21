@@ -47,6 +47,20 @@ def seeded_db_path(mountain_factory, lift_factory, db_path):
                 vertical=900,
                 length=3000,
             ),
+            "1-hike": lift_factory(
+                lift_id="1-hike",
+                mountain_id="1",
+                name="Summit Bootpack",
+                lift_type="hike",
+                vertical=300,
+                length=800,
+                average_slope=15,
+                occupancy=None,
+                capacity=None,
+                detachable=None,
+                bubble=None,
+                heating=None,
+            ),
         },
     ).to_db(db_path)
     mountain_factory(
@@ -140,6 +154,13 @@ def test_list_lifts_vertical_and_length_converted_to_feet(seeded_db_path):
 
     assert summaries[0].vertical == round(800 * 3.28084)
     assert summaries[0].length == round(2500 * 3.28084)
+
+
+def test_list_lifts_excludes_hike_to_access(seeded_db_path):
+    summaries, total_count = list_lifts(db_path=seeded_db_path)
+
+    assert total_count == 3
+    assert "Summit Bootpack" not in {s.name for s in summaries}
 
 
 def test_list_lifts_handles_none_capacity(seeded_db_path):

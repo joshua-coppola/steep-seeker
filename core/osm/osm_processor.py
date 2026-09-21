@@ -7,7 +7,7 @@ from united_states import UnitedStates
 from core.connectors.elevation_api import Elevation
 from core.datamodels.state import State
 from core.osm.osm_reader import OSMHandler
-from core.osm.trail_parser import identify_lifts, identify_trails
+from core.osm.trail_parser import identify_hikes, identify_lifts, identify_trails
 from core.support.area_routes import get_area_route
 from core.support.lift import Lift
 from core.support.trail import Trail
@@ -26,6 +26,15 @@ from core.support.utils import (
 ## Todo: handle multiline relations
 
 STEEPEST_PITCH_WINDOWS_FEET = (100, 150, 300, 500, 1320, 2640, 5280)
+
+# Fields (besides id/nodes) that every member of a relation, or every
+# candidate pair in a merge pass, must agree on before flatten/merge treats
+# them as segments of the same feature. hazardous is deliberately excluded
+# for trails -- it's always False at parse time (only set later via the
+# management popup), so it shouldn't gate whether two segments are "the
+# same trail".
+TRAIL_MATCH_FIELDS = ["name", "official_rating", "gladed", "area", "ungroomed", "park"]
+HIKE_MATCH_FIELDS = ["name"]
 
 
 class OSMProcessor:
@@ -63,86 +72,96 @@ class OSMProcessor:
         lift_dict = identify_lifts(self.ways)
         self.lifts = lift_dict["lifts"]
 
-        self.flatten_relations()
-        self.merge_trails()
+        hike_dict = identify_hikes(self.ways, self.relations)
+        self.hikes = hike_dict["hikes"]
+        self.hike_relations = hike_dict["relations"]
 
-    def flatten_relations(self) -> None:
+        self.trails, self.trail_relations = self._flatten_relations(
+            self.trails, self.trail_relations, TRAIL_MATCH_FIELDS
+        )
+        self.trails = self._merge_line_features(self.trails, TRAIL_MATCH_FIELDS)
+
+        # Kept scoped to self.hikes alone, merged into self.lifts only
+        # afterward: running the adjacency-merge over the combined self.lifts
+        # would risk splicing two distinct real lifts together if they share
+        # a station node and have identical (all-None) metadata. Way ids are
+        # globally unique in OSM, so this update is collision-safe.
+        self.hikes, self.hike_relations = self._flatten_relations(
+            self.hikes, self.hike_relations, HIKE_MATCH_FIELDS
+        )
+        self.hikes = self._merge_line_features(self.hikes, HIKE_MATCH_FIELDS)
+        self.lifts.update(self.hikes)
+
+    def _flatten_relations(
+        self, items: dict, relations: dict, match_fields: list[str]
+    ) -> tuple[dict, dict]:
         """
         Converts any relationships that can be represented as a single line
-        into a single trail, then removes the relationship. Updates the
-        self.trail_relations and self.trails in place.
+        into a single item, then removes the relationship. match_fields is
+        the set of metadata keys (besides id/nodes) that every member must
+        agree on for the relation to be flattened. Returns the updated
+        (items, relations).
         """
         merged_relation_ids = []
-        for relation_id, relation_value in self.trail_relations.items():
+        for relation_id, relation_value in relations.items():
             if len(relation_value.get("members")) == 1:
                 merged_relation_ids.append(relation_id)
                 continue
 
-            # Some member ways get filtered out by identify_trails (wrong
+            # Some member ways get filtered out during identification (wrong
             # piste:type, excluded tags, etc.) or fall outside the downloaded
-            # extract, so they never make it into self.trails. Drop those
+            # extract, so they never make it into items. Drop those
             # members; if fewer than two remain there's nothing to merge.
             members = [
-                way_id
-                for way_id in relation_value.get("members")
-                if way_id in self.trails
+                way_id for way_id in relation_value.get("members") if way_id in items
             ]
             if len(members) < 2:
                 continue
 
-            trail_info = {
-                "id": [],
-                "nodes": [],
-                "name": [],
-                "official_rating": [],
-                "gladed": [],
-                "area": [],
-                "ungroomed": [],
-                "park": [],
-            }
+            info = {"id": [], "nodes": [], **{key: [] for key in match_fields}}
             for way_id in members:
-                way = self.trails[way_id]
-                for key, value_list in trail_info.items():
+                way = items[way_id]
+                for key, value_list in info.items():
                     if key == "id":
                         value_list.append(way_id)
                     else:
                         value_list.append(way[key])
 
             same_values = 0
-            for key, value_list in trail_info.items():
+            for key, value_list in info.items():
                 if key == "nodes" or key == "id":
                     continue
                 if len(set(value_list)) == 1:
                     same_values += 1
 
-            if same_values != 6:
+            if same_values != len(match_fields):
                 continue
 
             to_be_merged = [
                 {
-                    "id": trail_info["id"][0],
-                    "start": trail_info["nodes"][0][0],
-                    "end": trail_info["nodes"][0][-1],
+                    "id": info["id"][0],
+                    "start": info["nodes"][0][0],
+                    "end": info["nodes"][0][-1],
                 }
             ]
 
-            for i in range(len(trail_info["nodes"]) - 1):
-                nodes = trail_info["nodes"][i + 1]
+            for i in range(len(info["nodes"]) - 1):
+                nodes = info["nodes"][i + 1]
                 if nodes[0] == to_be_merged[-1]["end"]:
                     to_be_merged.append(
                         {
-                            "id": trail_info["id"][i + 1],
-                            "start": trail_info["nodes"][i + 1][0],
-                            "end": trail_info["nodes"][i + 1][-1],
+                            "id": info["id"][i + 1],
+                            "start": info["nodes"][i + 1][0],
+                            "end": info["nodes"][i + 1][-1],
                         }
                     )
                 elif nodes[-1] == to_be_merged[0]["start"]:
                     to_be_merged.insert(
                         0,
                         {
-                            "id": trail_info["id"][i + 1],
-                            "start": trail_info["nodes"][i + 1][0],
-                            "end": trail_info["nodes"][i + 1][-1],
+                            "id": info["id"][i + 1],
+                            "start": info["nodes"][i + 1][0],
+                            "end": info["nodes"][i + 1][-1],
                         },
                     )
 
@@ -151,72 +170,74 @@ class OSMProcessor:
 
             merged_nodes = []
             for way_id in to_be_merged:
-                merged_nodes += self.trails[way_id["id"]]["nodes"]
+                merged_nodes += items[way_id["id"]]["nodes"]
 
             merged_nodes = list(dict.fromkeys(merged_nodes))
             keeper_id = to_be_merged[0]["id"]
 
-            self.trails[keeper_id]["nodes"] = merged_nodes
+            items[keeper_id]["nodes"] = merged_nodes
 
             for way_id in to_be_merged[1:]:
-                del self.trails[way_id["id"]]
+                del items[way_id["id"]]
 
             merged_relation_ids.append(relation_id)
 
-        for id in merged_relation_ids:
-            del self.trail_relations[id]
+        for relation_id in merged_relation_ids:
+            del relations[relation_id]
 
-    def merge_trails(self) -> None:
+        return items, relations
+
+    def _merge_line_features(self, items: dict, match_fields: list[str]) -> dict:
         """
-        Merges any trails that have the same metadata and have an overlapping
-        start/end point. Updates the self.trails object with the new trail list.
+        Merges any items that agree on every field in match_fields and have
+        an overlapping start/end point. Returns the merged items.
 
         This loops until no more merges occur.
         """
-        while self._merge_trails_pass():
-            pass
+        merged_any = True
+        while merged_any:
+            items, merged_any = self._merge_line_features_pass(items, match_fields)
+        return items
 
-    def _merge_trails_pass(self) -> bool:
+    def _merge_line_features_pass(
+        self, items: dict, match_fields: list[str]
+    ) -> tuple[dict, bool]:
         """
-        One merge pass over self.trails; returns whether anything merged.
+        One merge pass over items; returns (merged items, whether anything merged).
         """
-        complete_trails = {}
+        complete_items = {}
         merged_any = False
 
-        for trail_id, trail_value in self.trails.items():
+        for item_id, item_value in items.items():
             found_match = False
-            for existing_data in complete_trails.values():
-                metadata_keys = [
-                    key for key in existing_data if key not in ("id", "nodes")
-                ]
+            for existing_data in complete_items.values():
                 matching_parts = sum(
-                    1 for key in metadata_keys if trail_value[key] == existing_data[key]
+                    1 for key in match_fields if item_value[key] == existing_data[key]
                 )
 
                 # if all metadata is matching, then check if the start/end points line up
-                if matching_parts == len(metadata_keys):
-                    if trail_value["nodes"][0] == existing_data["nodes"][-1]:
+                if matching_parts == len(match_fields):
+                    if item_value["nodes"][0] == existing_data["nodes"][-1]:
                         existing_data["nodes"] = (
-                            existing_data["nodes"] + trail_value["nodes"][1:]
+                            existing_data["nodes"] + item_value["nodes"][1:]
                         )
-                    elif trail_value["nodes"][-1] == existing_data["nodes"][0]:
+                    elif item_value["nodes"][-1] == existing_data["nodes"][0]:
                         existing_data["nodes"] = (
-                            trail_value["nodes"][:-1] + existing_data["nodes"]
+                            item_value["nodes"][:-1] + existing_data["nodes"]
                         )
                     else:
                         continue
                     found_match = True
                     merged_any = True
-                    # trail_value now belongs to existing_data -- stop
-                    # checking it against the other accumulated trails, or
+                    # item_value now belongs to existing_data -- stop
+                    # checking it against the other accumulated items, or
                     # its nodes would get folded into more than one of them
                     break
 
             if not found_match:
-                complete_trails[trail_id] = trail_value
+                complete_items[item_id] = item_value
 
-        self.trails = complete_trails
-        return merged_any
+        return complete_items, merged_any
 
     def _node_points(self, nodes: list) -> list[shapely.Point]:
         """

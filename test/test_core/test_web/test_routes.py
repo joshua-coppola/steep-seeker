@@ -598,6 +598,17 @@ def test_lift_feature_without_edit_query_has_no_delete_form(lift_factory):
     assert "delete_submit" not in feature["properties"]["popupContent"]
 
 
+def test_lift_feature_includes_lift_type(lift_factory):
+    lift = lift_factory(
+        lift_type="hike",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert feature["properties"]["lift_type"] == "hike"
+
+
 def test_lift_feature_with_edit_query_adds_delete_form(lift_factory):
     lift = lift_factory(
         lift_id="w99",

@@ -60,6 +60,7 @@ Edit Resort
     <ul>
         <li>Trail Count: {{mountain.trail_count()}}</li>
         <li>Lift Count: {{mountain.lift_count()}}</li>
+        <li>Hike-to Access: {{mountain.hike_count()}}</li>
         <li>Vertical: {{mountain.vertical_feet()}} ft</li>
         <li>Difficulty: {{mountain.difficulty}}</li>
         <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
@@ -273,3 +274,11 @@ Edit Resort
     <p>Select a resort above to view it.</p>
     {% endif %}
 {% endblock insideContent %}
+
+{% block floatingContent %}
+{% if mountain %}
+<div class="map-switch">
+    <button class="button-cta2 map-button" id="public-map"><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}">Interactive Map</a></button>
+</div>
+{% endif %}
+{% endblock floatingContent %}

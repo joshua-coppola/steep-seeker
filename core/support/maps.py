@@ -53,7 +53,7 @@ def _create_legend(
     plt.plot(x, y, c="black", lw=0.001, label="Advanced")
     plt.plot(x, y, c="red", lw=0.001, label="Expert")
     plt.plot(x, y, c="gold", lw=0.001, label="Extreme")
-    plt.plot(x, y, c="black", lw=0.001, linestyle="dotted", label="Gladed")
+    plt.plot(x, y, c="black", lw=0.001, linestyle="dashed", label="Gladed")
 
     # create the legend
     leg = plt.legend(
@@ -221,7 +221,10 @@ def _populate_map(
         x = [j * lat_mirror for j in x]
         y = [k * lon_mirror for k in y]
 
-        plt.plot(x, y, c="grey", lw=line_width)
+        if lift.lift_type == "hike":
+            plt.plot(x, y, c="grey", linestyle="dotted", lw=line_width)
+        else:
+            plt.plot(x, y, c="grey", lw=line_width)
 
         if with_labels:
             length_feet = meters_to_feet(lift.length) or 0

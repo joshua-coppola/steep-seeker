@@ -64,6 +64,10 @@ def list_lifts(
         sort = "vertical"
 
     where_sql, params = name_and_location_where("Lifts", LiftTable.name, state, region)
+    # hike-to access routes are stored as lifts (lift_type="hike") but
+    # aren't a lift in the ranked sense, so they're excluded here
+    where_sql = f"{where_sql} AND Lifts.{LiftTable.lift_type} != ?"
+    params = [*params, "hike"]
 
     with cursor(db_path=db_path) as cur:
         count_query = f"""

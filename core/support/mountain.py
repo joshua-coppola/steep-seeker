@@ -104,9 +104,17 @@ class Mountain:
 
     def lift_count(self) -> int:
         """
-        Returns the number of lifts associated with the Mountain
+        Returns the number of mechanized lifts associated with the Mountain
+        (excludes hike-to access routes -- see hike_count).
         """
-        return len(self.lifts)
+        return sum(1 for lift in self.lifts.values() if lift.lift_type != "hike")
+
+    def hike_count(self) -> int:
+        """
+        Returns the number of hike-to access routes associated with the
+        Mountain. These are stored as Lifts with lift_type="hike".
+        """
+        return sum(1 for lift in self.lifts.values() if lift.lift_type == "hike")
 
     def add_trail(self, trail: Trail) -> None:
         """

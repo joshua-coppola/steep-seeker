@@ -139,6 +139,21 @@ class TestCreateMap:
         )
         assert output_file.exists()
 
+    def test_create_map_draws_hike_lift_dotted(
+        self, mountain_factory, trail_factory, lift_factory, tmp_path
+    ):
+        # gladed=False so the only source of a dasharray in this map is the
+        # hike lift, isolating it from the gladed=dashed styling tested
+        # elsewhere
+        mountain = mountain_factory(
+            trails={"w1000": trail_factory(gladed=False)},
+            lifts={"w1001": lift_factory(lift_id="w1001", lift_type="hike")},
+        )
+        create_map(mountain, output_dir=str(tmp_path))
+
+        output_file = tmp_path / mountain.state.value / f"{mountain.name}.svg"
+        assert "stroke-dasharray" in output_file.read_text()
+
 
 class TestCreateThumbnail:
     def test_create_thumbnail_writes_svg(self, mountain_factory, tmp_path):

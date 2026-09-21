@@ -202,6 +202,9 @@ function run_map(trails, map, editable = false){
                 return {color: feature.properties.color, weight: 4, dashArray: '5,10'}
             }
         }
+        if (feature.properties.lift_type == 'hike') {
+            return {color: feature.properties.color, weight: 4, dashArray: '1,6', lineCap: 'round'}
+        }
         return {color: feature.properties.color, weight: 4}
     }
 

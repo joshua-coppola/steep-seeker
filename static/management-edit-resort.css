@@ -30,6 +30,13 @@
     top: calc(140px + 1rem);
 }
 
+/* .map-button (interactive-map.css) is positioned for that page's shorter
+   header; shifted down by the same amount as .mountain-details/#map above
+   to clear this page's extra .management-nav bar */
+.map-button {
+    top: calc(102px + 1rem);
+}
+
 .search-form {
     display: flex;
     align-items: center;
