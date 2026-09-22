@@ -5,6 +5,7 @@ from core.datamodels.state import State
 from core.web.app import create_app
 from core.web.routes import (
     _lift_feature,
+    _lift_type_label,
     _orientation,
     _sorted_trails_and_lifts,
     _trail_features,
@@ -596,6 +597,49 @@ def test_lift_feature_without_edit_query_has_no_delete_form(lift_factory):
     feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
 
     assert "delete_submit" not in feature["properties"]["popupContent"]
+
+
+def test_lift_feature_includes_lift_type(lift_factory):
+    lift = lift_factory(
+        lift_type="hike",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert feature["properties"]["lift_type"] == "hike"
+
+
+def test_lift_feature_popup_shows_type(lift_factory):
+    lift = lift_factory(
+        lift_type="chair_lift",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert "<p>Type: Chairlift</p>" in feature["properties"]["popupContent"]
+
+
+def test_lift_feature_popup_shows_hike_type(lift_factory):
+    lift = lift_factory(
+        lift_type="hike",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert "<p>Type: Hike-to Access</p>" in feature["properties"]["popupContent"]
+
+
+class TestLiftTypeLabel:
+    def test_known_types_use_mapped_label(self):
+        assert _lift_type_label("t-bar") == "T-Bar"
+        assert _lift_type_label("hike") == "Hike-to Access"
+
+    def test_unknown_type_falls_back_to_titlecased_value(self):
+        assert _lift_type_label("funicular") == "Funicular"
+        assert _lift_type_label("some_new_tag") == "Some New Tag"
 
 
 def test_lift_feature_with_edit_query_adds_delete_form(lift_factory):

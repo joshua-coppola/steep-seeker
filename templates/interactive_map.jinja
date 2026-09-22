@@ -60,6 +60,7 @@
                 {% endif %}
                 <li>Trail Count: {{mountain.trail_count()}}</li>
                 <li>Lift Count: {{mountain.lift_count()}}</li>
+                <li>Hike-to Access: {{mountain.hike_count()}}</li>
                 <li>Vertical: {{mountain.vertical_feet()}} ft</li>
                 <li>Difficulty: {{mountain.difficulty}}<span class="icon difficulty-{{ trail_color(mountain.difficulty) }}"></span></li>
                 <li>Beginner Friendliness: {{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
@@ -99,7 +100,7 @@
             <h2>Lifts</h2>
             <ul>
                 {% for lift in lifts %}
-                {% if not '' == lift.name %}
+                {% if not '' == lift.name and lift.lift_type != "hike" %}
                 <li>
                     <span class="sidebar-badge">
                         {% if lift.occupancy %}
@@ -110,6 +111,19 @@
                         {% endif %}
                         {% endif %}
                     </span>
+                    {{lift.name}} - {{lift.length_feet()}} ft
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="mountain-section">
+            <h2>Hike-to Access</h2>
+            <ul>
+                {% for lift in lifts %}
+                {% if not '' == lift.name and lift.lift_type == "hike" %}
+                <li>
+                    <span class="sidebar-badge"></span>
                     {{lift.name}} - {{lift.length_feet()}} ft
                 </li>
                 {% endif %}

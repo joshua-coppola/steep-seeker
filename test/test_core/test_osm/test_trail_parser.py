@@ -1,5 +1,5 @@
 from core.osm.osm_processor import OSMProcessor
-from core.osm.trail_parser import identify_lifts, identify_trails
+from core.osm.trail_parser import identify_hikes, identify_lifts, identify_trails
 
 
 def test_identify_trails(osm_file):
@@ -124,6 +124,84 @@ def test_identify_trails_keeps_dual_tagged_trail_with_piste_name():
     }
 
     assert "w1" in identify_trails(ways, {})["trails"]
+
+
+def test_identify_hikes():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "hike", "name": "Ridge Bootpack"},
+        },
+        "w2": {
+            "nodes": [3, 4],
+            "tags": {"piste:type": "downhill", "name": "Not A Hike"},
+        },
+    }
+
+    hikes = identify_hikes(ways, {})["hikes"]
+
+    assert list(hikes.keys()) == ["w1"]
+    hike = hikes["w1"]
+    assert hike["nodes"] == [1, 2]
+    assert hike["name"] == "Ridge Bootpack"
+    assert hike["lift_type"] == "hike"
+    for key in ("occupancy", "capacity", "detachable", "bubble", "heating"):
+        assert hike[key] is None
+
+
+def test_identify_hikes_prefers_piste_name():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "piste:type": "hike",
+                "name": "Access Road",
+                "piste:name": "Summit Bootpack",
+            },
+        }
+    }
+
+    assert identify_hikes(ways, {})["hikes"]["w1"]["name"] == "Summit Bootpack"
+
+
+def test_identify_hikes_excludes_disused():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "hike", "name": "Old Route", "disused": "yes"},
+        }
+    }
+
+    assert identify_hikes(ways, {})["hikes"] == {}
+
+
+def test_identify_hikes_excludes_closed_by_name():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "hike", "name": "Closed for Season"},
+        }
+    }
+
+    assert identify_hikes(ways, {})["hikes"] == {}
+
+
+def test_identify_hikes_relations():
+    relations = {
+        "r1": {
+            "members": ["w1", "w2"],
+            "tags": {"piste:type": "hike", "type": "route"},
+        },
+        "r2": {
+            "members": ["w3"],
+            "tags": {"piste:type": "downhill", "type": "route"},
+        },
+    }
+
+    hike_relations = identify_hikes({}, relations)["relations"]
+
+    assert list(hike_relations.keys()) == ["r1"]
+    assert hike_relations["r1"]["members"] == ["w1", "w2"]
 
 
 def test_identify_lifts_tolerates_non_integer_occupancy_and_capacity():

@@ -120,6 +120,112 @@ def test_get_lifts(osm_file, monkeypatch):
     assert round(lifts["w113"].average_slope, 3) == 9.923
 
 
+def test_OSMProcessor_hikes_attributes(osm_file):
+    osm_processor_instance = OSMProcessor(osm_file)
+
+    # the fixture has no piste:type=hike ways, so wiring hikes into
+    # self.lifts should be a no-op
+    assert osm_processor_instance.hikes == {}
+    assert osm_processor_instance.hike_relations == {}
+    assert len(osm_processor_instance.lifts) == 20
+
+
+def test_OSMProcessor_merges_hikes_into_lifts(osm_file, monkeypatch):
+    def fake_identify_hikes(ways, relations):
+        return {
+            "hikes": {
+                "h1": {
+                    "id": "h1",
+                    "nodes": [1, 2],
+                    "name": "Summit Bootpack",
+                    "lift_type": "hike",
+                    "occupancy": None,
+                    "capacity": None,
+                    "detachable": None,
+                    "bubble": None,
+                    "heating": None,
+                }
+            },
+            "relations": {},
+        }
+
+    monkeypatch.setattr(osm_processor, "identify_hikes", fake_identify_hikes)
+
+    osm_processor_instance = OSMProcessor(osm_file)
+
+    assert osm_processor_instance.lifts["h1"]["lift_type"] == "hike"
+    # real lifts parsed from the fixture are untouched
+    assert len(osm_processor_instance.lifts) == 21
+
+
+def test_flatten_relations_merges_when_match_fields_agree(osm_file):
+    osm_processor_instance = OSMProcessor(osm_file)
+
+    items = {
+        "a1": {"id": "a1", "nodes": [1, 2], "name": "Bootpack"},
+        "a2": {"id": "a2", "nodes": [2, 3], "name": "Bootpack"},
+    }
+    relations = {"r1": {"id": "r1", "members": ["a1", "a2"], "type": "route"}}
+
+    items, relations = osm_processor_instance._flatten_relations(
+        items, relations, ["name"]
+    )
+
+    assert relations == {}
+    assert list(items.keys()) == ["a1"]
+    assert items["a1"]["nodes"] == [1, 2, 3]
+
+
+def test_flatten_relations_skips_when_match_field_differs(osm_file):
+    osm_processor_instance = OSMProcessor(osm_file)
+
+    items = {
+        "a1": {"id": "a1", "nodes": [1, 2], "name": "Bootpack"},
+        "a2": {"id": "a2", "nodes": [2, 3], "name": "Different Name"},
+    }
+    relations = {"r1": {"id": "r1", "members": ["a1", "a2"], "type": "route"}}
+
+    items, relations = osm_processor_instance._flatten_relations(
+        items, relations, ["name"]
+    )
+
+    assert "r1" in relations
+    assert set(items.keys()) == {"a1", "a2"}
+
+
+def test_merge_line_features_merges_adjacent_matching_items(osm_file):
+    osm_processor_instance = OSMProcessor(osm_file)
+
+    items = {
+        "a1": {"id": "a1", "nodes": [1, 2], "name": "Bootpack"},
+        "a2": {"id": "a2", "nodes": [2, 3], "name": "Bootpack"},
+    }
+
+    merged = osm_processor_instance._merge_line_features(items, ["name"])
+
+    assert len(merged) == 1
+    (merged_item,) = merged.values()
+    assert merged_item["nodes"] == [1, 2, 3]
+
+
+def test_merge_line_features_is_unaware_of_lift_semantics(osm_file):
+    # The merge pass only knows about match_fields/nodes -- it has no idea
+    # occupancy/capacity/etc are lift-only fields. Two "real lifts" with
+    # identical metadata sharing a station node would merge exactly like
+    # this if the pass were ever run over the combined self.lifts dict,
+    # which is why OSMProcessor keeps it scoped to self.hikes alone.
+    osm_processor_instance = OSMProcessor(osm_file)
+
+    items = {
+        "l1": {"id": "l1", "nodes": [1, 2], "lift_type": "chair_lift"},
+        "l2": {"id": "l2", "nodes": [2, 3], "lift_type": "chair_lift"},
+    }
+
+    merged = osm_processor_instance._merge_line_features(items, ["lift_type"])
+
+    assert len(merged) == 1
+
+
 def test_get_center(osm_file):
     osm_processor = OSMProcessor(osm_file)
 

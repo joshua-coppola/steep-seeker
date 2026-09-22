@@ -86,6 +86,26 @@ def test_mountain_lift_count(mountain_factory):
     assert mountain.lift_count() == 1
 
 
+def test_mountain_lift_count_excludes_hikes(mountain_factory, lift_factory):
+    mountain = mountain_factory(
+        lifts={
+            "w1001": lift_factory(lift_id="w1001"),
+            "w1002": lift_factory(lift_id="w1002", lift_type="hike"),
+        }
+    )
+    assert mountain.lift_count() == 1
+
+
+def test_mountain_hike_count(mountain_factory, lift_factory):
+    mountain = mountain_factory(
+        lifts={
+            "w1001": lift_factory(lift_id="w1001"),
+            "w1002": lift_factory(lift_id="w1002", lift_type="hike"),
+        }
+    )
+    assert mountain.hike_count() == 1
+
+
 def test_mountain_add_trail(mountain_factory, trail_factory):
     mountain = mountain_factory()
     trail = trail_factory(trail_id="w1002")
