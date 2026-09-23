@@ -428,8 +428,23 @@ function run_map(trails, map, editable = false){
         });
     }
 
+    // leaflet-rotate's tile-grid sizing for the rotated viewport can end up
+    // stale relative to the container's actual pixel size on first load,
+    // leaving grey gaps that only self-correct once the user pans. Forcing
+    // a resize check here makes the map run through that same recalculation
+    // immediately instead of waiting for a pan to trigger it.
+    map.invalidateSize();
+
     addTrails();
     map.fitBounds(geojson_features.getBounds());
+
+    // AlmostOver's mousemove handler brute-force-scans every trail/lift
+    // layer (no spatial index is loaded) on each sampled mousemove, which
+    // also fires while dragging the map -- pausing it for the duration of
+    // a drag removes that cost from panning without affecting hover/click
+    // detection otherwise.
+    map.on('dragstart', function () { map.almostOver.disable(); });
+    map.on('dragend', function () { map.almostOver.enable(); });
 
     // Labels only toggle visibility at the zoom-14 threshold (see
     // applyLabel), so skip the refresh entirely for zoom changes that
