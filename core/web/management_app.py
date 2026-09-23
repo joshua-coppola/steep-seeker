@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_compress import Compress
 
 from core.connectors.database import DATABASE_PATH
 from core.web.management_routes import management_web
@@ -23,6 +24,8 @@ def create_management_app(db_path: str = DATABASE_PATH) -> Flask:
         template_folder="../../templates",
     )
     app.config["DATABASE_PATH"] = db_path
+
+    Compress(app)
     app.register_blueprint(web)
     app.register_blueprint(management_web)
 

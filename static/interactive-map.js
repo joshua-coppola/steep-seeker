@@ -1,11 +1,6 @@
-function run_map(trails, map, editable = false){
-    // Delete-mode state (management edit page only, when editable is true):
-    // a set of flagged trail/lift OSM ids and a toggle for whether a click
-    // flags a line for deletion instead of opening its popup.
+function run_map(trails, map, editable = false, editQuery = null){
     let deleteMode = false;
     const flagged = new Set();
-    // Orange dash-dot ( -- - -- - ) -- deliberately unlike the red
-    // difficulty lines and the gladed lines' even dashes (dashArray '5,10').
     const FLAGGED_STYLE = {
         color: '#ff7f0e',
         weight: 7,
@@ -21,9 +16,6 @@ function run_map(trails, map, editable = false){
         if (submit) submit.disabled = flagged.size === 0;
     }
 
-    // A direct click on a line fires both the layer's own "click" and
-    // Leaflet.AlmostOver's "almost:click"; this collapses that pair (and
-    // any accidental double-click) into a single flag toggle per id.
     let lastToggle = {id: null, at: 0};
 
     function toggleFlag(layer) {
@@ -60,6 +52,8 @@ function run_map(trails, map, editable = false){
     
     // Track current basemap
     let currentBasemap = 'topo';
+
+    const satelliteLabelHalo = getComputedStyle(document.body).getPropertyValue('--color-secondary').trim() || '#666';
     
     // Create basemap toggle control
     L.Control.BasemapToggle = L.Control.extend({
@@ -167,22 +161,141 @@ function run_map(trails, map, editable = false){
         svg.prepend(title);
     });
 
-    function onEachFeature(feature, layer) {
-        if (feature.properties && feature.properties.popupContent) {
-            layer.bindPopup(feature.properties.popupContent);
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
+    function escapeAttr(value) {
+        // escapeHtml alone doesn't escape quotes, since those are only
+        // unsafe in an attribute-value context, not in text content.
+        return escapeHtml(value).replace(/"/g, '&quot;');
+    }
+
+    function buildDeleteFormHtml(id) {
+        const q = escapeAttr(editQuery);
+        return (
+            '<form id="delete" class="search-form">' +
+            `<input type="hidden" name="q" value="${q}">` +
+            `<input type="hidden" name="delete" value="${escapeAttr(id)}">` +
+            '<span class="checkbox-group">' +
+            '<input type="checkbox" id="blacklist" name="blacklist" value=True>' +
+            '<label for="blacklist">Blacklist</label>' +
+            '</span>' +
+            '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
+        );
+    }
+
+    function buildTrailEditFormsHtml(id, data) {
+        const q = escapeAttr(editQuery);
+        const gladedChecked = data.gladed ? 'checked' : '';
+        const ungroomedChecked = data.ungroomed ? 'checked' : '';
+        const hazardousChecked = data.hazardous ? 'checked' : '';
+        return (
+            '<form id="update_tags" class="search-form">' +
+            `<input type="hidden" name="q" value="${q}">` +
+            `<input type="hidden" name="trail_id" value="${escapeAttr(id)}">` +
+            '<span class="checkbox-group">' +
+            `<input type="checkbox" id="gladed" name="gladed" value=True ${gladedChecked}>` +
+            '<label for="gladed">Gladed</label>' +
+            '</span>' +
+            '<span class="checkbox-group">' +
+            `<input type="checkbox" id="ungroomed" name="ungroomed" value=True ${ungroomedChecked}>` +
+            '<label for="ungroomed">Ungroomed</label>' +
+            '</span>' +
+            '<span class="checkbox-group">' +
+            `<input type="checkbox" id="hazardous" name="hazardous" value=True ${hazardousChecked}>` +
+            '<label for="hazardous">Hazardous</label>' +
+            '</span>' +
+            '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
+        ) + buildDeleteFormHtml(id);
+    }
+
+    function buildTrailPopupHtml(data, id) {
+        let badges = '';
+        if (data.gladed) badges += '<i class="icon gladed"></i>';
+        if (data.ungroomed) badges += '<i class="icon ungroomed"></i>';
+        if (data.hazardous) badges += '<i class="icon hazardous"></i>';
+
+        let html = `<h3>${escapeHtml(data.name)}${badges}</h3>`;
+        html += `<p>Rating: ${data.difficulty}<span class="icon difficulty-${data.color}"></span></p>`;
+        html += `<p>Length: ${data.length_feet} ft</p>`;
+        html += `<p>Vertical Drop: ${data.vertical_feet} ft</p>`;
+        data.pitches.forEach(function (pitch) {
+            html += `<p>${pitch.label} Pitch: ${pitch.value}°<span class="icon difficulty-${pitch.color}"></span></p>`;
+        });
+        if (data.debug_id) {
+            html += `<p>Trail ID: ${escapeHtml(data.debug_id)}</p>`;
         }
-        if (feature.properties && feature.properties.label && map.getZoom() > 14) {
-            const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
+        if (editable) html += buildTrailEditFormsHtml(id, data);
+        return html;
+    }
+
+    function buildLiftPopupHtml(data, id) {
+        let html = `<h3>${escapeHtml(data.name)}</h3>`;
+        if (data.occupancy) {
+            if (data.occupancy <= 4) {
+                html += '<p>' + '<span class="icon person"></span>'.repeat(data.occupancy) + '</p>';
+            } else {
+                html += `<p class="occupancy">${data.occupancy}<span class="small-spacer"></span><span class="icon person"></span></p>`;
+            }
+        }
+        html += `<p>Type: ${escapeHtml(data.lift_type_label)}</p>`;
+        html += `<p>Length: ${data.length_feet} ft</p>`;
+        html += `<p>Vertical Rise: ${data.vertical_feet} ft</p>`;
+        html += `<p>Average Pitch: ${data.average_slope}°</p>`;
+        if (data.bubble) html += '<p>&#x2705; Bubble</p>';
+        if (data.heating) html += '<p>&#x2705; Heated</p>';
+        if (data.debug_id) {
+            html += `<p>Lift ID: ${escapeHtml(data.debug_id)}</p>`;
+        }
+        if (editable) html += buildDeleteFormHtml(id);
+        return html;
+    }
+
+    function labelAttributes() {
+        const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
+        const haloColor = currentBasemap === 'satellite' ? satelliteLabelHalo : 'white';
+        // +3px per zoom level above 15, where labels first appear at the
+        // base 14px.
+        const fontSize = 14 + (Math.max(0, map.getZoom() - 15) * 3);
+        return {
+            fill: textColor,
+            'font-size': fontSize + 'px',
+            stroke: haloColor,
+            'stroke-width': '3px',
+            'stroke-linejoin': 'round',
+            'paint-order': 'stroke fill'
+        };
+    }
+
+    function applyLabel(layer, feature) {
+        if (!feature.properties || !feature.properties.label) return;
+        layer.setText(null);
+        if (map.getZoom() > 14) {
             layer.setText(feature.properties.label, {
                 offset: -5,
                 center: true,
                 orientation: feature.properties.orientation,
-                attributes: {
-                    fill: textColor,
-                    'font-size': '14px'
-                }
+                attributes: labelAttributes(),
+                refreshAttributes: labelAttributes
             });
         }
+    }
+
+    function onEachFeature(feature, layer) {
+        if (feature.properties && feature.properties.popupData) {
+            // Built lazily -- only when a popup is actually opened -- since
+            // most of a resort's 600+ trails/lifts never get clicked in a
+            // given visit.
+            layer.bindPopup(function () {
+                const data = feature.properties.popupData;
+                const id = feature.properties.item_id;
+                return data.kind === 'lift' ? buildLiftPopupHtml(data, id) : buildTrailPopupHtml(data, id);
+            });
+        }
+        applyLabel(layer, feature);
     }
 
     function style(feature) {
@@ -350,23 +463,27 @@ function run_map(trails, map, editable = false){
     }
 
     function updateTrailLabels() {
-        geojson_features.removeFrom(map);
-        geojson_features.removeFrom(map.almostOver);
-        addTrails();
+        geojson_features.eachLayer(function (layer) {
+            if (layer.feature) applyLabel(layer, layer.feature);
+        });
     }
+
+    map.invalidateSize();
 
     addTrails();
     map.fitBounds(geojson_features.getBounds());
 
-    map.on('zoomend', function(){
-        geojson_features.removeFrom(map);
-        geojson_features.removeFrom(map.almostOver);
-        addTrails();
+    map.on('dragstart', function () { map.almostOver.disable(); });
+    map.on('dragend', function () { map.almostOver.enable(); });
+
+    let labelsShown = map.getZoom() > 14;
+    map.on('zoomend', function () {
+        const shouldShow = map.getZoom() > 14;
+        if (shouldShow === labelsShown) return;
+        labelsShown = shouldShow;
+        updateTrailLabels();
     });
 
-    // In delete mode a click flags the line -- suppress the bound popup
-    // that Leaflet would otherwise open (covers every click path,
-    // including polygons and direct layer clicks).
     map.on('popupopen', function () {
         if (editable && deleteMode) map.closePopup();
     });
@@ -418,11 +535,6 @@ function run_map(trails, map, editable = false){
     if (editable) {
         const bulkForm = document.getElementById('bulk-delete');
 
-        // Delete-mode toggle: while on, clicking a trail/lift line flags it
-        // (orange dash-dot) instead of opening its popup. The #bulk-delete
-        // form sits right below this button (adopted into a Leaflet control
-        // below), shown only while the mode is on, and submits every flagged
-        // id at once so the server regenerates the map/thumbnail only once.
         L.Control.DeleteModeToggle = L.Control.extend({
             onAdd: function () {
                 const button = L.DomUtil.create('button');

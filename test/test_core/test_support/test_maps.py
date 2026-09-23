@@ -1,10 +1,17 @@
+import math
+import re
+
+import matplotlib.pyplot as plt
 import pytest
 from shapely import LineString, Point, Polygon
 
 from core.datamodels.state import State
 from core.support.maps import (
+    MAP_SIMPLIFY_TOLERANCE,
     _find_map_size,
     _get_label_placement,
+    _populate_map,
+    _save_map_svg,
     _trail_color,
     create_map,
     create_thumbnail,
@@ -154,6 +161,80 @@ class TestCreateMap:
         output_file = tmp_path / mountain.state.value / f"{mountain.name}.svg"
         assert "stroke-dasharray" in output_file.read_text()
 
+    def test_create_map_simplifies_dense_geometry(
+        self, mountain_factory, trail_factory, tmp_path
+    ):
+        # a straight line with many redundant collinear points -- simplify()
+        # collapses these to just the two endpoints regardless of tolerance,
+        # while no tolerance draws every one of them. create_map wires up
+        # MAP_SIMPLIFY_TOLERANCE, a much smaller value than
+        # create_thumbnail's (this map is zoomable up to 100x), but it
+        # should still measurably thin geometry this dense.
+        dense_points = [[0, i * 0.001, 100] for i in range(200)]
+        mountain = mountain_factory(
+            trails={
+                "w1": trail_factory(trail_id="w1", geometry=LineString(dense_points))
+            }
+        )
+
+        plt.subplots()
+        _populate_map(
+            mountain, with_labels=False, simplify_tolerance=MAP_SIMPLIFY_TOLERANCE
+        )
+        _save_map_svg(mountain, str(tmp_path / "simplified"))
+
+        plt.subplots()
+        _populate_map(mountain, with_labels=False, simplify_tolerance=None)
+        _save_map_svg(mountain, str(tmp_path / "unsimplified"))
+
+        simplified_svg = (
+            tmp_path / "simplified" / mountain.state.value / f"{mountain.name}.svg"
+        ).read_text()
+        unsimplified_svg = (
+            tmp_path / "unsimplified" / mountain.state.value / f"{mountain.name}.svg"
+        ).read_text()
+
+        assert len(simplified_svg) < len(unsimplified_svg)
+
+    def test_create_map_label_rotation_unaffected_by_simplification(
+        self, mountain_factory, trail_factory, tmp_path
+    ):
+        # a curved arc, not a straight line -- a straight line's label
+        # angle looks the same whether it's built from 2 points or 100,
+        # so it wouldn't have caught the regression where simplified
+        # (far fewer, differently-spaced) points fed into
+        # _get_label_placement threw off the computed rotation angle
+        arc_points = [
+            [0.01 * math.cos(t), 0.01 * math.sin(t), 100]
+            for t in (i * (math.pi / 2) / 99 for i in range(100))
+        ]
+        mountain = mountain_factory(
+            trails={"w1": trail_factory(trail_id="w1", geometry=LineString(arc_points))}
+        )
+
+        plt.subplots()
+        _populate_map(mountain, with_labels=True, simplify_tolerance=None)
+        _save_map_svg(mountain, str(tmp_path / "unsimplified"))
+
+        plt.subplots()
+        _populate_map(
+            mountain, with_labels=True, simplify_tolerance=MAP_SIMPLIFY_TOLERANCE
+        )
+        _save_map_svg(mountain, str(tmp_path / "simplified"))
+
+        unsimplified_svg = (
+            tmp_path / "unsimplified" / mountain.state.value / f"{mountain.name}.svg"
+        ).read_text()
+        simplified_svg = (
+            tmp_path / "simplified" / mountain.state.value / f"{mountain.name}.svg"
+        ).read_text()
+
+        # label position/rotation must come from the full-precision curve
+        # regardless of what the drawn line itself was simplified to
+        assert re.findall(r"rotate\(([-\d.]+)", unsimplified_svg) == re.findall(
+            r"rotate\(([-\d.]+)", simplified_svg
+        )
+
 
 class TestCreateThumbnail:
     def test_create_thumbnail_writes_svg(self, mountain_factory, tmp_path):
@@ -163,3 +244,30 @@ class TestCreateThumbnail:
         output_file = tmp_path / mountain.state.value / f"{mountain.name}.svg"
         assert output_file.exists()
         assert output_file.read_text().startswith("<?xml")
+
+    def test_create_thumbnail_simplifies_dense_geometry(
+        self, mountain_factory, trail_factory, tmp_path
+    ):
+        # a straight line with many redundant collinear points -- simplify()
+        # collapses these to just the two endpoints regardless of tolerance,
+        # while create_map (no simplification) draws every one of them, so
+        # a big size gap here isolates the simplification effect from the
+        # (also real, but separate) labels-off savings
+        dense_points = [[0, i * 0.001, 100] for i in range(200)]
+        mountain = mountain_factory(
+            trails={
+                "w1": trail_factory(trail_id="w1", geometry=LineString(dense_points))
+            }
+        )
+
+        create_map(mountain, output_dir=str(tmp_path / "map"), with_labels=False)
+        create_thumbnail(mountain, output_dir=str(tmp_path / "thumb"))
+
+        map_svg = (
+            tmp_path / "map" / mountain.state.value / f"{mountain.name}.svg"
+        ).read_text()
+        thumb_svg = (
+            tmp_path / "thumb" / mountain.state.value / f"{mountain.name}.svg"
+        ).read_text()
+
+        assert len(thumb_svg) < len(map_svg) / 2

@@ -13,7 +13,7 @@
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 
-<script type="text/javascript" src="https://cdn.rawgit.com/makinacorpus/Leaflet.GeometryUtil/master/src/leaflet.geometryutil.js">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.GeometryUtil@master/src/leaflet.geometryutil.js">
 </script>
 
 <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
@@ -149,24 +149,26 @@
             }
         });
 
-        let trails = {{ geojson | tojson }}
+        fetch("/interactive-map/{{mountain.state.value}}/{{mountain.name}}/geojson{% if debug_mode %}?debug=true{% endif %}")
+            .then(function (response) { return response.json(); })
+            .then(function (trails) {
+                var mouseOver = true;
+                if (Object.keys(trails.features).length > 200) {
+                    mouseOver = false;
+                }
 
-        var mouseOver = true;
-        if (Object.keys(trails.features).length > 200) {
-            mouseOver = false;
-        }
+                var map = L.map('map', {
+                    rotate: true,
+                    rotateControl: {
+                        closeOnZeroBearing: false,
+                    },
+                    touchRotate: false,
+                    bearing: {{mountain.bearing()}},
+                    almostOnMouseMove: mouseOver,
+                }).setView([{{mountain.coordinates.y}},{{mountain.coordinates.x}}], 13);
 
-        var map = L.map('map', {
-            rotate: true,
-            rotateControl: {
-                closeOnZeroBearing: false,
-            },
-            touchRotate: false,
-            bearing: {{mountain.bearing()}},
-            almostOnMouseMove: mouseOver,
-        }).setView([{{mountain.coordinates.y}},{{mountain.coordinates.x}}], 13);
-
-        run_map(trails, map); 
+                run_map(trails, map);
+            });
 
     </script>
     <script>
