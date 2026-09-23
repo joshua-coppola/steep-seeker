@@ -167,11 +167,64 @@ function run_map(trails, map, editable = false){
         svg.prepend(title);
     });
 
-    function onEachFeature(feature, layer) {
-        if (feature.properties && feature.properties.popupContent) {
-            layer.bindPopup(feature.properties.popupContent);
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
+    function buildTrailPopupHtml(data) {
+        let badges = '';
+        if (data.gladed) badges += '<i class="icon gladed"></i>';
+        if (data.ungroomed) badges += '<i class="icon ungroomed"></i>';
+        if (data.hazardous) badges += '<i class="icon hazardous"></i>';
+
+        let html = `<h3>${escapeHtml(data.name)}${badges}</h3>`;
+        html += `<p>Rating: ${data.difficulty}<span class="icon difficulty-${data.color}"></span></p>`;
+        html += `<p>Length: ${data.length_feet} ft</p>`;
+        html += `<p>Vertical Drop: ${data.vertical_feet} ft</p>`;
+        data.pitches.forEach(function (pitch) {
+            html += `<p>${pitch.label} Pitch: ${pitch.value}°<span class="icon difficulty-${pitch.color}"></span></p>`;
+        });
+        if (data.debug_id) {
+            html += `<p>Trail ID: ${escapeHtml(data.debug_id)}</p>`;
         }
-        if (feature.properties && feature.properties.label && map.getZoom() > 14) {
+        return html;
+    }
+
+    function buildLiftPopupHtml(data) {
+        let html = `<h3>${escapeHtml(data.name)}</h3>`;
+        if (data.occupancy) {
+            if (data.occupancy <= 4) {
+                html += '<p>' + '<span class="icon person"></span>'.repeat(data.occupancy) + '</p>';
+            } else {
+                html += `<p class="occupancy">${data.occupancy}<span class="small-spacer"></span><span class="icon person"></span></p>`;
+            }
+        }
+        html += `<p>Type: ${escapeHtml(data.lift_type_label)}</p>`;
+        html += `<p>Length: ${data.length_feet} ft</p>`;
+        html += `<p>Vertical Rise: ${data.vertical_feet} ft</p>`;
+        html += `<p>Average Pitch: ${data.average_slope}°</p>`;
+        if (data.bubble) html += '<p>&#x2705; Bubble</p>';
+        if (data.heating) html += '<p>&#x2705; Heated</p>';
+        if (data.debug_id) {
+            html += `<p>Lift ID: ${escapeHtml(data.debug_id)}</p>`;
+        }
+        return html;
+    }
+
+    // Sets or clears a layer's text-path label to match the current zoom
+    // (labels only show above zoom 14) and basemap (fill color flips for
+    // satellite). Always clears any existing label first -- leaflet.textpath's
+    // setText doesn't remove a prior text node on its own, so calling it
+    // twice without that would leave a stale, orphaned node behind -- which
+    // makes this safe to call on an already-labeled layer too, e.g. to
+    // refresh color after a basemap switch, without needing to recreate
+    // the layer itself.
+    function applyLabel(layer, feature) {
+        if (!feature.properties || !feature.properties.label) return;
+        layer.setText(null);
+        if (map.getZoom() > 14) {
             const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
             layer.setText(feature.properties.label, {
                 offset: -5,
@@ -183,6 +236,21 @@ function run_map(trails, map, editable = false){
                 }
             });
         }
+    }
+
+    function onEachFeature(feature, layer) {
+        if (feature.properties && feature.properties.popupContent) {
+            layer.bindPopup(feature.properties.popupContent);
+        } else if (feature.properties && feature.properties.popupData) {
+            // Built lazily -- only when a popup is actually opened -- since
+            // most of a resort's 600+ trails/lifts never get clicked in a
+            // given visit.
+            layer.bindPopup(function () {
+                const data = feature.properties.popupData;
+                return data.kind === 'lift' ? buildLiftPopupHtml(data) : buildTrailPopupHtml(data);
+            });
+        }
+        applyLabel(layer, feature);
     }
 
     function style(feature) {
@@ -349,19 +417,30 @@ function run_map(trails, map, editable = false){
         });
     }
 
+    // Re-applies every layer's label (see applyLabel) instead of tearing
+    // down and rebuilding the whole feature layer -- rebuilding also
+    // rebinds every popup and almostOver registration, which for a large
+    // resort's 600+ trails/lifts is real, avoidable work every time this
+    // fires.
     function updateTrailLabels() {
-        geojson_features.removeFrom(map);
-        geojson_features.removeFrom(map.almostOver);
-        addTrails();
+        geojson_features.eachLayer(function (layer) {
+            if (layer.feature) applyLabel(layer, layer.feature);
+        });
     }
 
     addTrails();
     map.fitBounds(geojson_features.getBounds());
 
-    map.on('zoomend', function(){
-        geojson_features.removeFrom(map);
-        geojson_features.removeFrom(map.almostOver);
-        addTrails();
+    // Labels only toggle visibility at the zoom-14 threshold (see
+    // applyLabel), so skip the refresh entirely for zoom changes that
+    // don't cross it -- avoids rebuilding every label's SVG text node on
+    // every scroll-wheel tick.
+    let labelsShown = map.getZoom() > 14;
+    map.on('zoomend', function () {
+        const shouldShow = map.getZoom() > 14;
+        if (shouldShow === labelsShown) return;
+        labelsShown = shouldShow;
+        updateTrailLabels();
     });
 
     // In delete mode a click flags the line -- suppress the bound popup

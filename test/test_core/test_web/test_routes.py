@@ -445,6 +445,12 @@ def test_interactive_map_404_for_unknown_mountain(client):
     assert response.status_code == 404
 
 
+def test_interactive_map_geojson_404_for_unknown_mountain(client):
+    response = client.get("/interactive-map/VT/Nonexistent/geojson")
+
+    assert response.status_code == 404
+
+
 def test_map_sidebar_shows_lift_occupancy(
     client, db_path, mountain_factory, trail_factory, lift_factory
 ):
@@ -492,7 +498,7 @@ def test_interactive_map_returns_ok(mapped_client):
 
 
 def test_interactive_map_geojson_includes_area_route_feature(mapped_client):
-    response = mapped_client.get("/interactive-map/VT/TestMountain")
+    response = mapped_client.get("/interactive-map/VT/TestMountain/geojson")
 
     body = response.data.decode()
     assert "isRoute" in body
@@ -545,7 +551,10 @@ def test_trail_features_without_edit_query_has_no_tag_edit_form(trail_factory):
 
     features = _trail_features(line_trail, direction="n", debug_mode=False)
 
-    assert "update_tags" not in features[0]["properties"]["popupContent"]
+    # public map: structured popupData only -- no pre-rendered HTML (and
+    # so no tag-edit form) crosses the wire at all
+    assert "popupContent" not in features[0]["properties"]
+    assert "item_id" not in features[0]["properties"]
 
 
 def test_trail_features_with_edit_query_adds_tag_edit_form(trail_factory):
@@ -596,7 +605,10 @@ def test_lift_feature_without_edit_query_has_no_delete_form(lift_factory):
 
     feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
 
-    assert "delete_submit" not in feature["properties"]["popupContent"]
+    # public map: structured popupData only -- no pre-rendered HTML (and
+    # so no delete form) crosses the wire at all
+    assert "popupContent" not in feature["properties"]
+    assert "item_id" not in feature["properties"]
 
 
 def test_lift_feature_includes_lift_type(lift_factory):
@@ -618,7 +630,7 @@ def test_lift_feature_popup_shows_type(lift_factory):
 
     feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
 
-    assert "<p>Type: Chairlift</p>" in feature["properties"]["popupContent"]
+    assert feature["properties"]["popupData"]["lift_type_label"] == "Chairlift"
 
 
 def test_lift_feature_popup_shows_hike_type(lift_factory):
@@ -629,7 +641,7 @@ def test_lift_feature_popup_shows_hike_type(lift_factory):
 
     feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
 
-    assert "<p>Type: Hike-to Access</p>" in feature["properties"]["popupContent"]
+    assert feature["properties"]["popupData"]["lift_type_label"] == "Hike-to Access"
 
 
 class TestLiftTypeLabel:
@@ -713,7 +725,12 @@ def test_trail_features_area_trail_without_route_has_single_feature(trail_factor
     assert "routeCoordinates" not in features[0]["properties"]
 
 
-def test_trail_features_escapes_name_in_popup(trail_factory):
+def test_trail_features_popup_data_carries_raw_unescaped_name(trail_factory):
+    """
+    popupData is structured data, not pre-rendered HTML -- escaping now
+    happens client-side, when interactive-map.js actually builds the
+    popup (see its escapeHtml), not here.
+    """
     line_trail = trail_factory(
         name="<img src=x onerror=alert(1)>",
         area=False,
@@ -722,26 +739,24 @@ def test_trail_features_escapes_name_in_popup(trail_factory):
         route=None,
     )
 
-    popup = _trail_features(line_trail, direction="n", debug_mode=False)[0][
+    popup_data = _trail_features(line_trail, direction="n", debug_mode=False)[0][
         "properties"
-    ]["popupContent"]
+    ]["popupData"]
 
-    assert "<img src=x" not in popup
-    assert "&lt;img src=x onerror=alert(1)&gt;" in popup
+    assert popup_data["name"] == "<img src=x onerror=alert(1)>"
 
 
-def test_lift_feature_escapes_name_in_popup(lift_factory):
+def test_lift_feature_popup_data_carries_raw_unescaped_name(lift_factory):
     lift = lift_factory(
         name="<script>alert(1)</script>",
         geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
     )
 
-    popup = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)[
-        "properties"
-    ]["popupContent"]
+    popup_data = _lift_feature(
+        lift, direction="n", weather_modifier=0, debug_mode=False
+    )["properties"]["popupData"]
 
-    assert "<script>" not in popup
-    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in popup
+    assert popup_data["name"] == "<script>alert(1)</script>"
 
 
 @pytest.mark.parametrize("points", [[], [1.0]])

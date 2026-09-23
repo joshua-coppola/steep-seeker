@@ -8,6 +8,7 @@ from flask import (
     Response,
     abort,
     current_app,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -450,30 +451,69 @@ def _trail_features(
     lat_points = [c[1] for c in coords]
     orientation = _orientation(lon_points, lat_points, trail.area, direction)
 
-    gladed_icon = '<i class="icon gladed"></i>' if trail.gladed else ""
-    ungroomed_icon = '<i class="icon ungroomed"></i>' if trail.ungroomed else ""
-    hazardous_icon = '<i class="icon hazardous"></i>' if trail.hazardous else ""
-    popup_content = (
-        f"<h3>{escape(trail.name)}{gladed_icon}{ungroomed_icon}{hazardous_icon}</h3>"
-    )
-    popup_content += (
-        f"<p>Rating: {trail.difficulty}"
-        f'<span class="icon difficulty-{trail_color(trail.difficulty)}"></span></p>'
-    )
-    popup_content += (
-        f"<p>Length: {trail.length_feet()} ft</p>"
-        f"<p>Vertical Drop: {trail.vertical_feet()} ft</p>"
-    )
-    for field, label in PITCH_WINDOW_LABELS:
-        value = getattr(trail, field)
-        if value:
-            popup_content += (
-                f"<p>{label} Pitch: {value}\N{DEGREE SIGN}"
-                f'<span class="icon difficulty-{trail_color(value)}"></span></p>'
-            )
-    if debug_mode:
-        popup_content += f"<p>Trail ID: {escape(trail.trail_id)}</p>"
-    if edit_query is not None:
+    properties = {
+        # name is the trail's identity (used for the elevation-profile
+        # title regardless of which feature was clicked); label is
+        # specifically the text drawn along the map -- the two diverge for
+        # an area trail, whose label moves onto its route line below
+        "name": trail.name,
+        "label": trail.name,
+        "orientation": orientation,
+        "color": trail_color(trail.difficulty),
+        "gladed": str(trail.gladed),
+        "difficulty_modifier": (trail.difficulty or 0)
+        - (getattr(trail, difficulty_pitch_field()) or 0),
+    }
+
+    if edit_query is None:
+        # Public map: send structured popup data instead of a pre-rendered
+        # HTML string -- interactive-map.js builds the actual popup lazily,
+        # only for whichever trail gets clicked, instead of every one of a
+        # resort's trails (600+ for a large one) carrying a full baked-in
+        # HTML popup that bloats the GeoJSON payload whether it's ever
+        # opened or not.
+        properties["popupData"] = {
+            "kind": "trail",
+            "name": trail.name,
+            "difficulty": trail.difficulty,
+            "color": trail_color(trail.difficulty),
+            "gladed": trail.gladed,
+            "ungroomed": trail.ungroomed,
+            "hazardous": trail.hazardous,
+            "length_feet": trail.length_feet(),
+            "vertical_feet": trail.vertical_feet(),
+            "pitches": [
+                {"label": label, "value": value, "color": trail_color(value)}
+                for field, label in PITCH_WINDOW_LABELS
+                if (value := getattr(trail, field))
+            ],
+            "debug_id": trail.trail_id if debug_mode else None,
+        }
+    else:
+        # Management edit page: unchanged from before -- a pre-rendered
+        # popup (including the gladed/ungroomed/hazardous tag-edit form)
+        # since this map is admin-only and not performance-sensitive.
+        gladed_icon = '<i class="icon gladed"></i>' if trail.gladed else ""
+        ungroomed_icon = '<i class="icon ungroomed"></i>' if trail.ungroomed else ""
+        hazardous_icon = '<i class="icon hazardous"></i>' if trail.hazardous else ""
+        popup_content = f"<h3>{escape(trail.name)}{gladed_icon}{ungroomed_icon}{hazardous_icon}</h3>"
+        popup_content += (
+            f"<p>Rating: {trail.difficulty}"
+            f'<span class="icon difficulty-{trail_color(trail.difficulty)}"></span></p>'
+        )
+        popup_content += (
+            f"<p>Length: {trail.length_feet()} ft</p>"
+            f"<p>Vertical Drop: {trail.vertical_feet()} ft</p>"
+        )
+        for field, label in PITCH_WINDOW_LABELS:
+            value = getattr(trail, field)
+            if value:
+                popup_content += (
+                    f"<p>{label} Pitch: {value}\N{DEGREE SIGN}"
+                    f'<span class="icon difficulty-{trail_color(value)}"></span></p>'
+                )
+        if debug_mode:
+            popup_content += f"<p>Trail ID: {escape(trail.trail_id)}</p>"
         gladed_checked = "checked" if trail.gladed else ""
         ungroomed_checked = "checked" if trail.ungroomed else ""
         hazardous_checked = "checked" if trail.hazardous else ""
@@ -496,24 +536,10 @@ def _trail_features(
             '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
         )
         popup_content += _delete_form_html(edit_query, trail.trail_id)
-
-    properties = {
-        "popupContent": popup_content,
-        # only set on the management edit map -- lets its delete-mode
-        # flag a trail by clicking its line (see interactive-map.js)
-        **({"item_id": trail.trail_id} if edit_query is not None else {}),
-        # name is the trail's identity (used for the elevation-profile
-        # title regardless of which feature was clicked); label is
-        # specifically the text drawn along the map -- the two diverge for
-        # an area trail, whose label moves onto its route line below
-        "name": trail.name,
-        "label": trail.name,
-        "orientation": orientation,
-        "color": trail_color(trail.difficulty),
-        "gladed": str(trail.gladed),
-        "difficulty_modifier": (trail.difficulty or 0)
-        - (getattr(trail, difficulty_pitch_field()) or 0),
-    }
+        properties["popupContent"] = popup_content
+        # lets the edit map's delete-mode flag a trail by clicking its
+        # line (see interactive-map.js)
+        properties["item_id"] = trail.trail_id
 
     features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
 
@@ -561,7 +587,7 @@ LIFT_TYPE_LABELS = {
     "rope_tow": "Rope Tow",
     "magic_carpet": "Magic Carpet",
     "hike": "Hike-to Access",
-}   
+}
 
 
 def _lift_type_label(lift_type: str) -> str:
@@ -590,33 +616,7 @@ def _lift_feature(
     lat_points = [c[1] for c in coords]
     orientation = _orientation(lon_points, lat_points, False, direction)
 
-    popup_content = f"<h3>{escape(lift.name)}</h3>"
-    if lift.occupancy:
-        if lift.occupancy <= 4:
-            popup_content += (
-                "<p>" + '<span class="icon person"></span>' * lift.occupancy + "</p>"
-            )
-        else:
-            popup_content += (
-                f'<p class="occupancy">{lift.occupancy}'
-                '<span class="small-spacer"></span>'
-                '<span class="icon person"></span></p>'
-            )
-    popup_content += f"<p>Type: {escape(_lift_type_label(lift.lift_type))}</p>"
-    popup_content += f"<p>Length: {lift.length_feet()} ft</p>"
-    popup_content += f"<p>Vertical Rise: {lift.vertical_feet()} ft</p>"
-    popup_content += f"<p>Average Pitch: {round_degrees(lift.average_slope)}°</p>"
-    if lift.bubble:
-        popup_content += "<p>&#x2705; Bubble</p>"
-    if lift.heating:
-        popup_content += "<p>&#x2705; Heated</p>"
-    if debug_mode:
-        popup_content += f"<p>Lift ID: {escape(lift.lift_id)}</p>"
-    if edit_query is not None:
-        popup_content += _delete_form_html(edit_query, lift.lift_id)
-
     properties = {
-        "popupContent": popup_content,
         "name": lift.name,
         "label": lift.name,
         "orientation": orientation,
@@ -624,9 +624,51 @@ def _lift_feature(
         "lift_type": lift.lift_type,
         "difficulty_modifier": weather_modifier,
     }
-    if edit_query is not None:
-        # only set on the management edit map -- lets its delete-mode
-        # flag a lift by clicking its line (see interactive-map.js)
+
+    if edit_query is None:
+        # Public map: structured data, popup built lazily client-side --
+        # see the matching comment in _trail_features above.
+        properties["popupData"] = {
+            "kind": "lift",
+            "name": lift.name,
+            "occupancy": lift.occupancy,
+            "lift_type_label": _lift_type_label(lift.lift_type),
+            "length_feet": lift.length_feet(),
+            "vertical_feet": lift.vertical_feet(),
+            "average_slope": round_degrees(lift.average_slope),
+            "bubble": lift.bubble,
+            "heating": lift.heating,
+            "debug_id": lift.lift_id if debug_mode else None,
+        }
+    else:
+        popup_content = f"<h3>{escape(lift.name)}</h3>"
+        if lift.occupancy:
+            if lift.occupancy <= 4:
+                popup_content += (
+                    "<p>"
+                    + '<span class="icon person"></span>' * lift.occupancy
+                    + "</p>"
+                )
+            else:
+                popup_content += (
+                    f'<p class="occupancy">{lift.occupancy}'
+                    '<span class="small-spacer"></span>'
+                    '<span class="icon person"></span></p>'
+                )
+        popup_content += f"<p>Type: {escape(_lift_type_label(lift.lift_type))}</p>"
+        popup_content += f"<p>Length: {lift.length_feet()} ft</p>"
+        popup_content += f"<p>Vertical Rise: {lift.vertical_feet()} ft</p>"
+        popup_content += f"<p>Average Pitch: {round_degrees(lift.average_slope)}°</p>"
+        if lift.bubble:
+            popup_content += "<p>&#x2705; Bubble</p>"
+        if lift.heating:
+            popup_content += "<p>&#x2705; Heated</p>"
+        if debug_mode:
+            popup_content += f"<p>Lift ID: {escape(lift.lift_id)}</p>"
+        popup_content += _delete_form_html(edit_query, lift.lift_id)
+        properties["popupContent"] = popup_content
+        # lets the edit map's delete-mode flag a lift by clicking its
+        # line (see interactive-map.js)
         properties["item_id"] = lift.lift_id
 
     return {
@@ -792,18 +834,34 @@ def interactive_map(state, name):
     db_path = current_app.config["DATABASE_PATH"]
     mountain = _load_mountain_or_404(state, name, db_path)
 
+    # trails/lifts are still needed here for the sidebar list, but the
+    # GeoJSON itself (which can run into the megabytes for a large resort,
+    # once every trail/lift's popup HTML is baked in) is fetched by the
+    # browser separately (see interactive_map_geojson below) instead of
+    # being inlined into this page's HTML, so the page shell can render
+    # before that payload downloads.
     trails, lifts = _sorted_trails_and_lifts(mountain)
-    geojson = _build_geojson(mountain, trails, lifts, debug_mode)
 
     return render_template(
         "interactive_map.jinja",
         active_page="map",
-        geojson=geojson,
         mountain=mountain,
         trails=trails,
         lifts=lifts,
+        debug_mode=debug_mode,
         weather_modifier=round_degrees(_weather_modifier(trails)),
     )
+
+
+@web.route("/interactive-map/<string:state>/<string:name>/geojson")
+def interactive_map_geojson(state, name):
+    debug_mode = request.args.get("debug") == "true"
+
+    db_path = current_app.config["DATABASE_PATH"]
+    mountain = _load_mountain_or_404(state, name, db_path)
+    trails, lifts = _sorted_trails_and_lifts(mountain)
+
+    return jsonify(_build_geojson(mountain, trails, lifts, debug_mode))
 
 
 @web.route("/sitemap.xml")

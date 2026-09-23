@@ -18,6 +18,22 @@ from core.support.utils import trail_color as _trail_color
 
 mpl.use("svg")
 
+# Degrees of Douglas-Peucker tolerance used to thin trail/lift geometry
+# before drawing a thumbnail (~11m at mid-latitudes) -- picked by comparing
+# rendered output at several tolerances: this cuts a large resort's
+# thumbnail by roughly 80% with no visible difference at the 125x100px
+# size thumbnails are actually displayed at (see search.jinja).
+THUMBNAIL_SIMPLIFY_TOLERANCE = 0.0001
+
+# Much smaller than THUMBNAIL_SIMPLIFY_TOLERANCE (~0.5m vs ~11m) -- the
+# static map (map.jinja) is pannable/zoomable up to 100x (see map.js), so
+# it needs far more fidelity than a fixed-size thumbnail. Chosen by
+# comparing renders at a zoomed-in trail junction: at 4x this value,
+# curves were already visibly flattened; this tolerance still matched the
+# unsimplified render closely at ~16x zoom, while still cutting a large
+# resort's map by roughly a third.
+MAP_SIMPLIFY_TOLERANCE = 0.000005
+
 
 def _xy_from_coords(coords) -> tuple[list[float], list[float]]:
     lons = []
@@ -184,7 +200,10 @@ def _find_map_size(mountain: Mountain) -> dict:
 
 
 def _populate_map(
-    mountain: Mountain, with_labels: bool = True, debug_mode: bool = False
+    mountain: Mountain,
+    with_labels: bool = True,
+    debug_mode: bool = False,
+    simplify_tolerance: float | None = None,
 ) -> None:
     # configure correct item rotation & scaling
     lat_mirror = 1
@@ -210,16 +229,27 @@ def _populate_map(
     # line width between .4 - 2
     line_width = max(min(fig.get_size_inches()[0] / 3, 2), 0.4)
 
-    # lifts
-    for lift in mountain.lifts.values():
-        lons, lats = _xy_from_coords(lift.geometry.coords)
+    def _geometry_coords(geometry, is_area: bool = False):
+        # Douglas-Peucker simplification, in degrees -- thumbnails draw at
+        # 125x100px (see create_thumbnail), where a trail's full-precision
+        # point-by-point wiggle is invisible but still costs real bytes:
+        # for a large resort this can be the difference between a ~700KB
+        # and a ~100KB SVG with no perceptible visual change.
+        if simplify_tolerance:
+            geometry = geometry.simplify(simplify_tolerance, preserve_topology=True)
+        return geometry.exterior.coords if is_area else geometry.coords
+
+    def _mirrored_xy(coords):
+        lons, lats = _xy_from_coords(coords)
         if x_data == "lat":
             x, y = lats, lons
         else:
             x, y = lons, lats
+        return [j * lat_mirror for j in x], [k * lon_mirror for k in y]
 
-        x = [j * lat_mirror for j in x]
-        y = [k * lon_mirror for k in y]
+    # lifts
+    for lift in mountain.lifts.values():
+        x, y = _mirrored_xy(_geometry_coords(lift.geometry))
 
         if lift.lift_type == "hike":
             plt.plot(x, y, c="grey", linestyle="dotted", lw=line_width)
@@ -227,9 +257,16 @@ def _populate_map(
             plt.plot(x, y, c="grey", lw=line_width)
 
         if with_labels:
+            # label placement/rotation must use the *unsimplified* points --
+            # simplification can drop most of a curve's points, and
+            # _get_label_placement's angle comes from consecutive points
+            # (so it'd span a long straightened chord instead of the real
+            # local direction) while its point-spacing math assumes
+            # point_count roughly matches the line's real length
+            label_x, label_y = _mirrored_xy(lift.geometry.coords)
             length_feet = meters_to_feet(lift.length) or 0
             point, angle, label_length = _get_label_placement(
-                x, y, length_feet, len(lift.name)
+                label_x, label_y, length_feet, len(lift.name)
             )
             if point == 0 and angle == 0:
                 continue
@@ -239,8 +276,8 @@ def _populate_map(
                 label_text = lift.lift_id
             if label_length < length_feet or debug_mode:
                 plt.text(
-                    x[point],
-                    y[point],
+                    label_x[point],
+                    label_y[point],
                     label_text,
                     {"color": "grey", "size": 2, "rotation": angle},
                     ha="center",
@@ -251,25 +288,10 @@ def _populate_map(
 
     # trails -- area trails first so ordinary trails always draw on top of them
     for trail in sorted(mountain.trails.values(), key=lambda t: not t.area):
-        coords = trail.geometry.exterior.coords if trail.area else trail.geometry.coords
-        lons, lats = _xy_from_coords(coords)
-        if x_data == "lat":
-            x, y = lats, lons
-        else:
-            x, y = lons, lats
-
-        x = [j * lat_mirror for j in x]
-        y = [k * lon_mirror for k in y]
+        x, y = _mirrored_xy(_geometry_coords(trail.geometry, is_area=trail.area))
 
         if debug_mode and trail.area and trail.route is not None:
-            debug_lons, debug_lats = _xy_from_coords(trail.route.coords)
-            if x_data == "lat":
-                debug_x, debug_y = debug_lats, debug_lons
-            else:
-                debug_x, debug_y = debug_lons, debug_lats
-
-            debug_x = [j * lat_mirror for j in debug_x]
-            debug_y = [k * lon_mirror for k in debug_y]
+            debug_x, debug_y = _mirrored_xy(trail.route.coords)
 
         color = _trail_color(trail.difficulty)
 
@@ -299,9 +321,14 @@ def _populate_map(
             label_text = "{} {:.1f}{}".format(
                 trail.name.strip(), trail.difficulty_pitch(), "\N{DEGREE SIGN}"
             )
+            # unsimplified points -- see the matching comment in the lift
+            # loop above for why
+            label_x, label_y = _mirrored_xy(
+                trail.geometry.exterior.coords if trail.area else trail.geometry.coords
+            )
             length_feet = meters_to_feet(trail.length) or 0
             point, angle, label_length = _get_label_placement(
-                x, y, length_feet, len(label_text)
+                label_x, label_y, length_feet, len(label_text)
             )
             if point == 0 and angle == 0 and not debug_mode:
                 continue
@@ -313,8 +340,8 @@ def _populate_map(
                 if color == "gold":
                     color = "black"
                 plt.text(
-                    x[point],
-                    y[point],
+                    label_x[point],
+                    label_y[point],
                     label_text,
                     {"color": color, "size": 2, "rotation": angle},
                     ha="center",
@@ -397,7 +424,12 @@ def create_map(
         bottom_loc,
     )
 
-    _populate_map(mountain, with_labels, debug_mode)
+    _populate_map(
+        mountain,
+        with_labels,
+        debug_mode,
+        simplify_tolerance=MAP_SIMPLIFY_TOLERANCE,
+    )
 
     _save_map_svg(mountain, output_dir)
 
@@ -416,6 +448,8 @@ def create_thumbnail(mountain: Mountain, output_dir: str = "static/thumbnails") 
     plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
     _hide_axes()
 
-    _populate_map(mountain, False)
+    _populate_map(
+        mountain, with_labels=False, simplify_tolerance=THUMBNAIL_SIMPLIFY_TOLERANCE
+    )
 
     _save_map_svg(mountain, output_dir)

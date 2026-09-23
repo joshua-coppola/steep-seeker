@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_compress import Compress
 
 from core.connectors.database import DATABASE_PATH
 from core.web.routes import nav_links, web
@@ -16,6 +17,12 @@ def create_app(db_path: str = DATABASE_PATH) -> Flask:
         template_folder="../../templates",
     )
     app.config["DATABASE_PATH"] = db_path
+    # static files (JS/CSS/icons/per-mountain maps) otherwise default to
+    # Cache-Control: no-cache, forcing a revalidation round trip on every
+    # single request even when nothing changed; a mountain's map/thumbnail
+    # can go stale for up to this long after a resort refresh/recalibration
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
+    Compress(app)
     app.register_blueprint(web)
 
     @app.context_processor
