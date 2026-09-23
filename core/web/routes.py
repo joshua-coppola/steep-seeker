@@ -561,7 +561,7 @@ LIFT_TYPE_LABELS = {
     "rope_tow": "Rope Tow",
     "magic_carpet": "Magic Carpet",
     "hike": "Hike-to Access",
-}
+}   
 
 
 def _lift_type_label(lift_type: str) -> str:

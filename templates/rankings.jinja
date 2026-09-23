@@ -82,17 +82,17 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         {% if sort == "beginner" %}
         The Beginner Friendliness ranking is a weighted average of the easiest trails at each resort. It shows how easy
         it would be to learn to ski on these trails.
-        The color denotes what the easiest trails at a mountain are rated. The longer the bar, the easier the learning
+        The color denotes what the easiest trails at a mountain are rated. The higher the score, the easier the learning
         terrain is.
         {% endif %}
         {% if sort == "difficulty"%}
-        The Difficulty ranking is a weighted average of the hardest trails at each resort. It shows how much of a
-        challenge the mountain will present to advanced skiers.
-        The color denotes how challenging the hardest trails at a mountain are. The longer the bar, the harder the
-        advanced trails at the resort. Expect the toughest trails at a resort to have pitches (in degrees) that are
-        very similar to the difficulty score. The score is primarily based on the hardest 5 runs at a resort. What
-        this means in practice is that a resort with 1 standout challenging run will rank below a mountain that has a
-        handful of not quite as hard runs.
+        Each difficulty ranking is a weighted average of the hardest trails at a 
+        particular resort. These rankings indicated how challenging trails will be for 
+        advanced skiers. Expect that the toughest trails at a resort will have pitches 
+        in degrees that are similar to the difficulty score. This score is primarily 
+        based on five most difficult runs at a particular resort, which means that a 
+        resort with only challenging trails will rank below a mountain that has a 
+        few not as challenging advanced runs.
         {% endif %}
     </p>
 
@@ -103,9 +103,11 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         be high to reflect that.
         {% endif %}
         {% if sort == "difficulty"%}
-        The Difficulty scale is roughly from 0-60, where a mountain scoring highly presents extremely difficult terrain.
-        Technically, the max possible score is ~100, but that would require a mix of terrible weather and deadly cliffs. 
-        The steepest terrain is primarily in the west, and as such western resorts dominate the top of the Difficulty list.
+        The difficulty scale is roughly from 0-60, where a mountain scoring highly 
+        presents extremely difficult terrain. Technically, the max possible score is 
+        ~100, but that does not exist in practice. The steepest terrain is primarily 
+        in the west, and as such western resorts dominate the top of the difficulty 
+        list.
         {% endif %}
     </p>
 
