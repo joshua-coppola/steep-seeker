@@ -685,9 +685,7 @@ def management_edit_resort():
     if mountain is not None:
         trails, lifts = _sorted_trails_and_lifts(mountain)
         # debug_mode=True so popups always show OSM ids
-        geojson = _build_geojson(
-            mountain, trails, lifts, debug_mode=True, editable=True
-        )
+        geojson = _build_geojson(mountain, trails, lifts, debug_mode=True)
 
     season_pass_values = set()
     if mountain is not None:

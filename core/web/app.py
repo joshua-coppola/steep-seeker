@@ -17,10 +17,7 @@ def create_app(db_path: str = DATABASE_PATH) -> Flask:
         template_folder="../../templates",
     )
     app.config["DATABASE_PATH"] = db_path
-    # static files (JS/CSS/icons/per-mountain maps) otherwise default to
-    # Cache-Control: no-cache, forcing a revalidation round trip on every
-    # single request even when nothing changed; a mountain's map/thumbnail
-    # can go stale for up to this long after a resort refresh/recalibration
+    # static files (JS/CSS/icons/SVG maps) get cached for 1 day (86400 seconds)
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
     Compress(app)
     app.register_blueprint(web)

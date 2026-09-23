@@ -1,4 +1,4 @@
-function run_map(trails, map, editable = false){
+function run_map(trails, map, editable = false, editQuery = null){
     let deleteMode = false;
     const flagged = new Set();
     const FLAGGED_STYLE = {
@@ -167,7 +167,52 @@ function run_map(trails, map, editable = false){
         return div.innerHTML;
     }
 
-    function buildTrailPopupHtml(data) {
+    function escapeAttr(value) {
+        // escapeHtml alone doesn't escape quotes, since those are only
+        // unsafe in an attribute-value context, not in text content.
+        return escapeHtml(value).replace(/"/g, '&quot;');
+    }
+
+    function buildDeleteFormHtml(id) {
+        const q = escapeAttr(editQuery);
+        return (
+            '<form id="delete" class="search-form">' +
+            `<input type="hidden" name="q" value="${q}">` +
+            `<input type="hidden" name="delete" value="${escapeAttr(id)}">` +
+            '<span class="checkbox-group">' +
+            '<input type="checkbox" id="blacklist" name="blacklist" value=True>' +
+            '<label for="blacklist">Blacklist</label>' +
+            '</span>' +
+            '<input class="button-cta" id="delete_submit" type="submit" value="Delete" /></form>'
+        );
+    }
+
+    function buildTrailEditFormsHtml(id, data) {
+        const q = escapeAttr(editQuery);
+        const gladedChecked = data.gladed ? 'checked' : '';
+        const ungroomedChecked = data.ungroomed ? 'checked' : '';
+        const hazardousChecked = data.hazardous ? 'checked' : '';
+        return (
+            '<form id="update_tags" class="search-form">' +
+            `<input type="hidden" name="q" value="${q}">` +
+            `<input type="hidden" name="trail_id" value="${escapeAttr(id)}">` +
+            '<span class="checkbox-group">' +
+            `<input type="checkbox" id="gladed" name="gladed" value=True ${gladedChecked}>` +
+            '<label for="gladed">Gladed</label>' +
+            '</span>' +
+            '<span class="checkbox-group">' +
+            `<input type="checkbox" id="ungroomed" name="ungroomed" value=True ${ungroomedChecked}>` +
+            '<label for="ungroomed">Ungroomed</label>' +
+            '</span>' +
+            '<span class="checkbox-group">' +
+            `<input type="checkbox" id="hazardous" name="hazardous" value=True ${hazardousChecked}>` +
+            '<label for="hazardous">Hazardous</label>' +
+            '</span>' +
+            '<input class="button-cta" id="update_tags_submit" type="submit" value="Update" /></form>'
+        ) + buildDeleteFormHtml(id);
+    }
+
+    function buildTrailPopupHtml(data, id) {
         let badges = '';
         if (data.gladed) badges += '<i class="icon gladed"></i>';
         if (data.ungroomed) badges += '<i class="icon ungroomed"></i>';
@@ -183,10 +228,11 @@ function run_map(trails, map, editable = false){
         if (data.debug_id) {
             html += `<p>Trail ID: ${escapeHtml(data.debug_id)}</p>`;
         }
+        if (editable) html += buildTrailEditFormsHtml(id, data);
         return html;
     }
 
-    function buildLiftPopupHtml(data) {
+    function buildLiftPopupHtml(data, id) {
         let html = `<h3>${escapeHtml(data.name)}</h3>`;
         if (data.occupancy) {
             if (data.occupancy <= 4) {
@@ -204,13 +250,14 @@ function run_map(trails, map, editable = false){
         if (data.debug_id) {
             html += `<p>Lift ID: ${escapeHtml(data.debug_id)}</p>`;
         }
+        if (editable) html += buildDeleteFormHtml(id);
         return html;
     }
 
     function labelAttributes() {
         const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
         const haloColor = currentBasemap === 'satellite' ? satelliteLabelHalo : 'white';
-        // +1px per zoom level above 15, where labels first appear at the
+        // +3px per zoom level above 15, where labels first appear at the
         // base 14px.
         const fontSize = 14 + (Math.max(0, map.getZoom() - 15) * 3);
         return {
@@ -238,15 +285,14 @@ function run_map(trails, map, editable = false){
     }
 
     function onEachFeature(feature, layer) {
-        if (feature.properties && feature.properties.popupContent) {
-            layer.bindPopup(feature.properties.popupContent);
-        } else if (feature.properties && feature.properties.popupData) {
+        if (feature.properties && feature.properties.popupData) {
             // Built lazily -- only when a popup is actually opened -- since
             // most of a resort's 600+ trails/lifts never get clicked in a
             // given visit.
             layer.bindPopup(function () {
                 const data = feature.properties.popupData;
-                return data.kind === 'lift' ? buildLiftPopupHtml(data) : buildTrailPopupHtml(data);
+                const id = feature.properties.item_id;
+                return data.kind === 'lift' ? buildLiftPopupHtml(data, id) : buildTrailPopupHtml(data, id);
             });
         }
         applyLabel(layer, feature);

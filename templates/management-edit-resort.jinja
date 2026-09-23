@@ -268,7 +268,7 @@ Edit Resort
             almostOnMouseMove: mouseOver,
         }).setView([{{mountain.coordinates.y}},{{mountain.coordinates.x}}], 13);
 
-        run_map(trails, map, true);
+        run_map(trails, map, true, {{ (mountain.name ~ ", " ~ mountain.state.value) | tojson }});
     </script>
     {% else %}
     <p>Select a resort above to view it.</p>

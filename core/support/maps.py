@@ -19,19 +19,10 @@ from core.support.utils import trail_color as _trail_color
 mpl.use("svg")
 
 # Degrees of Douglas-Peucker tolerance used to thin trail/lift geometry
-# before drawing a thumbnail (~11m at mid-latitudes) -- picked by comparing
-# rendered output at several tolerances: this cuts a large resort's
-# thumbnail by roughly 80% with no visible difference at the 125x100px
-# size thumbnails are actually displayed at (see search.jinja).
+# before drawing a thumbnail (~11m at mid-latitudes)
 THUMBNAIL_SIMPLIFY_TOLERANCE = 0.0001
 
-# Much smaller than THUMBNAIL_SIMPLIFY_TOLERANCE (~0.5m vs ~11m) -- the
-# static map (map.jinja) is pannable/zoomable up to 100x (see map.js), so
-# it needs far more fidelity than a fixed-size thumbnail. Chosen by
-# comparing renders at a zoomed-in trail junction: at 4x this value,
-# curves were already visibly flattened; this tolerance still matched the
-# unsimplified render closely at ~16x zoom, while still cutting a large
-# resort's map by roughly a third.
+# Roughly 0.5m tolerance for the static map (map.jinja)
 MAP_SIMPLIFY_TOLERANCE = 0.000005
 
 
@@ -230,11 +221,6 @@ def _populate_map(
     line_width = max(min(fig.get_size_inches()[0] / 3, 2), 0.4)
 
     def _geometry_coords(geometry, is_area: bool = False):
-        # Douglas-Peucker simplification, in degrees -- thumbnails draw at
-        # 125x100px (see create_thumbnail), where a trail's full-precision
-        # point-by-point wiggle is invisible but still costs real bytes:
-        # for a large resort this can be the difference between a ~700KB
-        # and a ~100KB SVG with no perceptible visual change.
         if simplify_tolerance:
             geometry = geometry.simplify(simplify_tolerance, preserve_topology=True)
         return geometry.exterior.coords if is_area else geometry.coords
@@ -257,12 +243,6 @@ def _populate_map(
             plt.plot(x, y, c="grey", lw=line_width)
 
         if with_labels:
-            # label placement/rotation must use the *unsimplified* points --
-            # simplification can drop most of a curve's points, and
-            # _get_label_placement's angle comes from consecutive points
-            # (so it'd span a long straightened chord instead of the real
-            # local direction) while its point-spacing math assumes
-            # point_count roughly matches the line's real length
             label_x, label_y = _mirrored_xy(lift.geometry.coords)
             length_feet = meters_to_feet(lift.length) or 0
             point, angle, label_length = _get_label_placement(
@@ -321,8 +301,6 @@ def _populate_map(
             label_text = "{} {:.1f}{}".format(
                 trail.name.strip(), trail.difficulty_pitch(), "\N{DEGREE SIGN}"
             )
-            # unsimplified points -- see the matching comment in the lift
-            # loop above for why
             label_x, label_y = _mirrored_xy(
                 trail.geometry.exterior.coords if trail.area else trail.geometry.coords
             )

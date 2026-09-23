@@ -541,23 +541,7 @@ def test_trail_features_line_trail_has_single_linestring_feature(trail_factory):
     assert "routeCoordinates" not in features[0]["properties"]
 
 
-def test_trail_features_without_edit_query_has_no_tag_edit_form(trail_factory):
-    line_trail = trail_factory(
-        area=False,
-        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
-        interior_geometry="",
-        route=None,
-    )
-
-    features = _trail_features(line_trail, direction="n", debug_mode=False)
-
-    # public map: structured popupData only -- no pre-rendered HTML (and
-    # so no tag-edit form) crosses the wire at all
-    assert "popupContent" not in features[0]["properties"]
-    assert "item_id" not in features[0]["properties"]
-
-
-def test_trail_features_with_edit_query_adds_tag_edit_form(trail_factory):
+def test_trail_features_always_structured_popup_data(trail_factory):
     line_trail = trail_factory(
         trail_id="w42",
         area=False,
@@ -568,47 +552,30 @@ def test_trail_features_with_edit_query_adds_tag_edit_form(trail_factory):
         ungroomed=False,
     )
 
-    features = _trail_features(
-        line_trail, direction="n", debug_mode=False, edit_query="TestMountain, VT"
-    )
+    features = _trail_features(line_trail, direction="n", debug_mode=False)
 
-    popup = features[0]["properties"]["popupContent"]
-    assert 'name="q" value="TestMountain, VT"' in popup
-    assert 'name="trail_id" value="w42"' in popup
-    assert 'id="gladed" name="gladed" value=True checked' in popup
-    assert 'id="ungroomed" name="ungroomed" value=True checked' not in popup
-
-
-def test_trail_features_with_edit_query_adds_delete_form(trail_factory):
-    line_trail = trail_factory(
-        trail_id="w42",
-        area=False,
-        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 950]]),
-        interior_geometry="",
-        route=None,
-    )
-
-    features = _trail_features(
-        line_trail, direction="n", debug_mode=False, edit_query="TestMountain, VT"
-    )
-
-    popup = features[0]["properties"]["popupContent"]
-    assert 'id="delete_submit"' in popup
-    assert 'name="delete" value="w42"' in popup
-    assert 'id="blacklist"' in popup
+    # popups are always sent as structured data -- interactive-map.js
+    # builds the HTML (including, when editable, the tag-edit/delete
+    # forms) lazily on the client, so no pre-rendered HTML or edit-query
+    # ever crosses the wire from here
+    properties = features[0]["properties"]
+    assert "popupContent" not in properties
+    assert properties["item_id"] == "w42"
+    assert properties["popupData"]["gladed"] is True
+    assert properties["popupData"]["ungroomed"] is False
 
 
-def test_lift_feature_without_edit_query_has_no_delete_form(lift_factory):
+def test_lift_feature_always_structured_popup_data(lift_factory):
     lift = lift_factory(
-        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]])
+        lift_id="w99",
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
     )
 
     feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
 
-    # public map: structured popupData only -- no pre-rendered HTML (and
-    # so no delete form) crosses the wire at all
-    assert "popupContent" not in feature["properties"]
-    assert "item_id" not in feature["properties"]
+    properties = feature["properties"]
+    assert "popupContent" not in properties
+    assert properties["item_id"] == "w99"
 
 
 def test_lift_feature_includes_lift_type(lift_factory):
@@ -652,25 +619,6 @@ class TestLiftTypeLabel:
     def test_unknown_type_falls_back_to_titlecased_value(self):
         assert _lift_type_label("funicular") == "Funicular"
         assert _lift_type_label("some_new_tag") == "Some New Tag"
-
-
-def test_lift_feature_with_edit_query_adds_delete_form(lift_factory):
-    lift = lift_factory(
-        lift_id="w99",
-        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
-    )
-
-    feature = _lift_feature(
-        lift,
-        direction="n",
-        weather_modifier=0,
-        debug_mode=False,
-        edit_query="TestMountain, VT",
-    )
-
-    popup = feature["properties"]["popupContent"]
-    assert 'name="delete" value="w99"' in popup
-    assert 'id="blacklist"' in popup
 
 
 def test_trail_features_area_trail_with_route_adds_route_feature(trail_factory):

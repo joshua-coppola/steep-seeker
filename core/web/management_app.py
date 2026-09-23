@@ -24,11 +24,7 @@ def create_management_app(db_path: str = DATABASE_PATH) -> Flask:
         template_folder="../../templates",
     )
     app.config["DATABASE_PATH"] = db_path
-    # Unlike app.py's public site, this app is what you're actively editing
-    # static/template files against -- long caching here just means stale
-    # JS/CSS survives a browser reload. Leaving SEND_FILE_MAX_AGE_DEFAULT
-    # unset falls back to Flask's default, which sends Cache-Control:
-    # no-cache and forces a revalidation round trip on every request.
+
     Compress(app)
     app.register_blueprint(web)
     app.register_blueprint(management_web)

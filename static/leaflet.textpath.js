@@ -11,9 +11,6 @@ var __onAdd = L.Polyline.prototype.onAdd,
     __updatePath = L.Polyline.prototype._updatePath,
     __bringToFront = L.Polyline.prototype.bringToFront;
 
-/* Leaflet's SVG renderer always emits path data as "M{x} {y}L{x} {y}L..."
-   (see pointsToPath in leaflet's SVG.Util.js) -- parse that back into raw
-   [x,y] points for the helpers below. */
 function parsePathPoints(d) {
     var nums = d.match(/-?\d+\.?\d*/g) || [];
     var points = [];
@@ -27,14 +24,6 @@ function pointsToD(points) {
     return points.map(function (p, i) { return (i ? 'L' : 'M') + p[0] + ' ' + p[1]; }).join('');
 }
 
-/* Drops points closer together than MIN_POINT_SPACING (except the
-   endpoints). SVG's textPath places each glyph as a rigid shape following
-   the tangent at a single sampled point; a run of points closer together
-   than a glyph is wide gives consecutive glyphs almost the same
-   tangent-sample spacing as their own width, so they overlap. This is only
-   visible walking a path backwards -- forward rendering of the same dense
-   points (e.g. a catwalk with many closely-surveyed OSM nodes) is fine --
-   so it's corrected only when reversing, rather than for every path. */
 var MIN_POINT_SPACING = 15;
 function decimate(points) {
     if (points.length < 3) return points.slice();
@@ -53,17 +42,7 @@ function reversePoints(points) {
 }
 
 /* Mirrors _get_label_placement in maps.py, which picks the straightest run
-   of a trail long enough to fit its label on the static map images --
-   rather than always dead-centering the label on the whole path, which can
-   land it mid-label in a sharp bend. Returns the winning run's own points
-   (forward order), its length (in the same units as path.getTotalLength()),
-   and its mean local bearing in degrees (atan2 of consecutive points, so
-   0 = the path's own +x direction).
-
-   Ties (including the common case of a dead-straight trail, where every
-   valid position is equally straight) prefer the run centered closest to
-   the path's own midpoint, so a straight trail's label still lands
-   dead-center same as before this existed. */
+   of a trail long enough to fit its label on the static map images */
 function findStraightestWindow(d, targetLength) {
     var points = parsePathPoints(d);
     var n = points.length;
@@ -166,19 +145,6 @@ var PolylineTextPath = {
         var text = this._text,
             options = this._textOptions;
         if (text) {
-            /* _textRedraw fires on every _updatePath -- i.e. every zoom
-               level, since Leaflet recomputes every path's pixel
-               coordinates then, not just at whatever moment the caller
-               last explicitly called setText -- so it's the natural place
-               for zoom-dependent attributes (e.g. a font-size that grows
-               with zoom) to be refreshed too, without the caller having to
-               separately re-invoke setText itself on every zoom level (a
-               second full pass on top of this one -- doing the same
-               straightest-window/flip work twice per zoom for every
-               labeled layer). options.refreshAttributes, when given, is
-               called fresh each time and merged over the stored
-               attributes, instead of blindly replaying whatever was true
-               when setText was last called explicitly. */
             if (options && options.refreshAttributes) {
                 options = L.Util.extend({}, options, {
                     attributes: L.Util.extend({}, options.attributes, options.refreshAttributes())
@@ -241,28 +207,6 @@ var PolylineTextPath = {
             }
         }
 
-        /* orientation 0 or 180 (the only values this app ever sends) both
-           just mean "this is a real line, consider whether it needs to
-           flip to stay upright" -- treat them as a hint, not the answer.
-           They're computed server-side from the trail's raw midpoint, but
-           the label doesn't render there anymore (see findStraightestWindow
-           above); a trail can easily have its midpoint on one side of the
-           upright/upside-down threshold and its actual straightest,
-           label-bearing window on the other, in EITHER direction (a "180"
-           guess that turns out not to need flipping, or a "0" guess that
-           does). Rather than trust either specific value, or rotate the
-           finished, already-curved text (which mirrors the whole letter
-           arrangement and makes it hug the trail's curve backwards), work
-           out whether a flip is ACTUALLY needed at wherever the label will
-           really be centered: that window's own bearing combined with the
-           map's current rotation (leaflet-rotate's bearing, a CSS transform
-           applied uniformly to the whole pane after this layout, so it adds
-           directly to a local bearing angle here) tells us whether it'll
-           read upside down to the viewer.
-
-           A closed polygon ring (Leaflet's SVG renderer appends "z" to an
-           area trail's outline) has no single meaningful direction, so it's
-           left alone -- same as the old server-side check's is_area gate. */
         var isClosedRing = /z\s*$/i.test(pathD);
         var window_ = null;
         var flipped = false;
@@ -283,17 +227,6 @@ var PolylineTextPath = {
             }
         }
 
-        /* Reference a small standalone path built from just the chosen
-           window's points, instead of the full original path with an
-           arc-length offset into it. Referencing deep into a long,
-           many-segment path at a nonzero offset measurably confuses the
-           browser's per-glyph rotation for textPath -- confirmed by
-           rendering the identical points both ways: as their own short
-           path starting at 0, they render right-side up; reached via an
-           offset into the full original path, the same points render
-           upside down. Building a dedicated window path (as was already
-           done for the flipped case) sidesteps that entirely, for both
-           the flipped and non-flipped case. */
         var hrefId = id;
         var hrefD = pathD;
         var windowLength = this._path.getTotalLength();
@@ -329,13 +262,6 @@ var PolylineTextPath = {
             textPath = L.SVG.create('textPath');
 
         var dy = options.offset || this._path.getAttribute('stroke-width');
-        /* Walking the path backwards flips which side of the line the offset
-           lands on -- confirmed empirically (measuring rendered glyph
-           position against the path) that negating dy here to try to
-           compensate collapses the offset to ~0 instead of preserving it on
-           the opposite side, so the label ends up sitting on the line with
-           no readable gap. Leaving dy as-is keeps a full-magnitude offset,
-           just mirrored to the other side of the trail for a flipped label. */
 
         textPath.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", '#'+hrefId);
         textNode.setAttribute('dy', dy);
@@ -352,20 +278,11 @@ var PolylineTextPath = {
             svg.appendChild(textNode);
         }
 
-        /* Place the label centered within the window path referenced above
-           (see findStraightestWindow) -- picked for being the straightest
-           run of the original path long enough to fit the label, instead
-           of always dead-centering on the whole path. */
         if (options.center) {
             var textLength = textNode.getComputedTextLength();
             textNode.setAttribute('dx', (windowLength / 2) - (textLength / 2));
         }
 
-        /* Change label rotation (if required) -- a 180-degree orientation is
-           always handled above via the window-based flip decision instead
-           (whether or not it actually decided to flip), never here: this
-           was applying a second, stray 180-degree rotation on top of an
-           already-correct render whenever that decision came out false. */
         if (rotateAngle && rotateAngle !== 180) {
             var rotatecenterX = (textNode.getBBox().x + textNode.getBBox().width / 2);
             var rotatecenterY = (textNode.getBBox().y + textNode.getBBox().height / 2);
