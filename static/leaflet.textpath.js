@@ -166,6 +166,24 @@ var PolylineTextPath = {
         var text = this._text,
             options = this._textOptions;
         if (text) {
+            /* _textRedraw fires on every _updatePath -- i.e. every zoom
+               level, since Leaflet recomputes every path's pixel
+               coordinates then, not just at whatever moment the caller
+               last explicitly called setText -- so it's the natural place
+               for zoom-dependent attributes (e.g. a font-size that grows
+               with zoom) to be refreshed too, without the caller having to
+               separately re-invoke setText itself on every zoom level (a
+               second full pass on top of this one -- doing the same
+               straightest-window/flip work twice per zoom for every
+               labeled layer). options.refreshAttributes, when given, is
+               called fresh each time and merged over the stored
+               attributes, instead of blindly replaying whatever was true
+               when setText was last called explicitly. */
+            if (options && options.refreshAttributes) {
+                options = L.Util.extend({}, options, {
+                    attributes: L.Util.extend({}, options.attributes, options.refreshAttributes())
+                });
+            }
             this.setText(null).setText(text, options);
         }
     },

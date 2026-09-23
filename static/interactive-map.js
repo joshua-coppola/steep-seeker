@@ -1,11 +1,6 @@
 function run_map(trails, map, editable = false){
-    // Delete-mode state (management edit page only, when editable is true):
-    // a set of flagged trail/lift OSM ids and a toggle for whether a click
-    // flags a line for deletion instead of opening its popup.
     let deleteMode = false;
     const flagged = new Set();
-    // Orange dash-dot ( -- - -- - ) -- deliberately unlike the red
-    // difficulty lines and the gladed lines' even dashes (dashArray '5,10').
     const FLAGGED_STYLE = {
         color: '#ff7f0e',
         weight: 7,
@@ -21,9 +16,6 @@ function run_map(trails, map, editable = false){
         if (submit) submit.disabled = flagged.size === 0;
     }
 
-    // A direct click on a line fires both the layer's own "click" and
-    // Leaflet.AlmostOver's "almost:click"; this collapses that pair (and
-    // any accidental double-click) into a single flag toggle per id.
     let lastToggle = {id: null, at: 0};
 
     function toggleFlag(layer) {
@@ -60,6 +52,8 @@ function run_map(trails, map, editable = false){
     
     // Track current basemap
     let currentBasemap = 'topo';
+
+    const satelliteLabelHalo = getComputedStyle(document.body).getPropertyValue('--color-secondary').trim() || '#666';
     
     // Create basemap toggle control
     L.Control.BasemapToggle = L.Control.extend({
@@ -213,27 +207,32 @@ function run_map(trails, map, editable = false){
         return html;
     }
 
-    // Sets or clears a layer's text-path label to match the current zoom
-    // (labels only show above zoom 14) and basemap (fill color flips for
-    // satellite). Always clears any existing label first -- leaflet.textpath's
-    // setText doesn't remove a prior text node on its own, so calling it
-    // twice without that would leave a stale, orphaned node behind -- which
-    // makes this safe to call on an already-labeled layer too, e.g. to
-    // refresh color after a basemap switch, without needing to recreate
-    // the layer itself.
+    function labelAttributes() {
+        const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
+        const haloColor = currentBasemap === 'satellite' ? satelliteLabelHalo : 'white';
+        // +1px per zoom level above 15, where labels first appear at the
+        // base 14px.
+        const fontSize = 14 + (Math.max(0, map.getZoom() - 15) * 3);
+        return {
+            fill: textColor,
+            'font-size': fontSize + 'px',
+            stroke: haloColor,
+            'stroke-width': '3px',
+            'stroke-linejoin': 'round',
+            'paint-order': 'stroke fill'
+        };
+    }
+
     function applyLabel(layer, feature) {
         if (!feature.properties || !feature.properties.label) return;
         layer.setText(null);
         if (map.getZoom() > 14) {
-            const textColor = currentBasemap === 'satellite' ? 'white' : 'black';
             layer.setText(feature.properties.label, {
                 offset: -5,
                 center: true,
                 orientation: feature.properties.orientation,
-                attributes: {
-                    fill: textColor,
-                    'font-size': '14px'
-                }
+                attributes: labelAttributes(),
+                refreshAttributes: labelAttributes
             });
         }
     }
@@ -417,39 +416,20 @@ function run_map(trails, map, editable = false){
         });
     }
 
-    // Re-applies every layer's label (see applyLabel) instead of tearing
-    // down and rebuilding the whole feature layer -- rebuilding also
-    // rebinds every popup and almostOver registration, which for a large
-    // resort's 600+ trails/lifts is real, avoidable work every time this
-    // fires.
     function updateTrailLabels() {
         geojson_features.eachLayer(function (layer) {
             if (layer.feature) applyLabel(layer, layer.feature);
         });
     }
 
-    // leaflet-rotate's tile-grid sizing for the rotated viewport can end up
-    // stale relative to the container's actual pixel size on first load,
-    // leaving grey gaps that only self-correct once the user pans. Forcing
-    // a resize check here makes the map run through that same recalculation
-    // immediately instead of waiting for a pan to trigger it.
     map.invalidateSize();
 
     addTrails();
     map.fitBounds(geojson_features.getBounds());
 
-    // AlmostOver's mousemove handler brute-force-scans every trail/lift
-    // layer (no spatial index is loaded) on each sampled mousemove, which
-    // also fires while dragging the map -- pausing it for the duration of
-    // a drag removes that cost from panning without affecting hover/click
-    // detection otherwise.
     map.on('dragstart', function () { map.almostOver.disable(); });
     map.on('dragend', function () { map.almostOver.enable(); });
 
-    // Labels only toggle visibility at the zoom-14 threshold (see
-    // applyLabel), so skip the refresh entirely for zoom changes that
-    // don't cross it -- avoids rebuilding every label's SVG text node on
-    // every scroll-wheel tick.
     let labelsShown = map.getZoom() > 14;
     map.on('zoomend', function () {
         const shouldShow = map.getZoom() > 14;
@@ -458,9 +438,6 @@ function run_map(trails, map, editable = false){
         updateTrailLabels();
     });
 
-    // In delete mode a click flags the line -- suppress the bound popup
-    // that Leaflet would otherwise open (covers every click path,
-    // including polygons and direct layer clicks).
     map.on('popupopen', function () {
         if (editable && deleteMode) map.closePopup();
     });
@@ -512,11 +489,6 @@ function run_map(trails, map, editable = false){
     if (editable) {
         const bulkForm = document.getElementById('bulk-delete');
 
-        // Delete-mode toggle: while on, clicking a trail/lift line flags it
-        // (orange dash-dot) instead of opening its popup. The #bulk-delete
-        // form sits right below this button (adopted into a Leaflet control
-        // below), shown only while the mode is on, and submits every flagged
-        // id at once so the server regenerates the map/thumbnail only once.
         L.Control.DeleteModeToggle = L.Control.extend({
             onAdd: function () {
                 const button = L.DomUtil.create('button');
