@@ -17,11 +17,13 @@ About Steep Seeker
     <section class="blurb">
         <div></div>
         <div>
-            <p>The goal of this project is to allow for skiers and riders to 
-            have a reliable metric with which to compare trails between mountains. 
-            Often, a black diamond trail at one ski area is very different from 
-            another black diamond trail at a different ski area, especially across 
-            geographic regions. This standardized rating scale aims to fix this.</p>
+            <p>Steep Seeker was created with the intention of providing fellow skiers 
+            with a platform to easily and reliably compare trails between mountains. 
+            While ski resorts typically follow the standardized terms of “Green, Blue, 
+            Black and Double Black Diamond” trails, what one ski resort deems as a 
+            black diamond may be very different from another resort. The standardized 
+            rating scale Steep Seeker utilizes aims to provide an all encompassing 
+            rating across the board.</p>
         </div>
     </section>
     <section class="blurb blurb-dark">
@@ -87,35 +89,30 @@ About Steep Seeker
         <div>
             <h2>How It Works</h2>
 
-            <p>The data for each map comes from OpenStreetMaps and the USGS. 
-            I used the publicly available map data on OpenStreetMaps and 
-            elevation data from the USGS in order to create a 3D representation 
-            of each resort, then calculated the steepest sections of trail and 
-            used tags from OpenStreetMaps to determine things like whether a 
-            trail is gladed to create a difficulty rating.</p>
+            <p>These maps were created by using data collected from publicly available 
+            maps on OpenStreetMaps and the USGS. The elevation data collected from the 
+            USGS allowed for the configuration of a 3D representation of each resort.
+            </p>
 
-            <p>On each map, the degree label on each trail is for its steepest
-            {{ difficulty_thresholds.pitch_window_feet }} feet. The colors
-            are determined by the same {{ difficulty_thresholds.pitch_window_feet }}
-            feet plus a set of modifiers based of if the trail is gladed, if
-            the trail is groomed, how much snow and rain the resort recieves,
-            and how often the mountain experiences a freeze thaw cycle. Trails
-            can also be manually flagged as hazardous, which is not sourced
-            from OpenStreetMaps. Hazards might include large cliffs, boulder fields,
-            or other conditions that are outside of a normal ski trail that add
-            additional difficulty.</p>
+            <p>The colors that appear on the map are determined by the steepest 
+            {{ difficulty_thresholds.pitch_window_feet }} section of each trail and 
+            any modifiers that would increase or decrease difficulty. Information such 
+            as gladed trails, grooming, average accumulations of snow and rain at the 
+            resort, and frequency of freeze thaw cycles were also taken into account 
+            when determining a trails rating.</p>
 
-            <p>The colors for each trail are determined based on the table on this 
-            page. The table was created by performing a statistical analysis of all 
-            the trails in the US to maximize the number of trails that are rated 
-            the same as their official rating from the resort, then spot checked by 
-            numerous individuals with first hand experience of a selection of resorts.</p>
+            <p>The ratings and colors for each trail are based on the values listed in 
+            the tables on this page. These values are based on a combination of using 
+            statistics to select values that minimize error and rigorous manual 
+            verification to ensure that the math does in fact make sense in the real 
+            world.</p>
 
-            <p>One of the limitations of this approach is my maps can only be as
-            accurate as the data on OpenStreetMaps. Not all tags are correct, and
-            not all trails are present, or placed accurately. If you find tagging or
-            routing errors, please either contact me and let me know what is incorrect,
-            or correct the issues directly on OpenStreetMaps. More information about
+            <p>While Steep Steek prides itself in providing accurate data, one 
+            limitation to note is that the maps created can only be as accurate as the 
+            data collected from OpenStreetMaps. Not all tags are correct, and not all 
+            trails are present, or placed accurately. If you find tagging or routing 
+            errors, please either contact me and let me know what is incorrect, or 
+            correct the issues directly on OpenStreetMaps. More information about 
             correcting errors can be found in the Q & A section below.</p>
         </div>
     </section>
@@ -123,16 +120,19 @@ About Steep Seeker
         <div></div>
         <div>
             <h2 id="about-rankings">Mountain Rankings</h2>
-            <p>There are two types of mountain comparisons: how hard the hardest 
-            trails are and how easy the easiest area is. This is created using a 
-            weighted average of the top 30 hardest and easiest trails in order 
-            to create a metric that describes how expert and beginner friendly 
-            an area is, and how it stacks up to other mountains.</p>
+            <p>Mountain Rankings compare and contrast the difficulty of advanced 
+            trails from the easiest of novice trails. The rankings are created by 
+            using a weighted average of the top 30 difficult and novice trails in 
+            order to create a metric that provides data on how expert and beginner 
+            friendly a location is and how this data compares to other mountains.</p>
 
-            <p>20% of the rating is composed from the top 30 trails, and 80% is 
-            from the top 5. The color a resort receives shows how the hardest 
-            (or easiest) trails are rated, and the actual score can be used for 
-            comparisons within the same difficulty color.</p>
+            <p>20 percent of the rating is composed from the top 30 trails, and 80 
+            percent comes from the top 5 trails in a particular area. These rankings 
+            can be identified with the color designated  to each resort, which 
+            indicates how the difficult and novice trails are rated and an actual 
+            score which can be used to compare resorts within the same difficulty 
+            color. Note that in order for a mountain to rate well, it cannot just have 
+            one standout run.</p>
         </div>
     </section>
     <section class="blurb blurb-dark qa">
@@ -140,17 +140,17 @@ About Steep Seeker
         <div>
             <h2>Q & A</h2>
             <h3>Why only US resorts?</h3>
-            <p>Unfortunately, not very many countries 
-            have precise enough elevation maps available to the public. In 
-            order to get accurate results, I need 10m resolution or better. 
-            I hope to expand to other countries as better data becomes available.</p>
+            <p>At the moment, the elevation map specs I need of 10m resolution or 
+            better are not available for many countries. I hope to expand to other 
+            countries as better data becomes available, with Canada being top of my 
+            list.</p>
 
             <h3>What about X factor that changes a trail’s difficulty?</h3>
-            <p>A large portion of variance between different trails is explained with the 
-            steepness of the trail and whether the trail is gladed, but not all of it. 
+            <p>A large majority of variance between different trails is explained with the 
+            steepness of the trail and the existing modifiers, but not all of it. 
             I have many ideas about other factors to consider, but the hardest part 
-            for many of them is getting the data. The next step in improving the model 
-            is factoring in weather patterns and snowfall.</p>
+            for many of them is getting the data, and then establishing how much it 
+            should factor in.</p>
 
             <h3>What should you do if you find a mistake?</h3>
             <p>Given that the primary source for data is 
@@ -174,25 +174,19 @@ About Steep Seeker
             <p>Join the <a href=" https://discord.gg/yk9BKW8yFn">Steepseeker Discord</a>
             to tell me about what you want to see added in the feature-requests channel.</p>
 
-            <h3>Where did everything come from?</h3>
-            <p>The trail data is from OpenStreetMaps, 
-            the elevation data is from the USGS’s NED10 dataset, and the website and 
-            maps are my creation.</p>
-
-            <h3>Why did I make this?</h3>
+            <h3>What was the inspiration?</h3>
             <p>I’ve always wanted a way to compare trails that 
             was less subjective, and this grew out of a small project I started to see 
-            if that was possible. So far I have hundreds of hours invested in coding, 
+            if that was possible. So far I have thousands of hours invested in coding, 
             model development, and website design. This is an ongoing project that I 
             work on because I’m passionate about skiing, and want to make it easier 
             for people like myself to nerd out about statistics.</p>
 
             <h3>Who am I?</h3>
-            <p>I’m an avid skier; I grew up skiing and look forward to 
-            every powder day. On a good day skiing, I’ll likely be found in some 
-            tight steep trees enjoying each turn. I also majored in data science, 
-            and used that combined background to put this website and statistical 
-            model together.</p>
+            <p>I’m an avid skier and data scientist; who grew up skiing and looks 
+            forward to every powder day. I combined my passion for skiing and 
+            background in data science to create this website and the related 
+            algorithms that drive it.</p>
 
             <h3>How can you help?</h3>
             <p>This project takes a fair bit of time to create and 
