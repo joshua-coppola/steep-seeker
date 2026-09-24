@@ -99,11 +99,17 @@
     color: white;
 }
 
-/* #bulk-delete is a .search-form (display: flex), so it needs an explicit
-   rule to stay hidden while delete mode is off. It's moved into a Leaflet
-   control at the top-right of the map, directly under the Delete Mode
-   button (see interactive-map.js). */
-#bulk-delete {
+.modifier-mode-btn.active {
+    background-color: #6a3d9a;
+    color: white;
+}
+
+/* #bulk-delete/#bulk-modifiers are .search-forms (display: flex), so they
+   need an explicit rule to stay hidden while their mode is off. Each is
+   moved into a Leaflet control at the top-right of the map, stacked under
+   the mode toggle buttons (see interactive-map.js). */
+#bulk-delete,
+#bulk-modifiers {
     flex-direction: column;
     align-items: flex-start;
     gap: .4rem;
@@ -114,15 +120,18 @@
     background-clip: padding-box;
 }
 
-#bulk-delete[hidden] {
+#bulk-delete[hidden],
+#bulk-modifiers[hidden] {
     display: none;
 }
 
-#bulk-delete-count {
+#bulk-delete-count,
+#bulk-modifiers-count {
     font-weight: 600;
 }
 
-#bulk-delete-submit:disabled {
+#bulk-delete-submit:disabled,
+#bulk-modifiers-submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }

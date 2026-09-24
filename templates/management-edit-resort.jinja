@@ -199,6 +199,24 @@ Edit Resort
         </span>
         <input class="button-cta" id="bulk-delete-submit" type="submit" value="Delete Flagged" />
     </form>
+    <form id="bulk-modifiers" class="search-form" method="post"
+          action="/management-edit-resort/bulk-modifiers" hidden>
+        <input type="hidden" name="q" value="{{mountain.name}}, {{mountain.state.value}}">
+        <span id="bulk-modifiers-count">0 flagged</span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="bulk_gladed" name="gladed" value="True">
+            <label for="bulk_gladed">Gladed</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="bulk_ungroomed" name="ungroomed" value="True">
+            <label for="bulk_ungroomed">Ungroomed</label>
+        </span>
+        <span class="checkbox-group">
+            <input type="checkbox" id="bulk_hazardous" name="hazardous" value="True">
+            <label for="bulk_hazardous">Hazardous</label>
+        </span>
+        <input class="button-cta" id="bulk-modifiers-submit" type="submit" value="Apply to Flagged" />
+    </form>
     <form id="delete_resort" class="search-form">
         <input type="hidden" name="q" id="q" value="{{mountain.name}}, {{mountain.state.value}}">
         <input id="confirmation" name="delete_resort" type="search" placeholder="Type 'DELETE' to confirm" />

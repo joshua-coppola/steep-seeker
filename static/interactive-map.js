@@ -1,41 +1,93 @@
 function run_map(trails, map, editable = false, editQuery = null){
     let deleteMode = false;
-    const flagged = new Set();
-    const FLAGGED_STYLE = {
+    let modifierMode = false;
+    const DELETE_STYLE = {
         color: '#ff7f0e',
         weight: 7,
         opacity: 0.95,
         dashArray: '20,10,10,10',
         lineCap: 'round',
     };
+    const MODIFIER_STYLE = {
+        color: '#6a3d9a',
+        weight: 7,
+        opacity: 0.95,
+        dashArray: '4,8',
+        lineCap: 'round',
+    };
 
-    function updateBulkDeleteForm() {
-        const count = document.getElementById('bulk-delete-count');
-        if (count) count.textContent = flagged.size + ' flagged';
-        const submit = document.getElementById('bulk-delete-submit');
-        if (submit) submit.disabled = flagged.size === 0;
-    }
-
+    // Both bulk-flagging modes (delete, modifier) share the same click/
+    // debounce/restyle mechanics, differing only in which ids they track
+    // and which style flags them -- see makeFlagTracker.
     let lastToggle = {id: null, at: 0};
 
-    function toggleFlag(layer) {
-        const id = layer.feature && layer.feature.properties.item_id;
-        if (!id) return;
-        const now = Date.now();
-        if (lastToggle.id === id && now - lastToggle.at < 400) return;
-        lastToggle = {id: id, at: now};
-        if (flagged.has(id)) {
-            flagged.delete(id);
-            geojson_features.resetStyle(layer);
-        } else {
-            flagged.add(id);
-            layer.setStyle(FLAGGED_STYLE);
+    function makeFlagTracker(style, countElementId, submitElementId) {
+        const ids = new Set();
+
+        function updateForm() {
+            const count = document.getElementById(countElementId);
+            if (count) count.textContent = ids.size + ' flagged';
+            const submit = document.getElementById(submitElementId);
+            if (submit) submit.disabled = ids.size === 0;
         }
-        updateBulkDeleteForm();
+
+        return {
+            ids: ids,
+            has: function (layer) {
+                return layer.feature && ids.has(layer.feature.properties.item_id);
+            },
+            toggle: function (layer) {
+                const id = layer.feature && layer.feature.properties.item_id;
+                if (!id) return;
+                const now = Date.now();
+                if (lastToggle.id === id && now - lastToggle.at < 400) return;
+                lastToggle = {id: id, at: now};
+                if (ids.has(id)) {
+                    ids.delete(id);
+                    geojson_features.resetStyle(layer);
+                } else {
+                    ids.add(id);
+                    layer.setStyle(style);
+                }
+                updateForm();
+            },
+            updateForm: updateForm,
+        };
+    }
+
+    const deleteFlags = makeFlagTracker(DELETE_STYLE, 'bulk-delete-count', 'bulk-delete-submit');
+    const modifierFlags = makeFlagTracker(MODIFIER_STYLE, 'bulk-modifiers-count', 'bulk-modifiers-submit');
+
+    function isTrailLayer(layer) {
+        return layer.feature && layer.feature.properties.popupData &&
+            layer.feature.properties.popupData.kind === 'trail';
+    }
+
+    // Dispatches a click on a trail/lift layer to whichever bulk mode is
+    // active (delete flags any item; modifiers only apply to trails).
+    // Returns true if the click was consumed, so callers skip their normal
+    // popup/heightgraph behavior.
+    function handleModeClick(layer) {
+        if (!editable) return false;
+        if (deleteMode) {
+            deleteFlags.toggle(layer);
+            return true;
+        }
+        if (modifierMode) {
+            if (isTrailLayer(layer)) modifierFlags.toggle(layer);
+            return true;
+        }
+        return false;
     }
 
     function isFlagged(layer) {
-        return layer.feature && flagged.has(layer.feature.properties.item_id);
+        return deleteFlags.has(layer) || modifierFlags.has(layer);
+    }
+
+    function flaggedStyle(layer) {
+        if (deleteFlags.has(layer)) return DELETE_STYLE;
+        if (modifierFlags.has(layer)) return MODIFIER_STYLE;
+        return null;
     }
 
     // Define two basemaps
@@ -450,14 +502,11 @@ function run_map(trails, map, editable = false, editQuery = null){
 
         geojson_features.eachLayer(function (layer) {
             layer.on("click", function () {
-                if (editable && deleteMode) {
-                    toggleFlag(layer);
-                    return;
-                }
+                if (handleModeClick(layer)) return;
                 addHeightGraphData(layer);
             });
             if (editable && isFlagged(layer)) {
-                layer.setStyle(FLAGGED_STYLE);
+                layer.setStyle(flaggedStyle(layer));
             }
         });
     }
@@ -485,7 +534,7 @@ function run_map(trails, map, editable = false, editQuery = null){
     });
 
     map.on('popupopen', function () {
-        if (editable && deleteMode) map.closePopup();
+        if (editable && (deleteMode || modifierMode)) map.closePopup();
     });
 
     map.on('almost:over', function (e) {
@@ -496,7 +545,7 @@ function run_map(trails, map, editable = false, editQuery = null){
     map.on('almost:out', function (e){
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         if (editable && isFlagged(e.layer)) {
-            e.layer.setStyle(FLAGGED_STYLE);
+            e.layer.setStyle(flaggedStyle(e.layer));
             return;
         }
         e.layer.setStyle({weight: 4, opacity: 1});
@@ -504,10 +553,7 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     map.on('almost:click', function (e) {
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
-        if (editable && deleteMode) {
-            toggleFlag(e.layer);
-            return;
-        }
+        if (handleModeClick(e.layer)) return;
         e.layer.openPopup();
         const clickedLayer = e.layer;
         if (clickedLayer) {
@@ -533,58 +579,93 @@ function run_map(trails, map, editable = false, editQuery = null){
     L.control.locate().addTo(map);
 
     if (editable) {
-        const bulkForm = document.getElementById('bulk-delete');
+        const deleteForm = document.getElementById('bulk-delete');
+        const modifierForm = document.getElementById('bulk-modifiers');
+        let deleteButton, modifierButton;
 
-        L.Control.DeleteModeToggle = L.Control.extend({
-            onAdd: function () {
-                const button = L.DomUtil.create('button');
-                button.innerHTML = 'Delete Mode: Off';
-                button.className = 'basemap-toggle-btn delete-mode-btn';
-                L.DomEvent.disableClickPropagation(button);
-                button.onclick = function () {
-                    deleteMode = !deleteMode;
-                    button.innerHTML = deleteMode ? 'Delete Mode: On' : 'Delete Mode: Off';
-                    button.classList.toggle('active', deleteMode);
-                    if (bulkForm) bulkForm.hidden = !deleteMode;
-                };
-                return button;
-            }
-        });
-        L.control.deleteModeToggle = function (opts) {
-            return new L.Control.DeleteModeToggle(opts);
-        };
-        L.control.deleteModeToggle({ position: 'topright' }).addTo(map);
+        // Delete Mode and Modifier Mode are mutually exclusive -- turning
+        // one on always forces the other off (button label/style + its
+        // form's visibility), though a mode's own flags are kept when it's
+        // toggled off (either manually or by the other mode taking over),
+        // so switching back to it resumes where you left off.
+        function setDeleteMode(on) {
+            deleteMode = on;
+            deleteButton.innerHTML = 'Delete Mode: ' + (on ? 'On' : 'Off');
+            deleteButton.classList.toggle('active', on);
+            if (deleteForm) deleteForm.hidden = !on;
+        }
 
-        if (bulkForm) {
-            // Move the (template-rendered) form into a Leaflet control so it
-            // stacks directly under the Delete Mode button on the map.
-            const BulkDeleteControl = L.Control.extend({
+        function setModifierMode(on) {
+            modifierMode = on;
+            modifierButton.innerHTML = 'Modifier Mode: ' + (on ? 'On' : 'Off');
+            modifierButton.classList.toggle('active', on);
+            if (modifierForm) modifierForm.hidden = !on;
+        }
+
+        function toggleDeleteMode() {
+            setDeleteMode(!deleteMode);
+            if (deleteMode) setModifierMode(false);
+        }
+
+        function toggleModifierMode() {
+            setModifierMode(!modifierMode);
+            if (modifierMode) setDeleteMode(false);
+        }
+
+        function addModeButton(className, label, onClick) {
+            const ToggleControl = L.Control.extend({
                 onAdd: function () {
-                    L.DomEvent.disableClickPropagation(bulkForm);
-                    L.DomEvent.disableScrollPropagation(bulkForm);
-                    return bulkForm;
+                    const button = L.DomUtil.create('button');
+                    button.innerHTML = label + ': Off';
+                    button.className = 'basemap-toggle-btn ' + className;
+                    L.DomEvent.disableClickPropagation(button);
+                    button.onclick = onClick;
+                    return button;
                 }
             });
-            new BulkDeleteControl({ position: 'topright' }).addTo(map);
+            return new ToggleControl({ position: 'topright' }).addTo(map).getContainer();
+        }
 
-            bulkForm.addEventListener('submit', function (e) {
-                bulkForm.querySelectorAll('input[name="ids"]').forEach(function (n) {
+        deleteButton = addModeButton('delete-mode-btn', 'Delete Mode', toggleDeleteMode);
+        modifierButton = addModeButton('modifier-mode-btn', 'Modifier Mode', toggleModifierMode);
+
+        // Wires a (template-rendered) bulk form's submit to inject one
+        // hidden "ids" input per flagged id, and moves it into a Leaflet
+        // control so it stacks under the mode toggle buttons on the map.
+        function wireBulkForm(form, flagTracker) {
+            if (!form) return;
+
+            const BulkFormControl = L.Control.extend({
+                onAdd: function () {
+                    L.DomEvent.disableClickPropagation(form);
+                    L.DomEvent.disableScrollPropagation(form);
+                    return form;
+                }
+            });
+            new BulkFormControl({ position: 'topright' }).addTo(map);
+
+            form.addEventListener('submit', function (e) {
+                form.querySelectorAll('input[name="ids"]').forEach(function (n) {
                     n.remove();
                 });
-                if (flagged.size === 0) {
+                if (flagTracker.ids.size === 0) {
                     e.preventDefault();
                     return;
                 }
-                flagged.forEach(function (id) {
+                flagTracker.ids.forEach(function (id) {
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = 'ids';
                     input.value = id;
-                    bulkForm.appendChild(input);
+                    form.appendChild(input);
                 });
             });
         }
 
-        updateBulkDeleteForm();
+        wireBulkForm(deleteForm, deleteFlags);
+        wireBulkForm(modifierForm, modifierFlags);
+
+        deleteFlags.updateForm();
+        modifierFlags.updateForm();
     }
 }
