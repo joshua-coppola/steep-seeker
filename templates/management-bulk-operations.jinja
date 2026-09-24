@@ -25,4 +25,41 @@ Bulk Operations
         &rarr; {{ recalibrate_result.mean_modifier_after }}.
     </p>
     {% endif %}
+
+    <form class="search-form" method="POST">
+        <input type="hidden" name="action" value="bulk_refresh" />
+        <ul>
+        <li>
+            <input type="checkbox" id="bulk_stats" name="stats_refresh" value=True>
+            <label for="bulk_stats">From Local OSM & Maps</label>
+        </li>
+        <li>
+            <input type="checkbox" id="bulk_maps" name="map_refresh" value=True>
+            <label for="bulk_maps">Just Maps</label>
+        </li>
+        <li>
+            <input type="checkbox" id="bulk_full" name="full_refresh" value=True>
+            <label for="bulk_full">Fresh OSM & Maps</label>
+        </li>
+        <li>
+            <input type="checkbox" id="bulk_preserve_modifiers" name="preserve_modifiers" value=True checked>
+            <label for="bulk_preserve_modifiers">Preserve Manual Modifiers</label>
+        </li>
+        </ul>
+        <input class="button-cta" type="submit" value="Refresh All Resorts" />
+    </form>
+
+    {% if refresh_result %}
+    <p>
+        Refreshed {{ refresh_result.n_refreshed }} of {{ refresh_result.n_resorts }} resorts.
+        {% if refresh_result.failures %}
+        {{ refresh_result.failures|length }} failed:
+        <ul>
+        {% for failure in refresh_result.failures %}
+            <li>{{ failure }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    </p>
+    {% endif %}
 {% endblock insideContent %}

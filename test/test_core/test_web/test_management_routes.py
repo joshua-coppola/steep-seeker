@@ -129,6 +129,72 @@ def test_management_bulk_operations_recalibrate_reports_summary(
     assert updated.trails["w1"].difficulty == 20.0
 
 
+def test_management_bulk_operations_refresh_all_runs_stats_refresh_on_every_resort(
+    management_client, db_path, refresh_setup, mountain_factory
+):
+    # a second resort with no matching OSM file -- its stats_refresh should
+    # silently no-op (same as the single-resort page does for a missing
+    # file), not count as a failure
+    mountain_factory(mountain_id="2", name="No File", state=State.VERMONT).to_db(
+        db_path
+    )
+
+    response = management_client.post(
+        "/management-bulk-operations",
+        data={"action": "bulk_refresh", "stats_refresh": "True"},
+    )
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Refreshed 2 of 2 resorts" in body
+
+    # Bolton Valley's local OSM file exists -> rebuilt from it
+    bolton = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert len(bolton.trails) == 151
+    assert refresh_setup["calls"]["create_map"] == 1
+
+
+def test_management_bulk_operations_refresh_all_reports_failures_and_continues(
+    management_client, db_path, refresh_setup, mountain_factory, monkeypatch
+):
+    mountain_factory(mountain_id="2", name="Broken", state=State.VERMONT).to_db(db_path)
+
+    original = management_routes._apply_refresh
+
+    def flaky(mountain, db_path, **kwargs):
+        if mountain.name == "Broken":
+            raise ValueError("boom")
+        return original(mountain, db_path, **kwargs)
+
+    monkeypatch.setattr(management_routes, "_apply_refresh", flaky)
+
+    response = management_client.post(
+        "/management-bulk-operations",
+        data={"action": "bulk_refresh", "stats_refresh": "True"},
+    )
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Refreshed 1 of 2 resorts" in body
+    assert "Broken, VT: boom" in body
+
+    # the other resort still got refreshed despite the failure
+    bolton = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert len(bolton.trails) == 151
+
+
+def test_management_bulk_operations_refresh_all_no_options_is_a_noop(
+    management_client, db_path, refresh_setup
+):
+    response = management_client.post(
+        "/management-bulk-operations", data={"action": "bulk_refresh"}
+    )
+
+    assert response.status_code == 200
+    assert "Refreshed 0 of 0 resorts" in response.data.decode()
+    assert refresh_setup["calls"]["create_map"] == 0
+
+
 def test_management_add_resort_lists_available_osm_files(
     management_client, tmp_path, monkeypatch
 ):
@@ -775,6 +841,159 @@ def test_management_bulk_delete_no_ids_leaves_map_untouched(
     assert calls["n"] == 0
     mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
     assert "w1" in mountain.trails
+
+
+def test_management_bulk_modifiers_applies_to_all_ids_and_regenerates_once(
+    management_client,
+    db_path,
+    mountain_factory,
+    trail_factory,
+    lift_factory,
+    monkeypatch,
+):
+    calls = {"map": 0, "thumbnail": 0}
+    monkeypatch.setattr(
+        management_routes,
+        "create_map",
+        lambda *a, **k: calls.__setitem__("map", calls["map"] + 1),
+    )
+    monkeypatch.setattr(
+        management_routes,
+        "create_thumbnail",
+        lambda *a, **k: calls.__setitem__("thumbnail", calls["thumbnail"] + 1),
+    )
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={
+            "w1": trail_factory(
+                trail_id="w1",
+                mountain_id="1",
+                name="A",
+                difficulty=25.0,
+                steepest_150ft=20.0,
+                gladed=False,
+                ungroomed=False,
+                hazardous=False,
+            ),
+            "w2": trail_factory(
+                trail_id="w2",
+                mountain_id="1",
+                name="B",
+                difficulty=25.0,
+                steepest_150ft=20.0,
+                gladed=False,
+                ungroomed=False,
+                hazardous=False,
+            ),
+        },
+        lifts={"w3": lift_factory(lift_id="w3", mountain_id="1", name="C")},
+    ).to_db(db_path)
+
+    response = management_client.post(
+        "/management-edit-resort/bulk-modifiers",
+        data={
+            "q": "Bolton Valley, VT",
+            "ids": ["w1", "w2", "w3"],
+            "gladed": "True",
+        },
+    )
+
+    assert response.status_code == 302
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    # weather_modifier recovered as 25.0 - 20.0 - 0 = 5.0, then
+    # 20.0 + 5.0 + 8.0 (gladed bonus) = 33.0, for both flagged trails
+    assert mountain.trails["w1"].gladed is True
+    assert mountain.trails["w1"].difficulty == 33.0
+    assert mountain.trails["w2"].gladed is True
+    assert mountain.trails["w2"].difficulty == 33.0
+    # regenerated once for the whole batch, not once per trail
+    assert calls == {"map": 1, "thumbnail": 1}
+
+
+def test_management_bulk_modifiers_ignores_lift_ids(
+    management_client, db_path, mountain_factory, lift_factory, monkeypatch
+):
+    monkeypatch.setattr(management_routes, "create_map", lambda *a, **k: None)
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={},
+        lifts={"w3": lift_factory(lift_id="w3", mountain_id="1", name="C")},
+    ).to_db(db_path)
+
+    response = management_client.post(
+        "/management-edit-resort/bulk-modifiers",
+        data={"q": "Bolton Valley, VT", "ids": ["w3"], "gladed": "True"},
+    )
+
+    assert response.status_code == 302
+
+
+def test_management_bulk_modifiers_unchecked_clears_existing_modifier(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    monkeypatch.setattr(management_routes, "create_map", lambda *a, **k: None)
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={
+            "w1": trail_factory(
+                trail_id="w1",
+                mountain_id="1",
+                name="A",
+                difficulty=33.0,
+                steepest_150ft=20.0,
+                gladed=True,
+                ungroomed=False,
+                hazardous=False,
+            )
+        },
+    ).to_db(db_path)
+
+    # gladed omitted entirely -- an unchecked checkbox isn't sent at all
+    management_client.post(
+        "/management-edit-resort/bulk-modifiers",
+        data={"q": "Bolton Valley, VT", "ids": ["w1"]},
+    )
+
+    mountain = Mountain.from_name("Bolton Valley", State.VERMONT, db_path)
+    assert mountain.trails["w1"].gladed is False
+    assert mountain.trails["w1"].difficulty == 25.0
+
+
+def test_management_bulk_modifiers_no_ids_leaves_map_untouched(
+    management_client, db_path, mountain_factory, trail_factory, monkeypatch
+):
+    calls = {"n": 0}
+    monkeypatch.setattr(
+        management_routes,
+        "create_map",
+        lambda *a, **k: calls.__setitem__("n", calls["n"] + 1),
+    )
+    monkeypatch.setattr(management_routes, "create_thumbnail", lambda *a, **k: None)
+
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"w1": trail_factory(trail_id="w1", mountain_id="1", name="A")},
+    ).to_db(db_path)
+
+    response = management_client.post(
+        "/management-edit-resort/bulk-modifiers", data={"q": "Bolton Valley, VT"}
+    )
+
+    assert response.status_code == 302
+    assert calls["n"] == 0
 
 
 def test_management_edit_resort_delete_nonexistent_id_is_a_no_op(

@@ -1,7 +1,4 @@
-
-DROP TABLE IF EXISTS Mountains;
-
-CREATE TABLE "Mountains"
+CREATE TABLE IF NOT EXISTS "Mountains"
 (
     "mountain_id" TEXT PRIMARY KEY NOT NULL,
     "name" TEXT NOT NULL,
@@ -20,9 +17,7 @@ CREATE TABLE "Mountains"
 );
 
 
-DROP TABLE IF EXISTS Trails;
-
-CREATE TABLE "Trails"
+CREATE TABLE IF NOT EXISTS "Trails"
 (
     "trail_id" TEXT PRIMARY KEY NOT NULL,
     "mountain_id" TEXT NOT NULL,
@@ -51,15 +46,13 @@ CREATE TABLE "Trails"
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 
-CREATE INDEX "ix_Trails_mountain_id" ON "Trails" ("mountain_id");
+CREATE INDEX IF NOT EXISTS "ix_Trails_mountain_id" ON "Trails" ("mountain_id");
 -- trail-rankings (the /trail-rankings nav link) scans every trail and
 -- sorts by difficulty; this lets that page read straight down the index
-CREATE INDEX "ix_Trails_difficulty" ON "Trails" ("difficulty");
+CREATE INDEX IF NOT EXISTS "ix_Trails_difficulty" ON "Trails" ("difficulty");
 
 
-DROP TABLE IF EXISTS Lifts;
-
-CREATE TABLE "Lifts"
+CREATE TABLE IF NOT EXISTS "Lifts"
 (
     "lift_id" TEXT PRIMARY KEY NOT NULL,
     "mountain_id" TEXT NOT NULL,
@@ -77,24 +70,20 @@ CREATE TABLE "Lifts"
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 
-CREATE INDEX "ix_Lifts_mountain_id" ON "Lifts" ("mountain_id");
+CREATE INDEX IF NOT EXISTS "ix_Lifts_mountain_id" ON "Lifts" ("mountain_id");
 
 
-DROP TABLE IF EXISTS Blacklist;
-
-CREATE TABLE "Blacklist"
+CREATE TABLE IF NOT EXISTS "Blacklist"
 (
     "item_id" TEXT PRIMARY KEY NOT NULL,
     "mountain_id" TEXT NOT NULL,
     FOREIGN KEY("mountain_id") REFERENCES "Mountains"("mountain_id") ON DELETE CASCADE
 );
 
-CREATE INDEX "ix_Blacklist_mountain_id" ON "Blacklist" ("mountain_id");
+CREATE INDEX IF NOT EXISTS "ix_Blacklist_mountain_id" ON "Blacklist" ("mountain_id");
 
 
-DROP TABLE IF EXISTS WeatherCalibration;
-
-CREATE TABLE "WeatherCalibration"
+CREATE TABLE IF NOT EXISTS "WeatherCalibration"
 (
     "id" INTEGER PRIMARY KEY CHECK ("id" = 1),
     "created" TIMESTAMP NOT NULL,

@@ -11,6 +11,10 @@ from core.datamodels.database import CacheTable
 
 class Elevation:
     last_called = 0.0
+    # rich only allows one live display at a time; a caller that already has
+    # its own progress bar running (e.g. management_routes._bulk_refresh)
+    # sets this False for the duration so this inner one doesn't collide
+    show_progress = True
 
     def __init__(self, timeout: int = 30):
         self.timeout = timeout
@@ -103,6 +107,7 @@ class Elevation:
             divide_chunks(nodes, spacing),
             total=ceil(len(nodes) / spacing),
             description=f"Fetching elevation for {len(nodes)} points",
+            disable=not Elevation.show_progress,
         ):
             # Build location string like "lat,lon|lat,lon|..."
             coords_str = "|".join(f"{lat},{lon}" for lon, lat in chunk)
