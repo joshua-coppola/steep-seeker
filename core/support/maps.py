@@ -11,6 +11,7 @@ from os.path import exists
 import haversine as hs
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from shapely import get_coordinates
 
 from core.support.mountain import Mountain
 from core.support.utils import meters_to_feet
@@ -150,8 +151,9 @@ def _find_map_size(mountain: Mountain) -> dict:
     trail_lons: list[float] = []
     trail_lats: list[float] = []
     for trail in mountain.trails.values():
-        coords = trail.geometry.exterior.coords if trail.area else trail.geometry.coords
-        lons, lats = _xy_from_coords(coords)
+        # bounding-box math doesn't care about point order, so
+        # get_coordinates covers a Polygon/LineString/MultiLineString alike
+        lons, lats = _xy_from_coords(get_coordinates(trail.geometry))
         trail_lons.extend(lons)
         trail_lats.extend(lats)
 
@@ -266,17 +268,14 @@ def _populate_map(
                     bbox={"boxstyle": "square,pad=0.01", "fc": "white", "ec": "none"},
                 )
 
-    # trails -- area trails first so ordinary trails always draw on top of them
+    # trails -- area trails first so ordinary/multi-route trails always draw
+    # on top of them
     for trail in sorted(mountain.trails.values(), key=lambda t: not t.area):
-        x, y = _mirrored_xy(_geometry_coords(trail.geometry, is_area=trail.area))
-
-        if debug_mode and trail.area and trail.route is not None:
-            debug_x, debug_y = _mirrored_xy(trail.route.coords)
-
         color = _trail_color(trail.difficulty)
 
         # place lines
         if trail.area:
+            x, y = _mirrored_xy(_geometry_coords(trail.geometry, is_area=True))
             if trail.gladed:
                 plt.fill(x, y, alpha=0.1, fc=color)
                 plt.fill(x, y, ec=color, fc="none", linestyle="dashed", lw=line_width)
@@ -284,13 +283,34 @@ def _populate_map(
                 plt.fill(x, y, alpha=0.1, fc=color)
                 plt.fill(x, y, ec=color, fc="none", lw=line_width)
             if debug_mode and trail.route is not None:
+                debug_x, debug_y = _mirrored_xy(trail.route.coords)
                 if trail.gladed:
                     plt.plot(
                         debug_x, debug_y, c=color, linestyle="dashed", lw=line_width
                     )
                 else:
                     plt.plot(debug_x, debug_y, c=color, lw=line_width)
+        elif trail.multi_route:
+            # every branch is a real mapped line, so each draws in full
+            # (not a faint underlay the way an area's boundary does)
+            geometry = trail.geometry
+            if simplify_tolerance:
+                geometry = geometry.simplify(simplify_tolerance, preserve_topology=True)
+            for line in geometry.geoms:
+                x, y = _mirrored_xy(line.coords)
+                if trail.gladed:
+                    plt.plot(x, y, c=color, linestyle="dashed", lw=line_width)
+                else:
+                    plt.plot(x, y, c=color, lw=line_width)
+            if debug_mode and trail.route is not None:
+                debug_x, debug_y = _mirrored_xy(trail.route.coords)
+                # stands out against the branches (all drawn in the same
+                # trail color) to show which one(s) got picked for rating
+                plt.plot(
+                    debug_x, debug_y, c="black", linestyle="dotted", lw=line_width * 1.5
+                )
         else:
+            x, y = _mirrored_xy(_geometry_coords(trail.geometry))
             if trail.gladed:
                 plt.plot(x, y, c=color, linestyle="dashed", lw=line_width)
             else:
@@ -298,12 +318,22 @@ def _populate_map(
 
         # add label names
         if with_labels:
+            if trail.multi_route and trail.route is None:
+                continue
+
             label_text = "{} {:.1f}{}".format(
                 trail.name.strip(), trail.difficulty_pitch(), "\N{DEGREE SIGN}"
             )
-            label_x, label_y = _mirrored_xy(
-                trail.geometry.exterior.coords if trail.area else trail.geometry.coords
-            )
+            if trail.area:
+                label_coords = trail.geometry.exterior.coords
+            elif trail.multi_route:
+                # no single path to anchor a placement search on before a
+                # route is chosen, same reasoning as an area trail's label
+                # moving onto its route
+                label_coords = trail.route.coords
+            else:
+                label_coords = trail.geometry.coords
+            label_x, label_y = _mirrored_xy(label_coords)
             length_feet = meters_to_feet(trail.length) or 0
             point, angle, label_length = _get_label_placement(
                 label_x, label_y, length_feet, len(label_text)

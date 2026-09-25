@@ -38,6 +38,7 @@ def area_trail_mountain():
         official_rating="Expert",
         gladed=True,
         area=True,
+        multi_route=False,
         ungroomed=False,
         park=False,
         hazardous=False,

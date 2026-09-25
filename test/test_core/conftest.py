@@ -111,6 +111,7 @@ def trail_factory():
             TrailTable.official_rating: "Expert",
             TrailTable.gladed: True,
             TrailTable.area: False,
+            TrailTable.multi_route: False,
             TrailTable.ungroomed: False,
             TrailTable.park: False,
             TrailTable.hazardous: False,

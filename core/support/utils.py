@@ -222,7 +222,14 @@ def space_line_points_evenly(
 
     # Convert feet to meters because EPSG:5070 is in meters
     spacing_meters = spacing_feet / 3.28084
-    num_points = ceil(line_proj.length / spacing_meters)
+    # max(..., 1) guards a zero-length line (two distinct OSM nodes that
+    # happen to share a coordinate -- rare but real, and more likely to
+    # come up now that OSMProcessor._merge_multi_route_clusters produces
+    # many more, shorter segments than a plain chain merge did): without
+    # it, num_points would be 0, giving a single-point "line" GEOS rejects.
+    # A positive-length line already always computes num_points >= 1, so
+    # this is a no-op there.
+    num_points = max(ceil(line_proj.length / spacing_meters), 1)
     distances = np.arange(num_points + 1) * spacing_meters
 
     # Vectorized (one GEOS call for every distance, one coordinate-array

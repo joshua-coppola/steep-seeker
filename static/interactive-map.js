@@ -521,6 +521,10 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     addTrails();
     map.fitBounds(geojson_features.getBounds());
+    // fitBounds changes the zoom after labels were computed at the map's
+    // initial zoom (13, set in the template) -- resync now so labels drawn
+    // above/below the zoom-14 threshold reflect where the map actually lands.
+    updateTrailLabels();
 
     map.on('dragstart', function () { map.almostOver.disable(); });
     map.on('dragend', function () { map.almostOver.enable(); });

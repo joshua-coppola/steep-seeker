@@ -138,6 +138,18 @@ def test_space_line_points_evenly():
     assert len(shapely.to_geojson(output_line)) == 1335
 
 
+def test_space_line_points_evenly_handles_a_zero_length_line():
+    # two distinct OSM nodes sharing a coordinate -- real, if rare, data;
+    # previously crashed (GEOS rejects a single-point LineString) because
+    # num_points came out to 0 for a zero-length input
+    test_line = shapely.LineString([[0, 0, 100], [0, 0, 100]])
+
+    output_line = space_line_points_evenly(test_line)
+
+    coords = list(output_line.coords)
+    assert len(coords) >= 2
+
+
 def test_polygon_interior_grid():
     test_polygon = shapely.Polygon([[0, 0], [0, 0.01], [0.02, 0.02], [0.01, 0]])
 

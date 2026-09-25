@@ -1,4 +1,5 @@
 import uuid
+from collections import defaultdict
 from math import atan2, degrees
 
 import shapely
@@ -10,6 +11,7 @@ from core.osm.osm_reader import OSMHandler
 from core.osm.trail_parser import identify_hikes, identify_lifts, identify_trails
 from core.support.area_routes import get_area_route
 from core.support.lift import Lift
+from core.support.multi_route import get_multi_route
 from core.support.trail import Trail
 from core.support.utils import (
     compute_geometry_stats,
@@ -18,6 +20,7 @@ from core.support.utils import (
     get_max_slope,
     get_steepest_pitch,
     get_vertical_drop,
+    meters_to_feet,
     polygon_interior_grid,
     space_line_points_evenly,
     space_polygon_exterior_points_evenly,
@@ -35,6 +38,14 @@ STEEPEST_PITCH_WINDOWS_FEET = (100, 150, 300, 500, 1320, 2640, 5280)
 # same trail".
 TRAIL_MATCH_FIELDS = ["name", "official_rating", "gladed", "area", "ungroomed", "park"]
 HIKE_MATCH_FIELDS = ["name"]
+
+# _merge_multi_route_clusters lets an unnamed way ride into a named cluster
+# (OSM often only tags one branch of a forking trail), but only when it's
+# short -- an unnamed way touching a named trail's endpoint is frequently a
+# genuinely separate, merely nameless, trail or connector, and blindly
+# folding in a long one would produce a "branch" that isn't really part of
+# the run at all.
+MULTI_ROUTE_UNNAMED_MAX_LENGTH_FEET = 500
 
 
 class OSMProcessor:
@@ -80,6 +91,7 @@ class OSMProcessor:
             self.trails, self.trail_relations, TRAIL_MATCH_FIELDS
         )
         self.trails = self._merge_line_features(self.trails, TRAIL_MATCH_FIELDS)
+        self.trails = self._merge_multi_route_clusters(self.trails, TRAIL_MATCH_FIELDS)
 
         # Kept scoped to self.hikes alone, merged into self.lifts only
         # afterward: running the adjacency-merge over the combined self.lifts
@@ -239,6 +251,184 @@ class OSMProcessor:
 
         return complete_items, merged_any
 
+    def _merge_multi_route_clusters(self, items: dict, match_fields: list[str]) -> dict:
+        """
+        Finds trails left un-merged by _merge_line_features that are
+        actually branches of the same run -- splitting off and/or rejoining
+        -- rather than genuinely separate trails: two items agreeing on
+        every match_fields value are grouped together if either one's start
+        or end node lands anywhere along the other's node list, not just at
+        the other's own start/end (the narrower rule _merge_line_features
+        applies). A pure chain always fully collapses in that prior pass
+        regardless of dict iteration order, so anything still grouped here
+        by more than one member is a genuine fork, not a chain that pass
+        missed.
+
+        "name" (when present in match_fields) is treated specially: an
+        unnamed way (OSM often only tags one branch of a forking trail with
+        its name) is compatible with any name, but two *differently* named
+        ways never end up in the same cluster -- not even indirectly, via a
+        shared unnamed way that would otherwise bridge them both (a real
+        hazard at a trail junction, where an unnamed connector/crossing
+        piece can touch two unrelated named trails at once). Every other
+        match_fields value still needs exact equality, same as
+        _merge_line_features.
+
+        An unnamed way is further only eligible to merge in at all when its
+        own length is under MULTI_ROUTE_UNNAMED_MAX_LENGTH_FEET -- a long
+        unnamed way touching a named trail's endpoint is more likely a
+        distinct, merely nameless, trail than an actual branch of it. A
+        named way is never subject to this length check.
+
+        Each resulting cluster of 2+ items collapses into one trail dict
+        that keeps the first member's id and match_fields values (except
+        name -- a non-empty name among the cluster's members wins over an
+        empty one), drops "nodes" in favor of "branches", and sets
+        "multi_route" True. A cluster of one item is returned as-is.
+
+        A member whose touch point is at the *other* item's endpoint needs
+        no further work -- its own node list becomes one branch. But when
+        the touch is at an interior point (a spur splitting off partway
+        through a longer way, not at either way's own end), that interior
+        node isn't a real vertex of the resampled geometry _build_trail_geometry
+        will later produce for the branch that merely passes through it --
+        space_line_points_evenly only guarantees a line's own first/last
+        input vertex survives resampling exactly, not an arbitrary interior
+        one. Left alone, that would leave the two branches' resampled
+        geometries not sharing an exact coordinate at their real-world
+        junction, which multi_route.py's graph builder depends on to treat
+        them as connected. So every member's node list is first split at
+        each interior occurrence of any cluster member's endpoint, turning
+        "branches" into a flat list of pure graph edges whose own
+        start/end are always a real, shared junction node.
+        """
+        grouping_fields = [field for field in match_fields if field != "name"]
+        match_by_name = "name" in match_fields
+
+        by_match_fields = defaultdict(list)
+        for item_id, item in items.items():
+            # Area trails (glades/bowls, sampled as a polygon) are never
+            # multi-route candidates -- a "branches" MultiLineString and a
+            # Polygon boundary are fundamentally different geometry shapes,
+            # and _build_trail_geometry can only build one or the other.
+            # Two area ways happening to touch is a question for
+            # _merge_line_features's existing polygon-ring merge, not this
+            # pass.
+            if item.get("area"):
+                continue
+            by_match_fields[tuple(item[field] for field in grouping_fields)].append(
+                item_id
+            )
+
+        parent = {item_id: item_id for item_id in items}
+        # Tracks each component root's established name -- None while every
+        # member merged into it so far is unnamed. Checked (and updated) on
+        # every union, so a merge that would fuse two components that
+        # already settled on two different non-empty names is refused, no
+        # matter how many unnamed ways sit between them.
+        component_name = {
+            item_id: (items[item_id]["name"] if match_by_name else None) or None
+            for item_id in items
+        }
+
+        def find(item_id: str) -> str:
+            while parent[item_id] != item_id:
+                parent[item_id] = parent[parent[item_id]]
+                item_id = parent[item_id]
+            return item_id
+
+        def is_mergeable(item_id: str) -> bool:
+            if not match_by_name or items[item_id]["name"]:
+                return True
+            return (
+                self._way_length_feet(items[item_id]["nodes"])
+                < MULTI_ROUTE_UNNAMED_MAX_LENGTH_FEET
+            )
+
+        def try_union(a_id: str, b_id: str) -> None:
+            root_a, root_b = find(a_id), find(b_id)
+            if root_a == root_b:
+                return
+            if match_by_name:
+                name_a, name_b = component_name[root_a], component_name[root_b]
+                if name_a and name_b and name_a != name_b:
+                    return
+            if not is_mergeable(a_id) or not is_mergeable(b_id):
+                return
+            parent[root_a] = root_b
+            if match_by_name:
+                component_name[root_b] = (
+                    component_name[root_b] or component_name[root_a]
+                )
+
+        def touches(a_nodes: list, b_nodes: list) -> bool:
+            b_set = set(b_nodes)
+            if a_nodes[0] in b_set or a_nodes[-1] in b_set:
+                return True
+            a_set = set(a_nodes)
+            return b_nodes[0] in a_set or b_nodes[-1] in a_set
+
+        def split_at_junctions(nodes: list, junctions: set) -> list[list]:
+            segments = []
+            current = [nodes[0]]
+            for node in nodes[1:]:
+                current.append(node)
+                if node in junctions and len(current) > 1:
+                    segments.append(current)
+                    current = [node]
+            if len(current) > 1:
+                segments.append(current)
+            return segments
+
+        for group_ids in by_match_fields.values():
+            for i, a_id in enumerate(group_ids):
+                for b_id in group_ids[i + 1 :]:
+                    if touches(items[a_id]["nodes"], items[b_id]["nodes"]):
+                        try_union(a_id, b_id)
+
+        clusters = defaultdict(list)
+        for item_id in items:
+            clusters[find(item_id)].append(item_id)
+
+        merged = {}
+        for member_ids in clusters.values():
+            if len(member_ids) == 1:
+                (only_id,) = member_ids
+                merged[only_id] = items[only_id]
+                continue
+
+            keeper_id = member_ids[0]
+            keeper = {
+                key: value for key, value in items[keeper_id].items() if key != "nodes"
+            }
+            keeper["id"] = keeper_id
+            keeper["multi_route"] = True
+
+            junctions = set()
+            for member_id in member_ids:
+                nodes = items[member_id]["nodes"]
+                junctions.add(nodes[0])
+                junctions.add(nodes[-1])
+            branches = []
+            for member_id in member_ids:
+                branches.extend(
+                    split_at_junctions(items[member_id]["nodes"], junctions)
+                )
+            keeper["branches"] = branches
+
+            if match_by_name:
+                keeper["name"] = next(
+                    (
+                        items[member_id]["name"]
+                        for member_id in member_ids
+                        if items[member_id]["name"]
+                    ),
+                    "",
+                )
+            merged[keeper_id] = keeper
+
+        return merged
+
     def _node_points(self, nodes: list) -> list[shapely.Point]:
         """
         Maps a list of OSM node ids to shapely Points in (lon, lat) order.
@@ -248,21 +438,68 @@ class OSMProcessor:
             for node in nodes
         ]
 
+    def _way_length_feet(self, nodes: list) -> float:
+        """
+        Haversine length, in feet, of a raw OSM node id list -- used by
+        _merge_multi_route_clusters to gate merging in an unnamed way before
+        any elevation lookup or resampling has happened.
+        """
+        points = self._node_points(nodes)
+        coordinates = [[point.x, point.y] for point in points]
+        return meters_to_feet(get_length({"coordinates": coordinates}))
+
     def _build_trail_geometry(
         self, trail: dict
-    ) -> tuple[shapely.LineString | shapely.Polygon, shapely.MultiPoint | None]:
+    ) -> tuple[
+        shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+        shapely.MultiPoint | None,
+    ]:
         """
         Builds a trail's evenly-spaced geometry (and, for area trails, the
         interior sample grid) without any elevation lookups. Returns
-        (geometry, interior_multipoint); interior_multipoint is None for
-        non-area trails.
+        (geometry, interior_multipoint); interior_multipoint is only set for
+        area trails.
         """
+        if trail.get("multi_route"):
+            branch_lines = [
+                space_line_points_evenly(shapely.LineString(self._node_points(branch)))
+                for branch in trail["branches"]
+            ]
+            return shapely.MultiLineString(branch_lines), None
+
         node_array = self._node_points(trail["nodes"])
         if not trail["area"]:
             return space_line_points_evenly(shapely.LineString(node_array)), None
 
         geometry = space_polygon_exterior_points_evenly(shapely.Polygon(node_array))
         return geometry, polygon_interior_grid(geometry)
+
+    def _elevation_populated_branches(
+        self, geometry: shapely.MultiLineString, elevation_api: Elevation
+    ) -> list[list[tuple[float, float, float]]]:
+        """
+        Looks up elevation for a multi-route trail's branches in a single
+        batched call (rather than one call per branch), then splits the
+        flat result back out per branch. A single call matters beyond just
+        request count: two branches sharing a fork/rejoin junction node
+        must resolve to the exact same elevation there for multi_route.py's
+        exact-coordinate graph dedup to treat them as one graph node, which
+        only the real elevation API's cache -- keyed by coordinate, shared
+        across calls -- guarantees if it's queried once for both branches
+        together.
+        """
+        branch_lines = list(geometry.geoms)
+        lengths = [len(line.coords) for line in branch_lines]
+        flat_points = elevation_api.get(
+            [point for line in branch_lines for point in line.coords]
+        )
+
+        branches = []
+        offset = 0
+        for length in lengths:
+            branches.append(flat_points[offset : offset + length])
+            offset += length
+        return branches
 
     def get_trails(self) -> dict[str, Trail]:
         """
@@ -293,20 +530,27 @@ class OSMProcessor:
         # Phase 2a: one batched elevation lookup over all trail geometry.
         prefetch_points = []
         for trail_id, (geometry, interior_multipoint) in trail_geometries.items():
-            if not self.trails[trail_id]["area"]:
-                prefetch_points.extend(geometry.coords)
-            else:
+            if self.trails[trail_id]["area"]:
                 prefetch_points.extend(geometry.exterior.coords)
                 prefetch_points.extend(
                     point.coords[0] for point in interior_multipoint.geoms
                 )
+            else:
+                # shapely.get_coordinates flattens either a plain LineString
+                # or a multi-route trail's MultiLineString, so this one
+                # branch covers both
+                prefetch_points.extend(shapely.get_coordinates(geometry))
         elevation_api.get(prefetch_points)
 
-        # Phase 2b: route each area trail (elevation for exterior/interior is
-        # now cached), then batch-fetch elevation for every routed centerline.
-        area_routes = {}
+        # Phase 2b: route each area/multi-route trail (elevation for its raw
+        # geometry is now cached), then batch-fetch elevation for every
+        # routed centerline in one shared call.
+        computed_routes = {}
         area_trail_ids = [tid for tid in self.trails if self.trails[tid]["area"]]
-        if area_trail_ids:
+        multi_route_trail_ids = [
+            tid for tid in self.trails if self.trails[tid].get("multi_route")
+        ]
+        if area_trail_ids or multi_route_trail_ids:
             route_points = []
             for trail_id in area_trail_ids:
                 geometry, interior_multipoint = trail_geometries[trail_id]
@@ -324,8 +568,24 @@ class OSMProcessor:
                         [(point[0], point[1]) for point in raw_route["coordinates"]]
                     )
                 )
-                area_routes[trail_id] = route_line
+                computed_routes[trail_id] = route_line
                 route_points.extend(route_line.coords)
+
+            for trail_id in multi_route_trail_ids:
+                geometry, _interior_multipoint = trail_geometries[trail_id]
+                branches = self._elevation_populated_branches(geometry, elevation_api)
+                raw_route = get_multi_route(branches)
+                # re-spaced (like area's route) for uniform stats-window
+                # density -- not smoothed, since these are real mapped
+                # nodes, not a synthetic sampled grid
+                route_line = space_line_points_evenly(
+                    shapely.LineString(
+                        [(point[0], point[1]) for point in raw_route["coordinates"]]
+                    )
+                )
+                computed_routes[trail_id] = route_line
+                route_points.extend(route_line.coords)
+
             elevation_api.get(route_points)
 
         # Phase 3: assemble each Trail entirely from cached elevation.
@@ -336,11 +596,7 @@ class OSMProcessor:
             interior_geometry = None
             route = None
 
-            if not trail["area"]:
-                geometry_json = {
-                    "coordinates": elevation_api.get(list(geometry.coords))
-                }
-            else:
+            if trail["area"]:
                 geometry_json = {
                     "coordinates": [elevation_api.get(list(geometry.exterior.coords))]
                 }
@@ -350,11 +606,29 @@ class OSMProcessor:
                     )
                 }
                 route = {
-                    "coordinates": elevation_api.get(list(area_routes[trail_id].coords))
+                    "coordinates": elevation_api.get(
+                        list(computed_routes[trail_id].coords)
+                    )
+                }
+            elif trail.get("multi_route"):
+                geometry_json = {
+                    "coordinates": self._elevation_populated_branches(
+                        geometry, elevation_api
+                    )
+                }
+                route = {
+                    "coordinates": elevation_api.get(
+                        list(computed_routes[trail_id].coords)
+                    )
+                }
+            else:
+                geometry_json = {
+                    "coordinates": elevation_api.get(list(geometry.coords))
                 }
 
-            # Use route for areas since the boundry isn't where people actually ski
-            stats_geometry = route if trail["area"] else geometry_json
+            # Use route for areas/multi-route trails since neither's raw
+            # geometry is where people actually ski
+            stats_geometry = route if route is not None else geometry_json
 
             trail_dict = {}
             trail_dict["trail_id"] = trail["id"]
@@ -377,6 +651,13 @@ class OSMProcessor:
                 trail_dict["geometry"] = shapely.Polygon(
                     geometry_json["coordinates"][0]
                 )
+            elif trail.get("multi_route"):
+                trail_dict["geometry"] = shapely.MultiLineString(
+                    [
+                        shapely.LineString(branch)
+                        for branch in geometry_json["coordinates"]
+                    ]
+                )
             else:
                 trail_dict["geometry"] = shapely.LineString(
                     geometry_json["coordinates"]
@@ -391,7 +672,7 @@ class OSMProcessor:
             )
 
             for key in trail:
-                if key == "nodes" or key == "id":
+                if key in ("nodes", "id", "branches"):
                     continue
                 trail_dict[key] = trail[key]
 
@@ -470,7 +751,10 @@ class OSMProcessor:
         node_array = []
         for trail_id in self.trails:
             trail = self.trails[trail_id]
-            nodes = trail["nodes"]
+            if trail.get("multi_route"):
+                nodes = [node for branch in trail["branches"] for node in branch]
+            else:
+                nodes = trail["nodes"]
 
             node_array += [
                 shapely.Point(self.nodes[node]["lon"], self.nodes[node]["lat"])
@@ -502,8 +786,12 @@ class OSMProcessor:
         headings = []
 
         for trail in self.trails.values():
-            start_id = trail["nodes"][0]
-            end_id = trail["nodes"][-1]
+            # a multi-route trail has no single ordered path -- its first
+            # branch's endpoints are a fine stand-in, since this is only a
+            # coarse mountain-wide average
+            nodes = trail["branches"][0] if trail.get("multi_route") else trail["nodes"]
+            start_id = nodes[0]
+            end_id = nodes[-1]
 
             start_node = self.nodes[start_id]
             end_node = self.nodes[end_id]

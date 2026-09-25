@@ -7,24 +7,17 @@ inside the area.
 Runs in three phases over a graph built from the area's sampled points
 (the boundary ring plus the interior grid, per `polygon_interior_grid`):
 
-1. Bottleneck pass: a modified Dijkstra where a path's cost is its worst
-   edge, not the sum of edges, run from a virtual start node (connected to
-   every boundary point near the top of the area's vertical drop) to a
-   virtual end node (connected from every boundary point near the bottom).
-   This finds the gentlest steepest-pitch achievable by any valid
-   start/end combination, rather than pinning to the single highest and
-   lowest sampled points.
-2. Least-wandering pass: starting from a loose slope cap and tightening
-   it toward the bottleneck minimum, tracks route length at each cap
-   against a fixed baseline (the loosest pass). Stops as soon as
-   tightening further would grow the route beyond a fixed multiple of
-   that baseline, and keeps the previous, still-affordable cap.
+1+2. Bottleneck + least-wandering passes -- see core.support.route_search
+   for the shared algorithm (also used by multi_route.py for a branching
+   trail's real graph).
 3. Smoothing pass: a basic moving average over the route's lon/lat/
    elevation to reduce the zig-zag that shortest-path tie-breaking leaves
-   behind on a lattice-like graph. Endpoints are left untouched.
+   behind on a lattice-like graph. Endpoints are left untouched. This
+   step is area-specific -- multi_route.py skips it, since its graph is
+   built from real mapped trail nodes rather than a synthetic sampled
+   grid, so there's no zig-zag artifact to smooth away.
 """
 
-import heapq
 import json
 from collections import defaultdict
 from math import atan, degrees
@@ -33,188 +26,22 @@ import haversine as hs
 import numpy as np
 import shapely
 
+from core.support.route_search import (
+    MAX_GROWTH_MULTIPLIER,
+    START_SLOPE_DEGREES,
+    STEP_DEGREES,
+    VERTICAL_BAND_FRACTION,
+    Adjacency,
+    Point,
+    add_virtual_endpoints,
+    bottleneck_dijkstra,
+    find_best_max_slope,
+)
+
 SPACING_FEET = 20  # matches polygon_interior_grid's/space_polygon_exterior_points_evenly's default sample spacing
 SPACING_METERS = SPACING_FEET / 3.28084
 NEIGHBOR_RADIUS_MULTIPLIER = 1.8  # 8-connects the grid + links boundary to interior
-VERTICAL_BAND_FRACTION = 0.05  # perimeter points within this fraction of the vertical drop from the top/bottom are valid start/end candidates
-START_SLOPE_DEGREES = 70  # loosest slope cap the least-wandering pass starts from
-STEP_DEGREES = 1  # how far each tightening step lowers the slope cap
-MAX_GROWTH_MULTIPLIER = 1.2  # max route-length growth vs. loosest pass
 SMOOTHING_WINDOW = 2  # points on each side averaged together in the smoothing pass
-
-Point = tuple[float, float, float]  # (lon, lat, elevation)
-# node index -> [(neighbor index, distance_m, slope_deg), ...]
-Adjacency = dict[int, list[tuple[int, float, float]]]
-
-
-def _bottleneck_dijkstra(adjacency: Adjacency, start: int, n_nodes: int) -> list[float]:
-    """
-    Modified Dijkstra where a path's cost is its single worst edge rather
-    than the sum of edges -- finds the minimum steepest-pitch needed to
-    reach each node from `start`.
-    """
-    bottleneck = [float("inf")] * n_nodes
-    bottleneck[start] = 0.0
-    visited = [False] * n_nodes
-    heap = [(0.0, start)]
-
-    while heap:
-        cost, u = heapq.heappop(heap)
-        if visited[u]:
-            continue
-        visited[u] = True
-        for v, _dist, slope in adjacency[u]:
-            candidate = max(cost, slope)
-            if candidate < bottleneck[v]:
-                bottleneck[v] = candidate
-                heapq.heappush(heap, (candidate, v))
-
-    return bottleneck
-
-
-def _add_virtual_endpoints(
-    adjacency: Adjacency,
-    node_elev: np.ndarray,
-    n_boundary: int,
-    vertical_drop_fraction: float,
-) -> tuple[int, int]:
-    """
-    Adds two virtual nodes to `adjacency` (indices len(node_elev) and
-    len(node_elev) + 1): a virtual start with zero-cost edges to every
-    boundary point within the top `vertical_drop_fraction` of the area's
-    elevation range, and a virtual end with zero-cost edges FROM every
-    boundary point within the bottom `vertical_drop_fraction`. This lets
-    the route search treat any high/low-enough point on the perimeter as a
-    valid start/end, rather than pinning to the single highest/lowest
-    point. Mutates real boundary nodes' adjacency lists (for the end
-    side).
-
-    The vertical_drop_fraction threshold is based on the elevation range
-    across *all* nodes (boundary + interior), so it's possible for no
-    boundary point to qualify -- e.g. an interior knob taller than the
-    entire rim. When that happens, falls back to just the single
-    highest/lowest point on the perimeter, so there's always at least one
-    valid start/end candidate.
-
-    Returns (virtual_start_idx, virtual_end_idx).
-    """
-    n_nodes = len(node_elev)
-    virtual_start_idx = n_nodes
-    virtual_end_idx = n_nodes + 1
-
-    vertical_drop = node_elev.max() - node_elev.min()
-    top_threshold = node_elev.max() - vertical_drop_fraction * vertical_drop
-    bottom_threshold = node_elev.min() + vertical_drop_fraction * vertical_drop
-
-    start_candidates = [i for i in range(n_boundary) if node_elev[i] >= top_threshold]
-    end_candidates = [i for i in range(n_boundary) if node_elev[i] <= bottom_threshold]
-
-    if not start_candidates:
-        start_candidates = [int(np.argmax(node_elev[:n_boundary]))]
-    if not end_candidates:
-        end_candidates = [int(np.argmin(node_elev[:n_boundary]))]
-
-    for i in start_candidates:
-        adjacency[virtual_start_idx].append((i, 0.0, 0.0))
-    for i in end_candidates:
-        adjacency[i].append((virtual_end_idx, 0.0, 0.0))
-
-    return virtual_start_idx, virtual_end_idx
-
-
-def _least_wandering_path(
-    adjacency: Adjacency,
-    start: int,
-    end: int,
-    n_nodes: int,
-    slope_limit: float,
-    epsilon: float = 1e-6,
-) -> tuple[list[int], float]:
-    """
-    Among all routes whose steepest single segment is at or below
-    `slope_limit`, find the shortest one (fewest unnecessary detours).
-    Returns (None, None) if no such route exists.
-    """
-    dist_cost = [float("inf")] * n_nodes
-    dist_cost[start] = 0.0
-    prev = [None] * n_nodes
-    visited = [False] * n_nodes
-    heap = [(0.0, start)]
-
-    while heap:
-        cost, u = heapq.heappop(heap)
-        if visited[u]:
-            continue
-        visited[u] = True
-        if u == end:
-            break
-        for v, dist, slope in adjacency[u]:
-            if slope > slope_limit + epsilon:
-                continue
-            candidate = cost + dist
-            if candidate < dist_cost[v]:
-                dist_cost[v] = candidate
-                prev[v] = u
-                heapq.heappush(heap, (candidate, v))
-
-    if dist_cost[end] == float("inf"):
-        return None, None
-
-    path = []
-    node = end
-    while node is not None:
-        path.append(node)
-        node = prev[node]
-    path.reverse()
-    return path, dist_cost[end]
-
-
-def _find_best_max_slope(
-    adjacency: Adjacency,
-    start: int,
-    end: int,
-    n_nodes: int,
-    slope_limit: float,
-    start_slope: float,
-    step: float,
-    max_growth_multiplier: float,
-) -> tuple[float, list[int], float]:
-    """
-    Starts from a loose `start_slope` cap and tightens it toward the
-    bottleneck minimum (`slope_limit`) in `step`-degree increments,
-    tracking route length at each cap against a fixed baseline: the route
-    length at `start_slope` (the first, loosest pass). Stops -- and
-    returns the previous cap -- as soon as a route's length exceeds
-    `max_growth_multiplier` times that baseline, since it was the last cap
-    still within budget of the original length.
-
-    Returns None if no route exists even at `start_slope`.
-    """
-    slope_values = []
-    s = start_slope
-    while s > slope_limit:
-        slope_values.append(s)
-        s -= step
-    slope_values.append(slope_limit)
-
-    best = None  # (max_slope, route_indices, route_length_m)
-    baseline_length_m = None
-
-    for max_slope in slope_values:
-        route_indices, route_length_m = _least_wandering_path(
-            adjacency, start, end, n_nodes, max_slope
-        )
-        if route_indices is None:
-            break
-
-        if baseline_length_m is None:
-            baseline_length_m = route_length_m
-        elif route_length_m > baseline_length_m * max_growth_multiplier:
-            break
-
-        best = (max_slope, route_indices, route_length_m)
-
-    return best
 
 
 def _smooth_route(
@@ -307,17 +134,19 @@ def get_area_route(
             adjacency[i].append((j, dist, slope))
             adjacency[j].append((i, dist, slope))
 
-    virtual_start_idx, virtual_end_idx = _add_virtual_endpoints(
-        adjacency, node_elev, n_boundary, vertical_band_fraction
+    virtual_start_idx, virtual_end_idx = add_virtual_endpoints(
+        adjacency,
+        node_elev,
+        range(n_boundary),
+        range(n_boundary),
+        vertical_band_fraction,
     )
     n_nodes_with_virtual = n_nodes + 2
 
-    bottleneck = _bottleneck_dijkstra(
-        adjacency, virtual_start_idx, n_nodes_with_virtual
-    )
+    bottleneck = bottleneck_dijkstra(adjacency, virtual_start_idx, n_nodes_with_virtual)
     slope_limit = bottleneck[virtual_end_idx]
 
-    best = _find_best_max_slope(
+    best = find_best_max_slope(
         adjacency,
         virtual_start_idx,
         virtual_end_idx,

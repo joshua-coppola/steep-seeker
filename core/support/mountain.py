@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime
 from typing import Self
 
-from shapely import Point, wkt
+from shapely import Point, get_coordinates, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.connectors.weather_api import Weather
@@ -303,11 +303,9 @@ class Mountain:
         """
         elevations = []
         for trail in self.trails.values():
+            elevations.extend(get_coordinates(trail.geometry, include_z=True)[:, 2])
             if trail.area:
-                elevations.extend(coord[2] for coord in trail.geometry.exterior.coords)
                 elevations.extend(point.z for point in trail.interior_geometry.geoms)
-            else:
-                elevations.extend(coord[2] for coord in trail.geometry.coords)
 
         if elevations:
             self.vertical = int(max(elevations) - min(elevations))

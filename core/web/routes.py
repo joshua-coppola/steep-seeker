@@ -406,24 +406,41 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     """
     Builds the GeoJSON feature(s) for one trail. A line trail is a single
     LineString feature. An area trail (glade/bowl, sampled as a polygon)
-    is its boundary Polygon feature plus -- when a route has been computed
-    for it -- a second, faint/non-interactive LineString feature (styled in
-    interactive-map.js) carrying that route's elevation profile. The polygon's
+    is its boundary Polygon feature; a multi-route trail (a branch/rejoin
+    merged from several OSM ways) is a MultiLineString feature with one
+    part per branch, every part rendered as a real trail line -- unlike an
+    area's boundary, these are real mapped lines, not a sampling region.
+    Both area and multi-route trails additionally get a second, faint/
+    non-interactive LineString feature (styled in interactive-map.js)
+    carrying their computed route's elevation profile. The main feature's
     own properties carry the route's profile too (as routeCoordinates), so
-    interactive-map.js can show a real heightgraph when the polygon
-    itself is clicked.
+    interactive-map.js can show a real heightgraph when it's clicked
+    directly.
     """
     if trail.area:
         coords = list(trail.geometry.exterior.coords)
         profile = build_elevation_profile(coords)
         geometry = {"type": "Polygon", "coordinates": [profile + [profile[0]]]}
+        lon_points = [c[0] for c in coords]
+        lat_points = [c[1] for c in coords]
+    elif trail.multi_route:
+        geometry = {
+            "type": "MultiLineString",
+            "coordinates": [
+                build_elevation_profile(list(line.coords))
+                for line in trail.geometry.geoms
+            ],
+        }
+        # no single meaningful direction for several branches, and the
+        # label moves onto the route feature below anyway
+        lon_points, lat_points = [], []
     else:
         coords = list(trail.geometry.coords)
         profile = build_elevation_profile(coords)
         geometry = {"type": "LineString", "coordinates": profile}
+        lon_points = [c[0] for c in coords]
+        lat_points = [c[1] for c in coords]
 
-    lon_points = [c[0] for c in coords]
-    lat_points = [c[1] for c in coords]
     orientation = _orientation(lon_points, lat_points, trail.area, direction)
 
     properties = {
@@ -471,7 +488,7 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
 
     features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
 
-    if trail.area and trail.route is not None:
+    if (trail.area or trail.multi_route) and trail.route is not None:
         route_coords = list(trail.route.coords)
         route_profile = build_elevation_profile(route_coords)
         properties["routeCoordinates"] = route_profile
