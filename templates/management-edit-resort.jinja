@@ -206,11 +206,6 @@ Edit Resort
     <script>
         let trails = {{geojson}}
 
-        var mouseOver = true;
-        if (Object.keys(trails.features).length > 200) {
-            mouseOver = false;
-        }
-
         var map = L.map('map', {
             rotate: true,
             rotateControl: {
@@ -218,7 +213,7 @@ Edit Resort
             },
             touchRotate: false,
             bearing: {{mountain.bearing}},
-            almostOnMouseMove: mouseOver,
+            almostOnMouseMove: true,
         }).setView([{{mountain.lat}},{{mountain.lon}}], 13);
 
         run_map(trails, map);
