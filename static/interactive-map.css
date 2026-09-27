@@ -2,6 +2,14 @@
     filter: blur(4px);
 }
 
+/* Trail/lift name labels fade out at drag start (interactive-map.js sets
+   opacity to 0, then removes the node once the fade finishes) instead of
+   vanishing in a single instant frame, which read as a jarring pop even
+   though the underlying DOM removal itself is cheap. */
+#map .leaflet-overlay-pane svg text {
+    transition: opacity 150ms ease-out;
+}
+
 #map {
     position: fixed;
     top: 76px;

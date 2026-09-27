@@ -25,12 +25,14 @@ from core.support.trail_query import list_trails
 from core.support.utils import (
     BEGINNER_FRIENDLINESS_FLIP,
     DIFFICULTY_CONSTANTS,
+    MAP_SIMPLIFY_TOLERANCE,
     PITCH_WINDOW_LABELS,
     beginner_color,
     build_elevation_profile,
     difficulty_pitch_field,
     display_beginner_friendliness,
     round_degrees,
+    simplify_geometry_max_gap,
     trail_color,
     weather_modifier_from_trail,
 )
@@ -416,9 +418,25 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     own properties carry the route's profile too (as routeCoordinates), so
     interactive-map.js can show a real heightgraph when it's clicked
     directly.
+
+    Geometry is Douglas-Peucker simplified (same MAP_SIMPLIFY_TOLERANCE and
+    mechanism as maps.py's static SVG map) before being turned into
+    coordinates -- trail.geometry is stored at a much finer resolution
+    (space_line_points_evenly's 20ft spacing, for elevation/pitch stats),
+    which is more points than a resort's worth of Leaflet polylines needs
+    to look identical on screen, and panning a large resort's map noticeably
+    lags without thinning it first. Unlike maps.py's static image,
+    simplify_geometry_max_gap (not plain simplify_geometry) is used here,
+    since this geometry also feeds the elevation-profile tool -- a trail
+    that's straight in plan view but climbs and drops in elevation would
+    otherwise simplify away the samples that profile needs to show that.
     """
+    simplified_geometry = simplify_geometry_max_gap(
+        trail.geometry, MAP_SIMPLIFY_TOLERANCE
+    )
+
     if trail.area:
-        coords = list(trail.geometry.exterior.coords)
+        coords = list(simplified_geometry.exterior.coords)
         profile = build_elevation_profile(coords)
         geometry = {"type": "Polygon", "coordinates": [profile + [profile[0]]]}
         lon_points = [c[0] for c in coords]
@@ -428,14 +446,14 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
             "type": "MultiLineString",
             "coordinates": [
                 build_elevation_profile(list(line.coords))
-                for line in trail.geometry.geoms
+                for line in simplified_geometry.geoms
             ],
         }
         # no single meaningful direction for several branches, and the
         # label moves onto the route feature below anyway
         lon_points, lat_points = [], []
     else:
-        coords = list(trail.geometry.coords)
+        coords = list(simplified_geometry.coords)
         profile = build_elevation_profile(coords)
         geometry = {"type": "LineString", "coordinates": profile}
         lon_points = [c[0] for c in coords]
@@ -489,7 +507,9 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     features = [{"type": "Feature", "properties": properties, "geometry": geometry}]
 
     if (trail.area or trail.multi_route) and trail.route is not None:
-        route_coords = list(trail.route.coords)
+        route_coords = list(
+            simplify_geometry_max_gap(trail.route, MAP_SIMPLIFY_TOLERANCE).coords
+        )
         route_profile = build_elevation_profile(route_coords)
         properties["routeCoordinates"] = route_profile
 
@@ -551,7 +571,9 @@ def _lift_type_label(lift_type: str) -> str:
 def _lift_feature(
     lift, direction: str, weather_modifier: float, debug_mode: bool
 ) -> dict:
-    coords = list(lift.geometry.coords)
+    coords = list(
+        simplify_geometry_max_gap(lift.geometry, MAP_SIMPLIFY_TOLERANCE).coords
+    )
     profile = build_elevation_profile(coords)
     lon_points = [c[0] for c in coords]
     lat_points = [c[1] for c in coords]

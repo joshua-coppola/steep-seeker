@@ -210,14 +210,37 @@ var PolylineTextPath = {
         var isClosedRing = /z\s*$/i.test(pathD);
         var window_ = null;
         var flipped = false;
+
+        // getComputedTextLength() (both calls below) forces a synchronous
+        // layout, and depends only on the text content and font metrics --
+        // never on the path it's drawn along. _updatePath (see below)
+        // re-invokes setText on every path redraw, including a plain pan
+        // that changes no text or font attribute at all, so across a
+        // resort's whole label set that's the single biggest cost of
+        // panning a large map. Caching both measurements per layer, keyed
+        // on whatever can actually change them, lets a same-text/
+        // same-font redraw (the common case -- most redraws are a pan
+        // finishing, not a font-size-changing zoom) skip both DOM
+        // measurements entirely.
+        var metricsKey = text + '|' + (options.attributes['font-size'] || '') +
+            '|' + (options.attributes['font-family'] || '') +
+            '|' + (options.attributes['font-weight'] || '');
+        var cachedMetrics = (this._textMetricsCache && this._textMetricsCache.key === metricsKey)
+            ? this._textMetricsCache : null;
+
         if (options.center) {
-            var measureNode = L.SVG.create('text');
-            for (var mAttr in options.attributes)
-                measureNode.setAttribute(mAttr, options.attributes[mAttr]);
-            measureNode.appendChild(document.createTextNode(text));
-            svg.appendChild(measureNode);
-            var measuredLength = measureNode.getComputedTextLength();
-            svg.removeChild(measureNode);
+            var measuredLength;
+            if (cachedMetrics) {
+                measuredLength = cachedMetrics.measuredLength;
+            } else {
+                var measureNode = L.SVG.create('text');
+                for (var mAttr in options.attributes)
+                    measureNode.setAttribute(mAttr, options.attributes[mAttr]);
+                measureNode.appendChild(document.createTextNode(text));
+                svg.appendChild(measureNode);
+                measuredLength = measureNode.getComputedTextLength();
+                svg.removeChild(measureNode);
+            }
 
             window_ = findStraightestWindow(pathD, measuredLength);
 
@@ -229,12 +252,18 @@ var PolylineTextPath = {
 
         var hrefId = id;
         var hrefD = pathD;
-        var windowLength = this._path.getTotalLength();
+        // this._path.getTotalLength() forces a synchronous layout same as
+        // getComputedTextLength() does -- and window_.length (already
+        // computed above by findStraightestWindow, pure JS/math, no DOM)
+        // always overwrites it below whenever window_ is set, which for
+        // us (options.center is always true) is every call. Only fall
+        // back to the forced-layout call when window_ isn't set and
+        // there's no cheaper source for windowLength.
+        var windowLength = window_ ? window_.length : this._path.getTotalLength();
         if (window_) {
             hrefId = id + '-window';
             var windowPoints = flipped ? reversePoints(window_.points) : window_.points;
             hrefD = pointsToD(windowPoints);
-            windowLength = window_.length;
             var windowPath = L.SVG.create('path');
             windowPath.setAttribute('id', hrefId);
             windowPath.setAttribute('d', hrefD);
@@ -279,7 +308,10 @@ var PolylineTextPath = {
         }
 
         if (options.center) {
-            var textLength = textNode.getComputedTextLength();
+            var textLength = cachedMetrics ? cachedMetrics.textLength : textNode.getComputedTextLength();
+            if (!cachedMetrics) {
+                this._textMetricsCache = {key: metricsKey, measuredLength: measuredLength, textLength: textLength};
+            }
             textNode.setAttribute('dx', (windowLength / 2) - (textLength / 2));
         }
 

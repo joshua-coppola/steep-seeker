@@ -14,17 +14,15 @@ import matplotlib.pyplot as plt
 from shapely import get_coordinates
 
 from core.support.mountain import Mountain
-from core.support.utils import meters_to_feet
+from core.support.utils import (
+    MAP_SIMPLIFY_TOLERANCE,
+    THUMBNAIL_SIMPLIFY_TOLERANCE,
+    meters_to_feet,
+    simplify_geometry,
+)
 from core.support.utils import trail_color as _trail_color
 
 mpl.use("svg")
-
-# Degrees of Douglas-Peucker tolerance used to thin trail/lift geometry
-# before drawing a thumbnail (~11m at mid-latitudes)
-THUMBNAIL_SIMPLIFY_TOLERANCE = 0.0001
-
-# Roughly 0.5m tolerance for the static map (map.jinja)
-MAP_SIMPLIFY_TOLERANCE = 0.000005
 
 
 def _xy_from_coords(coords) -> tuple[list[float], list[float]]:
@@ -223,8 +221,7 @@ def _populate_map(
     line_width = max(min(fig.get_size_inches()[0] / 3, 2), 0.4)
 
     def _geometry_coords(geometry, is_area: bool = False):
-        if simplify_tolerance:
-            geometry = geometry.simplify(simplify_tolerance, preserve_topology=True)
+        geometry = simplify_geometry(geometry, simplify_tolerance)
         return geometry.exterior.coords if is_area else geometry.coords
 
     def _mirrored_xy(coords):
@@ -293,9 +290,7 @@ def _populate_map(
         elif trail.multi_route:
             # every branch is a real mapped line, so each draws in full
             # (not a faint underlay the way an area's boundary does)
-            geometry = trail.geometry
-            if simplify_tolerance:
-                geometry = geometry.simplify(simplify_tolerance, preserve_topology=True)
+            geometry = simplify_geometry(trail.geometry, simplify_tolerance)
             for line in geometry.geoms:
                 x, y = _mirrored_xy(line.coords)
                 if trail.gladed:

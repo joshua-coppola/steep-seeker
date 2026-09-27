@@ -1,6 +1,10 @@
+from itertools import pairwise
+
+import haversine as hs
 import shapely
 
 from core.support.utils import (
+    METERS_TO_FEET,
     build_elevation_profile,
     difficulty_pitch_field,
     get_average_slope,
@@ -16,6 +20,7 @@ from core.support.utils import (
     round_degrees,
     round_feet,
     round_geometry_precision,
+    simplify_geometry_max_gap,
     space_line_points_evenly,
     surface_difficulty_bonus,
     weather_modifier_from_trail,
@@ -148,6 +153,117 @@ def test_space_line_points_evenly_handles_a_zero_length_line():
 
     coords = list(output_line.coords)
     assert len(coords) >= 2
+
+
+def _max_gap_feet(coords: list) -> float:
+    return max(
+        hs.haversine((a[1], a[0]), (b[1], b[0]), unit=hs.Unit.METERS) * METERS_TO_FEET
+        for a, b in pairwise(coords)
+    )
+
+
+def test_simplify_geometry_max_gap_preserves_elevation_detail_on_a_straight_line():
+    # a trail that's dead straight in plan view but climbs/drops the whole
+    # way -- plain Douglas-Peucker simplification would collapse this to
+    # its two endpoints (nothing to trigger it into keeping intermediate
+    # points), throwing away every elevation sample in between
+    raw = shapely.LineString([(-111.6, 40.6), (-111.55, 40.6)])
+    spaced = space_line_points_evenly(raw, spacing_feet=20)
+    points = [
+        (lon, lat, 2000 + 50 * ((i % 10) - 5))  # sawtooth, never flat
+        for i, (lon, lat) in enumerate(spaced.coords)
+    ]
+    line = shapely.LineString(points)
+
+    result = simplify_geometry_max_gap(line, tolerance=0.000005, max_gap_feet=40)
+    coords = list(result.coords)
+
+    assert len(coords) > len(points) / 4  # nowhere near collapsed to 2 points
+    assert _max_gap_feet(coords) <= 40.5  # small float slack, not a real violation
+    assert coords[0] == points[0]
+    assert coords[-1] == points[-1]
+
+
+def test_simplify_geometry_max_gap_never_exceeds_the_cap_even_around_a_kept_point():
+    # regression: a run of several skipped points immediately followed by
+    # a point Douglas-Peucker actually wants to keep (a real bend) used to
+    # land without checking how far that kept point actually was from the
+    # last point this function had decided to keep, sometimes accepting a
+    # gap 1.5x the cap
+    raw = shapely.LineString(
+        [(-111.6, 40.6), (-111.599, 40.601), (-111.598, 40.6), (-111.55, 40.6)]
+    )
+    spaced = space_line_points_evenly(raw, spacing_feet=20)
+    points = [(lon, lat, 2000.0 + i) for i, (lon, lat) in enumerate(spaced.coords)]
+    line = shapely.LineString(points)
+
+    result = simplify_geometry_max_gap(line, tolerance=0.000005, max_gap_feet=40)
+    coords = list(result.coords)
+
+    assert _max_gap_feet(coords) <= 40.5
+
+
+def test_simplify_geometry_max_gap_only_uses_real_original_points():
+    raw = shapely.LineString([(-111.6, 40.6), (-111.599, 40.601), (-111.55, 40.6)])
+    spaced = space_line_points_evenly(raw, spacing_feet=20)
+    points = [(lon, lat, 2000.0 + i) for i, (lon, lat) in enumerate(spaced.coords)]
+    line = shapely.LineString(points)
+
+    result = simplify_geometry_max_gap(line, tolerance=0.000005, max_gap_feet=40)
+
+    original = set(points)
+    assert all(point in original for point in result.coords)
+
+
+def test_simplify_geometry_max_gap_no_tolerance_returns_geometry_unchanged():
+    line = shapely.LineString([(0, 0, 100), (1, 1, 90), (2, 2, 80)])
+
+    result = simplify_geometry_max_gap(line, tolerance=None)
+
+    assert list(result.coords) == list(line.coords)
+
+
+def test_simplify_geometry_max_gap_short_line_passthrough():
+    line = shapely.LineString([(0, 0, 100), (1, 1, 90)])
+
+    result = simplify_geometry_max_gap(line, tolerance=0.000005)
+
+    assert list(result.coords) == list(line.coords)
+
+
+def test_simplify_geometry_max_gap_polygon():
+    raw = shapely.Polygon(
+        [(-111.6, 40.6), (-111.6, 40.601), (-111.55, 40.601), (-111.55, 40.6)]
+    )
+    spaced = space_line_points_evenly(raw.exterior, spacing_feet=20)
+    ring_points = [(lon, lat, 2000.0 + i) for i, (lon, lat) in enumerate(spaced.coords)]
+    polygon = shapely.Polygon(ring_points)
+
+    result = simplify_geometry_max_gap(polygon, tolerance=0.000005, max_gap_feet=40)
+
+    assert result.geom_type == "Polygon"
+    assert _max_gap_feet(list(result.exterior.coords)) <= 40.5
+
+
+def test_simplify_geometry_max_gap_multilinestring_simplifies_each_branch():
+    raw_a = shapely.LineString([(-111.6, 40.6), (-111.55, 40.6)])
+    raw_b = shapely.LineString([(-111.55, 40.6), (-111.55, 40.65)])
+    points_a = [
+        (lon, lat, 2000.0 + i)
+        for i, (lon, lat) in enumerate(space_line_points_evenly(raw_a, 20).coords)
+    ]
+    points_b = [
+        (lon, lat, 2100.0 + i)
+        for i, (lon, lat) in enumerate(space_line_points_evenly(raw_b, 20).coords)
+    ]
+    multi = shapely.MultiLineString([points_a, points_b])
+
+    result = simplify_geometry_max_gap(multi, tolerance=0.000005, max_gap_feet=40)
+
+    assert result.geom_type == "MultiLineString"
+    assert len(result.geoms) == 2
+    for branch in result.geoms:
+        assert _max_gap_feet(list(branch.coords)) <= 40.5
 
 
 def test_polygon_interior_grid():

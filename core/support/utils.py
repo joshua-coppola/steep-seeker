@@ -243,6 +243,155 @@ def space_line_points_evenly(
     return line_geo
 
 
+# Degrees of Douglas-Peucker tolerance used to thin trail/lift geometry
+# before drawing a full-detail view (the static map, map.jinja, and the
+# interactive Leaflet map, which both show a mountain at comparable
+# on-screen scale) -- ~0.5m at mid-latitudes.
+MAP_SIMPLIFY_TOLERANCE = 0.000005
+
+# ~11m at mid-latitudes -- coarser, for the label-free thumbnail, which
+# only ever renders small
+THUMBNAIL_SIMPLIFY_TOLERANCE = 0.0001
+
+
+def simplify_geometry(
+    geometry: shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+    tolerance: float | None,
+) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
+    """
+    Thins a trail/lift geometry via Douglas-Peucker simplification --
+    preserving topology (no self-intersections introduced) and each
+    surviving point's elevation (the Z coordinate, when the geometry has
+    one, e.g. Trail.geometry) -- before it's drawn. Returns geometry
+    unchanged when tolerance is falsy.
+
+    Shared by maps.py's static SVG rendering and routes.py's interactive
+    Leaflet GeoJSON, so both draw from the same mechanism; each picks its
+    own tolerance constant for its own rendering context.
+    """
+    if not tolerance:
+        return geometry
+    return geometry.simplify(tolerance, preserve_topology=True)
+
+
+# Below this, a straight-in-plan-view stretch's elevation samples (used by
+# the interactive map's leaflet.heightgraph elevation-profile tool -- see
+# simplify_geometry_max_gap) are considered too sparse to be useful, no
+# matter how little Douglas-Peucker simplification actually needed to keep
+# for the line's on-screen shape.
+ELEVATION_PROFILE_MAX_GAP_FEET = 40
+
+
+def _segment_meters(
+    a: tuple[float, float, float], b: tuple[float, float, float]
+) -> float:
+    return hs.haversine((a[1], a[0]), (b[1], b[0]), unit=hs.Unit.METERS)
+
+
+def _simplify_points_max_gap(
+    points: list[tuple[float, float, float]],
+    tolerance: float | None,
+    max_gap_feet: float,
+) -> list[tuple[float, float, float]]:
+    if not tolerance or len(points) < 3:
+        return points
+
+    simplified = (
+        shapely.LineString(points).simplify(tolerance, preserve_topology=True).coords
+    )
+    # Douglas-Peucker only ever selects a subset of the input points (never
+    # relocates or interpolates one) and preserves their order, so this
+    # walks both lists once to recover which original indices survived --
+    # cheap, and avoids re-deriving the same selection with our own
+    # distance-to-line math.
+    kept = set()
+    cursor = 0
+    for point in simplified:
+        while cursor < len(points) and points[cursor][:2] != point[:2]:
+            cursor += 1
+        if cursor >= len(points):
+            # A coordinate round-trip mismatch (shouldn't happen -- GEOS
+            # preserves kept points' coordinates exactly -- but fall back
+            # to the plan-view-only simplification rather than crash the
+            # request over it).
+            return list(simplified)
+        kept.add(cursor)
+        cursor += 1
+
+    max_gap_meters = max_gap_feet / METERS_TO_FEET
+    result = [points[0]]
+    last_kept_index = 0
+    accumulated_m = 0.0
+    for i in range(1, len(points)):
+        point = points[i]
+        segment_m = _segment_meters(points[i - 1], point)
+        # Cap enforcement always runs, whether or not `point` itself is a
+        # DP-kept point -- otherwise a DP-kept point arriving right after
+        # a run of skipped ones would land without ever checking how far
+        # it actually is from the last point actually kept, which could
+        # be several skipped points' worth (a real gap, not the ~1
+        # max_gap_feet one this is supposed to guarantee).
+        if accumulated_m + segment_m >= max_gap_meters and last_kept_index != i - 1:
+            # `point` would push the gap since the last kept/inserted
+            # point over the cap -- insert the previous point instead
+            # (already confirmed to still be within budget), then restart
+            # accumulation from there up to `point`.
+            result.append(points[i - 1])
+            last_kept_index = i - 1
+            accumulated_m = segment_m
+        else:
+            accumulated_m += segment_m
+        if i in kept:
+            result.append(point)
+            last_kept_index = i
+            accumulated_m = 0.0
+    return result
+
+
+def simplify_geometry_max_gap(
+    geometry: shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+    tolerance: float | None,
+    max_gap_feet: float = ELEVATION_PROFILE_MAX_GAP_FEET,
+) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
+    """
+    Like simplify_geometry, but re-inserts real (not interpolated) points
+    from the original geometry wherever plan-view (lon/lat) Douglas-Peucker
+    simplification alone would leave two consecutive points more than
+    max_gap_feet apart.
+
+    Plain simplify_geometry only looks at a line's shape as drawn on the
+    map -- a trail that's dead straight in plan view but climbs and drops
+    repeatedly in elevation simplifies down to just its two endpoints, same
+    as a trail that's actually flat the whole way. That's fine for how the
+    line looks on the map, but it throws away every elevation sample in
+    between, leaving the interactive map's elevation-profile tool with a
+    single straight segment for a stretch that was never actually flat.
+    Capping the gap keeps the point-count win everywhere the plan-view
+    shape doesn't need the extra points, while still guaranteeing a
+    profile-worthy sampling rate everywhere else. Every point involved --
+    kept by Douglas-Peucker or re-inserted to cap the gap -- is a real,
+    already elevation-populated point from `geometry`; nothing is
+    interpolated and no new elevation lookups happen.
+    """
+    if geometry.geom_type == "Polygon":
+        ring = _simplify_points_max_gap(
+            list(geometry.exterior.coords), tolerance, max_gap_feet
+        )
+        return shapely.Polygon(ring)
+    if geometry.geom_type == "MultiLineString":
+        return shapely.MultiLineString(
+            [
+                shapely.LineString(
+                    _simplify_points_max_gap(list(line.coords), tolerance, max_gap_feet)
+                )
+                for line in geometry.geoms
+            ]
+        )
+    return shapely.LineString(
+        _simplify_points_max_gap(list(geometry.coords), tolerance, max_gap_feet)
+    )
+
+
 def space_polygon_exterior_points_evenly(
     polygon: shapely.Polygon, spacing_feet: int = 20
 ) -> shapely.Polygon:
