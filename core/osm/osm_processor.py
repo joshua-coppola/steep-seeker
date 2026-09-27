@@ -26,8 +26,6 @@ from core.support.utils import (
     space_polygon_exterior_points_evenly,
 )
 
-## Todo: handle multiline relations
-
 STEEPEST_PITCH_WINDOWS_FEET = (100, 150, 300, 500, 1320, 2640, 5280)
 
 # Fields (besides id/nodes) that every member of a relation, or every
@@ -263,57 +261,13 @@ class OSMProcessor:
         regardless of dict iteration order, so anything still grouped here
         by more than one member is a genuine fork, not a chain that pass
         missed.
-
-        "name" (when present in match_fields) is treated specially: an
-        unnamed way (OSM often only tags one branch of a forking trail with
-        its name) is compatible with any name, but two *differently* named
-        ways never end up in the same cluster -- not even indirectly, via a
-        shared unnamed way that would otherwise bridge them both (a real
-        hazard at a trail junction, where an unnamed connector/crossing
-        piece can touch two unrelated named trails at once). Every other
-        match_fields value still needs exact equality, same as
-        _merge_line_features.
-
-        An unnamed way is further only eligible to merge in at all when its
-        own length is under MULTI_ROUTE_UNNAMED_MAX_LENGTH_FEET -- a long
-        unnamed way touching a named trail's endpoint is more likely a
-        distinct, merely nameless, trail than an actual branch of it. A
-        named way is never subject to this length check.
-
-        Each resulting cluster of 2+ items collapses into one trail dict
-        that keeps the first member's id and match_fields values (except
-        name -- a non-empty name among the cluster's members wins over an
-        empty one), drops "nodes" in favor of "branches", and sets
-        "multi_route" True. A cluster of one item is returned as-is.
-
-        A member whose touch point is at the *other* item's endpoint needs
-        no further work -- its own node list becomes one branch. But when
-        the touch is at an interior point (a spur splitting off partway
-        through a longer way, not at either way's own end), that interior
-        node isn't a real vertex of the resampled geometry _build_trail_geometry
-        will later produce for the branch that merely passes through it --
-        space_line_points_evenly only guarantees a line's own first/last
-        input vertex survives resampling exactly, not an arbitrary interior
-        one. Left alone, that would leave the two branches' resampled
-        geometries not sharing an exact coordinate at their real-world
-        junction, which multi_route.py's graph builder depends on to treat
-        them as connected. So every member's node list is first split at
-        each interior occurrence of any cluster member's endpoint, turning
-        "branches" into a flat list of pure graph edges whose own
-        start/end are always a real, shared junction node.
         """
         grouping_fields = [field for field in match_fields if field != "name"]
         match_by_name = "name" in match_fields
 
         by_match_fields = defaultdict(list)
         for item_id, item in items.items():
-            # Area trails (glades/bowls, sampled as a polygon) are never
-            # multi-route candidates -- a "branches" MultiLineString and a
-            # Polygon boundary are fundamentally different geometry shapes,
-            # and _build_trail_geometry can only build one or the other.
-            # Two area ways happening to touch is a question for
-            # _merge_line_features's existing polygon-ring merge, not this
-            # pass.
+            # Area trails are never multi-route candidates 
             if item.get("area"):
                 continue
             by_match_fields[tuple(item[field] for field in grouping_fields)].append(
@@ -321,11 +275,7 @@ class OSMProcessor:
             )
 
         parent = {item_id: item_id for item_id in items}
-        # Tracks each component root's established name -- None while every
-        # member merged into it so far is unnamed. Checked (and updated) on
-        # every union, so a merge that would fuse two components that
-        # already settled on two different non-empty names is refused, no
-        # matter how many unnamed ways sit between them.
+        
         component_name = {
             item_id: (items[item_id]["name"] if match_by_name else None) or None
             for item_id in items
@@ -575,9 +525,6 @@ class OSMProcessor:
                 geometry, _interior_multipoint = trail_geometries[trail_id]
                 branches = self._elevation_populated_branches(geometry, elevation_api)
                 raw_route = get_multi_route(branches)
-                # re-spaced (like area's route) for uniform stats-window
-                # density -- not smoothed, since these are real mapped
-                # nodes, not a synthetic sampled grid
                 route_line = space_line_points_evenly(
                     shapely.LineString(
                         [(point[0], point[1]) for point in raw_route["coordinates"]]
