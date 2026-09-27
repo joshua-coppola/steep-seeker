@@ -312,13 +312,6 @@ function run_map(trails, map, editable = false, editQuery = null){
         // +3px per zoom level above 15, where labels first appear at the
         // base 14px.
         const fontSize = 14 + (Math.max(0, map.getZoom() - 15) * 3);
-        // An SVG stroke halo. A CSS text-shadow alternative was tried (see
-        // git history) to cut the per-label paint cost during
-        // leaflet.textpath's rebuild-on-every-moveend -- neutral to
-        // slightly better in Chromium, but substantially worse in Firefox
-        // specifically under the scale transform a zoom applies (measured:
-        // p95 33ms -> 100ms, worst frame 333ms -> 650ms). Not worth
-        // branching on L.Browser.gecko for Chromium's marginal gain.
         return {
             fill: textColor,
             'font-size': fontSize + 'px',
@@ -538,21 +531,12 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     // leaflet.textpath rebuilds every label's DOM node (forcing a
     // synchronous layout per label via getComputedTextLength()/getBBox())
-    // on every moveend -- across a resort's whole label set that's a real
-    // hitch, and a quick flurry of drags pays it once per release. Hide
+    // on every moveend. Hide
     // labels for the duration of an actual drag and defer the real
     // rebuild until movement has fully settled (including post-drag
     // inertia), so a rapid sequence of pans only rebuilds once. Scoped to
     // 'dragstart' rather than 'movestart' so a plain zoom (already
     // handled below) is never double-rebuilt.
-    //
-    // The actual DOM removal (layer.setText(null)) is cheap on its own
-    // (~2-4ms for a resort's whole label set) -- the "hide" still reads as
-    // a lag spike because every label vanishes in the same instant, single
-    // frame. So the removal itself is deferred by LABEL_FADE_MS: labels
-    // fade out first (a CSS opacity transition -- see interactive-map.css
-    // -- cheap and doesn't touch the DOM structure), and only get actually
-    // removed once that fade has visually finished.
     let panLabelsHidden = false;
     let panSettleTimer = null;
     let labelFadeTimer = null;

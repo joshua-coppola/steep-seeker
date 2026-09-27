@@ -410,8 +410,8 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     LineString feature. An area trail (glade/bowl, sampled as a polygon)
     is its boundary Polygon feature; a multi-route trail (a branch/rejoin
     merged from several OSM ways) is a MultiLineString feature with one
-    part per branch, every part rendered as a real trail line -- unlike an
-    area's boundary, these are real mapped lines, not a sampling region.
+    part per branch, every part rendered as a real trail line.
+
     Both area and multi-route trails additionally get a second, faint/
     non-interactive LineString feature (styled in interactive-map.js)
     carrying their computed route's elevation profile. The main feature's
@@ -419,17 +419,9 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     interactive-map.js can show a real heightgraph when it's clicked
     directly.
 
-    Geometry is Douglas-Peucker simplified (same MAP_SIMPLIFY_TOLERANCE and
+    Geometry is simplified (same MAP_SIMPLIFY_TOLERANCE and
     mechanism as maps.py's static SVG map) before being turned into
-    coordinates -- trail.geometry is stored at a much finer resolution
-    (space_line_points_evenly's 20ft spacing, for elevation/pitch stats),
-    which is more points than a resort's worth of Leaflet polylines needs
-    to look identical on screen, and panning a large resort's map noticeably
-    lags without thinning it first. Unlike maps.py's static image,
-    simplify_geometry_max_gap (not plain simplify_geometry) is used here,
-    since this geometry also feeds the elevation-profile tool -- a trail
-    that's straight in plan view but climbs and drops in elevation would
-    otherwise simplify away the samples that profile needs to show that.
+    coordinates.
     """
     simplified_geometry = simplify_geometry_max_gap(
         trail.geometry, MAP_SIMPLIFY_TOLERANCE
