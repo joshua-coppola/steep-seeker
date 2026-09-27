@@ -18,7 +18,7 @@ def cursor(db_path: str = DATABASE_PATH, dict_cursor: bool = True):
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA secure_delete = OFF")
     conn.execute("PRAGMA journal_mode = WAL")
-    
+
     if dict_cursor:
         conn.row_factory = sqlite3.Row
 

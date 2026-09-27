@@ -521,9 +521,58 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     addTrails();
     map.fitBounds(geojson_features.getBounds());
+    // fitBounds changes the zoom after labels were computed at the map's
+    // initial zoom (13, set in the template) -- resync now so labels drawn
+    // above/below the zoom-14 threshold reflect where the map actually lands.
+    updateTrailLabels();
 
     map.on('dragstart', function () { map.almostOver.disable(); });
     map.on('dragend', function () { map.almostOver.enable(); });
+
+    // leaflet.textpath rebuilds every label's DOM node (forcing a
+    // synchronous layout per label via getComputedTextLength()/getBBox())
+    // on every moveend. Hide
+    // labels for the duration of an actual drag and defer the real
+    // rebuild until movement has fully settled (including post-drag
+    // inertia), so a rapid sequence of pans only rebuilds once. Scoped to
+    // 'dragstart' rather than 'movestart' so a plain zoom (already
+    // handled below) is never double-rebuilt.
+    let panLabelsHidden = false;
+    let panSettleTimer = null;
+    let labelFadeTimer = null;
+    const PAN_SETTLE_MS = 200;
+    const LABEL_FADE_MS = 150; // matches interactive-map.css's transition duration
+
+    function removeFadedLabels() {
+        geojson_features.eachLayer(function (layer) {
+            if (layer.feature) layer.setText(null);
+        });
+    }
+
+    map.on('dragstart', function () {
+        panLabelsHidden = true;
+        if (panSettleTimer) {
+            clearTimeout(panSettleTimer);
+            panSettleTimer = null;
+        }
+        geojson_features.eachLayer(function (layer) {
+            if (layer.feature && layer._textNode) layer._textNode.style.opacity = '0';
+        });
+        if (labelFadeTimer) clearTimeout(labelFadeTimer);
+        labelFadeTimer = setTimeout(function () {
+            labelFadeTimer = null;
+            removeFadedLabels();
+        }, LABEL_FADE_MS);
+    });
+    map.on('moveend', function () {
+        if (!panLabelsHidden) return;
+        if (panSettleTimer) clearTimeout(panSettleTimer);
+        panSettleTimer = setTimeout(function () {
+            panSettleTimer = null;
+            panLabelsHidden = false;
+            updateTrailLabels();
+        }, PAN_SETTLE_MS);
+    });
 
     let labelsShown = map.getZoom() > 14;
     map.on('zoomend', function () {

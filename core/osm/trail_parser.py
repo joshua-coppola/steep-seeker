@@ -85,6 +85,12 @@ def identify_trails(ways, relations):
         # unflagged
         trail["hazardous"] = False
 
+        # multi_route is never OSM-derived either -- it's set by
+        # OSMProcessor._merge_multi_route_clusters when a branch/rejoin is
+        # detected across several ways, so every freshly parsed (single-way)
+        # trail starts False
+        trail["multi_route"] = False
+
         # if both gladed and ungroomed, only keep gladed
         if trail["gladed"] and trail["ungroomed"]:
             trail["ungroomed"] = False

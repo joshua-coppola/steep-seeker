@@ -34,6 +34,7 @@ def test_trail_from_db(trail_factory, db_path):
                 {TrailTable.official_rating},
                 {TrailTable.gladed},
                 {TrailTable.area},
+                {TrailTable.multi_route},
                 {TrailTable.ungroomed},
                 {TrailTable.park},
                 {TrailTable.hazardous},
@@ -50,7 +51,7 @@ def test_trail_from_db(trail_factory, db_path):
                 {TrailTable.steepest_2640ft},
                 {TrailTable.steepest_5280ft}
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             trail.trail_id,
@@ -61,6 +62,7 @@ def test_trail_from_db(trail_factory, db_path):
             trail.official_rating,
             trail.gladed,
             trail.area,
+            trail.multi_route,
             trail.ungroomed,
             trail.park,
             trail.hazardous,
@@ -107,6 +109,7 @@ def test_trail_to_db(trail_factory, db_path):
         TrailTable.official_rating: "Expert",
         TrailTable.gladed: 1,
         TrailTable.area: 0,
+        TrailTable.multi_route: 0,
         TrailTable.ungroomed: 0,
         TrailTable.park: 0,
         TrailTable.hazardous: 0,

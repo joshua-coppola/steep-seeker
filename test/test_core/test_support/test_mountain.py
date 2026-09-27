@@ -429,8 +429,12 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.name == "test"
     assert mountain.state == State("VT")
     assert mountain.direction == "w"
-    assert mountain.coordinates.x == pytest.approx(-72.73652, abs=1e-5)
-    assert mountain.coordinates.y == pytest.approx(43.41028, abs=1e-5)
+    # A multi_route trail's junction nodes are intentionally double-counted
+    # (once as the end of one branch, once as the start of the next -- see
+    # OSMProcessor._merge_multi_route_clusters' split_at_junctions), nudging
+    # the centroid by a couple of meters versus counting each node once
+    assert mountain.coordinates.x == pytest.approx(-72.73652, abs=5e-5)
+    assert mountain.coordinates.y == pytest.approx(43.41028, abs=5e-5)
     assert mountain.season_passes == season_passes
     assert mountain.url == url
     # FakeElevation descends 1 unit per point within each trail/area segment;
@@ -444,7 +448,9 @@ def test_mountain_from_osm(osm_file, db_path, monkeypatch):
     assert mountain.average_icy_days == 50.1
     assert mountain.average_rain == 10.01
     assert mountain.average_snow == 125.00
-    assert len(mountain.trails) == 151
+    # 151 raw trail ways, 11 of which fold into 7 multi_route trails -- see
+    # test_osm_processor.py's OSMProcessor-level assertions for detail
+    assert len(mountain.trails) == 140
     assert len(mountain.lifts) == 20
 
     # difficulty = steepest_pitch (steepest_150ft, see difficulty_pitch_field)

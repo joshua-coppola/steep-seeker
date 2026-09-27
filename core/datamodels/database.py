@@ -33,6 +33,7 @@ class TrailTable:
     official_rating: str = "official_rating"
     gladed: str = "gladed"
     area: str = "area"
+    multi_route: str = "multi_route"
     ungroomed: str = "ungroomed"
     park: str = "park"
     hazardous: str = "hazardous"

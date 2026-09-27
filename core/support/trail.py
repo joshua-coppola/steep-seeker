@@ -1,7 +1,7 @@
 from dataclasses import dataclass, fields
 from typing import Self
 
-from shapely import LineString, Polygon, wkt
+from shapely import LineString, MultiLineString, Polygon, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.datamodels.database import TrailTable
@@ -23,11 +23,12 @@ class Trail:
 
     trail_id: str
     mountain_id: str
-    geometry: LineString | Polygon
+    geometry: LineString | Polygon | MultiLineString
     name: str
     official_rating: str | None
     gladed: bool
     area: bool
+    multi_route: bool
     ungroomed: bool
     park: bool
     hazardous: bool
@@ -91,6 +92,7 @@ class Trail:
         )
         result[TrailTable.gladed] = bool(result[TrailTable.gladed])
         result[TrailTable.area] = bool(result[TrailTable.area])
+        result[TrailTable.multi_route] = bool(result[TrailTable.multi_route])
         result[TrailTable.ungroomed] = bool(result[TrailTable.ungroomed])
         result[TrailTable.park] = bool(result[TrailTable.park])
         result[TrailTable.hazardous] = bool(result[TrailTable.hazardous])
@@ -132,7 +134,7 @@ class Trail:
         if self.interior_geometry in ("", None) and self.area:
             raise ValueError("The following fields are missing: interior_geometry")
 
-        if self.route is None and self.area:
+        if self.route is None and (self.area or self.multi_route):
             raise ValueError("The following fields are missing: route")
 
         with cursor(db_path=db_path) as cur:
@@ -147,6 +149,7 @@ class Trail:
                     {TrailTable.official_rating},
                     {TrailTable.gladed},
                     {TrailTable.area},
+                    {TrailTable.multi_route},
                     {TrailTable.ungroomed},
                     {TrailTable.park},
                     {TrailTable.hazardous},
@@ -163,7 +166,7 @@ class Trail:
                     {TrailTable.steepest_2640ft},
                     {TrailTable.steepest_5280ft}
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT({TrailTable.trail_id}) DO UPDATE SET
                     {TrailTable.mountain_id} = excluded.{TrailTable.mountain_id},
                     {TrailTable.geometry} = excluded.{TrailTable.geometry},
@@ -173,6 +176,7 @@ class Trail:
                     {TrailTable.official_rating} = excluded.{TrailTable.official_rating},
                     {TrailTable.gladed} = excluded.{TrailTable.gladed},
                     {TrailTable.area} = excluded.{TrailTable.area},
+                    {TrailTable.multi_route} = excluded.{TrailTable.multi_route},
                     {TrailTable.ungroomed} = excluded.{TrailTable.ungroomed},
                     {TrailTable.park} = excluded.{TrailTable.park},
                     {TrailTable.hazardous} = excluded.{TrailTable.hazardous},
@@ -203,6 +207,7 @@ class Trail:
                 self.official_rating,
                 self.gladed,
                 self.area,
+                self.multi_route,
                 self.ungroomed,
                 self.park,
                 self.hazardous,

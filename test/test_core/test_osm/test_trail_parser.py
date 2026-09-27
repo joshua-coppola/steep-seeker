@@ -17,6 +17,7 @@ def test_identify_trails(osm_file):
         "official_rating": [],
         "gladed": [],
         "area": [],
+        "multi_route": [],
         "ungroomed": [],
         "park": [],
         "hazardous": [],

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "Trails"
     "official_rating" TEXT,
     "gladed" BOOLEAN NOT NULL,
     "area" BOOLEAN NOT NULL,
+    "multi_route" BOOLEAN NOT NULL,
     "ungroomed" BOOLEAN NOT NULL,
     "park" BOOLEAN NOT NULL,
     "hazardous" BOOLEAN NOT NULL,

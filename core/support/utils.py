@@ -222,18 +222,125 @@ def space_line_points_evenly(
 
     # Convert feet to meters because EPSG:5070 is in meters
     spacing_meters = spacing_feet / 3.28084
-    num_points = ceil(line_proj.length / spacing_meters)
+    
+    num_points = max(ceil(line_proj.length / spacing_meters), 1)
     distances = np.arange(num_points + 1) * spacing_meters
 
-    # Vectorized (one GEOS call for every distance, one coordinate-array
-    # pull) instead of building a Point per distance and re-parsing each
-    # one's .coords in a Python loop -- ~3x faster for a typical trail's
-    # point count, and this runs once per trail during every OSM ingest.
     points_proj = shapely.line_interpolate_point(line_proj, distances)
     line_proj_evenly = shapely.LineString(shapely.get_coordinates(points_proj))
     line_geo = shapely.ops.transform(_TO_COORDINATES_PROJ.transform, line_proj_evenly)
 
     return line_geo
+
+
+# Degrees of Douglas-Peucker tolerance used to thin trail/lift geometry
+# before drawing a full-detail view (the static map, map.jinja, and the
+# interactive Leaflet map, which both show a mountain at comparable
+# on-screen scale) -- ~0.5m at mid-latitudes.
+MAP_SIMPLIFY_TOLERANCE = 0.000005
+
+# ~11m at mid-latitudes -- coarser, for the label-free thumbnail, which
+# only ever renders small
+THUMBNAIL_SIMPLIFY_TOLERANCE = 0.0001
+
+
+def simplify_geometry(
+    geometry: shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+    tolerance: float | None,
+) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
+    """
+    Thins a trail/lift geometry via Douglas-Peucker simplification. Returns 
+    geometry unchanged when tolerance is falsy.
+
+    Shared by maps.py's static SVG rendering and routes.py's interactive
+    Leaflet GeoJSON, so both draw from the same mechanism; each picks its
+    own tolerance constant for its own rendering context.
+    """
+    if not tolerance:
+        return geometry
+    return geometry.simplify(tolerance, preserve_topology=True)
+
+
+# Maximum allowed gap between elevation samples in feet for the elevation profile.
+ELEVATION_PROFILE_MAX_GAP_FEET = 40
+
+
+def _segment_meters(
+    a: tuple[float, float, float], b: tuple[float, float, float]
+) -> float:
+    return hs.haversine((a[1], a[0]), (b[1], b[0]), unit=hs.Unit.METERS)
+
+
+def _simplify_points_max_gap(
+    points: list[tuple[float, float, float]],
+    tolerance: float | None,
+    max_gap_feet: float,
+) -> list[tuple[float, float, float]]:
+    if not tolerance or len(points) < 3:
+        return points
+
+    simplified = (
+        shapely.LineString(points).simplify(tolerance, preserve_topology=True).coords
+    )
+    
+    kept = set()
+    cursor = 0
+    for point in simplified:
+        while cursor < len(points) and points[cursor][:2] != point[:2]:
+            cursor += 1
+        if cursor >= len(points):
+            return list(simplified)
+        kept.add(cursor)
+        cursor += 1
+
+    max_gap_meters = max_gap_feet / METERS_TO_FEET
+    result = [points[0]]
+    last_kept_index = 0
+    accumulated_m = 0.0
+    for i in range(1, len(points)):
+        point = points[i]
+        segment_m = _segment_meters(points[i - 1], point)
+        if accumulated_m + segment_m >= max_gap_meters and last_kept_index != i - 1:
+            result.append(points[i - 1])
+            last_kept_index = i - 1
+            accumulated_m = segment_m
+        else:
+            accumulated_m += segment_m
+        if i in kept:
+            result.append(point)
+            last_kept_index = i
+            accumulated_m = 0.0
+    return result
+
+
+def simplify_geometry_max_gap(
+    geometry: shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+    tolerance: float | None,
+    max_gap_feet: float = ELEVATION_PROFILE_MAX_GAP_FEET,
+) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
+    """
+    Like simplify_geometry, but re-inserts points
+    from the original geometry wherever plan-view (lon/lat) Douglas-Peucker
+    simplification alone would leave two consecutive points more than
+    max_gap_feet apart.
+    """
+    if geometry.geom_type == "Polygon":
+        ring = _simplify_points_max_gap(
+            list(geometry.exterior.coords), tolerance, max_gap_feet
+        )
+        return shapely.Polygon(ring)
+    if geometry.geom_type == "MultiLineString":
+        return shapely.MultiLineString(
+            [
+                shapely.LineString(
+                    _simplify_points_max_gap(list(line.coords), tolerance, max_gap_feet)
+                )
+                for line in geometry.geoms
+            ]
+        )
+    return shapely.LineString(
+        _simplify_points_max_gap(list(geometry.coords), tolerance, max_gap_feet)
+    )
 
 
 def space_polygon_exterior_points_evenly(
