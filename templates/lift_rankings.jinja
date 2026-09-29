@@ -151,12 +151,12 @@ Lift Rankings - Compare Chairlifts Across the USA
             {% if not '' == lift.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}">
+                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">
                             {{lift.name}}
                         </a></p>
                 </td>
                 <td>
-                    <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}">{{lift.resort_name}}</a>
+                    <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">{{lift.resort_name}}</a>
                     {% for season_pass in lift.season_passes %}
                     <img src="icons/{{season_pass.value}}.png" class="pass-icon" alt="{{season_pass.value}}"/>
                     {% endfor %}
@@ -198,7 +198,7 @@ Lift Rankings - Compare Chairlifts Across the USA
             <table class="header">
                 <tr>
                     <td>
-                        {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}">
+                        {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">
                                 {{lift.name}}, {{lift.resort_name}} ({{lift.state.value}})
                             </a>
                             {% for season_pass in lift.season_passes %}

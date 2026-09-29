@@ -644,6 +644,16 @@ function run_map(trails, map, editable = false, editQuery = null){
     // above/below the zoom-14 threshold reflect where the map actually lands.
     updateTrailLabels();
 
+    // A trail/lift rankings row can deep-link here with e.g.
+    // ?select=trail:w123 -- reuse the same sidebar selection machinery so
+    // the map lands zoomed in on and highlighting that specific feature
+    // instead of the whole resort.
+    const selectParam = new URLSearchParams(window.location.search).get('select');
+    if (selectParam) {
+        const [selectKind, selectId] = selectParam.split(':');
+        if (selectKind && selectId) selectFeature(selectKind, selectId);
+    }
+
     map.on('dragstart', function () { map.almostOver.disable(); });
     map.on('dragend', function () { map.almostOver.enable(); });
 

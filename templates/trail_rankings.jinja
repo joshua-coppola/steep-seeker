@@ -132,7 +132,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% if not '' == trail.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}">
+                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
                             {{trail.name}}
                             {% if trail.gladed == True %}
                             <span class="icon gladed"></span>
@@ -146,7 +146,7 @@ Trail Rankings - Find the Hardest Trails in the USA
                         </a></p>
                 </td>
                 <td>
-                    <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}">{{trail.resort_name}}</a>
+                    <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">{{trail.resort_name}}</a>
                     {% for season_pass in trail.season_passes %}
                     <img src="icons/{{season_pass.value}}.png" class="pass-icon" alt="{{season_pass.value}}"/>
                     {% endfor %}
@@ -180,7 +180,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             <table class="header">
                 <tr>
                     <td>
-                        <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}">
+                        <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
                                 {{trail.name}}, {{trail.resort_name}} ({{trail.state.value}})
                                 {% if trail.gladed == True %}
                                 <span class="icon gladed"></span>
