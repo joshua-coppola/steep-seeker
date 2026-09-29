@@ -60,10 +60,19 @@ main > * {
 .mountain-section {
     font-size: 1rem;
 }
+.mountain-section ul {
+    margin-top: 8px;
+}
 .mountain-section ul li {
-    margin-top: 16px;
+    padding: 8px 0;
     color: var(--color-primary);
     display: flex;
+}
+.sidebar-item {
+    cursor: pointer;
+}
+.sidebar-item:hover {
+    background-color: var(--color-map-background);
 }
 
 .sidebar-badge {

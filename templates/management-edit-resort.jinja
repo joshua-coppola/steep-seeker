@@ -234,7 +234,7 @@ Edit Resort
             <li><span class="sidebar-badge"><span class="icon hazardous"></span></span>Hazardous</li>
             {% for trail in trails %}
             {% if not '' == trail.name %}
-            <li>
+            <li class="sidebar-item" data-item-id="{{trail.trail_id}}" data-kind="trail">
                 <span class="sidebar-badge">
                     {{trail.difficulty}}<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
                 </span>
@@ -252,7 +252,7 @@ Edit Resort
         <ul>
             {% for lift in lifts %}
             {% if not '' == lift.name %}
-            <li>
+            <li class="sidebar-item" data-item-id="{{lift.lift_id}}" data-kind="lift">
                 <span class="sidebar-badge">
                     {% if lift.occupancy %}
                     {% if lift.occupancy <= 2 %}
