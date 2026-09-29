@@ -322,11 +322,39 @@ function run_map(trails, map, editable = false, editQuery = null){
         };
     }
 
+    // Matches trail_color() in core/support/utils.py -- glyph shapes mirror
+    // the site's standard difficulty icons (circle/square/diamond).
+    const RATING_GLYPHS = {
+        green: {glyph: '●', fill: 'green'},
+        royalblue: {glyph: '■', fill: 'royalblue'},
+        black: {glyph: '◆', fill: 'black'},
+        red: {glyph: '◆◆', fill: 'red', letterSpacing: '-0.15em'},
+        gold: {glyph: '◆◆', fill: 'gold', letterSpacing: '-0.15em'},
+    };
+
+    function ratingRun(feature) {
+        // Lifts get color: 'grey' (not a key here), so they're naturally
+        // excluded -- no need to check popupData.kind, which an area/
+        // multi-route trail's route-label feature doesn't carry (see
+        // _trail_features in routes.py).
+        return RATING_GLYPHS[feature.properties.color] || null;
+    }
+
     function applyLabel(layer, feature) {
         if (!feature.properties || !feature.properties.label) return;
         layer.setText(null);
         if (map.getZoom() > 14) {
-            layer.setText(feature.properties.label, {
+            const rating = ratingRun(feature);
+            const iconAttributes = rating && rating.letterSpacing
+                ? {fill: rating.fill, 'letter-spacing': rating.letterSpacing}
+                : rating && {fill: rating.fill};
+            const text = rating
+                ? [
+                    {text: rating.glyph, attributes: iconAttributes},
+                    {text: feature.properties.label, attributes: {dx: '0.15em'}},
+                ]
+                : feature.properties.label;
+            layer.setText(text, {
                 offset: -5,
                 center: true,
                 orientation: feature.properties.orientation,
