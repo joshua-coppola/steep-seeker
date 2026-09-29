@@ -44,7 +44,7 @@ function run_map(trails, map, editable = false, editQuery = null){
                 lastToggle = {id: id, at: now};
                 if (ids.has(id)) {
                     ids.delete(id);
-                    geojson_features.resetStyle(layer);
+                    restyleLayer(layer);
                 } else {
                     ids.add(id);
                     layer.setStyle(style);
@@ -90,6 +90,91 @@ function run_map(trails, map, editable = false, editQuery = null){
         return null;
     }
 
+    // Sidebar-driven selection: clicking a trail/lift/hike-to row in the
+    // mountain sidebar zooms to and highlights the corresponding layer.
+    // Namespaced by kind since trail/lift ids aren't guaranteed distinct.
+    const idToLayer = new Map();
+    const featureKey = (kind, id) => kind + ':' + id;
+    let selectedLayer = null;
+    let selectionShadow = null;
+
+    // An active bulk-edit flag always wins over a layer's default style --
+    // it's the current admin workflow signal.
+    function restyleLayer(layer) {
+        if (editable && isFlagged(layer)) {
+            layer.setStyle(flaggedStyle(layer));
+            return;
+        }
+        geojson_features.resetStyle(layer);
+    }
+
+    function closeMobileSidebarIfOpen() {
+        const panel = document.getElementById('mountain-details');
+        if (panel && window.matchMedia('(max-width: 950px)').matches) {
+            panel.style.display = 'none';
+        }
+    }
+
+    // Selection is drawn as a soft glow underneath the feature's own
+    // geometry -- the same wide/blurred/translucent treatment area and
+    // multi-route trails already use for their route line (see
+    // 'route-line-soft' in style()/interactive-map.css) -- rather than
+    // recoloring the feature itself.
+    function clearSelectionShadow() {
+        if (selectionShadow) {
+            map.removeLayer(selectionShadow);
+            selectionShadow = null;
+        }
+    }
+
+    const SELECTION_SHADOW_COLOR = '#00c2d1';
+
+    function addSelectionShadow(layer) {
+        const shadowStyle = {
+            color: SELECTION_SHADOW_COLOR,
+            weight: 16,
+            opacity: 0.25,
+            interactive: false,
+            lineCap: 'round',
+            lineJoin: 'round',
+            className: 'route-line-soft',
+            fill: false,
+        };
+        selectionShadow = layer instanceof L.Polygon
+            ? L.polygon(layer.getLatLngs(), shadowStyle)
+            : L.polyline(layer.getLatLngs(), shadowStyle);
+        selectionShadow.addTo(map);
+    }
+
+    function selectFeature(kind, id) {
+        const layer = idToLayer.get(featureKey(kind, id));
+        if (!layer) return;
+        map.closePopup();
+        selectedLayer = layer;
+        clearSelectionShadow();
+        addSelectionShadow(layer);
+        const bounds = layer.getBounds();
+        const opts = {maxZoom: 17, padding: [40, 40]};
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            map.fitBounds(bounds, opts);
+        } else {
+            map.flyToBounds(bounds, {...opts, duration: 0.75});
+        }
+        closeMobileSidebarIfOpen();
+    }
+
+    function clearSelection() {
+        if (!selectedLayer) return;
+        selectedLayer = null;
+        clearSelectionShadow();
+    }
+
+    document.addEventListener('click', function (e) {
+        const item = e.target.closest('.sidebar-item');
+        if (!item) return;
+        selectFeature(item.dataset.kind, item.dataset.itemId);
+    });
+
     // Define two basemaps
     const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
@@ -113,7 +198,8 @@ function run_map(trails, map, editable = false, editQuery = null){
             const button = L.DomUtil.create('button');
             button.innerHTML = 'Satellite';
             button.className = 'basemap-toggle-btn';
-            
+            L.DomEvent.disableClickPropagation(button);
+
             button.onclick = function() {
                 if (currentBasemap === 'topo') {
                     map.removeLayer(topoBasemap);
@@ -322,11 +408,39 @@ function run_map(trails, map, editable = false, editQuery = null){
         };
     }
 
+    // Matches trail_color() in core/support/utils.py -- glyph shapes mirror
+    // the site's standard difficulty icons (circle/square/diamond).
+    const RATING_GLYPHS = {
+        green: {glyph: '●', fill: 'green'},
+        royalblue: {glyph: '■', fill: 'royalblue'},
+        black: {glyph: '◆', fill: 'black'},
+        red: {glyph: '◆◆', fill: 'red', letterSpacing: '-0.15em'},
+        gold: {glyph: '◆◆', fill: 'gold', letterSpacing: '-0.15em'},
+    };
+
+    function ratingRun(feature) {
+        // Lifts get color: 'grey' (not a key here), so they're naturally
+        // excluded -- no need to check popupData.kind, which an area/
+        // multi-route trail's route-label feature doesn't carry (see
+        // _trail_features in routes.py).
+        return RATING_GLYPHS[feature.properties.color] || null;
+    }
+
     function applyLabel(layer, feature) {
         if (!feature.properties || !feature.properties.label) return;
         layer.setText(null);
         if (map.getZoom() > 14) {
-            layer.setText(feature.properties.label, {
+            const rating = ratingRun(feature);
+            const iconAttributes = rating && rating.letterSpacing
+                ? {fill: rating.fill, 'letter-spacing': rating.letterSpacing}
+                : rating && {fill: rating.fill};
+            const text = rating
+                ? [
+                    {text: rating.glyph, attributes: iconAttributes},
+                    {text: feature.properties.label, attributes: {dx: '0.15em'}},
+                ]
+                : feature.properties.label;
+            layer.setText(text, {
                 offset: -5,
                 center: true,
                 orientation: feature.properties.orientation,
@@ -508,6 +622,10 @@ function run_map(trails, map, editable = false, editQuery = null){
             if (editable && isFlagged(layer)) {
                 layer.setStyle(flaggedStyle(layer));
             }
+            const props = layer.feature && layer.feature.properties;
+            if (props && props.item_id && props.popupData) {
+                idToLayer.set(featureKey(props.popupData.kind, props.item_id), layer);
+            }
         });
     }
 
@@ -525,6 +643,16 @@ function run_map(trails, map, editable = false, editQuery = null){
     // initial zoom (13, set in the template) -- resync now so labels drawn
     // above/below the zoom-14 threshold reflect where the map actually lands.
     updateTrailLabels();
+
+    // A trail/lift rankings row can deep-link here with e.g.
+    // ?select=trail:w123 -- reuse the same sidebar selection machinery so
+    // the map lands zoomed in on and highlighting that specific feature
+    // instead of the whole resort.
+    const selectParam = new URLSearchParams(window.location.search).get('select');
+    if (selectParam) {
+        const [selectKind, selectId] = selectParam.split(':');
+        if (selectKind && selectId) selectFeature(selectKind, selectId);
+    }
 
     map.on('dragstart', function () { map.almostOver.disable(); });
     map.on('dragend', function () { map.almostOver.enable(); });
@@ -586,6 +714,8 @@ function run_map(trails, map, editable = false, editQuery = null){
         if (editable && (deleteMode || modifierMode)) map.closePopup();
     });
 
+    map.on('click', function () { clearSelection(); });
+
     map.on('almost:over', function (e) {
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
         e.layer.setStyle({weight: 10, opacity: .7});
@@ -593,11 +723,7 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     map.on('almost:out', function (e){
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
-        if (editable && isFlagged(e.layer)) {
-            e.layer.setStyle(flaggedStyle(e.layer));
-            return;
-        }
-        e.layer.setStyle({weight: 4, opacity: 1});
+        restyleLayer(e.layer);
     });
 
     map.on('almost:click', function (e) {
@@ -620,6 +746,7 @@ function run_map(trails, map, editable = false, editQuery = null){
         div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
         div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
         div.innerHTML += '<span>- - - Gladed</span><br>';
+        L.DomEvent.disableClickPropagation(div);
         return div;
     };
 

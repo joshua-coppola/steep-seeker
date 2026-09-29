@@ -187,7 +187,13 @@ var PolylineTextPath = {
             return this;
         }
 
-        text = text.replace(/ /g, '\u00A0');  // Non breakable spaces
+        // `text` is normally a plain string, but may also be an array of
+        // {text, attributes} runs so a caller can style part of the label
+        // (e.g. a colored rating glyph) differently from the rest.
+        var runs = (Array.isArray(text) ? text : [{text: text}]).map(function (run) {
+            return {text: run.text.replace(/ /g, '\u00A0'), attributes: run.attributes || {}};  // Non breakable spaces
+        });
+        var plainText = runs.map(function (run) { return run.text; }).join('');
         var id = 'pathdef-' + L.Util.stamp(this);
         var svg = this._renderer._container;
         this._path.setAttribute('id', id);
@@ -211,7 +217,7 @@ var PolylineTextPath = {
         var window_ = null;
         var flipped = false;
 
-        var metricsKey = text + '|' + (options.attributes['font-size'] || '') +
+        var metricsKey = plainText + '|' + (options.attributes['font-size'] || '') +
             '|' + (options.attributes['font-family'] || '') +
             '|' + (options.attributes['font-weight'] || '');
         var cachedMetrics = (this._textMetricsCache && this._textMetricsCache.key === metricsKey)
@@ -225,7 +231,7 @@ var PolylineTextPath = {
                 var measureNode = L.SVG.create('text');
                 for (var mAttr in options.attributes)
                     measureNode.setAttribute(mAttr, options.attributes[mAttr]);
-                measureNode.appendChild(document.createTextNode(text));
+                measureNode.appendChild(document.createTextNode(plainText));
                 svg.appendChild(measureNode);
                 measuredLength = measureNode.getComputedTextLength();
                 svg.removeChild(measureNode);
@@ -260,13 +266,14 @@ var PolylineTextPath = {
             var pattern = L.SVG.create('text');
             for (var attr in options.attributes)
                 pattern.setAttribute(attr, options.attributes[attr]);
-            pattern.appendChild(document.createTextNode(text));
+            pattern.appendChild(document.createTextNode(plainText));
             svg.appendChild(pattern);
             var alength = pattern.getComputedTextLength();
             svg.removeChild(pattern);
 
-            /* Create string as long as path */
-            text = new Array(Math.ceil(isNaN(this._path.getTotalLength() / alength) ? 0 : this._path.getTotalLength() / alength)).join(text);
+            /* Create string as long as path, discarding any per-run styling */
+            var repeatCount = Math.ceil(isNaN(this._path.getTotalLength() / alength) ? 0 : this._path.getTotalLength() / alength);
+            runs = [{text: new Array(repeatCount).join(plainText), attributes: {}}];
         }
 
         /* Put it along the path using textPath */
@@ -279,7 +286,13 @@ var PolylineTextPath = {
         textNode.setAttribute('dy', dy);
         for (var attr in options.attributes)
             textNode.setAttribute(attr, options.attributes[attr]);
-        textPath.appendChild(document.createTextNode(text));
+        runs.forEach(function (run) {
+            var tspan = L.SVG.create('tspan');
+            for (var rAttr in run.attributes)
+                tspan.setAttribute(rAttr, run.attributes[rAttr]);
+            tspan.appendChild(document.createTextNode(run.text));
+            textPath.appendChild(tspan);
+        });
         textNode.appendChild(textPath);
         this._textNode = textNode;
 
