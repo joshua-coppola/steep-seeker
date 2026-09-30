@@ -133,7 +133,7 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
                 {{mountain.name}}, {{mountain.state.value}}
             </a>
             {% for season_pass in mountain.season_passes %}
-            <img src="icons/{{season_pass.value}}.png" class="pass-icon"/>
+            <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>
             {% endfor %}
         </p>
 
@@ -150,7 +150,7 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
                 {{mountain.name}}, {{mountain.state.value}}
             </a>
             {% for season_pass in mountain.season_passes %}
-            <img src="icons/{{season_pass.value}}.png" class="pass-icon"/>
+            <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>
             {% endfor %}
         </p>
         <div class="bar-div"><span class="ranking-bar" title="{{mountain.name}} Beginner Friendliness: {{mountain.beginner_friendliness}}"

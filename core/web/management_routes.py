@@ -38,7 +38,7 @@ SEASON_PASS_FORM_FIELDS = {
     "ikon": Season_Pass.IKON,
     "mountain_collective": Season_Pass.MOUNTAIN_COLLECTIVE,
     "indy": Season_Pass.INDY,
-    "cooper": Season_Pass.COOPER,
+    "snow_pass": Season_Pass.SNOW_PASS,
     "powder_alliance": Season_Pass.POWDER_ALLIANCE,
     "freedom": Season_Pass.FREEDOM,
     "power": Season_Pass.POWER,
@@ -128,7 +128,13 @@ def management_add_resort():
             state_dir = os.path.join(OSM_DIR, mountain.state.value)
             os.makedirs(state_dir, exist_ok=True)
             final_osm_path = os.path.join(state_dir, f"{mountain.name}.osm")
-            if os.path.abspath(osm_path) != os.path.abspath(final_osm_path):
+            if os.path.abspath(osm_path) != os.path.abspath(
+                final_osm_path
+            ) and os.path.exists(osm_path):
+                # osm_path can already be gone if a duplicate/double-submitted
+                # request for the same resort raced this one and already
+                # moved it -- to_db() below is an upsert keyed on
+                # mountain_id, so it's safe to just continue in that case
                 os.replace(osm_path, final_osm_path)
 
             mountain.to_db(db_path)

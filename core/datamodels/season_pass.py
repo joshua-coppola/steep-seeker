@@ -7,6 +7,6 @@ class Season_Pass(Enum):
     INDY = "Indy"
     POWDER_ALLIANCE = "Powder Alliance"
     MOUNTAIN_COLLECTIVE = "Mountain Collective"
-    COOPER = "Cooper"
+    SNOW_PASS = "Snow Pass"
     FREEDOM = "Freedom"
     POWER = "Power"
