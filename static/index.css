@@ -1,3 +1,7 @@
+main {
+  --center-width: 1300px;
+}
+
 footer {
     position: fixed;
 }

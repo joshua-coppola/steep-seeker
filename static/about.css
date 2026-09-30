@@ -108,6 +108,22 @@ main {
     text-align: center;
 }
 
+.social-links {
+    display: inline-flex;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.social-links img {
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+}
+
+.social-links a:hover img {
+    opacity: 1;
+}
+
 @media screen and (max-width: 800px) {
     .blurb {
         display: flex;

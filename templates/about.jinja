@@ -17,13 +17,24 @@ About Steep Seeker
     <section class="blurb">
         <div></div>
         <div>
-            <p>Steep Seeker was created with the intention of providing fellow skiers 
-            with a platform to easily and reliably compare trails between mountains. 
-            While ski resorts typically follow the standardized terms of “Green, Blue, 
-            Black and Double Black Diamond” trails, what one ski resort deems as a 
-            black diamond may be very different from another resort. The standardized 
-            rating scale Steep Seeker utilizes aims to provide an all encompassing 
+            <p>Steep Seeker was created with the intention of providing fellow skiers
+            with a platform to easily and reliably compare trails between mountains.
+            While ski resorts typically follow the standardized terms of “Green, Blue,
+            Black and Double Black Diamond” trails, what one ski resort deems as a
+            black diamond may be very different from another resort. The standardized
+            rating scale Steep Seeker utilizes aims to provide an all encompassing
             rating across the board.</p>
+
+            <p>Want to join the community? Come chat about the slopes and get updates
+            first.</p>
+            <div class="social-links">
+                <a href="https://discord.gg/yk9BKW8yFn" target="_blank" rel="noopener" aria-label="Join the Steepseeker Discord">
+                    <img alt="" height="28" width="28" src="/icons/discord.svg" />
+                </a>
+                <a href="https://www.instagram.com/steepseeker/" target="_blank" rel="noopener" aria-label="Follow Steepseeker on Instagram">
+                    <img alt="" height="28" width="28" src="/icons/instagram.svg" />
+                </a>
+            </div>
         </div>
     </section>
     <section class="blurb blurb-dark">
@@ -198,17 +209,65 @@ About Steep Seeker
             missing tags. For example, I’d love to have more resorts with proper tagging 
             for moguls so I can add them to the model. </p>
 
-            <p>If you have made it this far, you will likely enjoy the
-            <a href="https://discord.gg/yk9BKW8yFn">Steepseeker Discord</a>.
-            Join other like minded skier and snowboarders and chat about the slopes.
-            I also will post updates and announcements on there first.
-            </p>
+            <h2>Stay Connected</h2>
+            <p>Follow along for updates, or come chat about the slopes.</p>
+            <div class="social-links">
+                <a href="https://discord.gg/yk9BKW8yFn" target="_blank" rel="noopener" aria-label="Join the Steepseeker Discord">
+                    <img alt="" height="32" width="32" src="/icons/discord.svg" />
+                </a>
+                <a href="https://www.instagram.com/steepseeker/" target="_blank" rel="noopener" aria-label="Follow Steepseeker on Instagram">
+                    <img alt="" height="32" width="32" src="/icons/instagram.svg" />
+                </a>
+            </div>
         </div>
     </section>
     <section class="blurb qa">
         <div></div>
         <div>
             <h2>Changelog</h2>
+            <h3>V2.0 Sep 29 2026</h3>
+
+            <p>Big changes! Over the last year I have been working on a full rewrite 
+            of the backend to bring much needed code quality improvements as well as 
+            greater scalability to add new features and performance improvements. And 
+            at long last, it’s finally done! While the visuals of the site are largely 
+            similar, behind the scenes many things are different. Ratings have been 
+            overhauled, and difficulty is now defined by the steepest 150 feet (and 
+            all the steepest pitches being in feet is also new), and the ratings and 
+            modifiers have had their values tweaked to improve accuracy. Expect 
+            ratings to be broadly the same as before, but for sustained pitches to be 
+            slightly more important (the previous ratings were based on the steepest 
+            30 meter or ~100 foot section). Beyond reweighting the importance of 
+            whether a trail is ungroomed or gladed, I also added in a new modifier: 
+            Hazardous. This is for trails that have extreme characteristics that don’t 
+            reflect in the current model like the entrance to Corbet’s Couloir. Expect 
+            very few trails to have this applied. Full change log (or as full as I can 
+            remember, so many little things to remember over 1 year of work):</p>
+            <ul class="bullets">
+                <li>New backend</li>
+                <li>Vastly improved workflow for updating/modifying resorts (helps me 
+                update mountains faster, cutting the time needed to refresh all the 
+                resorts from over a week of solid work to one day)</li>
+                <li>New Ratings weightings</li>
+                <li>Hazardous modifier</li>
+                <li>More information about Lifts on Lift Rankings</li>
+                <li>Improved interactive map performance</li>
+                <li>Improved readability of interactive map labels & added difficulty 
+                symbols</li>
+                <li>You can now click on trails on the mountain sidebar and have them 
+                be highlighted on the interactive map</li>
+                <li>Clicking a trail on the trail rankings page now opens the map with 
+                the trail highlighted</li>
+                <li>Brought in some help from a friend of mine to word smith my some 
+                of my writing, thanks again for the help!</li>
+                <li>Lots of small UI/UX tweaks</li>
+                <li>Refreshed all the mountains for the new season! (And had to do it 
+                twice because I may have messed up and lost the original copy…)</li>
+            </ul>
+
+            <p>Now that I have this off my plate, I can redirect more of my focus to 
+            implementing the fun features! Expect lots more where this came from, 
+            with hopefully much less lag time between now and the next update!</p>
 
             <h3>v1.20 Feb 16 2026</h3>
             <p>You may have noticed a few things trickling onto the site over the last month or so
