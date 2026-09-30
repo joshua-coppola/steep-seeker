@@ -158,7 +158,7 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <td>
                     <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">{{lift.resort_name}}</a>
                     {% for season_pass in lift.season_passes %}
-                    <img src="icons/{{season_pass.value}}.png" class="pass-icon" alt="{{season_pass.value}}"/>
+                    <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
                     {% endfor %}
                 </td>
                 <td>{{lift.state.value}}</td>
@@ -202,7 +202,7 @@ Lift Rankings - Compare Chairlifts Across the USA
                                 {{lift.name}}, {{lift.resort_name}} ({{lift.state.value}})
                             </a>
                             {% for season_pass in lift.season_passes %}
-                            <img src="icons/{{season_pass.value}}.png" class="pass-icon" alt="{{season_pass.value}}"/>
+                            <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
                             {% endfor %}
                     </td>
 

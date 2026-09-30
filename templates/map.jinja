@@ -28,7 +28,7 @@
                 {% if mountain.season_passes %}
                 <li>Passes:</li>
                 {% for season_pass in mountain.season_passes %}
-                <li><img alt="{{season_pass.value}}" src="/icons/{{season_pass.value}}.png" class="pass-icon"/>{{season_pass.value}}</li>
+                <li><img alt="{{season_pass.value}}" src="/icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>{{season_pass.value}}</li>
                 {% endfor %}
                 {% endif %}
                 <li>Trail Count: {{mountain.trail_count()}}</li>
