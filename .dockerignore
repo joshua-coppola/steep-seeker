@@ -1,0 +1,42 @@
+# Dev/VCS/tooling cruft -- not needed in the image
+.git
+.gitignore
+.pre-commit-config.yaml
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+test/
+scripts/
+README.md
+CLAUDE.md
+api-endpoints-steepseeker.com.json
+package.json
+package-lock.json
+startup.bat
+startup.sh
+pyproject.toml
+requirements.in
+requirements.txt
+
+# Management app: served by a separate process and intentionally excluded
+# from the public site image.
+management.py
+core/web/management_app.py
+core/web/management_routes.py
+core/support/maps.py
+templates/management.jinja
+templates/management-add-resort.jinja
+templates/management-edit-resort.jinja
+templates/management-bulk-operations.jinja
+static/management-edit-resort.css
+static/management-edit-resort.js
+
+# data/ holds ~1GB of ingestion artifacts (raw OSM extracts, the elevation
+# cache DB, backups, old DB snapshots, access logs, the source spreadsheet)
+# that the running public site never touches -- only db.db ships in the
+# image. Elevation/Weather/OSM fetch code is only reachable via ingestion
+# (Mountain.from_osm), which the public app never calls.
+data/*
+!data/db.db

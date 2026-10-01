@@ -1,0 +1,875 @@
+import os
+from dataclasses import dataclass
+from datetime import UTC, datetime
+
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from rich.progress import track
+
+from core.connectors.elevation_api import Elevation
+from core.connectors.osm_api import OSM
+from core.datamodels.season_pass import Season_Pass
+from core.datamodels.state import State
+from core.support.blacklist import add_to_blacklist, is_blacklisted
+from core.support.lift import Lift
+from core.support.maps import create_map, create_thumbnail
+from core.support.mountain import Mountain
+from core.support.mountain_query import list_mountains
+from core.support.trail import Trail
+from core.support.utils import (
+    difficulty_pitch_field,
+    display_beginner_friendliness,
+    get_bounding_box,
+    get_trail_difficulty,
+    round_degrees,
+    weather_modifier_from_trail,
+)
+from core.support.weather_calibration import recalibrate
+from core.web.routes import (
+    NavigationLink,
+    _build_geojson,
+    _parse_state,
+    _sorted_trails_and_lifts,
+    _weather_modifier,
+)
+from core.web.routes import nav_links as public_nav_links
+
+SEASON_PASS_FORM_FIELDS = {
+    "epic": Season_Pass.EPIC,
+    "ikon": Season_Pass.IKON,
+    "mountain_collective": Season_Pass.MOUNTAIN_COLLECTIVE,
+    "indy": Season_Pass.INDY,
+    "snow_pass": Season_Pass.SNOW_PASS,
+    "powder_alliance": Season_Pass.POWDER_ALLIANCE,
+    "freedom": Season_Pass.FREEDOM,
+    "power": Season_Pass.POWER,
+}
+
+management_web = Blueprint("management_web", __name__)
+
+# the public nav plus a Management link -- kept separate from
+# core.web.routes.nav_links so the public app (app_new.py) never shows a
+# link into the admin pages, even though this blueprint can be registered
+# alongside the public one (see management_app.py)
+nav_links = [
+    *public_nav_links,
+    NavigationLink("Management", "management", "/management-add-resort"),
+]
+
+
+@dataclass
+class ManagementLink:
+    title: str
+    to: str
+
+
+management_links = [
+    ManagementLink("Add Resort", "/management-add-resort"),
+    ManagementLink("Edit Resort", "/management-edit-resort"),
+    ManagementLink("Bulk Operations", "/management-bulk-operations"),
+]
+
+OSM_DIR = "data/osm"
+OSM_OLD_DIR = "data/osm-old"
+
+
+def _available_osm_files(db_path: str) -> list[str]:
+    """
+    Returns "<state>/<name>" identifiers (without .osm) for every OSM file
+    under data/osm/<state>/ that isn't already saved as a mountain in the
+    DB, for the add-resort dropdown.
+    """
+    existing_mountains, _ = list_mountains(db_path=db_path)
+    existing = {
+        (mountain.state.value, mountain.name) for mountain in existing_mountains
+    }
+
+    available = []
+    if not os.path.isdir(OSM_DIR):
+        return available
+
+    for state_dir in sorted(os.listdir(OSM_DIR)):
+        state_path = os.path.join(OSM_DIR, state_dir)
+        if not os.path.isdir(state_path):
+            continue
+        for filename in sorted(os.listdir(state_path)):
+            if not filename.endswith(".osm"):
+                continue
+            name = filename[: -len(".osm")]
+            if (state_dir, name) in existing:
+                continue
+            available.append(f"{state_dir}/{name}")
+
+    return available
+
+
+@management_web.route("/management-add-resort", methods=["GET", "POST"])
+def management_add_resort():
+    if request.method == "POST":
+        osm_path = None
+
+        file = request.files.get("file")
+        if file and file.filename and file.filename.endswith(".osm"):
+            # saved flat for now; moved into data/osm/<state>/ below once
+            # the file's own state is known, matching how every other
+            # resort's OSM file is organized
+            osm_path = os.path.join(OSM_DIR, file.filename)
+            file.save(osm_path)
+        else:
+            selection = request.form.get("q")
+            if selection and selection != "none":
+                osm_path = os.path.join(OSM_DIR, f"{selection}.osm")
+
+        if osm_path:
+            db_path = current_app.config["DATABASE_PATH"]
+            mountain = Mountain.from_osm(
+                osm_path, season_passes=[], url="", db_path=db_path
+            )
+
+            state_dir = os.path.join(OSM_DIR, mountain.state.value)
+            os.makedirs(state_dir, exist_ok=True)
+            final_osm_path = os.path.join(state_dir, f"{mountain.name}.osm")
+            if os.path.abspath(osm_path) != os.path.abspath(
+                final_osm_path
+            ) and os.path.exists(osm_path):
+                # osm_path can already be gone if a duplicate/double-submitted
+                # request for the same resort raced this one and already
+                # moved it -- to_db() below is an upsert keyed on
+                # mountain_id, so it's safe to just continue in that case
+                os.replace(osm_path, final_osm_path)
+
+            mountain.to_db(db_path)
+            create_map(mountain)
+            create_thumbnail(mountain)
+
+            return redirect(
+                url_for(
+                    "management_web.management_edit_resort",
+                    q=f"{mountain.name}, {mountain.state.value}",
+                )
+            )
+
+    return render_template(
+        "management-add-resort.jinja",
+        management_links=management_links,
+        active_page="Add Resort",
+        resorts=_available_osm_files(current_app.config["DATABASE_PATH"]),
+    )
+
+
+def _rename_resort_files(state: str, old_name: str, new_name: str) -> None:
+    """
+    Moves a resort's OSM source file and thumbnail to match a new name.
+    The map SVG isn't moved -- it's regenerated instead, since it renders
+    the resort's name as its title (the thumbnail doesn't, so a plain move
+    is enough for it).
+    """
+    osm_old = os.path.join(OSM_DIR, state, f"{old_name}.osm")
+    osm_new = os.path.join(OSM_DIR, state, f"{new_name}.osm")
+    if os.path.exists(osm_old):
+        os.rename(osm_old, osm_new)
+
+    thumbnail_old = os.path.join("static/thumbnails", state, f"{old_name}.svg")
+    thumbnail_new = os.path.join("static/thumbnails", state, f"{new_name}.svg")
+    if os.path.exists(thumbnail_old):
+        os.rename(thumbnail_old, thumbnail_new)
+
+
+def _apply_mountain_edits(mountain: Mountain, db_path: str) -> None:
+    """
+    Applies whichever of the season-passes/URL/rename edits were submitted
+    with this request to the given (already-loaded) mountain, persisting
+    each change immediately.
+    """
+    if request.args.get("update_passes"):
+        mountain.season_passes = [
+            season_pass
+            for field, season_pass in SEASON_PASS_FORM_FIELDS.items()
+            if request.args.get(field)
+        ]
+        mountain.to_db(db_path)
+
+    new_url = request.args.get("url")
+    if new_url:
+        mountain.url = new_url
+        mountain.to_db(db_path)
+
+    new_name = request.args.get("rename")
+    if new_name and new_name != mountain.name:
+        _rename_resort_files(mountain.state.value, mountain.name, new_name)
+        mountain.name = new_name
+        mountain.to_db(db_path)
+        create_map(mountain)
+
+
+def _set_trail_modifiers(
+    trail: Trail, gladed: bool, ungroomed: bool, hazardous: bool
+) -> None:
+    """
+    Sets a trail's gladed/ungroomed/hazardous tags, recomputing its
+    difficulty by reverse-engineering the weather modifier from the
+    trail's current stored difficulty/steepest pitch (see
+    difficulty_pitch_field)/gladed/ungroomed/hazardous, then reapplying
+    that pitch + the modifier + the new bonuses. Does not persist -- callers
+    write the trail to the DB themselves.
+    """
+    weather_modifier = weather_modifier_from_trail(trail)
+
+    trail.gladed = gladed
+    trail.ungroomed = ungroomed
+    trail.hazardous = hazardous
+    trail.difficulty = get_trail_difficulty(
+        getattr(trail, difficulty_pitch_field()),
+        trail.gladed,
+        trail.ungroomed,
+        trail.hazardous,
+        weather_modifier,
+    )
+
+
+def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
+    """
+    Applies a gladed/ungroomed/hazardous tag edit to one trail (identified
+    by trail_id).
+    """
+    trail_id = request.args.get("trail_id")
+    if not trail_id:
+        return
+
+    trail = mountain.trails.get(trail_id)
+    if trail is None:
+        return
+
+    _set_trail_modifiers(
+        trail,
+        bool(request.args.get("gladed")),
+        bool(request.args.get("ungroomed")),
+        bool(request.args.get("hazardous")),
+    )
+    trail.to_db(db_path)
+
+    mountain.recalculate_stats()
+    mountain.update_stats_in_db(db_path)
+
+
+def _apply_rotate(mountain: Mountain, db_path: str) -> None:
+    """
+    Rotates the mountain's map orientation a quarter turn clockwise or
+    counter-clockwise
+    """
+    if request.args.get("rotate"):
+        mountain.rotate_clockwise()
+    elif request.args.get("rotate_ccw"):
+        mountain.rotate_counterclockwise()
+    else:
+        return
+
+    mountain.to_db(db_path)
+    create_map(mountain)
+    create_thumbnail(mountain)
+
+
+def _snapshot_modifiers(mountain: Mountain) -> dict[str, tuple[bool, bool, bool]]:
+    """
+    Captures every trail's gladed/ungroomed/hazardous flags right before a
+    refresh overwrites them from a fresh OSM parse, so _fill_cached_modifiers
+    can restore manual edits made on the edit-resort page afterward. Lives
+    only for the duration of one refresh call -- not persisted anywhere.
+    """
+    return {
+        trail_id: (trail.gladed, trail.ungroomed, trail.hazardous)
+        for trail_id, trail in mountain.trails.items()
+    }
+
+
+def _fill_cached_modifiers(
+    mountain: Mountain, cached: dict[str, tuple[bool, bool, bool]]
+) -> None:
+    """
+    Fills in gladed/ungroomed/hazardous on every trail of "mountain" from a
+    _snapshot_modifiers taken just before the refresh that overwrote them.
+    A flag the fresh OSM parse already set True is left alone -- current
+    OSM data always wins over a stale manual edit; only a flag the parse
+    came back without gets filled in from the cache. Trails with no cached
+    snapshot (new since the snapshot) are left untouched. Recomputes
+    difficulty for any trail whose flags actually changed.
+    """
+    pitch_field = difficulty_pitch_field()
+    for trail_id, trail in mountain.trails.items():
+        snapshot = cached.get(trail_id)
+        if snapshot is None:
+            continue
+
+        gladed, ungroomed, hazardous = snapshot
+        gladed = trail.gladed or gladed
+        ungroomed = trail.ungroomed or ungroomed
+        hazardous = trail.hazardous or hazardous
+        # gladed and ungroomed don't stack -- gladed wins, same as the OSM
+        # parser's own rule
+        if gladed and ungroomed:
+            ungroomed = False
+
+        if (gladed, ungroomed, hazardous) == (
+            trail.gladed,
+            trail.ungroomed,
+            trail.hazardous,
+        ):
+            continue
+
+        weather_modifier = weather_modifier_from_trail(trail)
+        trail.gladed = gladed
+        trail.ungroomed = ungroomed
+        trail.hazardous = hazardous
+        trail.difficulty = get_trail_difficulty(
+            getattr(trail, pitch_field),
+            trail.gladed,
+            trail.ungroomed,
+            trail.hazardous,
+            weather_modifier,
+        )
+
+
+def _rebuild_from_osm_file(
+    mountain: Mountain,
+    osm_path: str,
+    db_path: str,
+    ignore_areas: bool = False,
+    blacklist_areas: bool = False,
+    preserve_modifiers: bool = False,
+) -> Mountain | None:
+    """
+    Re-parses the given local OSM file into a fresh trail/lift set for
+    the mountain (reusing its existing mountain_id so the reload attaches
+    to the same DB row), drops anything blacklisted so a previously
+    deleted item doesn't come back. Replaces the mountain's trails/lifts
+    in the DB with this new set.
+
+    When "ignore_areas" is set, glade/bowl (area) trails are dropped from
+    the rebuild; "blacklist_areas" additionally blacklists those ids so
+    they stay gone on future refreshes even without "ignore_areas".
+
+    When "preserve_modifiers" is set, gladed/ungroomed/hazardous flags that
+    were manually set on the edit-resort page (and so would otherwise be
+    lost when the fresh OSM parse comes back without them) are restored --
+    see _snapshot_modifiers/_fill_cached_modifiers.
+
+    Returns None (leaving the DB untouched) if the file is missing or the
+    parse comes back with zero trails, since rebuilding from an empty or
+    failed parse would wipe out real data.
+    """
+    if not os.path.exists(osm_path):
+        return None
+
+    cached_modifiers = _snapshot_modifiers(mountain) if preserve_modifiers else {}
+
+    refreshed = Mountain.from_osm(
+        osm_path,
+        season_passes=mountain.season_passes,
+        url=mountain.url,
+        mountain_id=mountain.mountain_id,
+        db_path=db_path,
+    )
+
+    # keep the map orientation the mountain already had -- it's only
+    # meant to change when an admin explicitly rotates the map, not as a
+    # side effect of a refresh re-deriving it from (possibly shifted) OSM
+    # geometry
+    refreshed.direction = mountain.direction
+
+    if ignore_areas:
+        area_trail_ids = [
+            trail_id for trail_id, trail in refreshed.trails.items() if trail.area
+        ]
+        for trail_id in area_trail_ids:
+            if blacklist_areas:
+                add_to_blacklist(mountain.mountain_id, trail_id, db_path)
+            del refreshed.trails[trail_id]
+
+    if not refreshed.trails:
+        return None
+
+    refreshed.trails = {
+        trail_id: trail
+        for trail_id, trail in refreshed.trails.items()
+        if not is_blacklisted(mountain.mountain_id, trail_id, db_path)
+    }
+    refreshed.lifts = {
+        lift_id: lift
+        for lift_id, lift in refreshed.lifts.items()
+        if not is_blacklisted(mountain.mountain_id, lift_id, db_path)
+    }
+
+    if preserve_modifiers:
+        _fill_cached_modifiers(refreshed, cached_modifiers)
+
+    refreshed.recalculate_stats()
+
+    Mountain.clear_trails_and_lifts(mountain.mountain_id, db_path)
+    refreshed.to_db(db_path)
+
+    return refreshed
+
+
+def _archive_osm_file(osm_path: str) -> None:
+    """
+    Moves an existing OSM file aside into data/osm-old/<state>/, named
+    with its last-modified date, before it gets overwritten by a fresh
+    extract. A no-op if there's no existing file to archive (e.g. the
+    very first full refresh).
+    """
+    if not os.path.exists(osm_path):
+        return
+
+    state_dir, filename = os.path.split(osm_path)
+    state = os.path.basename(state_dir)
+    old_date = datetime.fromtimestamp(os.stat(osm_path).st_mtime, tz=UTC).date()
+
+    archive_dir = os.path.join(OSM_OLD_DIR, state)
+    os.makedirs(archive_dir, exist_ok=True)
+    os.replace(osm_path, os.path.join(archive_dir, f"{old_date} {filename}"))
+
+
+def _full_refresh(
+    mountain: Mountain,
+    db_path: str,
+    size_increase: float = 0.0,
+    ignore_areas: bool = False,
+    blacklist_areas: bool = False,
+    preserve_modifiers: bool = False,
+) -> Mountain | None:
+    """
+    Fetches a brand-new OSM extract from Overpass for a bounding box
+    covering the mountain's current trails/lifts (padded outward by
+    "size_increase", for resorts that have grown past their original
+    boundary), archives the existing local OSM file and replaces it with
+    the new extract, then rebuilds trails/lifts/stats from that new file
+    the same way a stats refresh does -- "ignore_areas", "blacklist_areas",
+    and "preserve_modifiers" apply here too.
+
+    Returns None (leaving the DB and local file untouched) if the fetch
+    fails.
+    """
+    geometries = [trail.geometry for trail in mountain.trails.values()] + [
+        lift.geometry for lift in mountain.lifts.values()
+    ]
+    bbox = get_bounding_box(geometries, padding=size_increase)
+
+    extract = OSM().get(bbox)
+    if extract is None:
+        return None
+
+    osm_path = os.path.join(OSM_DIR, mountain.state.value, f"{mountain.name}.osm")
+    _archive_osm_file(osm_path)
+    os.makedirs(os.path.dirname(osm_path), exist_ok=True)
+    with open(osm_path, "wb") as f:
+        f.write(extract)
+
+    return _rebuild_from_osm_file(
+        mountain, osm_path, db_path, ignore_areas, blacklist_areas, preserve_modifiers
+    )
+
+
+def _apply_refresh(
+    mountain: Mountain,
+    db_path: str,
+    full_refresh: bool = False,
+    stats_refresh: bool = False,
+    map_refresh: bool = False,
+    size_increase: float = 0.0,
+    ignore_areas: bool = False,
+    blacklist_areas: bool = False,
+    preserve_modifiers: bool = False,
+) -> Mountain:
+    """
+    Applies whichever refresh variant(s) were requested, returning the
+    (possibly reloaded) mountain to keep rendering with. full_refresh
+    takes priority over stats_refresh if both are somehow requested at
+    once. Shared by the single-resort edit page (options sourced from its
+    query string) and the bulk-operations "refresh all resorts" action
+    (options sourced from its POST form, minus size_increase/ignore_areas/
+    blacklist_areas, which are resort-specific curation choices that don't
+    generalize across the whole population).
+
+    The map/thumbnail are only regenerated when a refresh actually
+    changed something: map_refresh always regenerates it (there's
+    nothing for it to fail), but a stats/full refresh that couldn't run
+    (missing file, failed fetch, empty parse) leaves the existing map
+    alone rather than re-rendering unchanged data.
+    """
+    refreshed = None
+
+    if full_refresh:
+        refreshed = _full_refresh(
+            mountain,
+            db_path,
+            size_increase,
+            ignore_areas,
+            blacklist_areas,
+            preserve_modifiers,
+        )
+    elif stats_refresh:
+        osm_path = os.path.join(OSM_DIR, mountain.state.value, f"{mountain.name}.osm")
+        refreshed = _rebuild_from_osm_file(
+            mountain,
+            osm_path,
+            db_path,
+            ignore_areas,
+            blacklist_areas,
+            preserve_modifiers,
+        )
+
+    if refreshed is not None:
+        mountain = refreshed
+        create_map(mountain)
+        create_thumbnail(mountain)
+
+    if map_refresh:
+        create_map(mountain)
+        create_thumbnail(mountain)
+
+    return mountain
+
+
+def _delete_resort(mountain: Mountain, db_path: str) -> None:
+    """
+    Permanently deletes a resort: its DB rows (mountain, trails, lifts,
+    blacklist entries) and its generated map/thumbnail SVGs. The source
+    OSM file is only removed when "delete_osm" is checked.
+    """
+    state = mountain.state.value
+    name = mountain.name
+
+    Mountain.delete_from_db(mountain.mountain_id, db_path)
+
+    map_path = os.path.join("static/maps", state, f"{name}.svg")
+    if os.path.exists(map_path):
+        os.remove(map_path)
+
+    thumbnail_path = os.path.join("static/thumbnails", state, f"{name}.svg")
+    if os.path.exists(thumbnail_path):
+        os.remove(thumbnail_path)
+
+    if request.args.get("delete_osm"):
+        osm_path = os.path.join(OSM_DIR, state, f"{name}.osm")
+        if os.path.exists(osm_path):
+            os.remove(osm_path)
+
+
+def _delete_item(
+    mountain: Mountain, item_id: str, db_path: str, blacklist: bool
+) -> bool:
+    """
+    Removes one trail or lift (identified by its OSM id) from the mountain
+    and the DB, optionally blacklisting it so a future refresh won't
+    re-add it. Returns True if something was deleted.
+
+    Does not regenerate the map/thumbnail -- callers do that once after
+    all deletions so a bulk delete only pays that cost a single time.
+    """
+    if item_id in mountain.trails:
+        Trail.delete_from_db(item_id, db_path)
+        del mountain.trails[item_id]
+        mountain.recalculate_stats()
+        mountain.update_stats_in_db(db_path)
+    elif item_id in mountain.lifts:
+        Lift.delete_from_db(item_id, db_path)
+        del mountain.lifts[item_id]
+    else:
+        return False
+
+    if blacklist:
+        add_to_blacklist(mountain.mountain_id, item_id, db_path)
+
+    return True
+
+
+def _apply_delete(mountain: Mountain, db_path: str) -> None:
+    """
+    Deletes a trail or lift (identified by its OSM id) from the mountain,
+    optionally blacklisting it so a future refresh won't re-add it.
+    """
+    item_id = request.args.get("delete")
+    if not item_id:
+        return
+
+    if _delete_item(mountain, item_id, db_path, bool(request.args.get("blacklist"))):
+        create_map(mountain)
+        create_thumbnail(mountain)
+
+
+def _load_mountain(q: str | None, db_path: str) -> Mountain | None:
+    """
+    Resolves the "<name>, <state>" the edit page's resort selector uses
+    into a Mountain, or None if it's missing/unparseable/unknown.
+    """
+    if not q:
+        return None
+
+    parts = q.split(",", 1)
+    if len(parts) != 2:
+        return None
+
+    state = _parse_state(parts[1].strip())
+    if not isinstance(state, State):
+        return None
+
+    return Mountain.from_name(parts[0].strip(), state, db_path)
+
+
+@management_web.route("/management-edit-resort/bulk-delete", methods=["POST"])
+def management_bulk_delete():
+    """
+    Deletes every trail/lift id in the "ids" form field in one shot,
+    regenerating the map/thumbnail only once at the end, then returns to
+    the edit page. Backs the map's delete-mode (see interactive-map.js).
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+    q = request.form.get("q")
+    mountain = _load_mountain(q, db_path)
+
+    if mountain is not None:
+        blacklist = bool(request.form.get("blacklist"))
+        deleted = False
+        for item_id in request.form.getlist("ids"):
+            if _delete_item(mountain, item_id, db_path, blacklist):
+                deleted = True
+
+        if deleted:
+            create_map(mountain)
+            create_thumbnail(mountain)
+
+    return redirect(url_for("management_web.management_edit_resort", q=q))
+
+
+@management_web.route("/management-edit-resort/bulk-modifiers", methods=["POST"])
+def management_bulk_modifiers():
+    """
+    Applies the same gladed/ungroomed/hazardous state to every trail id in
+    the "ids" form field in one shot, regenerating the map/thumbnail only
+    once at the end, then returns to the edit page. Backs the map's
+    modifier-mode (see interactive-map.js). Lift ids are silently ignored --
+    modifiers are a trail-only concept.
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+    q = request.form.get("q")
+    mountain = _load_mountain(q, db_path)
+
+    if mountain is not None:
+        gladed = bool(request.form.get("gladed"))
+        ungroomed = bool(request.form.get("ungroomed"))
+        hazardous = bool(request.form.get("hazardous"))
+
+        changed = False
+        for trail_id in request.form.getlist("ids"):
+            trail = mountain.trails.get(trail_id)
+            if trail is None:
+                continue
+            _set_trail_modifiers(trail, gladed, ungroomed, hazardous)
+            trail.to_db(db_path)
+            changed = True
+
+        if changed:
+            mountain.recalculate_stats()
+            mountain.update_stats_in_db(db_path)
+            create_map(mountain)
+            create_thumbnail(mountain)
+
+    return redirect(url_for("management_web.management_edit_resort", q=q))
+
+
+def _regenerate_maps(mountain_ids: list[str], db_path: str) -> int:
+    """
+    Rebuilds the static map + thumbnail SVGs for the given mountains (their
+    trails are coloured by difficulty, so they go stale after a recalibration).
+    Progress prints to the management process's console.
+    """
+    regenerated = 0
+    for mountain_id in track(
+        mountain_ids, description="Regenerating maps", total=len(mountain_ids)
+    ):
+        mountain = Mountain.from_db(mountain_id, db_path=db_path)
+        if mountain is None:
+            continue
+        create_map(mountain)
+        create_thumbnail(mountain)
+        regenerated += 1
+    return regenerated
+
+
+def _bulk_refresh(
+    db_path: str,
+    full_refresh: bool,
+    stats_refresh: bool,
+    map_refresh: bool,
+    preserve_modifiers: bool,
+) -> dict:
+    """
+    Applies the selected refresh mode(s) to every mountain in the DB, the
+    same way the single-resort edit page's refresh form does (see
+    _apply_refresh) but without the resort-specific area-curation options
+    (size_increase/ignore_areas/blacklist_areas), which don't generalize
+    across the whole population.
+
+    A mountain whose refresh raises is skipped rather than aborting the
+    rest of the run (same approach as scripts/warm_elevation_cache.py) --
+    one bad local .osm file or a transient fetch failure shouldn't cost
+    every other resort its refresh.
+    """
+    if not (full_refresh or stats_refresh or map_refresh):
+        return {"n_resorts": 0, "n_refreshed": 0, "failures": []}
+
+    # list_mountains returns lightweight MountainSummary rows (no
+    # trails/lifts/url) -- _apply_refresh needs the full Mountain, same as
+    # _regenerate_maps below
+    summaries, _ = list_mountains(db_path=db_path)
+
+    refreshed = 0
+    failures = []
+    # a resort that needs fresh elevation lookups starts its own
+    # rich.progress.track (elevation_api.py) -- rich only allows one live
+    # display at a time, so that inner bar is suppressed for the duration of
+    # this outer one
+    previous_show_progress = Elevation.show_progress
+    Elevation.show_progress = False
+    try:
+        for summary in track(
+            summaries, description="Refreshing resorts", total=len(summaries)
+        ):
+            mountain = Mountain.from_db(summary.mountain_id, db_path=db_path)
+            if mountain is None:
+                continue
+            try:
+                _apply_refresh(
+                    mountain,
+                    db_path,
+                    full_refresh=full_refresh,
+                    stats_refresh=stats_refresh,
+                    map_refresh=map_refresh,
+                    preserve_modifiers=preserve_modifiers,
+                )
+                refreshed += 1
+            except Exception as exc:  # noqa: BLE001 - one bad resort shouldn't stop the batch
+                failures.append(f"{mountain.name}, {mountain.state.value}: {exc}")
+    finally:
+        Elevation.show_progress = previous_show_progress
+
+    return {
+        "n_resorts": len(summaries),
+        "n_refreshed": refreshed,
+        "failures": failures,
+    }
+
+
+@management_web.route("/management-bulk-operations", methods=["GET", "POST"])
+def management_bulk_operations():
+    """
+    Site-wide maintenance actions that touch every resort at once, kept off
+    the per-resort edit page: recalibrate the weather modifier (rebuild
+    WeatherCalibration from the current population, re-rate every trail
+    against it -- see core.support.weather_calibration.recalibrate -- then
+    regenerate the now-stale static maps), or run the edit page's refresh
+    form against every resort at once (see _bulk_refresh).
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+
+    result = None
+    refresh_result = None
+    action = request.form.get("action") if request.method == "POST" else None
+
+    if action == "recalibrate":
+        result = recalibrate(db_path)
+        result["n_maps_regenerated"] = _regenerate_maps(
+            result["rerated_mountain_ids"], db_path
+        )
+    elif action == "bulk_refresh":
+        refresh_result = _bulk_refresh(
+            db_path,
+            full_refresh=bool(request.form.get("full_refresh")),
+            stats_refresh=bool(request.form.get("stats_refresh")),
+            map_refresh=bool(request.form.get("map_refresh")),
+            preserve_modifiers=bool(request.form.get("preserve_modifiers")),
+        )
+
+    return render_template(
+        "management-bulk-operations.jinja",
+        management_links=management_links,
+        active_page="Bulk Operations",
+        recalibrate_result=result,
+        refresh_result=refresh_result,
+    )
+
+
+@management_web.route("/management-edit-resort")
+def management_edit_resort():
+    db_path = current_app.config["DATABASE_PATH"]
+
+    mountain = _load_mountain(request.args.get("q"), db_path)
+
+    if mountain is not None:
+        if request.args.get("delete_resort") == "DELETE":
+            _delete_resort(mountain, db_path)
+            mountain = None
+        else:
+            mountain = _apply_refresh(
+                mountain,
+                db_path,
+                full_refresh=bool(request.args.get("full_refresh")),
+                stats_refresh=bool(request.args.get("stats_refresh")),
+                map_refresh=bool(request.args.get("map_refresh")),
+                size_increase=float(request.args.get("size_increase") or 0),
+                ignore_areas=bool(request.args.get("ignore_areas")),
+                blacklist_areas=bool(request.args.get("blacklist_areas")),
+                preserve_modifiers=bool(request.args.get("preserve_modifiers")),
+            )
+            _apply_mountain_edits(mountain, db_path)
+            _apply_rotate(mountain, db_path)
+            _apply_trail_edit(mountain, db_path)
+            _apply_delete(mountain, db_path)
+            mountain.beginner_friendliness = display_beginner_friendliness(
+                mountain.beginner_friendliness
+            )
+
+    all_mountains, _ = list_mountains(db_path=db_path)
+    resorts = sorted(f"{m.name}, {m.state.value}" for m in all_mountains)
+
+    mountain_index = -1
+    if mountain is not None:
+        mountain_label = f"{mountain.name}, {mountain.state.value}"
+        if mountain_label in resorts:
+            mountain_index = resorts.index(mountain_label)
+
+    next_mountain = ""
+    if resorts:
+        if mountain_index == len(resorts) - 1:
+            mountain_index = -1
+        next_mountain = resorts[mountain_index + 1]
+
+    trails, lifts = [], []
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [],
+        "properties": {"summary": "elevation"},
+    }
+    if mountain is not None:
+        trails, lifts = _sorted_trails_and_lifts(mountain)
+        # debug_mode=True so popups always show OSM ids
+        geojson = _build_geojson(mountain, trails, lifts, debug_mode=True)
+
+    season_pass_values = set()
+    if mountain is not None:
+        season_pass_values = {
+            season_pass.value for season_pass in mountain.season_passes
+        }
+
+    return render_template(
+        "management-edit-resort.jinja",
+        management_links=management_links,
+        active_page="Edit Resort",
+        resorts=resorts,
+        mountain=mountain,
+        season_pass_values=season_pass_values,
+        geojson=geojson,
+        next_mountain=next_mountain,
+        trails=trails,
+        lifts=lifts,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
+    )

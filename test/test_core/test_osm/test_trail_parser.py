@@ -1,0 +1,223 @@
+from core.osm.osm_processor import OSMProcessor
+from core.osm.trail_parser import identify_hikes, identify_lifts, identify_trails
+
+
+def test_identify_trails(osm_file):
+    osm_processor = OSMProcessor(osm_file)
+
+    trails = identify_trails(osm_processor.ways, osm_processor.relations)
+
+    assert len(trails["trails"]) == 188
+    assert len(trails["relations"]) == 7
+
+    trail_info = {
+        "id": [],
+        "nodes": [],
+        "name": [],
+        "official_rating": [],
+        "gladed": [],
+        "area": [],
+        "multi_route": [],
+        "ungroomed": [],
+        "park": [],
+        "hazardous": [],
+    }
+    for trail in trails["trails"].values():
+        assert "INVALID" not in trail["name"]
+        for key in trail:
+            trail_info[key].append(trail[key])
+
+    assert len(set(trail_info["name"])) == 128
+
+    node_lengths = [len(nodes) for nodes in trail_info["nodes"]]
+    assert sum(node_lengths) == 2224
+
+    assert len(set(trail_info["official_rating"])) == 5
+    assert sum(trail_info["gladed"]) == 17
+    assert sum(trail_info["area"]) == 8
+    assert sum(trail_info["ungroomed"]) == 11
+    assert sum(trail_info["park"]) == 3
+    # hazardous is never OSM-derived -- always False at parse time
+    assert sum(trail_info["hazardous"]) == 0
+
+
+def test_identify_lifts(osm_file):
+    osm_processor = OSMProcessor(osm_file)
+
+    lifts = identify_lifts(osm_processor.ways)
+
+    assert len(lifts["lifts"]) == 20
+
+    lift_info = {
+        "id": [],
+        "nodes": [],
+        "name": [],
+        "lift_type": [],
+        "occupancy": [],
+        "capacity": [],
+        "detachable": [],
+        "bubble": [],
+        "heating": [],
+    }
+    for lift in lifts["lifts"].values():
+        assert "INVALID" not in lift["name"]
+        for key in lift:
+            lift_info[key].append(lift[key])
+
+    assert len(set(lift_info["name"])) == 20
+
+    node_lengths = [len(nodes) for nodes in lift_info["nodes"]]
+    assert sum(node_lengths) == 227
+
+    assert len(set(lift_info["lift_type"])) == 3
+
+    occupancy_nums = [
+        occupancy if occupancy else 0 for occupancy in lift_info["occupancy"]
+    ]
+    assert sum(occupancy_nums) == 54
+
+    capacity_nums = [capacity if capacity else 0 for capacity in lift_info["capacity"]]
+    assert sum(capacity_nums) == 650
+
+    assert sum(lift_info["detachable"]) == 5
+    assert sum(lift_info["bubble"]) == 2
+    assert sum(lift_info["heating"]) == 1
+
+
+def test_identify_trails_excludes_bike_trail_with_no_ski_signal():
+    # mtb:scale:imba alone, with neither piste:difficulty nor piste:name,
+    # reads as a bike trail with an incidental/mistaken piste:type
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "downhill", "mtb:scale:imba": "3"},
+        }
+    }
+
+    assert identify_trails(ways, {})["trails"] == {}
+
+
+def test_identify_trails_keeps_dual_tagged_trail_with_piste_difficulty():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "piste:type": "downhill",
+                "piste:difficulty": "advanced",
+                "mtb:scale:imba": "4",
+            },
+        }
+    }
+
+    assert "w1" in identify_trails(ways, {})["trails"]
+
+
+def test_identify_trails_keeps_dual_tagged_trail_with_piste_name():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "piste:type": "downhill",
+                "piste:name": "East Bowl",
+                "mtb:scale:imba": "4",
+            },
+        }
+    }
+
+    assert "w1" in identify_trails(ways, {})["trails"]
+
+
+def test_identify_hikes():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "hike", "name": "Ridge Bootpack"},
+        },
+        "w2": {
+            "nodes": [3, 4],
+            "tags": {"piste:type": "downhill", "name": "Not A Hike"},
+        },
+    }
+
+    hikes = identify_hikes(ways, {})["hikes"]
+
+    assert list(hikes.keys()) == ["w1"]
+    hike = hikes["w1"]
+    assert hike["nodes"] == [1, 2]
+    assert hike["name"] == "Ridge Bootpack"
+    assert hike["lift_type"] == "hike"
+    for key in ("occupancy", "capacity", "detachable", "bubble", "heating"):
+        assert hike[key] is None
+
+
+def test_identify_hikes_prefers_piste_name():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "piste:type": "hike",
+                "name": "Access Road",
+                "piste:name": "Summit Bootpack",
+            },
+        }
+    }
+
+    assert identify_hikes(ways, {})["hikes"]["w1"]["name"] == "Summit Bootpack"
+
+
+def test_identify_hikes_excludes_disused():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "hike", "name": "Old Route", "disused": "yes"},
+        }
+    }
+
+    assert identify_hikes(ways, {})["hikes"] == {}
+
+
+def test_identify_hikes_excludes_closed_by_name():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {"piste:type": "hike", "name": "Closed for Season"},
+        }
+    }
+
+    assert identify_hikes(ways, {})["hikes"] == {}
+
+
+def test_identify_hikes_relations():
+    relations = {
+        "r1": {
+            "members": ["w1", "w2"],
+            "tags": {"piste:type": "hike", "type": "route"},
+        },
+        "r2": {
+            "members": ["w3"],
+            "tags": {"piste:type": "downhill", "type": "route"},
+        },
+    }
+
+    hike_relations = identify_hikes({}, relations)["relations"]
+
+    assert list(hike_relations.keys()) == ["r1"]
+    assert hike_relations["r1"]["members"] == ["w1", "w2"]
+
+
+def test_identify_lifts_tolerates_non_integer_occupancy_and_capacity():
+    ways = {
+        "w1": {
+            "nodes": [1, 2],
+            "tags": {
+                "aerialway": "chair_lift",
+                "aerialway:occupancy": "4;6",
+                "aerialway:capacity": "quad",
+            },
+        }
+    }
+
+    lift = identify_lifts(ways)["lifts"]["w1"]
+
+    assert lift["occupancy"] is None
+    assert lift["capacity"] is None

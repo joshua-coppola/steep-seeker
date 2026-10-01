@@ -17,11 +17,24 @@ About Steep Seeker
     <section class="blurb">
         <div></div>
         <div>
-            <p>The goal of this project is to allow for skiers and riders to 
-            have a reliable metric with which to compare trails between mountains. 
-            Often, a black diamond trail at one ski area is very different from 
-            another black diamond trail at a different ski area, especially across 
-            geographic regions. This standardized rating scale aims to fix this.</p>
+            <p>Steep Seeker was created with the intention of providing fellow skiers
+            with a platform to easily and reliably compare trails between mountains.
+            While ski resorts typically follow the standardized terms of “Green, Blue,
+            Black and Double Black Diamond” trails, what one ski resort deems as a
+            black diamond may be very different from another resort. The standardized
+            rating scale Steep Seeker utilizes aims to provide an all encompassing
+            rating across the board.</p>
+
+            <p>Want to join the community? Come chat about the slopes and get updates
+            first.</p>
+            <div class="social-links">
+                <a href="https://discord.gg/yk9BKW8yFn" target="_blank" rel="noopener" aria-label="Join the Steepseeker Discord">
+                    <img alt="" height="28" width="28" src="/icons/discord.svg" />
+                </a>
+                <a href="https://www.instagram.com/steepseeker/" target="_blank" rel="noopener" aria-label="Follow Steepseeker on Instagram">
+                    <img alt="" height="28" width="28" src="/icons/instagram.svg" />
+                </a>
+            </div>
         </div>
     </section>
     <section class="blurb blurb-dark">
@@ -32,34 +45,28 @@ About Steep Seeker
                     <tr>
                         <td>Pitch (in degrees)</td>
                         <td>Difficulty</td>
-                        <td>Color on Map</td>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>0°-18°</td>
-                        <td>Beginner</td>
-                        <td><span class="icon difficulty-green"></span>Green</td>
+                        <td>0°-{{ "%g" % difficulty_thresholds.beginner_max }}°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon difficulty-green"></span></span>Beginner</td>
                     </tr>
                     <tr>
-                        <td>18°-27°</td>
-                        <td>Intermediate</td>
-                        <td><span class="icon difficulty-royalblue"></span>Blue</td>
+                        <td>{{ "%g" % difficulty_thresholds.beginner_max }}°-{{ "%g" % difficulty_thresholds.intermediate_max }}°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon difficulty-royalblue"></span></span>Intermediate</td>
                     </tr>
                     <tr>
-                        <td>27°-36°</td>
-                        <td>Advanced</td>
-                        <td><span class="icon difficulty-black"></span>Black</td>
+                        <td>{{ "%g" % difficulty_thresholds.intermediate_max }}°-{{ "%g" % difficulty_thresholds.advanced_max }}°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon difficulty-black"></span></span>Advanced</td>
                     </tr>
                     <tr>
-                        <td>36°-47°</td>
-                        <td>Expert</td>
-                        <td><span class="icon difficulty-red"></span>Red</td>
+                        <td>{{ "%g" % difficulty_thresholds.advanced_max }}°-{{ "%g" % difficulty_thresholds.expert_max }}°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon difficulty-red"></span></span>Expert</td>
                     </tr>
                     <tr>
-                        <td>47°+</td>
-                        <td>Extreme Terrain</td>
-                        <td><span class="icon difficulty-gold"></span>Yellow</td>
+                        <td>{{ "%g" % difficulty_thresholds.expert_max }}°+</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon difficulty-gold"></span></span>Extreme Terrain</td>
                     </tr>
                 </tbody>
             </table>
@@ -72,16 +79,20 @@ About Steep Seeker
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Gladed</td>
-                        <td>+5.5°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon gladed"></span></span>Gladed</td>
+                        <td>+{{ "%g" % difficulty_thresholds.gladed_bonus }}°</td>
                     </tr>
                     <tr>
-                        <td>Ungroomed / Moguls</td>
-                        <td>+2.5°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon ungroomed"></span></span>Ungroomed / Moguls</td>
+                        <td>+{{ "%g" % difficulty_thresholds.ungroomed_bonus }}°</td>
                     </tr>
                     <tr>
-                        <td>Typical Weather</td>
-                        <td>Between +0° and + 6°</td>
+                        <td class="icon-cell"><span class="sidebar-badge"><span class="icon hazardous"></span></span>Hazardous</td>
+                        <td>+{{ "%g" % difficulty_thresholds.hazardous_bonus }}°</td>
+                    </tr>
+                    <tr>
+                        <td class="icon-cell"><span class="sidebar-badge"></span>Typical Weather</td>
+                        <td>Between +0° and +6°</td>
                     </tr>
                 </tbody>
             </table>
@@ -89,30 +100,30 @@ About Steep Seeker
         <div>
             <h2>How It Works</h2>
 
-            <p>The data for each map comes from OpenStreetMaps and the USGS. 
-            I used the publicly available map data on OpenStreetMaps and 
-            elevation data from the USGS in order to create a 3D representation 
-            of each resort, then calculated the steepest sections of trail and 
-            used tags from OpenStreetMaps to determine things like whether a 
-            trail is gladed to create a difficulty rating.</p>
+            <p>These maps were created by using data collected from publicly available 
+            maps on OpenStreetMaps and the USGS. The elevation data collected from the 
+            USGS allowed for the configuration of a 3D representation of each resort.
+            </p>
 
-            <p>On each map, the degree label on each trail is for the steepest 30 
-            meters. The colors are determined by the same 30 meters plus a set of
-            modifiers based of if the trail is gladed, if the trail is groomed,
-            how much snow and rain the resort recieves, and how often the mountain
-            experiences a freeze thaw cycle.</p>
+            <p>The colors that appear on the map are determined by the steepest 
+            {{ difficulty_thresholds.pitch_window_feet }} section of each trail and 
+            any modifiers that would increase or decrease difficulty. Information such 
+            as gladed trails, grooming, average accumulations of snow and rain at the 
+            resort, and frequency of freeze thaw cycles were also taken into account 
+            when determining a trails rating.</p>
 
-            <p>The colors for each trail are determined based on the table on this 
-            page. The table was created by performing a statistical analysis of all 
-            the trails in the US to maximize the number of trails that are rated 
-            the same as their official rating from the resort, then spot checked by 
-            numerous individuals with first hand experience of a selection of resorts.</p>
+            <p>The ratings and colors for each trail are based on the values listed in 
+            the tables on this page. These values are based on a combination of using 
+            statistics to select values that minimize error and rigorous manual 
+            verification to ensure that the math does in fact make sense in the real 
+            world.</p>
 
-            <p>One of the limitations of this approach is my maps can only be as
-            accurate as the data on OpenStreetMaps. Not all tags are correct, and
-            not all trails are present, or placed accurately. If you find tagging or
-            routing errors, please either contact me and let me know what is incorrect,
-            or correct the issues directly on OpenStreetMaps. More information about
+            <p>While Steep Steek prides itself in providing accurate data, one 
+            limitation to note is that the maps created can only be as accurate as the 
+            data collected from OpenStreetMaps. Not all tags are correct, and not all 
+            trails are present, or placed accurately. If you find tagging or routing 
+            errors, please either contact me and let me know what is incorrect, or 
+            correct the issues directly on OpenStreetMaps. More information about 
             correcting errors can be found in the Q & A section below.</p>
         </div>
     </section>
@@ -120,16 +131,19 @@ About Steep Seeker
         <div></div>
         <div>
             <h2 id="about-rankings">Mountain Rankings</h2>
-            <p>There are two types of mountain comparisons: how hard the hardest 
-            trails are and how easy the easiest area is. This is created using a 
-            weighted average of the top 30 hardest and easiest trails in order 
-            to create a metric that describes how expert and beginner friendly 
-            an area is, and how it stacks up to other mountains.</p>
+            <p>Mountain Rankings compare and contrast the difficulty of advanced 
+            trails from the easiest of novice trails. The rankings are created by 
+            using a weighted average of the top 30 difficult and novice trails in 
+            order to create a metric that provides data on how expert and beginner 
+            friendly a location is and how this data compares to other mountains.</p>
 
-            <p>20% of the rating is composed from the top 30 trails, and 80% is 
-            from the top 5. The color a resort receives shows how the hardest 
-            (or easiest) trails are rated, and the actual score can be used for 
-            comparisons within the same difficulty color.</p>
+            <p>20 percent of the rating is composed from the top 30 trails, and 80 
+            percent comes from the top 5 trails in a particular area. These rankings 
+            can be identified with the color designated  to each resort, which 
+            indicates how the difficult and novice trails are rated and an actual 
+            score which can be used to compare resorts within the same difficulty 
+            color. Note that in order for a mountain to rate well, it cannot just have 
+            one standout run.</p>
         </div>
     </section>
     <section class="blurb blurb-dark qa">
@@ -137,17 +151,17 @@ About Steep Seeker
         <div>
             <h2>Q & A</h2>
             <h3>Why only US resorts?</h3>
-            <p>Unfortunately, not very many countries 
-            have precise enough elevation maps available to the public. In 
-            order to get accurate results, I need 10m resolution or better. 
-            I hope to expand to other countries as better data becomes available.</p>
+            <p>At the moment, the elevation map specs I need of 10m resolution or 
+            better are not available for many countries. I hope to expand to other 
+            countries as better data becomes available, with Canada being top of my 
+            list.</p>
 
             <h3>What about X factor that changes a trail’s difficulty?</h3>
-            <p>A large portion of variance between different trails is explained with the 
-            steepness of the trail and whether the trail is gladed, but not all of it. 
+            <p>A large majority of variance between different trails is explained with the 
+            steepness of the trail and the existing modifiers, but not all of it. 
             I have many ideas about other factors to consider, but the hardest part 
-            for many of them is getting the data. The next step in improving the model 
-            is factoring in weather patterns and snowfall.</p>
+            for many of them is getting the data, and then establishing how much it 
+            should factor in.</p>
 
             <h3>What should you do if you find a mistake?</h3>
             <p>Given that the primary source for data is 
@@ -171,25 +185,19 @@ About Steep Seeker
             <p>Join the <a href=" https://discord.gg/yk9BKW8yFn">Steepseeker Discord</a>
             to tell me about what you want to see added in the feature-requests channel.</p>
 
-            <h3>Where did everything come from?</h3>
-            <p>The trail data is from OpenStreetMaps, 
-            the elevation data is from the USGS’s NED10 dataset, and the website and 
-            maps are my creation.</p>
-
-            <h3>Why did I make this?</h3>
+            <h3>What was the inspiration?</h3>
             <p>I’ve always wanted a way to compare trails that 
             was less subjective, and this grew out of a small project I started to see 
-            if that was possible. So far I have hundreds of hours invested in coding, 
+            if that was possible. So far I have thousands of hours invested in coding, 
             model development, and website design. This is an ongoing project that I 
             work on because I’m passionate about skiing, and want to make it easier 
             for people like myself to nerd out about statistics.</p>
 
             <h3>Who am I?</h3>
-            <p>I’m an avid skier; I grew up skiing and look forward to 
-            every powder day. On a good day skiing, I’ll likely be found in some 
-            tight steep trees enjoying each turn. I also majored in data science, 
-            and used that combined background to put this website and statistical 
-            model together.</p>
+            <p>I’m an avid skier and data scientist; who grew up skiing and looks 
+            forward to every powder day. I combined my passion for skiing and 
+            background in data science to create this website and the related 
+            algorithms that drive it.</p>
 
             <h3>How can you help?</h3>
             <p>This project takes a fair bit of time to create and 
@@ -201,17 +209,65 @@ About Steep Seeker
             missing tags. For example, I’d love to have more resorts with proper tagging 
             for moguls so I can add them to the model. </p>
 
-            <p>If you have made it this far, you will likely enjoy the
-            <a href="https://discord.gg/yk9BKW8yFn">Steepseeker Discord</a>.
-            Join other like minded skier and snowboarders and chat about the slopes.
-            I also will post updates and announcements on there first.
-            </p>
+            <h2>Stay Connected</h2>
+            <p>Follow along for updates, or come chat about the slopes.</p>
+            <div class="social-links">
+                <a href="https://discord.gg/yk9BKW8yFn" target="_blank" rel="noopener" aria-label="Join the Steepseeker Discord">
+                    <img alt="" height="32" width="32" src="/icons/discord.svg" />
+                </a>
+                <a href="https://www.instagram.com/steepseeker/" target="_blank" rel="noopener" aria-label="Follow Steepseeker on Instagram">
+                    <img alt="" height="32" width="32" src="/icons/instagram.svg" />
+                </a>
+            </div>
         </div>
     </section>
     <section class="blurb qa">
         <div></div>
         <div>
             <h2>Changelog</h2>
+            <h3>V2.0 Sep 29 2026</h3>
+
+            <p>Big changes! Over the last year I have been working on a full rewrite 
+            of the backend to bring much needed code quality improvements as well as 
+            greater scalability to add new features and performance improvements. And 
+            at long last, it’s finally done! While the visuals of the site are largely 
+            similar, behind the scenes many things are different. Ratings have been 
+            overhauled, and difficulty is now defined by the steepest 150 feet (and 
+            all the steepest pitches being in feet is also new), and the ratings and 
+            modifiers have had their values tweaked to improve accuracy. Expect 
+            ratings to be broadly the same as before, but for sustained pitches to be 
+            slightly more important (the previous ratings were based on the steepest 
+            30 meter or ~100 foot section). Beyond reweighting the importance of 
+            whether a trail is ungroomed or gladed, I also added in a new modifier: 
+            Hazardous. This is for trails that have extreme characteristics that don’t 
+            reflect in the current model like the entrance to Corbet’s Couloir. Expect 
+            very few trails to have this applied. Full change log (or as full as I can 
+            remember, so many little things to remember over 1 year of work):</p>
+            <ul class="bullets">
+                <li>New backend</li>
+                <li>Vastly improved workflow for updating/modifying resorts (helps me 
+                update mountains faster, cutting the time needed to refresh all the 
+                resorts from over a week of solid work to one day)</li>
+                <li>New Ratings weightings</li>
+                <li>Hazardous modifier</li>
+                <li>More information about Lifts on Lift Rankings</li>
+                <li>Improved interactive map performance</li>
+                <li>Improved readability of interactive map labels & added difficulty 
+                symbols</li>
+                <li>You can now click on trails on the mountain sidebar and have them 
+                be highlighted on the interactive map</li>
+                <li>Clicking a trail on the trail rankings page now opens the map with 
+                the trail highlighted</li>
+                <li>Brought in some help from a friend of mine to word smith my some 
+                of my writing, thanks again for the help!</li>
+                <li>Lots of small UI/UX tweaks</li>
+                <li>Refreshed all the mountains for the new season! (And had to do it 
+                twice because I may have messed up and lost the original copy…)</li>
+            </ul>
+
+            <p>Now that I have this off my plate, I can redirect more of my focus to 
+            implementing the fun features! Expect lots more where this came from, 
+            with hopefully much less lag time between now and the next update!</p>
 
             <h3>v1.20 Feb 16 2026</h3>
             <p>You may have noticed a few things trickling onto the site over the last month or so

@@ -1,0 +1,753 @@
+from dataclasses import dataclass
+from math import atan, ceil, degrees
+
+import haversine as hs
+import numpy as np
+import pyproj
+import shapely
+import shapely.ops
+
+COORDINATE_PRECISION = 6
+METERS_TO_FEET = 3.28084
+BEGINNER_FRIENDLINESS_FLIP = 30  # see display_beginner_friendliness
+
+
+@dataclass(frozen=True)
+class DifficultyConstants:
+    """
+    Every hand-tuned constant behind the site's difficulty rating, in one
+    place -- trail_color, beginner_color, and surface_difficulty_bonus all
+    read from DIFFICULTY_CONSTANTS below live, so recalibrating the site
+    is just constructing a new instance and assigning it there.
+    """
+
+    # degrees at the top of each tier's range
+    beginner_max: float
+    intermediate_max: float
+    advanced_max: float
+    expert_max: float
+    gladed_bonus: float
+    ungroomed_bonus: float
+    hazardous_bonus: float
+    # which steepest_Xft column (see osm.osm_processor.STEEPEST_PITCH_WINDOWS_FEET
+    # for the ones that exist) feeds the difficulty rating -- see
+    # difficulty_pitch_field()
+    pitch_window_feet: int
+
+
+DIFFICULTY_CONSTANTS = DifficultyConstants(
+    beginner_max=16.0,
+    intermediate_max=26.0,
+    advanced_max=36.0,
+    expert_max=46.0,
+    gladed_bonus=8.0,
+    ungroomed_bonus=5.0,
+    hazardous_bonus=5.0,
+    pitch_window_feet=150,
+)
+
+
+def difficulty_pitch_field() -> str:
+    """
+    Name of the Trail attribute / Trails column holding the pitch that
+    feeds the site's difficulty rating -- "steepest_Xft" for
+    DIFFICULTY_CONSTANTS.pitch_window_feet.
+    """
+    return f"steepest_{DIFFICULTY_CONSTANTS.pitch_window_feet}ft"
+
+
+# Display label for each steepest_Xft column (see
+# osm.osm_processor.STEEPEST_PITCH_WINDOWS_FEET for the windows themselves),
+# shared by the interactive-map popup and trail_rankings so column/label
+# order only needs to change in one place.
+PITCH_WINDOW_LABELS: list[tuple[str, str]] = [
+    ("steepest_100ft", "100ft"),
+    ("steepest_150ft", "150ft"),
+    ("steepest_300ft", "300ft"),
+    ("steepest_500ft", "500ft"),
+    ("steepest_1320ft", "¼mi"),
+    ("steepest_2640ft", "½mi"),
+    ("steepest_5280ft", "1mi"),
+]
+
+
+# Shared WGS84 <-> Albers Equal Area (contiguous US) transformers. Building a
+# pyproj.Transformer is expensive, so these are constructed once at import
+# time rather than per-call in every space_line_points_evenly/
+# polygon_interior_grid invocation.
+_WGS84 = pyproj.CRS("EPSG:4326")
+_ALBERS = pyproj.CRS("EPSG:5070")  # Equal Area projection for contiguous US
+_TO_METERS_PROJ = pyproj.Transformer.from_proj(_WGS84, _ALBERS, always_xy=True)
+_TO_COORDINATES_PROJ = pyproj.Transformer.from_proj(_ALBERS, _WGS84, always_xy=True)
+
+
+def meters_to_feet(value: float | None) -> float | None:
+    """
+    Converts a meters value (how length/vertical are stored internally,
+    matching the elevation API and geometry math) to feet, for display to
+    the end user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return value * METERS_TO_FEET
+
+
+def round_feet(value: float | None) -> int | None:
+    """
+    Rounds a feet value to the nearest whole foot, for display to the end
+    user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return round(value)
+
+
+def round_degrees(value: float | None) -> float | None:
+    """
+    Rounds a degrees value (difficulty, beginner_friendliness, max_slope,
+    average_slope, steepest_Xft) to the nearest 0.1 degree, for display to
+    the end user. Passes None through unchanged.
+    """
+    if value is None:
+        return None
+
+    return round(value, 1)
+
+
+def trail_color(difficulty: float) -> str:
+    """
+    Maps a difficulty/pitch value (degrees) to the site's standard trail
+    color scale, used for both static map rendering and interactive-map
+    popups.
+    """
+    if difficulty < DIFFICULTY_CONSTANTS.beginner_max:
+        return "green"
+    if difficulty < DIFFICULTY_CONSTANTS.intermediate_max:
+        return "royalblue"
+    if difficulty < DIFFICULTY_CONSTANTS.advanced_max:
+        return "black"
+    if difficulty < DIFFICULTY_CONSTANTS.expert_max:
+        return "red"
+    return "gold"
+
+
+def display_beginner_friendliness(beginner_friendliness: float | None) -> float | None:
+    """
+    Flips Mountain.beginner_friendliness as stored (the raw weighted average
+    of a mountain's easiest rateable trails, in difficulty degrees -- lower
+    means friendlier) into the site's display scale, where higher means
+    friendlier -- matching the thresholds beginner_color checks against.
+    Passes None through unchanged.
+    """
+    if beginner_friendliness is None:
+        return None
+
+    return round_degrees(BEGINNER_FRIENDLINESS_FLIP - beginner_friendliness)
+
+
+def beginner_color(beginner_friendliness: float) -> str:
+    """
+    Maps a mountain's displayed beginner_friendliness score to the site's
+    color scale. Unlike trail_color this runs on the flipped score (higher
+    = friendlier), so the scale is inverted: high scores are green.
+    """
+    flip = BEGINNER_FRIENDLINESS_FLIP
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.beginner_max:
+        return "green"
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.intermediate_max:
+        return "royalblue"
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.advanced_max:
+        return "black"
+    if beginner_friendliness > flip - DIFFICULTY_CONSTANTS.expert_max:
+        return "red"
+    return "gold"
+
+
+def round_geometry_precision(
+    geometry: shapely.geometry.base.BaseGeometry,
+    ndigits: int = COORDINATE_PRECISION,
+) -> shapely.geometry.base.BaseGeometry:
+    """
+    Returns a copy of the given geometry with its x/y coordinates rounded to
+    `ndigits` decimal places (6dp is ~11cm). Elevation (z), if present, is
+    left untouched. Call this on any geometry right before it's persisted,
+    so precision is guaranteed at the DB boundary regardless of how the
+    geometry's coordinates were produced upstream.
+    """
+
+    def _round(coords: np.ndarray) -> np.ndarray:
+        coords = coords.copy()
+        coords[:, :2] = np.round(coords[:, :2], ndigits)
+        return coords
+
+    return shapely.transform(geometry, _round, include_z=geometry.has_z)
+
+
+def get_bounding_box(
+    geometries: list[shapely.geometry.base.BaseGeometry], padding: float = 0
+) -> str:
+    """
+    Returns an Overpass-API-formatted "min_lon,min_lat,max_lon,max_lat"
+    bounding box string covering the given geometries, expanded outward
+    by `padding` as a fraction of each dimension (e.g. 0.5 adds 50% to
+    each side) -- for re-fetching an OSM extract that still covers a
+    mountain after new trails/lifts have been added just past its
+    original edges.
+    """
+    bounds = [geometry.bounds for geometry in geometries]
+    min_lon = min(b[0] for b in bounds)
+    min_lat = min(b[1] for b in bounds)
+    max_lon = max(b[2] for b in bounds)
+    max_lat = max(b[3] for b in bounds)
+
+    lon_adj = (max_lon - min_lon) * padding * 0.5
+    lat_adj = (max_lat - min_lat) * padding * 0.5
+
+    return (
+        f"{min_lon - lon_adj},{min_lat - lat_adj},"
+        f"{max_lon + lon_adj},{max_lat + lat_adj}"
+    )
+
+
+def space_line_points_evenly(
+    line: shapely.LineString, spacing_feet: int = 20
+) -> shapely.LineString:
+    """
+    Accepts a Shapely LineString, and evenly spaces out points
+    every 20 feet along the length of the line
+    """
+    line_proj = shapely.ops.transform(_TO_METERS_PROJ.transform, line)
+
+    # Convert feet to meters because EPSG:5070 is in meters
+    spacing_meters = spacing_feet / 3.28084
+    
+    num_points = max(ceil(line_proj.length / spacing_meters), 1)
+    distances = np.arange(num_points + 1) * spacing_meters
+
+    points_proj = shapely.line_interpolate_point(line_proj, distances)
+    line_proj_evenly = shapely.LineString(shapely.get_coordinates(points_proj))
+    line_geo = shapely.ops.transform(_TO_COORDINATES_PROJ.transform, line_proj_evenly)
+
+    return line_geo
+
+
+# Degrees of Douglas-Peucker tolerance used to thin trail/lift geometry
+# before drawing a full-detail view (the static map, map.jinja, and the
+# interactive Leaflet map, which both show a mountain at comparable
+# on-screen scale) -- ~0.5m at mid-latitudes.
+MAP_SIMPLIFY_TOLERANCE = 0.000005
+
+# ~11m at mid-latitudes -- coarser, for the label-free thumbnail, which
+# only ever renders small
+THUMBNAIL_SIMPLIFY_TOLERANCE = 0.0001
+
+
+def simplify_geometry(
+    geometry: shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+    tolerance: float | None,
+) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
+    """
+    Thins a trail/lift geometry via Douglas-Peucker simplification. Returns 
+    geometry unchanged when tolerance is falsy.
+
+    Shared by maps.py's static SVG rendering and routes.py's interactive
+    Leaflet GeoJSON, so both draw from the same mechanism; each picks its
+    own tolerance constant for its own rendering context.
+    """
+    if not tolerance:
+        return geometry
+    return geometry.simplify(tolerance, preserve_topology=True)
+
+
+# Maximum allowed gap between elevation samples in feet for the elevation profile.
+ELEVATION_PROFILE_MAX_GAP_FEET = 40
+
+
+def _segment_meters(
+    a: tuple[float, float, float], b: tuple[float, float, float]
+) -> float:
+    return hs.haversine((a[1], a[0]), (b[1], b[0]), unit=hs.Unit.METERS)
+
+
+def _simplify_points_max_gap(
+    points: list[tuple[float, float, float]],
+    tolerance: float | None,
+    max_gap_feet: float,
+) -> list[tuple[float, float, float]]:
+    if not tolerance or len(points) < 3:
+        return points
+
+    simplified = (
+        shapely.LineString(points).simplify(tolerance, preserve_topology=True).coords
+    )
+    
+    kept = set()
+    cursor = 0
+    for point in simplified:
+        while cursor < len(points) and points[cursor][:2] != point[:2]:
+            cursor += 1
+        if cursor >= len(points):
+            return list(simplified)
+        kept.add(cursor)
+        cursor += 1
+
+    max_gap_meters = max_gap_feet / METERS_TO_FEET
+    result = [points[0]]
+    last_kept_index = 0
+    accumulated_m = 0.0
+    for i in range(1, len(points)):
+        point = points[i]
+        segment_m = _segment_meters(points[i - 1], point)
+        if accumulated_m + segment_m >= max_gap_meters and last_kept_index != i - 1:
+            result.append(points[i - 1])
+            last_kept_index = i - 1
+            accumulated_m = segment_m
+        else:
+            accumulated_m += segment_m
+        if i in kept:
+            result.append(point)
+            last_kept_index = i
+            accumulated_m = 0.0
+    return result
+
+
+def simplify_geometry_max_gap(
+    geometry: shapely.LineString | shapely.Polygon | shapely.MultiLineString,
+    tolerance: float | None,
+    max_gap_feet: float = ELEVATION_PROFILE_MAX_GAP_FEET,
+) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
+    """
+    Like simplify_geometry, but re-inserts points
+    from the original geometry wherever plan-view (lon/lat) Douglas-Peucker
+    simplification alone would leave two consecutive points more than
+    max_gap_feet apart.
+    """
+    if geometry.geom_type == "Polygon":
+        ring = _simplify_points_max_gap(
+            list(geometry.exterior.coords), tolerance, max_gap_feet
+        )
+        return shapely.Polygon(ring)
+    if geometry.geom_type == "MultiLineString":
+        return shapely.MultiLineString(
+            [
+                shapely.LineString(
+                    _simplify_points_max_gap(list(line.coords), tolerance, max_gap_feet)
+                )
+                for line in geometry.geoms
+            ]
+        )
+    return shapely.LineString(
+        _simplify_points_max_gap(list(geometry.coords), tolerance, max_gap_feet)
+    )
+
+
+def space_polygon_exterior_points_evenly(
+    polygon: shapely.Polygon, spacing_feet: int = 20
+) -> shapely.Polygon:
+    """
+    Accepts a Shapely Polygon, and evenly spaces out points
+    every 20 feet along the perimeter of the Polygon
+    """
+    line = space_line_points_evenly(polygon.exterior, spacing_feet)
+
+    return shapely.Polygon(line)
+
+
+def polygon_interior_grid(
+    polygon: shapely.Polygon, spacing_feet: int = 20
+) -> shapely.MultiPoint:
+    """
+    Accepts a Shapely Polygon and returns a grid of points that
+    fall inside the polygon boundry at a set interval defined in feet.
+    """
+    polygon_proj = shapely.ops.transform(_TO_METERS_PROJ.transform, polygon)
+
+    minx, miny, maxx, maxy = polygon_proj.bounds
+
+    # Create grid coordinates
+    spacing_meters = spacing_feet / 3.28084
+    x_coords = np.arange(minx, maxx, spacing_meters)
+    y_coords = np.arange(miny, maxy, spacing_meters)
+    X, Y = np.meshgrid(x_coords, y_coords)
+
+    # Flatten into Nx2 array
+    coords = np.column_stack((X.ravel(), Y.ravel()))
+
+    # Build multipoint from all candidate points
+    mp = shapely.MultiPoint(coords)
+
+    # Intersection keeps only points inside polygon
+    inside_proj = polygon_proj.intersection(mp)
+    inside = shapely.ops.transform(_TO_COORDINATES_PROJ.transform, inside_proj)
+
+    # Normalize return type
+    if inside.is_empty:
+        return None
+    elif inside.geom_type == "Point":
+        return shapely.MultiPoint([inside])
+    elif inside.geom_type == "MultiPoint":
+        return inside
+    elif inside.geom_type == "GeometryCollection":
+        # filter only points
+        pts = [g for g in inside.geoms if g.geom_type == "Point"]
+        return shapely.MultiPoint(pts) if pts else None
+    else:
+        raise ValueError(f"Unexpected geometry type: {inside.geom_type}")
+
+
+@dataclass(frozen=True)
+class GeometryStats:
+    """
+    Per-point/per-segment measurements over a trail/lift's geometry, from a
+    single walk of its coordinates -- shared by get_length/get_max_slope/
+    get_average_slope/get_steepest_pitch (see compute_geometry_stats) so a
+    trail with several of those stats needed doesn't re-walk the same
+    coordinates with its own haversine pass for each one.
+    """
+
+    # meters from the first point, one entry per point (including a
+    # leading 0.0), regardless of elevation availability
+    cumulative_dist: list[float]
+    # degrees, one entry per segment whose endpoints both have elevation
+    # (segments missing elevation on either end are omitted, not zero-filled)
+    slopes: list[float]
+
+
+def compute_geometry_stats(geometry: dict[str, str]) -> GeometryStats:
+    """
+    Single pass over a geojson LineString blob's coordinates (flat
+    "coordinates" list of points) building the cumulative haversine
+    distance from the first point and the segment-to-segment slope
+    profile -- see GeometryStats. For an area trail, pass its route rather
+    than its boundary polygon.
+    """
+    coordinates = geometry.get("coordinates") or []
+
+    cumulative_dist = [0.0] * len(coordinates)
+    slopes = []
+
+    for i in range(1, len(coordinates)):
+        previous_point, point = coordinates[i - 1], coordinates[i]
+        dist = hs.haversine(
+            (previous_point[1], previous_point[0]),
+            (point[1], point[0]),
+            unit=hs.Unit.METERS,
+        )
+        cumulative_dist[i] = cumulative_dist[i - 1] + dist
+
+        if (
+            len(previous_point) < 3
+            or len(point) < 3
+            or previous_point[2] is None
+            or point[2] is None
+        ):
+            continue
+
+        elevation_change = point[2] - previous_point[2]
+        slopes.append(abs(degrees(atan(elevation_change / dist))) if dist != 0 else 0.0)
+
+    return GeometryStats(cumulative_dist=cumulative_dist, slopes=slopes)
+
+
+def get_length(geometry: dict[str, str], stats: GeometryStats | None = None) -> float:
+    """
+    Accepts a geojson LineString blob (flat "coordinates" list of points)
+    and calculates the haversine distance of the line. For an area trail,
+    pass its route rather than its boundary polygon.
+
+    `stats` (see compute_geometry_stats) can be passed in when the caller
+    is also getting max/average slope or steepest pitch for the same
+    geometry, so it's only walked once. Left as None, it's computed fresh.
+    """
+    stats = stats or compute_geometry_stats(geometry)
+
+    return stats.cumulative_dist[-1] if stats.cumulative_dist else 0.0
+
+
+def get_vertical_drop(geometry: dict[str, str]) -> float | None:
+    """
+    Accepts a geojson blob and calculates vertical drop (max elevation - min elevation).
+    Returns meters or `None` if no elevation data is available.
+    """
+    elevations = []
+
+    coords = geometry.get("coordinates") or []
+
+    def _extract(points):
+        for p in points:
+            # nested coordinate lists (e.g., polygons) can appear as lists of lists
+            if isinstance(p, (list, tuple)) and p and isinstance(p[0], (list, tuple)):
+                _extract(p)
+            else:
+                # expect [lon, lat, elevation] or [lon, lat]
+                if isinstance(p, (list, tuple)) and len(p) >= 3:
+                    elev = p[2]
+                    if elev is not None:
+                        elevations.append(float(elev))
+
+    _extract(coords)
+
+    if not elevations:
+        return None
+
+    return max(elevations) - min(elevations)
+
+
+def build_elevation_profile(
+    coords: list[tuple[float, float, float]],
+) -> list[list[float]]:
+    """
+    Converts an ordered list of (lon, lat, elevation_meters) points, for
+    example from Trail.geometry.coords, Trail.geometry.exterior.coords for an
+    area trail's boundary ring, or Trail.route.coords into the
+    [lon, lat, elevation_feet, slope_degrees] point array the interactive
+    map's elevation profile (leaflet.heightgraph) expects. slope_degrees is
+    the raw point-to-point pitch (no difficulty modifiers applied); the
+    first point's slope is 0.
+    """
+    profile = []
+    previous_point = None
+
+    for lon, lat, elevation_m in coords:
+        slope = 0.0
+        if previous_point is not None:
+            prev_lon, prev_lat, prev_elevation_m = previous_point
+            dist = hs.haversine((prev_lat, prev_lon), (lat, lon), unit=hs.Unit.METERS)
+            elevation_change = prev_elevation_m - elevation_m
+            if dist != 0 and elevation_change != 0:
+                slope = abs(degrees(atan(elevation_change / dist)))
+
+        profile.append(
+            [lon, lat, round_feet(meters_to_feet(elevation_m)), round_degrees(slope)]
+        )
+        previous_point = (lon, lat, elevation_m)
+
+    return profile
+
+
+def get_max_slope(
+    geometry: dict[str, str], stats: GeometryStats | None = None
+) -> float | None:
+    """
+    Accepts a geojson blob and returns the steepest segment-to-segment
+    slope in degrees, or `None` if it can't be calculated.
+
+    `stats` -- see get_length -- can be passed in to share a single walk
+    of the geometry with the caller's other stat lookups.
+    """
+    stats = stats or compute_geometry_stats(geometry)
+
+    return max(stats.slopes) if stats.slopes else None
+
+
+def get_average_slope(
+    geometry: dict[str, str], stats: GeometryStats | None = None
+) -> float | None:
+    """
+    Accepts a geojson blob and returns the average segment-to-segment
+    slope in degrees, or `None` if it can't be calculated.
+
+    `stats` -- see get_length -- can be passed in to share a single walk
+    of the geometry with the caller's other stat lookups.
+    """
+    stats = stats or compute_geometry_stats(geometry)
+
+    return sum(stats.slopes) / len(stats.slopes) if stats.slopes else None
+
+
+def get_steepest_pitch(
+    geometry: dict[str, str],
+    window_feet: float,
+    cumulative_dist: list[float] | None = None,
+) -> float | None:
+    """
+    Accepts a geojson LineString blob (flat "coordinates" list of points)
+    and returns the steepest slope in degrees found over any contiguous
+    window of at least `window_feet` along the line. For an area trail,
+    pass its route rather than its boundary polygon.
+
+    If the trail is shorter than the window, falls back to the overall
+    trail slope for windows up to DIFFICULTY_CONSTANTS.pitch_window_feet
+    (the trail is short enough that its whole length is a reasonable
+    stand-in -- and this window is the one that must produce a value for
+    every ratable trail, since it feeds the difficulty rating); for longer
+    windows there's no meaningful window-sized measurement, so `None` is
+    returned.
+
+    `cumulative_dist` -- see GeometryStats.cumulative_dist -- can be passed
+    in when calling this repeatedly for the same geometry with different
+    windows (see osm_processor.py), so the geometry is only walked once
+    for however many windows are checked. Left as None, it's computed
+    fresh from `geometry`.
+    """
+    coordinates = geometry.get("coordinates") or []
+
+    if len(coordinates) < 2:
+        return None
+
+    window_meters = window_feet / METERS_TO_FEET
+
+    max_pitch = None
+
+    if cumulative_dist is None:
+        cumulative_dist = compute_geometry_stats(geometry).cumulative_dist
+
+    # The window's end point only moves forward as the start point moves
+    # forward, so a two-pointer sweep finds it in a single pass over the
+    # line rather than re-scanning from each start point.
+    end = 1
+    for start, start_point in enumerate(coordinates):
+        if len(start_point) < 3 or start_point[2] is None:
+            continue
+
+        end = max(end, start + 1)
+
+        while (
+            end < len(coordinates)
+            and cumulative_dist[end] - cumulative_dist[start] < window_meters
+        ):
+            end += 1
+
+        if end < len(coordinates):
+            point = coordinates[end]
+            window_dist = cumulative_dist[end] - cumulative_dist[start]
+            if len(point) >= 3 and point[2] is not None:
+                elevation_change = start_point[2] - point[2]
+                pitch = (
+                    abs(degrees(atan(elevation_change / window_dist)))
+                    if elevation_change != 0
+                    else 0.0
+                )
+                if max_pitch is None or pitch > max_pitch:
+                    max_pitch = pitch
+
+    if max_pitch is not None:
+        return round(max_pitch, 1)
+
+    if window_feet > DIFFICULTY_CONSTANTS.pitch_window_feet:
+        return None
+
+    first_point, last_point = coordinates[0], coordinates[-1]
+    if (
+        len(first_point) < 3
+        or len(last_point) < 3
+        or first_point[2] is None
+        or last_point[2] is None
+    ):
+        return None
+
+    total_dist = cumulative_dist[-1]
+    if total_dist == 0:
+        return 0.0
+
+    elevation_change = last_point[2] - first_point[2]
+
+    return round(
+        abs(degrees(atan(elevation_change / total_dist)))
+        if elevation_change != 0
+        else 0.0,
+        1,
+    )
+
+
+def surface_difficulty_bonus(gladed: bool, ungroomed: bool, hazardous: bool) -> float:
+    """
+    The difficulty bump a trail earns for its surface and hazards:
+    gladed_bonus for a gladed trail, ungroomed_bonus for an
+    ungroomed-but-not-gladed one, 0 otherwise -- gladed wins when both flags
+    are set, the two don't stack. hazardous_bonus is added on top of that
+    when the trail is hazardous; unlike gladed/ungroomed it's a separate
+    axis (a manually-set hazard warning, not a surface type) and always
+    stacks.
+    """
+    if gladed:
+        bonus = DIFFICULTY_CONSTANTS.gladed_bonus
+    elif ungroomed:
+        bonus = DIFFICULTY_CONSTANTS.ungroomed_bonus
+    else:
+        bonus = 0.0
+
+    if hazardous:
+        bonus += DIFFICULTY_CONSTANTS.hazardous_bonus
+
+    return bonus
+
+
+def weather_modifier_from_trail(trail) -> float:
+    """
+    Recovers the mountain's weather modifier from one already-rated trail,
+    inverting get_trail_difficulty:
+        difficulty == steepest_pitch + weather_modifier + surface bonus
+    where steepest_pitch is the trail's steepest_Xft attribute named by
+    difficulty_pitch_field().
+    """
+    return (
+        trail.difficulty
+        - getattr(trail, difficulty_pitch_field())
+        - surface_difficulty_bonus(trail.gladed, trail.ungroomed, trail.hazardous)
+    )
+
+
+def get_trail_difficulty(
+    steepest_pitch: float | None,
+    gladed: bool,
+    ungroomed: bool,
+    hazardous: bool,
+    weather_modifier: float,
+) -> float | None:
+    """
+    Accepts a trail's steepest pitch (over DIFFICULTY_CONSTANTS.pitch_window_feet
+    -- see difficulty_pitch_field()), its gladed/ungroomed/hazardous flags,
+    and the mountain's weather modifier (see connectors.weather_api), and
+    returns the trail's overall difficulty rating. Returns `None` if
+    steepest_pitch couldn't be calculated.
+
+    A trail that is both gladed and ungroomed only gets the gladed modifier;
+    the two aren't stacked. hazardous is a separate axis and always stacks
+    on top.
+    """
+    if steepest_pitch is None:
+        return None
+
+    difficulty = (
+        steepest_pitch
+        + weather_modifier
+        + surface_difficulty_bonus(gladed, ungroomed, hazardous)
+    )
+
+    return round(difficulty, 1)
+
+
+def get_mountain_rating(
+    trail_difficulties: list[float],
+) -> tuple[float | None, float | None]:
+    """
+    Accepts the difficulty ratings of a mountain's trails and returns
+    (difficulty, beginner_friendliness) for the mountain overall, or
+    (None, None) if no trail difficulties were given.
+
+    Each value blends a top/bottom-30 average (20% weight) with a
+    top/bottom-5 average (80% weight) - difficulty from the hardest trails,
+    beginner_friendliness from the easiest - so a mountain with a handful of
+    standout hard or easy trails is rated accordingly without being fully
+    dominated by outliers.
+    """
+    if not trail_difficulties:
+        return None, None
+
+    sorted_difficulties = sorted(trail_difficulties, reverse=True)
+
+    wide_count = min(30, len(sorted_difficulties))
+    narrow_count = min(5, wide_count)
+
+    def weighted_average(values: list[float]) -> float:
+        wide = values[:wide_count]
+        narrow = values[:narrow_count]
+        return (sum(wide) / wide_count) * 0.2 + (sum(narrow) / narrow_count) * 0.8
+
+    difficulty = weighted_average(sorted_difficulties)
+    beginner_friendliness = weighted_average(list(reversed(sorted_difficulties)))
+
+    return round(difficulty, 1), round(beginner_friendliness, 1)

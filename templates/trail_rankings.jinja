@@ -54,17 +54,12 @@ Trail Rankings - Find the Hardest Trails in the USA
     </form>
 
     <ul class="ranking-sort mobile">
-        {% set sorts = {
-            "difficulty": "Difficulty",
-            "steepest_30m": "30m Pitch",
-            "steepest_50m": "50m Pitch",
-            "steepest_100m": "100m Pitch",
-            "steepest_200m": "200m Pitch",
-            "steepest_500m": "500m Pitch",
-            "steepest_1000m": "1000m Pitch"
-        } %}
+        {% set sorts = [("difficulty", "Difficulty")] %}
+        {% for key, label in pitch_fields %}
+            {% set _ = sorts.append((key, label ~ " Pitch")) %}
+        {% endfor %}
 
-        {% for key, label in sorts.items() %}
+        {% for key, label in sorts %}
             <li>
                 {% if sort_by == key %}
                     <a class="button-cta">{{ label }}</a>
@@ -81,7 +76,7 @@ Trail Rankings - Find the Hardest Trails in the USA
 
     <p class="detail">
         The trails can be filtered by their region within the US, and sorted by the length of the steepest pitch.
-        Keep in mind that trail difficulties are calculated using the 30 meter pitch value, as well as other factors
+        Keep in mind that trail difficulties are calculated using the 150 foot pitch value, as well as other factors
         not shown here.
     </p>
 
@@ -94,6 +89,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             <li><span class="icon difficulty-gold"></span>Extreme</li>
             <li><span class="icon gladed"></span>Gladed</li>
             <li><span class="icon ungroomed"></span>Ungroomed</li>
+            <li><span class="icon hazardous"></span>Hazardous</li>
         </ul>
     </div>
 
@@ -124,42 +120,19 @@ Trail Rankings - Find the Hardest Trails in the USA
                 {% else %}
                 <th><a href="{{pages.first}}&sort=difficulty">Difficulty</a></th>
                 {% endif %}
-                {% if sort_by == "steepest_30m"%}
-                <th><a class="active">30m Pitch</a></th>
+                {% for field, label in pitch_fields %}
+                {% if sort_by == field %}
+                <th><a class="active">{{ label }} Pitch</a></th>
                 {% else %}
-                <th><a href="{{pages.first}}&sort=steepest_30m">30m Pitch</a></th>
+                <th><a href="{{pages.first}}&sort={{ field }}">{{ label }} Pitch</a></th>
                 {% endif %}
-                {% if sort_by == "steepest_50m"%}
-                <th><a class="active">50m Pitch</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=steepest_50m">50m Pitch</a></th>
-                {% endif %}
-                {% if sort_by == "steepest_100m"%}
-                <th><a class="active">100m Pitch</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=steepest_100m">100m Pitch</a></th>
-                {% endif %}
-                {% if sort_by == "steepest_200m"%}
-                <th><a class="active">200m Pitch</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=steepest_200m">200m Pitch</a></th>
-                {% endif %}
-                {% if sort_by == "steepest_500m"%}
-                <th><a class="active">500m Pitch</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=steepest_500m">500m Pitch</a></th>
-                {% endif %}
-                {% if sort_by == "steepest_1000m"%}
-                <th><a class="active">1000m Pitch</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=steepest_1000m">1000m Pitch</a></th>
-                {% endif %}
+                {% endfor %}
             </tr>
             {% for trail in trails %}
             {% if not '' == trail.name %}
             <tr>
                 <td>
-                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state}}/{{trail.resort_name}}">
+                    <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
                             {{trail.name}}
                             {% if trail.gladed == True %}
                             <span class="icon gladed"></span>
@@ -167,142 +140,32 @@ Trail Rankings - Find the Hardest Trails in the USA
                             {% if trail.ungroomed == True%}
                             <span class="icon ungroomed"></span>
                             {% endif %}
+                            {% if trail.hazardous == True%}
+                            <span class="icon hazardous"></span>
+                            {% endif %}
                         </a></p>
                 </td>
-                <td><a href="/interactive-map/{{trail.state}}/{{trail.resort_name}}">{{trail.resort_name}}</a></td>
-                <td>{{trail.state}}</td>
                 <td>
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.difficulty}}
+                    <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">{{trail.resort_name}}</a>
+                    {% for season_pass in trail.season_passes %}
+                    <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
+                    {% endfor %}
                 </td>
+                <td>{{trail.state.value}}</td>
                 <td>
-                    {% if trail.steepest_30m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_30m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_30m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_30m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}°
+                    <span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    {{trail.difficulty}}
                 </td>
+                {% for field, label in pitch_fields %}
                 <td>
-                    {% if trail.steepest_50m != None %}
-                    {% if trail.steepest_50m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_50m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_50m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_50m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_50m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
+                    {% if trail[field] != None %}
+                    <span class="icon difficulty-{{ trail_color(trail[field]) }}"></span>
+                    {{trail[field]}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
-                <td>
-                    {% if trail.steepest_100m != None %}
-                    {% if trail.steepest_100m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_100m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_100m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_100m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_100m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-                <td>
-                    {% if trail.steepest_200m != None %}
-                    {% if trail.steepest_200m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_200m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_200m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_200m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_200m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-                <td>
-                    {% if trail.steepest_500m != None %}
-                    {% if trail.steepest_500m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_500m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_500m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_500m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_500m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-                <td>
-                    {% if trail.steepest_1000m != None %}
-                    {% if trail.steepest_1000m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_1000m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_1000m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_1000m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_1000m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
+                {% endfor %}
             </tr>
             {% endif %}
             {% endfor %}
@@ -317,15 +180,22 @@ Trail Rankings - Find the Hardest Trails in the USA
             <table class="header">
                 <tr>
                     <td>
-                        <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state}}/{{trail.resort_name}}">
-                                {{trail.name}}, {{trail.resort_name}} ({{trail.state}})
+                        <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
+                                {{trail.name}}, {{trail.resort_name}} ({{trail.state.value}})
                                 {% if trail.gladed == True %}
                                 <span class="icon gladed"></span>
                                 {% endif %}
                                 {% if trail.ungroomed == True%}
                                 <span class="icon ungroomed"></span>
                                 {% endif %}
-                            </a></p>
+                                {% if trail.hazardous == True%}
+                                <span class="icon hazardous"></span>
+                                {% endif %}
+                            </a>
+                            {% for season_pass in trail.season_passes %}
+                            <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
+                            {% endfor %}
+                        </p>
                     </td>
                 </tr>
             </table>
@@ -338,180 +208,27 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% endif %}
                 <td style="width:50%">Difficulty</td>
                 <td style="width:50%">
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.difficulty}}
+                    <span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    {{trail.difficulty}}
                 </td>
             </tr>
-            {% if sort_by == "steepest_30m"%}
+            {% for field, label in pitch_fields %}
+            {% if sort_by == field %}
             <tr style="background-color: var(--color-accent-very-light)">
             {% else %}
             <tr>
             {% endif %}
-                <td>30m Pitch</td>
+                <td>{{ label }} Pitch</td>
                 <td>
-                    {% if trail.steepest_30m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_30m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_30m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_30m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}°
+                    {% if trail[field] != None %}
+                    <span class="icon difficulty-{{ trail_color(trail[field]) }}"></span>
+                    {{trail[field]}}°
+                    {% else %}
+                    --
+                    {% endif %}
                 </td>
             </tr>
-            {% if sort_by == "steepest_50m"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>50m Pitch</td>
-                <td>
-                    {% if trail.steepest_50m != None %}
-                    {% if trail.steepest_50m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_50m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_50m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_50m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_50m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "steepest_100m"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>100m Pitch</td>
-                <td>
-                    {% if trail.steepest_100m != None %}
-                    {% if trail.steepest_100m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_100m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_100m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_100m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_100m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "steepest_200m"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>200m Pitch</td>
-                <td>
-                    {% if trail.steepest_200m != None %}
-                    {% if trail.steepest_200m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_200m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_200m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_200m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_200m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "steepest_500m"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>500m Pitch</td>
-                <td>
-                    {% if trail.steepest_500m != None %}
-                    {% if trail.steepest_500m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_500m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_500m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_500m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_500m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "steepest_1000m"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>1000m Pitch</td>
-                <td>
-                    {% if trail.steepest_1000m != None %}
-                    {% if trail.steepest_1000m < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.steepest_1000m < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.steepest_1000m < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.steepest_1000m < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_1000m}}°
-                                    {% else %}
-                                    --
-                                    {% endif %}
-                </td>
-            </tr>
+            {% endfor %}
         </table>
         {% endif %}
         {% endfor %}

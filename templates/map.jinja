@@ -6,6 +6,7 @@
 
 {% block pagehead %}
 <link href="/map.css" rel="stylesheet" />
+<link href="/map_shared.css" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -19,7 +20,7 @@
     <div class="map-pane mountain-details" id="mountain-details">
         <div class="mountain-title">
             <h1>{{mountain.name}}</h1>
-            <span class="mountain-location">{{mountain.state}}</span>
+            <span class="mountain-location">{{mountain.state.value}}</span>
         </div>
         <div class="mountain-section">
             <h2>Overview</h2>
@@ -27,15 +28,17 @@
                 {% if mountain.season_passes %}
                 <li>Passes:</li>
                 {% for season_pass in mountain.season_passes %}
-                <li><img alt="{{season_pass}}" src="/icons/{{season_pass}}.png" class="pass-icon"/>{{season_pass}}</li>
+                <li><img alt="{{season_pass.value}}" src="/icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>{{season_pass.value}}</li>
                 {% endfor %}
                 {% endif %}
-                <li>Trail Count: {{mountain.trail_count}}</li>
-                <li>Lift Count: {{mountain.lift_count}}</li>
-                <li>Vertical: {{mountain.vertical}} ft</li>
-                <li>Difficulty: {{mountain.difficulty}}</li>
-                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}</li>
-                <li>Last Updated: {{mountain.last_updated}}</li>
+                <li>Trail Count: {{mountain.trail_count()}}</li>
+                <li>Lift Count: {{mountain.lift_count()}}</li>
+                <li>Hike-to Access: {{mountain.hike_count()}}</li>
+                <li>Vertical: {{mountain.vertical_feet()}} ft</li>
+                <li>Difficulty: {{mountain.difficulty}}<span class="icon difficulty-{{ trail_color(mountain.difficulty) }}"></span></li>
+                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
+                <li>Weather Modifier: {{weather_modifier}}°</li>
+                <li>Last Updated: {{mountain.last_updated.date()}}</li>
                 <li><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button></li>
             </ul>
         </div>
@@ -45,31 +48,19 @@
         <div class="mountain-section">
             <h2>Trails - Sorted by Difficulty</h2>
             <ul>
-                <li><span class="icon gladed"></span>Gladed</li>
-                <li><span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>Ungroomed/Moguls</li>
+                <li><span class="sidebar-badge"><span class="icon gladed"></span></span>Gladed</li>
+                <li><span class="sidebar-badge"><span class="icon ungroomed"></span></span>Ungroomed/Moguls</li>
+                <li><span class="sidebar-badge"><span class="icon hazardous"></span></span>Hazardous</li>
                 {% for trail in trails %}
                 {% if not '' == trail.name %}
                 <li>
-                    {% if trail.difficulty < 18 %} <span class="icon difficulty-green"></span>
-                        {% else %}
-                        {% if trail.difficulty < 27 %} <span class="icon difficulty-royalblue"></span>
-                            {% else %}
-                            {% if trail.difficulty < 36 %} <span class="icon difficulty-black"></span>
-                                {% else %}
-                                {% if trail.difficulty < 47 %} <span class="icon difficulty-red"></span>
-                                    {% else %}
-                                    <span class="icon difficulty-gold"></span>
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {% endif %}
-                                    {{trail.steepest_30m}}° - {{trail.name}}
-                                    {% if trail.gladed == True %}
-                                    <span> </span><span class="icon gladed"></span>
-                                    {% endif %}
-                                    {% if trail.ungroomed == True %}
-                                    <span>&nbsp;&nbsp;</span><span class="icon ungroomed"></span>
-                                    {% endif %}
+                    <span class="sidebar-badge">
+                        {{trail.difficulty}}<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    </span>
+                    {{trail.name}}
+                    {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}
+                    {% if trail.ungroomed %}<span class="icon ungroomed"></span>{% endif %}
+                    {% if trail.hazardous %}<span class="icon hazardous"></span>{% endif %}
                 </li>
                 {% endif %}
                 {% endfor %}
@@ -82,8 +73,32 @@
             <h2>Lifts</h2>
             <ul>
                 {% for lift in lifts %}
-                {% if not '' == lift.name %}
-                <li>{{lift.name}} - {{lift.length}} ft</li>
+                {% if not '' == lift.name and lift.lift_type != "hike" %}
+                <li>
+                    <span class="sidebar-badge">
+                        {% if lift.occupancy %}
+                        {% if lift.occupancy <= 2 %}
+                        {% for i in range(lift.occupancy) %}<span class="icon person"></span>{% endfor %}
+                        {% else %}
+                        {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
+                        {% endif %}
+                        {% endif %}
+                    </span>
+                    {{lift.name}} - {{lift.length_feet()}} ft
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="mountain-section">
+            <h2>Hike-to Access</h2>
+            <ul>
+                {% for lift in lifts %}
+                {% if not '' == lift.name and lift.lift_type == "hike" %}
+                <li>
+                    <span class="sidebar-badge"></span>
+                    {{lift.name}} - {{lift.length_feet()}} ft
+                </li>
                 {% endif %}
                 {% endfor %}
             </ul>
@@ -94,7 +109,7 @@
     </div>
 
     <div id="zoom">
-        <img alt="{{mountain.name}} - {{mountain.state}}" src="/maps/{{mountain.state}}/{{mountain.name}}.svg" id="map" />
+        <img alt="{{mountain.name}} - {{mountain.state.value}}" src="/maps/{{mountain.state.value}}/{{mountain.name}}.svg" id="map" />
     </div>
     <div class="zoom-buttons">
         <button class="button-cta2 zoom-button" id="zoom_out">-</button>
@@ -102,7 +117,7 @@
         <button class="button-cta2 zoom-button" id="zoom_reset">Reset</button>
     </div>
     <div class="map-switch">
-        <button class="button-cta2 map-button" id="interactive"><a href="/interactive-map/{{mountain.state}}/{{mountain.name}}">Interactive Map</a></button>
+        <button class="button-cta2 map-button" id="interactive"><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}">Interactive Map</a></button>
     </div>
     <script>
         document.getElementById("hideButton").addEventListener("click", function() {

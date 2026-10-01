@@ -561,31 +561,33 @@
     u = '',
     a = ''
   function d (t) {
+    var k = window.DIFFICULTY_CONSTANTS
     switch (t) {
       case 0:
         return 0
       case 1:
-        return 18
+        return k.beginner_max
       case 2:
-        return 27
+        return k.intermediate_max
       case 3:
-        return 36
+        return k.advanced_max
       case 4:
-        return 47
+        return k.expert_max
       case 5:
         return 100
     }
   }
   function c (t) {
+    var k = window.DIFFICULTY_CONSTANTS
     return t == 0
       ? 0
-      : t <= 18
+      : t <= k.beginner_max
       ? 1
-      : t <= 27
+      : t <= k.intermediate_max
       ? 2
-      : t <= 36
+      : t <= k.advanced_max
       ? 3
-      : t <= 47
+      : t <= k.expert_max
       ? 4
       : 5
   }

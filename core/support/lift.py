@@ -1,0 +1,154 @@
+from dataclasses import dataclass, fields
+from typing import Self
+
+from shapely import LineString, wkt
+
+from core.connectors.database import DATABASE_PATH, cursor, db_id
+from core.datamodels.database import LiftTable
+from core.support.utils import meters_to_feet, round_feet, round_geometry_precision
+
+
+@dataclass
+class Lift:
+    """
+    Lift dataclass that contains all information about a specific lift.
+    An existing lift can be loaded from the DB with from_db, and a new
+    or updated lift can be saved back to the DB with to_db.
+    """
+
+    lift_id: str
+    mountain_id: str
+    geometry: LineString
+    name: str
+    lift_type: str
+    occupancy: int | None
+    capacity: int | None
+    detachable: bool | None
+    bubble: bool | None
+    heating: bool | None
+    length: float | None
+    vertical: float | None = None
+    average_slope: float | None = None
+
+    def length_feet(self) -> int | None:
+        """
+        Returns length in feet, for display. Length is stored in meters.
+        """
+        return round_feet(meters_to_feet(self.length))
+
+    def vertical_feet(self) -> int | None:
+        """
+        Returns vertical rise in feet, for display. Vertical is stored
+        in meters.
+        """
+        return round_feet(meters_to_feet(self.vertical))
+
+    def from_db(lift_id: str, db_path: str = DATABASE_PATH) -> Self:
+        """
+        Gets lift data from database and returns a Lift object
+        """
+        with cursor(db_path=db_path) as cur:
+            query = "SELECT * from Lifts WHERE lift_id = ?"
+            params = (lift_id,)
+            result = cur.execute(query, params).fetchone()
+
+        if not result:
+            return None
+
+        result = dict(result)
+        result[LiftTable.geometry] = wkt.loads(result[LiftTable.geometry])
+        result[LiftTable.detachable] = (
+            None
+            if result[LiftTable.detachable] is None
+            else bool(result[LiftTable.detachable])
+        )
+        result[LiftTable.bubble] = (
+            None if result[LiftTable.bubble] is None else bool(result[LiftTable.bubble])
+        )
+        result[LiftTable.heating] = (
+            None
+            if result[LiftTable.heating] is None
+            else bool(result[LiftTable.heating])
+        )
+
+        return Lift(**result)
+
+    def to_db(self, db_path: str = DATABASE_PATH) -> None:
+        """
+        Updates DB record with the values in the dataclass
+        """
+        # occupancy/capacity/detachable/bubble/heating come from OSM tags
+        # that many lifts simply aren't tagged with
+        nullable_fields = {
+            "occupancy",
+            "capacity",
+            "detachable",
+            "bubble",
+            "heating",
+        }
+
+        # check that all other fields have been populated before saving
+        missing_fields = [
+            f.name
+            for f in fields(self)
+            if f.name not in nullable_fields and getattr(self, f.name) is None
+        ]
+        if len(missing_fields) > 0:
+            raise ValueError(f"The following fields are missing: {missing_fields}")
+
+        with cursor(db_path=db_path) as cur:
+            query = f"""
+                INSERT INTO Lifts (
+                    {LiftTable.lift_id},
+                    {LiftTable.mountain_id},
+                    {LiftTable.geometry},
+                    {LiftTable.name},
+                    {LiftTable.lift_type},
+                    {LiftTable.occupancy},
+                    {LiftTable.capacity},
+                    {LiftTable.detachable},
+                    {LiftTable.bubble},
+                    {LiftTable.heating},
+                    {LiftTable.length},
+                    {LiftTable.vertical},
+                    {LiftTable.average_slope}
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT({LiftTable.lift_id}) DO UPDATE SET
+                    {LiftTable.mountain_id} = excluded.{LiftTable.mountain_id},
+                    {LiftTable.geometry} = excluded.{LiftTable.geometry},
+                    {LiftTable.name} = excluded.{LiftTable.name},
+                    {LiftTable.lift_type} = excluded.{LiftTable.lift_type},
+                    {LiftTable.occupancy} = excluded.{LiftTable.occupancy},
+                    {LiftTable.capacity} = excluded.{LiftTable.capacity},
+                    {LiftTable.detachable} = excluded.{LiftTable.detachable},
+                    {LiftTable.bubble} = excluded.{LiftTable.bubble},
+                    {LiftTable.heating} = excluded.{LiftTable.heating},
+                    {LiftTable.length} = excluded.{LiftTable.length},
+                    {LiftTable.vertical} = excluded.{LiftTable.vertical},
+                    {LiftTable.average_slope} = excluded.{LiftTable.average_slope}
+            """
+            params = (
+                self.lift_id,
+                db_id(self.mountain_id),
+                str(round_geometry_precision(self.geometry)),
+                self.name,
+                self.lift_type,
+                self.occupancy,
+                self.capacity,
+                self.detachable,
+                self.bubble,
+                self.heating,
+                self.length,
+                self.vertical,
+                self.average_slope,
+            )
+            cur.execute(query, params)
+
+    def delete_from_db(lift_id: str, db_path: str = DATABASE_PATH) -> None:
+        """
+        Removes a lift from the DB by id.
+        """
+        with cursor(db_path=db_path) as cur:
+            query = f"DELETE FROM Lifts WHERE {LiftTable.lift_id} = ?"
+            cur.execute(query, (lift_id,))

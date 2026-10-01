@@ -13,7 +13,7 @@ Explore Resorts - Find Ski Resorts Across the USA
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 
-<script type="text/javascript" src="https://cdn.rawgit.com/makinacorpus/Leaflet.GeometryUtil/master/src/leaflet.geometryutil.js">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.GeometryUtil@master/src/leaflet.geometryutil.js">
 </script>
 
 <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
@@ -39,7 +39,7 @@ Explore Resorts - Find Ski Resorts Across the USA
 
 <div id='map'></div>
 <script>
-    locations = {{geojson}}
+    locations = {{ geojson | tojson }}
     var map = L.map('map').setView([47.8281, -113.5795], 4);
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {

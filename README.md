@@ -19,7 +19,7 @@ sudo apt install python3-pip
 Once pip is installed, the next step is the project's dependencies, which can be install with:
 
 ```bash
-pip install rich flask flask_wtf matplotlib haversine requests
+pip install -r requirements.txt
 ```
 
 Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to add necessary directories and your secret file.
@@ -27,6 +27,22 @@ Mark `startup.sh` as executable with `chmod +x`. Run `startup.sh` in order to ad
 If you are exporting data from a previous install, it can be found in the `data` directory and the `static/maps` and `static/thumbnails` directories.
 
 To run the website on localhost, execute the file called `app.py` with `python3 app.py`. If the port specified in the `app.py` file is less than 5000, sudo is required.
+
+## Development
+
+To update reqirements.txt, run:
+
+```bash
+pipreqs --savepath=requirements.in
+pip-compile
+```
+
+Before running `pip-compile`, add in the following lines to the `requirements.in` file:
+```txt
+pipreqs==0.5.0
+pip-tools==7.5.0
+these-united-states==1.2.0.24
+```
 
 ## Status
 

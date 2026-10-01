@@ -1,18 +1,139 @@
-#update_tags_submit {
-    margin-top: .2rem;
-    margin-bottom: .5rem;
-}
-
 .map-pane {
     padding: 1rem;
 }
 
-.search-form {
-    padding-top: 1rem;
+.map-pane > div {
+    padding: 0;
 }
 
-ul {
+.management-nav {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: 0;
+}
+
+.management-nav h1 {
+    margin: 0 0 0.5rem;
+}
+
+.management-nav .nav-list {
+    margin-top: 0;
+    flex-wrap: wrap;
+}
+
+.mountain-details{
+    top: calc(92px + 1rem);
+}
+
+#map {
+    top: calc(140px + 1rem);
+}
+
+/* .map-button (interactive-map.css) is positioned for that page's shorter
+   header; shifted down by the same amount as .mountain-details/#map above
+   to clear this page's extra .management-nav bar */
+.map-button {
+    top: calc(102px + 1rem);
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding-top: 1rem;
     padding-bottom: 1rem;
+}
+
+.search-form ul {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    padding-bottom: 0;
+}
+
+.checkbox-group {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+#refresh {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.rotate-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    width: fit-content;
+}
+
+.rotate-buttons .search-form {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rotate-buttons .button-cta2 {
+    width: 100%;
+}
+
+#refresh ul {
+    align-self: stretch;
+}
+
+#refresh .nested-option {
+    margin-left: 1rem;
+}
+
+#map_size {
+    width: 4rem;
+}
+
+.delete-mode-btn.active {
+    background-color: #ff7f0e;
+    color: white;
+}
+
+.modifier-mode-btn.active {
+    background-color: #6a3d9a;
+    color: white;
+}
+
+/* #bulk-delete/#bulk-modifiers are .search-forms (display: flex), so they
+   need an explicit rule to stay hidden while their mode is off. Each is
+   moved into a Leaflet control at the top-right of the map, stacked under
+   the mode toggle buttons (see interactive-map.js). */
+#bulk-delete,
+#bulk-modifiers {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .4rem;
+    padding: 8px 12px;
+    background-color: white;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background-clip: padding-box;
+}
+
+#bulk-delete[hidden],
+#bulk-modifiers[hidden] {
+    display: none;
+}
+
+#bulk-delete-count,
+#bulk-modifiers-count {
+    font-weight: 600;
+}
+
+#bulk-delete-submit:disabled,
+#bulk-modifiers-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 h2 {
@@ -23,6 +144,63 @@ select {
     height: 32px;
 }
 
-input:not([type="checkbox"]) {
-    height: 32px;
+#add-resort-form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .5rem;
+    width: fit-content;
+}
+
+input[type="file"] {
+    display: flex;
+    align-items: center;
+}
+
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+    height: 100%;
+    cursor: pointer;
+}
+
+/* Full-screen wait indicator shown while a management form submission
+   (add / refresh / rotate / etc.) is being processed server-side. */
+#processing-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: color-mix(in srgb, var(--color-background) 80%, transparent);
+    backdrop-filter: blur(2px);
+}
+
+#processing-overlay[hidden] {
+    display: none;
+}
+
+#processing-overlay .spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 4px solid var(--color-border);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: processing-spin 0.8s linear infinite;
+}
+
+#processing-overlay p {
+    color: var(--color-primary);
+    font-weight: 600;
+    padding: 0;
+}
+
+@keyframes processing-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #processing-overlay .spinner { animation-duration: 2s; }
 }

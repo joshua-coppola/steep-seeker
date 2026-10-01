@@ -5,21 +5,35 @@ Add Resort
 {% endblock title %}
 
 {% block pagehead %}
+<link href="/interactive-map.css" rel="stylesheet" />
+<link href="/map_shared.css" rel="stylesheet" />
 <link href="/management-edit-resort.css" rel="stylesheet" />
-<link href="/management-add-resort.css" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block insideContent %}
-    <form id="search-form" class="search-form" method="POST" enctype="multipart/form-data">
+    <form id="add-resort-form" class="search-form" method="POST" enctype="multipart/form-data">
         <select id="search" name="q" type="search">
             <option value="none" selected disabled hidden>Select a File</option>
             {% for resort in resorts %}
                 <option value="{{resort}}">{{resort}}</option>
             {% endfor %}
         </select>
-        <br>
         <input type="file" id="file" name="file" accept=".osm" />
-        <br>
         <input class="button-cta" id="submit" type="submit" value="Add" />
     </form>
+    <script>
+        (function () {
+            // adding a resort fetches elevation/weather data and can take
+            // over a minute, which invites a double-click/double-submit;
+            // that races two requests over the same source .osm file and
+            // the second one 500s when it tries to move a file the first
+            // one already moved
+            const form = document.getElementById("add-resort-form");
+            const submit = document.getElementById("submit");
+            form.addEventListener("submit", () => {
+                submit.disabled = true;
+                submit.value = "Adding...";
+            });
+        })();
+    </script>
 {% endblock insideContent %}
