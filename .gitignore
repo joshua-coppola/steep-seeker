@@ -15,5 +15,6 @@ static/node_modules
 #ignore test files
 test.py
 
-#ignore testing scripts
-scripts/
+#ignore testing scripts, except the deploy script
+scripts/*
+!scripts/docker_deploy.sh
