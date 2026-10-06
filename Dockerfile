@@ -30,7 +30,7 @@ COPY app.py .
 COPY core/ core/
 COPY templates/ templates/
 
-RUN useradd --system --create-home --uid 1000 appuser && \
+RUN useradd --create-home --uid 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
