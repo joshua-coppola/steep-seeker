@@ -5,6 +5,16 @@
 # be synced into this repo checkout before `docker build` runs -- this image
 # bakes in whatever is present at build time, it does not fetch or generate
 # it. Rebuild + redeploy whenever the data is refreshed.
+
+# leaflet.heightgraph (templates reference it at /node_modules/leaflet.heightgraph/...,
+# served by Flask's static folder -- see core/web/app.py) used to depend on a
+# manual `npm install` into static/node_modules on whatever host built the
+# image. 
+FROM node:20-slim AS node_modules
+WORKDIR /build
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -24,6 +34,7 @@ RUN pip install --no-cache-dir -r requirements-docker.txt
 COPY data/db.db data/db.db
 COPY config/weather_calibration.json config/weather_calibration.json
 COPY static/ static/
+COPY --from=node_modules /build/node_modules static/node_modules
 
 # Application code.
 COPY app.py .

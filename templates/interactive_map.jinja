@@ -5,37 +5,6 @@
 {% endblock title %}
 
 {% block pagehead %}
-<script>
-    // TEMPORARY iOS debugging aid -- surfaces JS errors/rejections directly
-    // on the page so they're readable on-device without a Mac/Safari remote
-    // inspector. Remove once the iOS map-rendering issue is diagnosed.
-    (function () {
-        var banner;
-        function show(msg) {
-            if (!banner) {
-                banner = document.createElement('div');
-                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;' +
-                    'background:#b00020;color:#fff;font:12px/1.4 monospace;' +
-                    'padding:8px;max-height:40vh;overflow:auto;white-space:pre-wrap;';
-                document.documentElement.appendChild(banner);
-            }
-            var line = document.createElement('div');
-            line.style.borderTop = '1px solid rgba(255,255,255,.3)';
-            line.style.paddingTop = '4px';
-            line.style.marginTop = '4px';
-            line.textContent = msg;
-            banner.appendChild(line);
-        }
-        window.addEventListener('error', function (e) {
-            show('Error: ' + e.message + '\n' + (e.filename || '') + ':' + e.lineno + ':' + e.colno +
-                (e.error && e.error.stack ? '\n' + e.error.stack : ''));
-        });
-        window.addEventListener('unhandledrejection', function (e) {
-            var reason = e.reason;
-            show('Unhandled rejection: ' + (reason && reason.stack ? reason.stack : reason));
-        });
-    })();
-</script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
