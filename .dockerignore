@@ -12,8 +12,6 @@ scripts/
 README.md
 CLAUDE.md
 api-endpoints-steepseeker.com.json
-package.json
-package-lock.json
 startup.bat
 startup.sh
 pyproject.toml
