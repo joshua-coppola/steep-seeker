@@ -17,16 +17,9 @@ About Steep Seeker
     <section class="blurb">
         <div></div>
         <div>
-            <p>Steep Seeker was created with the intention of providing fellow skiers
-            with a platform to easily and reliably compare trails between mountains.
-            While ski resorts typically follow the standardized terms of “Green, Blue,
-            Black and Double Black Diamond” trails, what one ski resort deems as a
-            black diamond may be very different from another resort. The standardized
-            rating scale Steep Seeker utilizes aims to provide an all encompassing
-            rating across the board.</p>
+            <p>Steep Seeker was created with the intention of providing fellow skiers with a platform to easily and reliably compare trails between mountains. While ski resorts typically follow the standardized terms of “Green, Blue, Black, and Double Black Diamond” trails, what one ski resort deems as a black diamond may be very different from another resort. The standardized rating scale Steep Seeker utilizes aims to provide an all-encompassing rating across the board.</p>
 
-            <p>Want to join the community? Come chat about the slopes and get updates
-            first.</p>
+            <p>Want to join the community? Come chat about the slopes and get updates first.</p>
             <div class="social-links">
                 <a href="https://discord.gg/yk9BKW8yFn" target="_blank" rel="noopener" aria-label="Join the Steepseeker Discord">
                     <img alt="" height="28" width="28" src="/icons/discord.svg" />
@@ -100,50 +93,22 @@ About Steep Seeker
         <div>
             <h2>How It Works</h2>
 
-            <p>These maps were created by using data collected from publicly available 
-            maps on OpenStreetMaps and the USGS. The elevation data collected from the 
-            USGS allowed for the configuration of a 3D representation of each resort.
-            </p>
+            <p>These maps were created using data collected from publicly available maps on OpenStreetMap and the USGS. The elevation data collected from the USGS allowed for the configuration of a 3D representation of each resort.</p>
 
-            <p>The colors that appear on the map are determined by the steepest 
-            {{ difficulty_thresholds.pitch_window_feet }} section of each trail and 
-            any modifiers that would increase or decrease difficulty. Information such 
-            as gladed trails, grooming, average accumulations of snow and rain at the 
-            resort, and frequency of freeze thaw cycles were also taken into account 
-            when determining a trails rating.</p>
+            <p>The colors that appear on the map are determined by the steepest {{ difficulty_thresholds.pitch_window_feet }} foot section of each trail and any modifiers that would increase or decrease difficulty. Information such as gladed trails, grooming, average accumulations of snow and rain at the resort, and frequency of freeze-thaw cycles were also taken into account when determining a trail’s rating.</p>
 
-            <p>The ratings and colors for each trail are based on the values listed in 
-            the tables on this page. These values are based on a combination of using 
-            statistics to select values that minimize error and rigorous manual 
-            verification to ensure that the math does in fact make sense in the real 
-            world.</p>
+            <p>The ratings and colors for each trail are based on the values listed in the tables on this page. These values were created through statistics to select values that minimize error. Furthermore, each value undergoes manual verification to ensure real world accuracy.</p>
 
-            <p>While Steep Steek prides itself in providing accurate data, one 
-            limitation to note is that the maps created can only be as accurate as the 
-            data collected from OpenStreetMaps. Not all tags are correct, and not all 
-            trails are present, or placed accurately. If you find tagging or routing 
-            errors, please either contact me and let me know what is incorrect, or 
-            correct the issues directly on OpenStreetMaps. More information about 
-            correcting errors can be found in the Q & A section below.</p>
+            <p>While Steep Steek prides itself on providing accurate data, one limitation to note is that the maps created can only be as accurate as the data collected from OpenStreetMap. Not all tags are correct, and not all trails are present or placed accurately. If you find tagging or routing errors, please either contact me and let me know what is incorrect, or correct the issues directly on OpenStreetMap. More information about correcting errors can be found in the Q & A section below.</p>
         </div>
     </section>
     <section class="blurb">
         <div></div>
         <div>
             <h2 id="about-rankings">Mountain Rankings</h2>
-            <p>Mountain Rankings compare and contrast the difficulty of advanced 
-            trails from the easiest of novice trails. The rankings are created by 
-            using a weighted average of the top 30 difficult and novice trails in 
-            order to create a metric that provides data on how expert and beginner 
-            friendly a location is and how this data compares to other mountains.</p>
+            <p>Mountain Rankings compare and contrast the most difficult of advanced trails and the easiest of novice trails. The rankings are created by using a weighted average of the top 30 difficult and novice trails in order to create a metric that provides data on how expert and beginner friendly a location is and how this data compares to other mountains.</p>
 
-            <p>20 percent of the rating is composed from the top 30 trails, and 80 
-            percent comes from the top 5 trails in a particular area. These rankings 
-            can be identified with the color designated  to each resort, which 
-            indicates how the difficult and novice trails are rated and an actual 
-            score which can be used to compare resorts within the same difficulty 
-            color. Note that in order for a mountain to rate well, it cannot just have 
-            one standout run.</p>
+            <p>20 percent of the rating is composed of  the top 30 trails, and 80 percent comes from the top five trails in a particular area. These rankings can be identified with the color designated to each resort, which indicates how the difficult and novice trails are rated, and an actual score which can be used to compare resorts within the same difficulty color. Note that in order for a mountain to rate well, it cannot just have one standout run.</p>
         </div>
     </section>
     <section class="blurb blurb-dark qa">
@@ -151,29 +116,14 @@ About Steep Seeker
         <div>
             <h2>Q & A</h2>
             <h3>Why only US resorts?</h3>
-            <p>At the moment, the elevation map specs I need of 10m resolution or 
-            better are not available for many countries. I hope to expand to other 
-            countries as better data becomes available, with Canada being top of my 
-            list.</p>
+            <p>At the moment, the elevation map specs I need of 10m resolution or better, are not available for many countries. I hope to expand to other countries as better data becomes available, with Canada being top of my list.</p>
 
             <h3>What about X factor that changes a trail’s difficulty?</h3>
-            <p>A large majority of variance between different trails is explained with the 
-            steepness of the trail and the existing modifiers, but not all of it. 
-            I have many ideas about other factors to consider, but the hardest part 
-            for many of them is getting the data, and then establishing how much it 
-            should factor in.</p>
+            <p>A large majority of the variance between different trails is explained by trail steepness and the existing modifiers, but not all of it. I have many ideas for potential factors to consider, but it is difficult to obtain the data needed to implement them.</p>
 
             <h3>What should you do if you find a mistake?</h3>
             <p>Given that the primary source for data is 
-            <a href="https://www.openstreetmap.org">OpenStreetMaps</a>, where individual 
-            users come together to crowdsource the map, trail quality can vary between 
-            resorts. The flip side to that is that anyone can improve the maps. If you 
-            know a resort well and are familiar with contributing to OpenStreetMaps (or 
-            want to learn), it would be extremely helpful to have local knowledge to fix 
-            problems on a resort’s map. Once OpenStreetMaps is updated, let me know 
-            and I’ll refresh the map here. If you find a problem that is beyond 
-            what you are willing to fix there (or is a problem with my 
-            model/website), let me know and I’ll do my best to resolve it. </p>
+            <a href="https://www.openstreetmap.org">OpenStreetMaps</a>, where individual users come together to crowdsource the map, trail quality can vary between resorts. The flip side to that is that anyone can improve the maps. If you know a resort well and are familiar with contributing to OpenStreetMap (or want to learn), it would be extremely helpful to have local knowledge to fix problems on a resort’s map. Once OpenStreetMap is updated, let me know, and I’ll refresh the map here. If you find a problem that is beyond what you are willing to fix there (or is a problem with my model/website), let me know and I’ll do my best to resolve it.</p>
 
             <p>Join the <a href=" https://discord.gg/yk9BKW8yFn">Steepseeker Discord</a> 
             Server and let me know about any issues you encounter in the issues channel.</p>
@@ -186,28 +136,13 @@ About Steep Seeker
             to tell me about what you want to see added in the feature-requests channel.</p>
 
             <h3>What was the inspiration?</h3>
-            <p>I’ve always wanted a way to compare trails that 
-            was less subjective, and this grew out of a small project I started to see 
-            if that was possible. So far I have thousands of hours invested in coding, 
-            model development, and website design. This is an ongoing project that I 
-            work on because I’m passionate about skiing, and want to make it easier 
-            for people like myself to nerd out about statistics.</p>
+            <p>I have  always wanted a way to compare trails that was less subjective, and this grew out of a small project I started to see if that was possible. So far, I have thousands of hours invested in coding, model development, and website design. This is an ongoing project that I work on because I’m passionate about skiing and want to make it easier for people like myself to nerd out about statistics.</p>
 
             <h3>Who am I?</h3>
-            <p>I’m an avid skier and data scientist; who grew up skiing and looks 
-            forward to every powder day. I combined my passion for skiing and 
-            background in data science to create this website and the related 
-            algorithms that drive it.</p>
+            <p>I am  an avid skier and data scientist who grew up skiing and looks forward to every powder day. I combined my passion for skiing and background in data science to create this website and the related algorithms that drive it.</p>
 
             <h3>How can you help?</h3>
-            <p>This project takes a fair bit of time to create and 
-            maintain, and hosting a website is far from free. If you have experience 
-            with editing OpenStreetMaps, it would be extremely helpful to help by 
-            maintaining your local areas. When new trails get added to a resort, 
-            someone needs to add them to OSM, and I likely won’t know that there is a 
-            new trail. Also, not every resort has all the trails added, and many are 
-            missing tags. For example, I’d love to have more resorts with proper tagging 
-            for moguls so I can add them to the model. </p>
+            <p>This project takes a fair bit of time to create and maintain, and hosting a website is far from free. If you have experience with editing OpenStreetMap, it would be extremely helpful if you could  help by maintaining your local areas. When new trails get added to a resort, someone needs to add them to OSM, and I likely would not  know that there is a new trail. Also, not every resort has all the trails added, and many are missing tags. For example, I’d love to have more resorts with proper tagging for moguls so I can add them to the model.</p>
 
             <h2>Stay Connected</h2>
             <p>Follow along for updates, or come chat about the slopes.</p>
@@ -258,8 +193,7 @@ About Steep Seeker
                 be highlighted on the interactive map</li>
                 <li>Clicking a trail on the trail rankings page now opens the map with 
                 the trail highlighted</li>
-                <li>Brought in some help from a friend of mine to word smith my some 
-                of my writing, thanks again for the help!</li>
+                <li>Brought in some help from a professional to help word smith some of my writing, thanks again Rhiannon for your help!</li>
                 <li>Lots of small UI/UX tweaks</li>
                 <li>Refreshed all the mountains for the new season! (And had to do it 
                 twice because I may have messed up and lost the original copy…)</li>
