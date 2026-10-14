@@ -10,6 +10,11 @@ function updateThemeColors() {
   } else {
     root.classList.remove('dark');
   }
+  // keep the installed app's title bar / mobile browser chrome matching the page
+  var themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) {
+    themeColor.setAttribute('content', currentTheme == 'dark' ? '#000000' : '#ffffff');
+  }
 }
 
 function toggleTheme() {
