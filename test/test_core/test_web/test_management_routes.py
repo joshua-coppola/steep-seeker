@@ -68,7 +68,8 @@ def test_management_bulk_operations_page_renders(management_client):
     assert "Recalibrate" in body
     # same shell / sidebar CSS as the other management pages
     assert '<div class="map-pane mountain-details">' in body
-    assert 'href="/management-edit-resort.css"' in body
+    # (asset_url appends a ?v= content hash to the stylesheet link)
+    assert 'href="/management-edit-resort.css?v=' in body
 
 
 def test_management_bulk_operations_recalibrate_reports_summary(

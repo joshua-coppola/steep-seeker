@@ -5,8 +5,8 @@ Search Ski Resorts
 {% endblock title %}
 
 {% block pagehead %}
-<link href="/search.css" rel="stylesheet" />
-<link href="/form.css" rel="stylesheet" />
+<link href="{{ asset_url('/search.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/form.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -123,5 +123,5 @@ Search Ski Resorts
 {% endblock content %}
 
 {% block postbody %}
-<script src="/search.js"></script>
+<script src="{{ asset_url('/search.js') }}"></script>
 {% endblock postbody %}

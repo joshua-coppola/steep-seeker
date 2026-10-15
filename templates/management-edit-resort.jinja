@@ -19,22 +19,22 @@ Edit Resort
 <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
 </script>
 
-<link href="/interactive-map.css" rel="stylesheet" />
-<link href="/map_shared.css" rel="stylesheet" />
-<link href="/management-edit-resort.css" rel="stylesheet" />
+<link href="{{ asset_url('/interactive-map.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/map_shared.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/management-edit-resort.css') }}" rel="stylesheet" />
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
 
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 
-<script src="/leaflet.textpath.js"></script>
+<script src="{{ asset_url('/leaflet.textpath.js') }}"></script>
 
-<link rel="stylesheet" href="/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.css"/>
-<script type="text/javascript" src="/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.js"></script>
+<link rel="stylesheet" href="{{ asset_url('/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.css') }}"/>
+<script type="text/javascript" src="{{ asset_url('/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.js') }}"></script>
 
-<script type="text/javascript" src="/mappings.js"></script>
-<script type="text/javascript" src="/interactive-map.js"></script>
+<script type="text/javascript" src="{{ asset_url('/mappings.js') }}"></script>
+<script type="text/javascript" src="{{ asset_url('/interactive-map.js') }}"></script>
 
 {% endblock pagehead %}
 

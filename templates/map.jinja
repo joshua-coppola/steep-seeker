@@ -5,8 +5,8 @@
 {% endblock title %}
 
 {% block pagehead %}
-<link href="/map.css" rel="stylesheet" />
-<link href="/map_shared.css" rel="stylesheet" />
+<link href="{{ asset_url('/map.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/map_shared.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -146,5 +146,5 @@
 {% block postbody %}
 {#<script src="/panzoom.js"></script>#}
 <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
-<script src="/map.js"></script>
+<script src="{{ asset_url('/map.js') }}"></script>
 {% endblock postbody %}

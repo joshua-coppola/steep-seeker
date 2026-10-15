@@ -21,9 +21,9 @@ Explore Resorts - Find Ski Resorts Across the USA
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
-<script src="/tile-layer.js"></script>
+<script src="{{ asset_url('/tile-layer.js') }}"></script>
 
-<link href="/explore.css" rel="stylesheet" />
+<link href="{{ asset_url('/explore.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}

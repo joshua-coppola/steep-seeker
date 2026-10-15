@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
 
-    <link href="/base.css" rel="stylesheet" />
+    <link href="{{ asset_url('/base.css') }}" rel="stylesheet" />
 
     <script src="https://cmp.gatekeeperconsent.com/min.js" data-cfasync="false"></script>
     <script src="https://the.gatekeeperconsent.com/cmp.min.js" data-cfasync="false"></script>
@@ -45,9 +45,9 @@
 
     {% endblock %}
 
-    <script src="/theme.js"></script>
-    <script src="/share.js"></script>
-    <script src="/install.js"></script>
+    <script src="{{ asset_url('/theme.js') }}"></script>
+    <script src="{{ asset_url('/share.js') }}"></script>
+    <script src="{{ asset_url('/install.js') }}"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');

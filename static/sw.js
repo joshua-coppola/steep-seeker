@@ -81,9 +81,13 @@ workbox.routing.registerRoute(
 );
 
 // An asset that isn't in the asset cache and can't be fetched (i.e. offline):
-// fall back to the copies offline.html relies on
+// fall back to the copies offline.html relies on. Those are cached under
+// their plain paths, so ignore the ?v= version templates add to CSS/JS links.
 workbox.routing.setCatchHandler(async ({ request }) => {
-  const fallback = await caches.match(request, { cacheName: OFFLINE_CACHE });
+  const fallback = await caches.match(request, {
+    cacheName: OFFLINE_CACHE,
+    ignoreSearch: true,
+  });
   return fallback || Response.error();
 });
 
