@@ -150,7 +150,7 @@ main > * {
     display: none;
 }
 
-@media screen and (max-width: 1116px){
+@media screen and (max-width: 1232px){
     .zoom-button {
         width: auto;
     }

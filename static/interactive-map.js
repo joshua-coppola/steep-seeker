@@ -175,18 +175,14 @@ function run_map(trails, map, editable = false, editQuery = null){
         selectFeature(item.dataset.kind, item.dataset.itemId);
     });
 
-    // Define two basemaps. crossOrigin makes tiles CORS requests, so the
-    // service worker caches them as normal responses rather than opaque ones
-    // (which browsers count as several MB each against the storage quota)
-    const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    // Define two basemaps (corsTileLayer: see /tile-layer.js)
+    const topoBasemap = corsTileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
-        crossOrigin: true,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
 
-    const satelliteBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    const satelliteBasemap = corsTileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
-        crossOrigin: true,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
     

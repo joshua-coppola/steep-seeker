@@ -89,7 +89,7 @@ main {
     }
 }
 
-@media screen and (max-width: 1116px){
+@media screen and (max-width: 1232px){
     #submit {
         width: auto;
     }

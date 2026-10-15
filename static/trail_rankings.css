@@ -161,6 +161,20 @@ select {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    /* same grid as .ranking-sort, so Share is one sort/region button wide */
+    .share-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 16px;
+    }
+
+    .share-row .share-button {
+        width: 100%;
+        max-width: 300px;
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
     .mobile table {
         width: 100%;
         margin-top: 4px;
@@ -177,7 +191,7 @@ select {
     }
   }
 
-@media screen and (max-width: 1116px) {
+@media screen and (max-width: 1232px) {
     #submit {
         width: auto;
     }
@@ -196,7 +210,8 @@ select {
 }
 
 @media screen and (max-width: 350px) {
-    .ranking-sort {
+    .ranking-sort,
+    .share-row {
         grid-template-columns: 1fr;
     }
 

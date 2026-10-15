@@ -33,7 +33,8 @@ window.addEventListener('load', function() {
   root = document.body;
 
   if (localStorage) {
-    currentTheme = localStorage.getItem('theme');
+    // nothing saved yet (first visit) means the default light theme
+    currentTheme = localStorage.getItem('theme') || 'light';
   }
 
   updateThemeColors();

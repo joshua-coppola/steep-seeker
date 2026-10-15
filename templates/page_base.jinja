@@ -27,6 +27,10 @@
                         {{link.title}}
                     </a></div></li>
                 {% endfor %}
+                {# shown by /install.js only when installing is possible #}
+                <li id="install-item" style="display: none"><div class="button"><a href="javascript:void(0);" class="button-cta2" id="install-button">
+                        Install App
+                    </a></div></li>
             </ul>
         </div>
     </div>
@@ -44,6 +48,14 @@
         } 
     </script>
 </nav>
+
+{# iOS has no install prompt, so /install.js opens this instead #}
+<dialog id="install-dialog" class="install-dialog">
+    <p>To install Steep Seeker, tap the <strong>Share</strong> button in Safari's toolbar, then choose <strong>Add to Home Screen</strong>.</p>
+    <form method="dialog">
+        <button class="button-cta">Got it</button>
+    </form>
+</dialog>
 
 <main>
     {%block content%}

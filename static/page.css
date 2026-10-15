@@ -179,7 +179,7 @@ p.copy {
 }
 
 
-@media screen and (max-width: 1116px) {
+@media screen and (max-width: 1232px) {
     nav {
         z-index: 9;
         background-color: var(--color-background);
@@ -245,4 +245,67 @@ p.copy {
     .button-cta2 {
         width: 100%;
     }
+}
+
+/* SHARE / INSTALL */
+
+.share-row {
+    margin: 8px 0;
+}
+
+/* on the rankings pages, stay button-sized past the general 1232px
+   full-width switch; rankings.css / trail_rankings.css size it to match
+   their sort/region buttons once those switch to a grid */
+.share-row .share-button {
+    width: auto;
+}
+
+/* Visit Website + Share side by side in the map pages' details pane, each
+   taking half the row */
+.mountain-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.mountain-actions > * {
+    flex: 1;
+}
+
+/* same text size for both (Visit Website otherwise keeps the browser's
+   default button font, which is smaller than .share-button's) */
+.mountain-actions button {
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+/* .button-cta2 is styled for links; reset the <button> defaults to match */
+.share-button {
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.install-dialog {
+    max-width: min(400px, 90vw);
+    padding: 16px;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    background-color: var(--color-background);
+    color: var(--color-primary);
+}
+
+.install-dialog p {
+    margin-bottom: 16px;
+    line-height: 1.5em;
+}
+
+.install-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.install-dialog .button-cta {
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
 }
