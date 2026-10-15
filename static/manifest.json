@@ -34,6 +34,43 @@
             "purpose": "maskable"
         }
     ],
+    "screenshots": [
+        {
+            "src": "/screenshots/interactive-map-wide.webp",
+            "type": "image/webp",
+            "sizes": "1280x800",
+            "form_factor": "wide",
+            "label": "Interactive trail map for Solitude, colored by standardized difficulty"
+        },
+        {
+            "src": "/screenshots/rankings-wide.webp",
+            "type": "image/webp",
+            "sizes": "1280x800",
+            "form_factor": "wide",
+            "label": "Mountain rankings by difficulty"
+        },
+        {
+            "src": "/screenshots/home-wide.webp",
+            "type": "image/webp",
+            "sizes": "1280x800",
+            "form_factor": "wide",
+            "label": "Steep Seeker home page"
+        },
+        {
+            "src": "/screenshots/interactive-map-narrow.webp",
+            "type": "image/webp",
+            "sizes": "780x1688",
+            "form_factor": "narrow",
+            "label": "Interactive trail map for Solitude on a phone"
+        },
+        {
+            "src": "/screenshots/home-narrow.webp",
+            "type": "image/webp",
+            "sizes": "780x1688",
+            "form_factor": "narrow",
+            "label": "Steep Seeker home page"
+        }
+    ],
     "shortcuts": [
         {
             "name": "Search",
