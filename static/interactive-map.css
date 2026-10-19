@@ -221,30 +221,6 @@ h3 {
     margin-top: calc(44px + var(--feature-sheet-offset-right, 0px));
 }
 
-.legend {
-    padding: 6px 8px;
-    background: white;
-    line-height: 20px;
-}
-
-.legend span {
-    text-align: left;
-    bottom: 3px;
-    font-size: 1.2rem;
-}
-
-.legend i {
-    width: 1.2rem;
-    height: 1.2rem;
-    float: left;
-    margin: 0 8px 0 0;
-}
-
-.legend i.icon {
-    background-size: 1rem;
-    background-color: rgba(255, 255, 255, 1);
-}
-
 .map-button {
     position: absolute;
     left: 426px;
@@ -295,18 +271,6 @@ h3 {
 
 
 @media screen and (max-width: 500px) {
-    .legend span {
-        font-size: .8rem;
-    }
-
-    .legend i {
-        width: .8rem;
-    }
-
-    .legend i.icon {
-        background-size: .8rem;
-    }
-
     #url {
         width: 100%;
     }

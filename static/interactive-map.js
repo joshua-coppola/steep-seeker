@@ -906,22 +906,7 @@ function run_map(trails, map, editable = false, editQuery = null){
         onFeatureClick(e.layer, e.latlng);
     });
 
-    var legend = L.control({ position: "bottomright" });
-
-    legend.onAdd = function(map) {
-        var div = L.DomUtil.create("div", "legend");
-        div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
-        div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
-        div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
-        div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
-        div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
-        div.innerHTML += '<span>- - - Gladed</span><br>';
-        L.DomEvent.disableClickPropagation(div);
-        return div;
-    };
-
-    legend.addTo(map);
-
+    
     L.control.locate().addTo(map);
 
     if (editable) {

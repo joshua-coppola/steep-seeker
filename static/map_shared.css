@@ -75,6 +75,56 @@ main > * {
     background-color: var(--color-map-background);
 }
 
+/* Legend section of the mountain details panel (map_page_base.jinja):
+   compact two-column lists, each item led by a fixed-width marker --
+   a difficulty/tag icon, or a line sample matching how that feature is
+   drawn on the map -- so the labels line up. Filled top-to-bottom, then
+   left-to-right (3 rows per column), so the difficulty scale reads in
+   order; minmax(0, 1fr) keeps both columns equal so the two lists'
+   columns line up despite long labels. */
+.mountain-section ul.map-legend {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    column-gap: 1rem;
+}
+
+.mountain-section ul.map-legend + ul.map-legend {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border);
+}
+
+.mountain-section .map-legend li {
+    padding: 3px 0;
+    align-items: center;
+}
+
+.map-legend li > :first-child {
+    flex: none;
+    margin: 0 .5em 0 0;
+}
+
+.map-legend li > .icon:first-child {
+    margin-right: 1.75em; /* 1em icon + this = the 2.25em line samples + .5em */
+}
+
+.map-legend li > .icon:not(:first-child) {
+    margin: 0 0 0 .4em;
+}
+
+.legend-line {
+    width: 2.25em;
+    height: 1em;
+}
+
+/* Gladed lines take their trail's difficulty color on the map, so the
+   sample is drawn in the text color. */
+.legend-line line:not([stroke]) {
+    stroke: var(--color-primary);
+}
+
 .sidebar-badge {
     flex: 0 0 4.5em;
     display: flex;
