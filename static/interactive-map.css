@@ -23,16 +23,202 @@ h3 {
     font-size: 1.5rem;
 }
 
-.leaflet-popup-content p {
+/* Trail/lift sheet docked to the top of the map (built in
+   interactive-map.js): elevation profile on top, stats below. It sits
+   level with the first row of Leaflet controls and sizes to its content,
+   up to the map's height. Width is capped so the elevation profile doesn't
+   stretch across a wide desktop map. */
+.feature-sheet {
+    position: absolute;
+    top: 54px; /* .leaflet-top's 44px + .leaflet-control's 10px */
+    left: 10px;
+    width: calc(100% - 20px);
+    max-width: 720px;
+    z-index: 1001; /* above Leaflet's control corners (1000) */
+    max-height: calc(100% - 64px);
+    overflow-y: auto;
+    padding: 8px 12px 12px;
+    background-color: var(--color-background);
+    color: var(--color-primary);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
+    cursor: default;
+}
+
+.feature-sheet[hidden],
+.feature-sheet [hidden] {
+    display: none;
+}
+
+.feature-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+}
+
+.feature-sheet-title {
+    font-size: 1.25rem;
+    font-weight: bold;
     margin: 0;
-    margin-top: .2rem;
-    font-size: 1rem;
+}
+
+.feature-sheet-close {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    color: var(--color-primary);
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.feature-sheet-graph {
+    margin-top: 4px;
+}
+
+/* The heightgraph's container keeps its .leaflet-control class after being
+   moved into the sheet; undo that class's float/margins so the stats stack
+   below the graph instead of beside it. */
+.feature-sheet-graph .leaflet-control {
+    float: none;
+    margin: 0;
+}
+
+.feature-sheet-graph svg {
+    display: block;
+}
+
+.feature-sheet .icon {
+    margin: 0;
+    margin-left: .5rem;
+}
+
+.feature-sheet .sheet-muted {
+    color: var(--color-secondary);
+}
+
+/* Summary line: rating badge, then headline facts. Spacing plus each
+   fact's muted label separates them (no dividers, which would be left
+   dangling at the start of a line when this wraps on phones). */
+.sheet-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem 1.1rem;
+    font-size: 1.1rem;
+}
+
+/* Rating badge, cards: the site's button shape (4px corners, 2px border,
+   bold, difficulty written icon-first as in the rankings), tinted by
+   difficulty: a light wash of the color behind, a softer version of it
+   for the border, and (cards) the full color on a thick left edge.
+   Black is swapped for grey in dark mode so its tint still shows; lift
+   cards, which have no difficulty, fall back to the neutral secondary
+   color. */
+.chip-green { --chip-color: green; }
+.chip-royalblue { --chip-color: royalblue; }
+.chip-black { --chip-color: black; }
+.chip-red { --chip-color: red; }
+.chip-gold { --chip-color: gold; }
+.dark .chip-black { --chip-color: #999; }
+
+.sheet-rating,
+.sheet-chip {
+    border: 2px solid color-mix(in srgb, var(--chip-color, var(--color-secondary)) 45%, var(--color-background));
+    border-radius: 4px;
+    background-color: color-mix(in srgb, var(--chip-color, var(--color-secondary)) 12%, var(--color-background));
+}
+
+.sheet-rating {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    font-weight: bold;
+}
+
+.sheet-rating-level {
+    margin-left: .35rem;
+    font-weight: normal;
+}
+
+/* flex: none / no-repeat -- squeezed, or at fractional sizes, an icon's
+   repeating 'contain' background tiles a sliver of another copy beside
+   or below it. */
+.feature-sheet .sheet-rating .icon,
+.feature-sheet .sheet-chip-value .icon {
+    flex: none;
+    background-repeat: no-repeat;
+    margin: 0 .35rem 0 0;
+}
+
+.feature-sheet .sheet-chip-value .icon.person {
+    margin: 0 .1rem 0 0;
+}
+
+/* Uppercase bold, like the rankings pages' sort/region tabs. */
+.sheet-section-label {
+    margin-top: 8px;
+    font-size: .9rem;
+    font-weight: bold;
+    text-transform: uppercase;
     color: var(--color-primary);
 }
 
-.leaflet-popup-content .icon {
-    margin: 0;
-    margin-left: .5rem;
+/* Trails: fixed grid so a short last row doesn't stretch. Lifts: cards
+   sized to their content. */
+.sheet-chips {
+    display: grid;
+    /* Fits the widest value: a double-diamond icon + "37.3°". */
+    grid-template-columns: repeat(auto-fill, minmax(4.7rem, 1fr));
+    gap: 4px;
+}
+
+.sheet-chips-auto {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.sheet-chip {
+    display: flex;
+    flex-direction: column;
+    padding: 1px 6px;
+    border-left: 6px solid var(--chip-color, var(--color-secondary));
+}
+
+.sheet-chip-label {
+    font-size: .8rem;
+    line-height: 1.2;
+    color: var(--color-secondary);
+}
+
+.sheet-chip-value {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    line-height: 1.3;
+    font-weight: bold;
+}
+
+.sheet-debug {
+    margin: 8px 0 0;
+    font-size: .8rem;
+}
+
+/* Push the top control corners (basemap toggle, rotate, locate, and the
+   management page's mode buttons/bulk forms) down below the open sheet;
+   the offsets are kept in sync with the sheet's size by a ResizeObserver
+   in interactive-map.js. The right corner is only offset when the sheet
+   is wide enough to reach it. */
+.leaflet-top {
+    margin-top: calc(44px + var(--feature-sheet-offset, 0px));
+}
+
+.leaflet-top.leaflet-right {
+    margin-top: calc(44px + var(--feature-sheet-offset-right, 0px));
 }
 
 .legend {
@@ -75,14 +261,6 @@ h3 {
     font-weight: bold;
 }
 
-.leaflet-top {
-    margin-top: 44px;
-}
-
-.heightgraph-svg-title {
-    font-size: 1.2rem;
-}
-
 .basemap-toggle-btn {
     background-color: white;
     border: 2px solid rgba(0,0,0,0.2);
@@ -112,10 +290,6 @@ h3 {
         left: 0;
         right: 0;
         bottom: 0;
-    }
-
-    .heightgraph-container {
-        z-index: 1000;
     }
 }
 
