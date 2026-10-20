@@ -68,6 +68,18 @@ main > * {
     color: var(--color-primary);
     display: flex;
 }
+
+/* The overview's facts sit a little tighter than the trail/lift lists. */
+.mountain-section.overview-section ul li {
+    padding: 6px 0;
+}
+
+/* Bold label ("Trails:") before each value. The li is a flex container,
+   so a plain space after the label would collapse -- the gap is a margin. */
+.overview-section li strong {
+    font-weight: bold;
+    margin-right: .4em;
+}
 .sidebar-item {
     cursor: pointer;
 }
@@ -222,11 +234,28 @@ main > * {
         bottom: 0;
     }
 
+    /* Inset 8px from the screen edges (and the nav bar above) so it reads
+       as a panel over the map rather than a full-screen page. margin-top,
+       not a new top, keeps whatever top each page already sets; it's 7px
+       because the panel already sat 1px below the nav bar. */
     .mountain-details {
         float: none;
         display: none;
-        width: 100%;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+        margin-top: 7px;
         z-index: 8;
+    }
+
+    /* While the panel is open, the Details button (which sits over the
+       panel's top-right corner) moves in with the panel's 8px inset so it
+       keeps the same 10px from the panel's corner. .details-open is set by
+       the toggle script in map_page_base.jinja. */
+    #hideButton.details-open {
+        top: calc(38px + 7px); /* the panel's margin-top */
+        right: 18px;
     }
 
     .mountain-title {

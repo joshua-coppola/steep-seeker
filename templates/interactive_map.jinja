@@ -1,4 +1,5 @@
 {% extends "map_page_base.jinja" %}
+{% import "map_macros.jinja" as map_macros with context %}
 
 {# Sidebar rows select and zoom to their trail/lift on this map #}
 {% set selectable_sidebar = true %}
@@ -6,35 +7,7 @@
 {% block map_title %}Interactive Trail Map{% endblock map_title %}
 
 {% block map_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.GeometryUtil@master/src/leaflet.geometryutil.js">
-</script>
-
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
-</script>
-
-<link href="{{ asset_url('/interactive-map.css') }}" rel="stylesheet" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
-
-<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
-
-<script src="{{ asset_url('/leaflet.textpath.js') }}"></script>
-
-<link rel="stylesheet" href="{{ asset_url('/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.css') }}"/>
-<script type="text/javascript" src="{{ asset_url('/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.js') }}"></script>
-
-<script type="text/javascript" src="{{ asset_url('/mappings.js') }}"></script>
-<script src="{{ asset_url('/tile-layer.js') }}"></script>
-<script type="text/javascript" src="{{ asset_url('/interactive-map.js') }}"></script>
+{{ map_macros.leaflet_assets() }}
 {% endblock map_head %}
 
 {% block map_view %}
@@ -46,25 +19,11 @@
 
 {% block map_script %}
     <script>
+{{ map_macros.create_map_js(mountain) }}
         fetch("/interactive-map/{{mountain.state.value}}/{{mountain.name}}/geojson{% if debug_mode %}?debug=true{% endif %}")
             .then(function (response) { return response.json(); })
             .then(function (trails) {
-                var mouseOver = true;
-                if (Object.keys(trails.features).length > 200) {
-                    mouseOver = false;
-                }
-
-                var map = L.map('map', {
-                    rotate: true,
-                    rotateControl: {
-                        closeOnZeroBearing: false,
-                    },
-                    touchRotate: false,
-                    bearing: {{mountain.bearing()}},
-                    almostOnMouseMove: mouseOver,
-                }).setView([{{mountain.coordinates.y}},{{mountain.coordinates.x}}], 13);
-
-                run_map(trails, map);
+                run_map(trails, createMountainMap(trails));
             });
     </script>
 {% endblock map_script %}

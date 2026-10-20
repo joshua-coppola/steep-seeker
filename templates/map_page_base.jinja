@@ -2,7 +2,8 @@
 Shared layout for the per-mountain map pages -- the static map (map.jinja)
 and the interactive map (interactive_map.jinja). Owns everything the two have
 in common: the Details button and the mountain details panel (legend,
-overview, trail/lift/hike-to lists, ad slots) and its show/hide script.
+overview, trail/lift/hike-to lists -- built from map_macros.jinja, shared with
+the management edit page -- plus ad slots) and its show/hide script.
 
 A page fills in:
   - map_title:  page-specific part of the <title>
@@ -13,10 +14,7 @@ and can set `selectable_sidebar = true` (top-level {% set %}) to make the
 trail/lift/hike-to rows clickable (see .sidebar-item in interactive-map.js).
 #}
 {% extends "page_base.jinja" %}
-
-{% macro sidebar_item(kind, item_id) -%}
-{% if selectable_sidebar %}<li class="sidebar-item" data-item-id="{{item_id}}" data-kind="{{kind}}">{% else %}<li>{% endif %}
-{%- endmacro %}
+{% import "map_macros.jinja" as map_macros with context %}
 
 {% block title %}
 {{mountain.name}} - {% block map_title %}{% endblock map_title %}
@@ -39,103 +37,17 @@ trail/lift/hike-to rows clickable (see .sidebar-item in interactive-map.js).
             <h1>{{mountain.name}}</h1>
             <span class="mountain-location">{{mountain.state.value}}</span>
         </div>
-        <div class="mountain-section legend-section">
-            <h2>Legend</h2>
-            <ul class="map-legend">
-                <li><span class="icon difficulty-green"></span>Beginner</li>
-                <li><span class="icon difficulty-royalblue"></span>Intermediate</li>
-                <li><span class="icon difficulty-black"></span>Advanced</li>
-                <li><span class="icon difficulty-red"></span>Expert</li>
-                <li><span class="icon difficulty-gold"></span>Extreme</li>
-            </ul>
-            <ul class="map-legend">
-                {# Line samples mirror how both maps draw these: style() in
-                   interactive-map.js and create_map() in core/support/maps.py #}
-                <li><svg class="legend-line" viewBox="0 0 36 10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke-width="3" stroke-dasharray="5,6"/></svg>Gladed<span class="icon gladed"></span></li>
-                <li><svg class="legend-line" viewBox="0 0 36 10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="grey" stroke-width="3"/></svg>Lift</li>
-                <li><svg class="legend-line" viewBox="0 0 36 10" aria-hidden="true"><line x1="3" y1="5" x2="34" y2="5" stroke="grey" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.1,6"/></svg>Hike-to</li>
-                <li><span class="icon ungroomed"></span><span>Ungroomed/<wbr>Moguls</span></li>
-                <li><span class="icon hazardous"></span>Hazardous</li>
-            </ul>
-        </div>
-        <div class="mountain-section">
-            <h2>Overview</h2>
-            <ul>
-                {% if mountain.season_passes %}
-                <li>Passes:</li>
-                {% for season_pass in mountain.season_passes %}
-                <li><img alt="{{season_pass.value}}" src="/icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>{{season_pass.value}}</li>
-                {% endfor %}
-                {% endif %}
-                <li>Trail Count: {{mountain.trail_count()}}</li>
-                <li>Lift Count: {{mountain.lift_count()}}</li>
-                <li>Hike-to Access: {{mountain.hike_count()}}</li>
-                <li>Vertical: {{mountain.vertical_feet()}} ft</li>
-                <li>Difficulty: {{mountain.difficulty}}<span class="icon difficulty-{{ trail_color(mountain.difficulty) }}"></span></li>
-                <li>Beginner Friendliness: {{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
-                <li>Weather Modifier: {{weather_modifier}}°</li>
-                <li>Last Updated: {{mountain.last_updated.date()}}</li>
-                <li class="mountain-actions"><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button><button type="button" class="button-cta2 share-button" data-share>Share⤷</button></li>
-            </ul>
-        </div>
+{{ map_macros.legend() }}
+{{ map_macros.overview(mountain, weather_modifier) }}
         <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
         <div id="ezoic-pub-ad-placeholder-124"></div>
         <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
-        <div class="mountain-section">
-            <h2>Trails - Sorted by Difficulty</h2>
-            <ul>
-                {% for trail in trails %}
-                {% if not '' == trail.name %}
-                {{ sidebar_item("trail", trail.trail_id) }}
-                    <span class="sidebar-badge">
-                        {{trail.difficulty}}<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
-                    </span>
-                    {{trail.name}}
-                    {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}
-                    {% if trail.ungroomed %}<span class="icon ungroomed"></span>{% endif %}
-                    {% if trail.hazardous %}<span class="icon hazardous"></span>{% endif %}
-                </li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
+{{ map_macros.trail_list(trails, selectable_sidebar) }}
         <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
         <div id="ezoic-pub-ad-placeholder-125"></div>
         <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
-        <div class="mountain-section">
-            <h2>Lifts</h2>
-            <ul>
-                {% for lift in lifts %}
-                {% if not '' == lift.name and lift.lift_type != "hike" %}
-                {{ sidebar_item("lift", lift.lift_id) }}
-                    <span class="sidebar-badge">
-                        {% if lift.occupancy %}
-                        {% if lift.occupancy <= 2 %}
-                        {% for i in range(lift.occupancy) %}<span class="icon person"></span>{% endfor %}
-                        {% else %}
-                        {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
-                        {% endif %}
-                        {% endif %}
-                    </span>
-                    {{lift.name}} - {{lift.length_feet()}} ft
-                </li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="mountain-section">
-            <h2>Hike-to Access</h2>
-            <ul>
-                {% for lift in lifts %}
-                {% if not '' == lift.name and lift.lift_type == "hike" %}
-                {{ sidebar_item("lift", lift.lift_id) }}
-                    <span class="sidebar-badge"></span>
-                    {{lift.name}} - {{lift.length_feet()}} ft
-                </li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
+{{ map_macros.lift_list(lifts, selectable_sidebar) }}
+{{ map_macros.hike_list(lifts, selectable_sidebar) }}
         <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
         <div id="ezoic-pub-ad-placeholder-126"></div>
         <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
@@ -149,6 +61,8 @@ trail/lift/hike-to rows clickable (see .sidebar-item in interactive-map.js).
             } else {
                 x.style.display = "block";
             }
+            // repositions the button over the open panel (map_shared.css)
+            this.classList.toggle("details-open", x.checkVisibility());
         });
     </script>
     {% block map_script %}{% endblock map_script %}

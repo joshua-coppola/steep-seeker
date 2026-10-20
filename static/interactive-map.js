@@ -112,6 +112,10 @@ function run_map(trails, map, editable = false, editQuery = null){
         const panel = document.getElementById('mountain-details');
         if (panel && window.matchMedia('(max-width: 950px)').matches) {
             panel.style.display = 'none';
+            // the Details button moves back off the (now closed) panel --
+            // see #hideButton.details-open in map_shared.css
+            const button = document.getElementById('hideButton');
+            if (button) button.classList.remove('details-open');
         }
     }
 
