@@ -83,6 +83,10 @@ main {
     margin-bottom: 40px;
 }
 
+#filters-toggle {
+    display: none;
+}
+
 @media screen and (max-width: 1250px){
     .search-form #search {
         width: auto;
@@ -121,13 +125,47 @@ main {
     }
 }
 
+/* keep this breakpoint in sync with the ad script in search.jinja */
 @media screen and (max-width: 700px) {
-    #sidebar {
-        visibility: hidden;
-        width: 0px;
-    }
-
     main {
         padding: 0px;
+        grid-template-rows: min-content min-content 1fr;
+    }
+
+    /* filters collapse into a toggle between the title and the results */
+    #sidebar {
+        grid-column: 2;
+        grid-row: 2;
+        max-width: none;
+    }
+    #content {
+        grid-row: 3;
+    }
+
+    #sidebar h2 {
+        display: none;
+    }
+
+    #filters-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font: inherit;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #filters {
+        display: none;
+        margin-top: 16px;
+    }
+    #sidebar.filters-open #filters {
+        display: grid;
+    }
+
+    #ezoic-pub-ad-placeholder-124 {
+        display: none;
     }
 }
