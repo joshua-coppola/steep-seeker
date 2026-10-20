@@ -1,7 +1,7 @@
 {% extends "base.jinja"%}
 
 {% block head %}
-<link href="/page.css" rel="stylesheet" />
+<link href="{{ asset_url('/page.css') }}" rel="stylesheet" />
 <script>
     // the site's difficulty-color calibration (core.support.utils.DIFFICULTY_CONSTANTS),
     // for any static JS that needs to match the same boundaries the server rates trails by
@@ -27,6 +27,10 @@
                         {{link.title}}
                     </a></div></li>
                 {% endfor %}
+                {# shown by /install.js only when installing is possible #}
+                <li id="install-item" style="display: none"><div class="button"><a href="javascript:void(0);" class="button-cta2" id="install-button">
+                        Install App
+                    </a></div></li>
             </ul>
         </div>
     </div>
@@ -41,9 +45,24 @@
             } else {
                 x.style.display = "block";
             }
-        } 
+        }
+
+        /* Expand/collapse the .collapsible section a .collapse-toggle button controls (mobile layout only, see page.css) */
+        function toggleCollapse(button) {
+            var target = document.getElementById(button.getAttribute("aria-controls"));
+            var open = target.classList.toggle("open");
+            button.setAttribute("aria-expanded", open);
+        }
     </script>
 </nav>
+
+{# iOS has no install prompt, so /install.js opens this instead #}
+<dialog id="install-dialog" class="install-dialog">
+    <p>To install Steep Seeker, tap the <strong>Share</strong> button in Safari's toolbar, then choose <strong>Add to Home Screen</strong>.</p>
+    <form method="dialog">
+        <button class="button-cta">Got it</button>
+    </form>
+</dialog>
 
 <main>
     {%block content%}

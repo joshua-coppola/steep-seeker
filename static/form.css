@@ -8,6 +8,9 @@
 
 .form-slider svg {
     overflow: visible;
+    /* sideways touch drags move the slider instead of panning the page;
+       vertical swipes still scroll */
+    touch-action: pan-y;
 }
 
 .form-slider-thumb {

@@ -36,8 +36,16 @@ from core.support.utils import (
     trail_color,
     weather_modifier_from_trail,
 )
+from core.web.assets import versioned_asset_url
 
 web = Blueprint("web", __name__)
+
+
+@web.app_template_global()
+def asset_url(path: str) -> str:
+    # templates link local CSS/JS through this (e.g. {{ asset_url('/page.css') }})
+    # so each deploy's changed files get a new URL; see core.web.assets
+    return versioned_asset_url(current_app.static_folder, path)
 
 
 @web.app_context_processor

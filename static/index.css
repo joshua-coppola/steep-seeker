@@ -6,14 +6,20 @@ footer {
     position: fixed;
 }
 
+/* #content (a grid item of main) and .hero-text (a flex item of #content)
+   both default to a minimum width of their content's, which for the
+   hero-links grid is 3 buttons across; min-width: 0 lets them shrink to the
+   screen so the grid can reflow to 2 across or stacked */
 #content {
     display: flex;
     flex-wrap: wrap;
     gap: 32px;
+    min-width: 0;
 }
 
 .hero-text {
     font-size: 1.25rem;
+    min-width: 0;
 }
 
 .hero-text > * {
@@ -37,23 +43,33 @@ img {
     max-width: 100%;
 }
 
-.hero-links .button {
-    padding-bottom: 16px;
+/* the three hero buttons in equal-width columns that reflow between 3 across,
+   2 across, and stacked as space allows; each column is at least wide enough
+   for the longest label, and the group is capped at the paragraph's width */
+.hero-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    max-width: 65ch;
 }
 
-@media screen and (max-width: 1116px) {
+.hero-links .button {
+    padding-bottom: 0;
+}
+
+.hero-links .button-cta,
+.hero-links .button-cta2 {
+    width: 100%;
+    text-align: center;
+}
+
+@media screen and (max-width: 1232px) {
     .hero-links > * {
-        width: fit-content;
         line-height: 1;
     }
 }
 
 @media screen and (max-width: 650px) {
-    .hero-links > * {
-        text-align: center;
-        width: 100%;
-    }
-
     main {
         margin: 0;
         padding: 0;

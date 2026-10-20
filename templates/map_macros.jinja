@@ -1,0 +1,182 @@
+{#
+Building blocks shared by the per-mountain map pages: the public static and
+interactive maps (via map_page_base.jinja) and the management edit page
+(management-edit-resort.jinja, which keeps management.jinja's layout).
+
+Import with context -- the macros use context-processor helpers
+(trail_color, beginner_color, asset_url):
+    {% import "map_macros.jinja" as map_macros with context %}
+
+`selectable` rows get the .sidebar-item hooks interactive-map.js uses to
+select and zoom to that trail/lift on the map.
+#}
+
+{% macro _item_open(kind, item_id, selectable) -%}
+{% if selectable %}<li class="sidebar-item" data-item-id="{{item_id}}" data-kind="{{kind}}">{% else %}<li>{% endif %}
+{%- endmacro %}
+
+{# Styled in map_shared.css. Line samples mirror how both maps draw these:
+   style() in interactive-map.js and create_map() in core/support/maps.py. #}
+{% macro legend() %}
+        <div class="mountain-section legend-section">
+            <h2>Legend</h2>
+            <ul class="map-legend">
+                <li><span class="icon difficulty-green"></span>Beginner</li>
+                <li><span class="icon difficulty-royalblue"></span>Intermediate</li>
+                <li><span class="icon difficulty-black"></span>Advanced</li>
+                <li><span class="icon difficulty-red"></span>Expert</li>
+                <li><span class="icon difficulty-gold"></span>Extreme</li>
+            </ul>
+            <ul class="map-legend">
+                <li><svg class="legend-line" viewBox="0 0 36 10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke-width="3" stroke-dasharray="5,6"/></svg>Gladed<span class="icon gladed"></span></li>
+                <li><svg class="legend-line" viewBox="0 0 36 10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="grey" stroke-width="3"/></svg>Lift</li>
+                <li><svg class="legend-line" viewBox="0 0 36 10" aria-hidden="true"><line x1="3" y1="5" x2="34" y2="5" stroke="grey" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.1,6"/></svg>Hike-to</li>
+                <li><span class="icon ungroomed"></span><span>Ungroomed/<wbr>Moguls</span></li>
+                <li><span class="icon hazardous"></span>Hazardous</li>
+            </ul>
+        </div>
+{% endmacro %}
+
+{# share=False drops the Share button (e.g. on management pages, where the
+   page URL isn't one worth sharing). #}
+{% macro overview(mountain, weather_modifier, share=True) %}
+        <div class="mountain-section overview-section">
+            <h2>Overview</h2>
+            <ul>
+                {% if mountain.season_passes %}
+                <li><strong>Passes:</strong></li>
+                {% for season_pass in mountain.season_passes %}
+                <li><img alt="{{season_pass.value}}" src="/icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>{{season_pass.value}}</li>
+                {% endfor %}
+                {% endif %}
+                <li><strong>Trails:</strong>{{mountain.trail_count()}}</li>
+                <li><strong>Lifts:</strong>{{mountain.lift_count()}}</li>
+                <li><strong>Hike-to Access:</strong>{{mountain.hike_count()}}</li>
+                <li><strong>Vertical:</strong>{{mountain.vertical_feet()}} ft</li>
+                <li><strong>Difficulty:</strong>{{mountain.difficulty}}<span class="icon difficulty-{{ trail_color(mountain.difficulty) }}"></span></li>
+                <li><strong>Beginner Friendliness:</strong>{{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
+                <li><strong>Weather Modifier:</strong>{{weather_modifier}}°</li>
+                <li><strong>Last Updated:</strong>{{mountain.last_updated.date()}}</li>
+                <li class="mountain-actions"><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button>{% if share %}<button type="button" class="button-cta2 share-button" data-share>Share⤷</button>{% endif %}</li>
+            </ul>
+        </div>
+{% endmacro %}
+
+{% macro trail_list(trails, selectable=False) %}
+        <div class="mountain-section">
+            <h2>Trails - Sorted by Difficulty</h2>
+            <ul>
+                {% for trail in trails %}
+                {% if not '' == trail.name %}
+                {{ _item_open("trail", trail.trail_id, selectable) }}
+                    <span class="sidebar-badge">
+                        {{trail.difficulty}}<span class="small-spacer"></span><span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span>
+                    </span>
+                    {{trail.name}}
+                    {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}
+                    {% if trail.ungroomed %}<span class="icon ungroomed"></span>{% endif %}
+                    {% if trail.hazardous %}<span class="icon hazardous"></span>{% endif %}
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+{% endmacro %}
+
+{# Lifts (everything but hike-to) as a list; caller supplies the section. #}
+{% macro _lift_rows(lifts, selectable) %}
+                {% for lift in lifts %}
+                {% if not '' == lift.name and lift.lift_type != "hike" %}
+                {{ _item_open("lift", lift.lift_id, selectable) }}
+                    <span class="sidebar-badge">
+                        {% if lift.occupancy %}
+                        {% if lift.occupancy <= 2 %}
+                        {% for i in range(lift.occupancy) %}<span class="icon person"></span>{% endfor %}
+                        {% else %}
+                        {{lift.occupancy}}<span class="small-spacer"></span><span class="icon person"></span>
+                        {% endif %}
+                        {% endif %}
+                    </span>
+                    {{lift.name}} - {{lift.length_feet()}} ft
+                </li>
+                {% endif %}
+                {% endfor %}
+{% endmacro %}
+
+{% macro lift_list(lifts, selectable=False) %}
+        <div class="mountain-section">
+            <h2>Lifts</h2>
+            <ul>
+{{ _lift_rows(lifts, selectable) }}
+            </ul>
+        </div>
+{% endmacro %}
+
+{% macro hike_list(lifts, selectable=False) %}
+        <div class="mountain-section">
+            <h2>Hike-to Access</h2>
+            <ul>
+                {% for lift in lifts %}
+                {% if not '' == lift.name and lift.lift_type == "hike" %}
+                {{ _item_open("lift", lift.lift_id, selectable) }}
+                    <span class="sidebar-badge"></span>
+                    {{lift.name}} - {{lift.length_feet()}} ft
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+{% endmacro %}
+
+{# CSS/JS the interactive (Leaflet) map needs: run_map() in
+   interactive-map.js and the plugins it builds on. #}
+{% macro leaflet_assets() %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.GeometryUtil@master/src/leaflet.geometryutil.js">
+</script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
+</script>
+
+<link href="{{ asset_url('/interactive-map.css') }}" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+
+<script src="{{ asset_url('/leaflet.textpath.js') }}"></script>
+
+<link rel="stylesheet" href="{{ asset_url('/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.css') }}"/>
+<script type="text/javascript" src="{{ asset_url('/node_modules/leaflet.heightgraph/dist/L.Control.Heightgraph.min.js') }}"></script>
+
+<script type="text/javascript" src="{{ asset_url('/mappings.js') }}"></script>
+<script src="{{ asset_url('/tile-layer.js') }}"></script>
+<script type="text/javascript" src="{{ asset_url('/interactive-map.js') }}"></script>
+{% endmacro %}
+
+{# Defines createMountainMap(trails): builds the Leaflet map in #map for
+   this mountain (rotated to its bearing, centered on it) and returns it,
+   ready to pass to run_map(). Hover-highlighting (almostOnMouseMove) is
+   turned off for resorts with over 200 features, where it gets slow. #}
+{% macro create_map_js(mountain) %}
+        function createMountainMap(trails) {
+            var mouseOver = Object.keys(trails.features).length <= 200;
+            return L.map('map', {
+                rotate: true,
+                rotateControl: {
+                    closeOnZeroBearing: false,
+                },
+                touchRotate: false,
+                bearing: {{mountain.bearing()}},
+                almostOnMouseMove: mouseOver,
+            }).setView([{{mountain.coordinates.y}},{{mountain.coordinates.x}}], 13);
+        }
+{% endmacro %}

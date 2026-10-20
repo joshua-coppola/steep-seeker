@@ -1,20 +1,92 @@
 {
+    "id": "/",
     "name": "Steep Seeker - Universal Ski Trail Ratings",
     "short_name": "Steep Seeker",
+    "description": "Standardized ski trail difficulty ratings, comparable across resorts.",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#000000",
+    "theme_color": "#ffffff",
     "icons": [
         {
             "src": "/logo_small.png",
             "type": "image/png",
-            "sizes": "192x192"
+            "sizes": "192x192",
+            "purpose": "any"
         },
         {
             "src": "/logo_large.png",
             "type": "image/png",
-            "sizes": "512x512"
+            "sizes": "512x512",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-192.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshots/interactive-map-wide.webp",
+            "type": "image/webp",
+            "sizes": "1280x800",
+            "form_factor": "wide",
+            "label": "Interactive trail map for Solitude, colored by standardized difficulty"
+        },
+        {
+            "src": "/screenshots/rankings-wide.webp",
+            "type": "image/webp",
+            "sizes": "1280x800",
+            "form_factor": "wide",
+            "label": "Mountain rankings by difficulty"
+        },
+        {
+            "src": "/screenshots/home-wide.webp",
+            "type": "image/webp",
+            "sizes": "1280x800",
+            "form_factor": "wide",
+            "label": "Steep Seeker home page"
+        },
+        {
+            "src": "/screenshots/interactive-map-narrow.webp",
+            "type": "image/webp",
+            "sizes": "780x1688",
+            "form_factor": "narrow",
+            "label": "Interactive trail map for Solitude on a phone"
+        },
+        {
+            "src": "/screenshots/home-narrow.webp",
+            "type": "image/webp",
+            "sizes": "780x1688",
+            "form_factor": "narrow",
+            "label": "Steep Seeker home page"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Search",
+            "url": "/search"
+        },
+        {
+            "name": "Explore Map",
+            "url": "/explore-map"
+        },
+        {
+            "name": "Mountain Rankings",
+            "url": "/rankings?sort=difficulty&order=desc&region=usa"
+        },
+        {
+            "name": "Trail Rankings",
+            "url": "/trail-rankings?region=usa"
         }
     ]
 }
