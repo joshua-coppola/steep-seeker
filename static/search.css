@@ -83,10 +83,6 @@ main {
     margin-bottom: 40px;
 }
 
-#filters-toggle {
-    display: none;
-}
-
 @media screen and (max-width: 1250px){
     .search-form #search {
         width: auto;
@@ -125,7 +121,8 @@ main {
     }
 }
 
-/* keep this breakpoint in sync with the ad script in search.jinja */
+/* keep this breakpoint in sync with the ad script in search.jinja and the
+   collapsible sections in page.css */
 @media screen and (max-width: 700px) {
     main {
         padding: 0px;
@@ -146,23 +143,8 @@ main {
         display: none;
     }
 
-    #filters-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font: inherit;
-        font-size: 1.1rem;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
     #filters {
-        display: none;
         margin-top: 16px;
-    }
-    #sidebar.filters-open #filters {
-        display: grid;
     }
 
     #ezoic-pub-ad-placeholder-124 {

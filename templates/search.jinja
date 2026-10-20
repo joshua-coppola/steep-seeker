@@ -15,21 +15,14 @@ Search Ski Resorts
 <section id="sidebar">
     <h2>Filters</h2>
     {# only shown in the mobile layout, where the filters start collapsed #}
-    <button type="button" id="filters-toggle" class="button-cta2" aria-expanded="false" aria-controls="filters"
-        onclick="toggleFilters()">
+    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="filters"
+        onclick="toggleCollapse(this)">
         <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
         Filters
     </button>
 
-    <form id="filters"></form>
+    <form id="filters" class="collapsible"></form>
     <div id="ezoic-pub-ad-placeholder-124"></div>
-    <script>
-        function toggleFilters() {
-            var sidebar = document.getElementById("sidebar");
-            var open = sidebar.classList.toggle("filters-open");
-            document.getElementById("filters-toggle").setAttribute("aria-expanded", open);
-        }
-    </script>
 </section>
 
 <section id="content">
@@ -130,7 +123,7 @@ Search Ski Resorts
         ezstandalone.cmd.push(function () {
             // the sidebar ad slot (124) sits under the collapsible filters in the
             // mobile layout, so drop it there instead of requesting an ad for it;
-            // keep this breakpoint in sync with search.css
+            // keep this breakpoint in sync with search.css and page.css
             if (window.matchMedia("(max-width: 700px)").matches) {
                 document.getElementById("ezoic-pub-ad-placeholder-124").remove();
                 ezstandalone.showAds(101, 102);

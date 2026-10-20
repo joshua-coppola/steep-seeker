@@ -45,7 +45,14 @@
             } else {
                 x.style.display = "block";
             }
-        } 
+        }
+
+        /* Expand/collapse the .collapsible section a .collapse-toggle button controls (mobile layout only, see page.css) */
+        function toggleCollapse(button) {
+            var target = document.getElementById(button.getAttribute("aria-controls"));
+            var open = target.classList.toggle("open");
+            button.setAttribute("aria-expanded", open);
+        }
     </script>
 </nav>
 

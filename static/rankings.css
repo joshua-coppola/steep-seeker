@@ -133,7 +133,8 @@ select {
 }
 
 @media screen and (max-width: 700px) {
-    #content > * {
+    #content > *,
+    #content > .collapsible > * {
         margin-bottom: 36px;
     }
 
@@ -196,10 +197,32 @@ select {
         column-gap: 16px;
     }
 
+    /* one .share-row column wide, so it lines up with Share below it */
+    #content > .collapse-toggle {
+        width: calc((100% - 16px) / 2);
+    }
+
     .share-row .share-button {
         width: 100%;
         font-size: 1.1rem;
         line-height: 1;
+    }
+}
+
+/* Share and the Filters & Info toggle go full width before the sort/region
+   buttons do */
+@media screen and (max-width: 500px) {
+    .share-row {
+        grid-template-columns: 1fr;
+    }
+
+    #content > .collapse-toggle {
+        width: 100%;
+    }
+
+    #content > .collapse-toggle,
+    .share-row .share-button {
+        max-width: none;
     }
 }
 
@@ -216,8 +239,7 @@ select {
 }
 
 @media screen and (max-width: 350px) {
-    .ranking-sort,
-    .share-row {
+    .ranking-sort {
         grid-template-columns: 1fr;
     }
 

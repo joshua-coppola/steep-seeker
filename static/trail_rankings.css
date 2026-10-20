@@ -4,6 +4,10 @@ main {
 
 #content {
     grid-row: 1;
+    /* a grid item won't shrink below its content's width by default, which
+       let a wide table widen the whole page instead of scrolling within
+       .trail-table.desktop */
+    min-width: 0;
 }
 
 .ranking-sort {
@@ -46,6 +50,11 @@ main {
     margin-top: 8px;
     margin-right: 30px;
     color: var(--color-primary);
+}
+
+/* phone-layout-only elements, shown again by trail_rankings_mobile.css */
+.mobile {
+    display: none;
 }
 
 .links {
@@ -120,102 +129,8 @@ select {
     margin-left: 8px;
 }
 
-@media screen and (min-width: 1001px) {
-    .mobile {
-        display: none;
-    }
-}
-
-@media screen and (max-width: 1000px) {
-    #content > * {
-        margin-bottom: 36px;
-    }
-
-    h1 {
-        padding-top: 32px;
-    }
-
-    .desktop {
-        display: none;
-    }
-
-    main {
-        padding: 8px;
-        margin-top: 0px;
-    }
-
-    .ranking-sort {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        line-height: 1.0;
-        row-gap: 8px;
-        column-gap: 16px;
-    }
-
-    .ranking-sort > * {
-        margin-right: 0;
-    }
-
-    .legend ul{
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    /* same grid as .ranking-sort, so Share is one sort/region button wide */
-    .share-row {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        column-gap: 16px;
-    }
-
-    .share-row .share-button {
-        width: 100%;
-        max-width: 300px;
-        font-size: 1.1rem;
-        line-height: 1;
-    }
-
-    .mobile table {
-        width: 100%;
-        margin-top: 4px;
-    }
-
-    .mobile ul {
-        padding-bottom: 32px;
-    }
-
-    .header {
-        font-size: 1.5rem;
-        font-weight: 600;
-        padding-top: 16px;
-    }
-  }
-
 @media screen and (max-width: 1232px) {
     #submit {
         width: auto;
-    }
-}
-
-@media screen and (max-width: 400px) {
-    #submit {
-        margin-top: 8px;
-        margin-left: 0;
-        width: 100%;
-    }
-
-    select {
-        width: 100%;
-    }
-}
-
-@media screen and (max-width: 350px) {
-    .ranking-sort,
-    .share-row {
-        grid-template-columns: 1fr;
-    }
-
-    .legend ul{
-        grid-template-columns: 1fr;
     }
 }

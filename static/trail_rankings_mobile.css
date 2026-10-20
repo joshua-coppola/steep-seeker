@@ -1,0 +1,136 @@
+/* the phone layout for trail_rankings.jinja and lift_rankings.jinja; each
+   loads it through a <link media> at its own breakpoint (trail 1000px, lift
+   1300px, where its wider table stops fitting), since media queries can't
+   take a variable. Load it after trail_rankings.css, whose rules it overrides */
+
+#content > *,
+#content > .collapsible > * {
+    margin-bottom: 36px;
+}
+
+/* collapse the filters/description from this page's own mobile switch
+   instead of page.css's 700px; mirrors the rules there */
+.collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: inherit;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#content > .collapse-toggle {
+    margin-bottom: 16px;
+    /* one .share-row column wide and capped like Share, so they line up */
+    width: calc((100% - 16px) / 2);
+    max-width: 300px;
+}
+
+.collapsible:not(.open) {
+    display: none;
+}
+
+h1 {
+    padding-top: 32px;
+}
+
+.desktop {
+    display: none;
+}
+
+main {
+    padding: 8px;
+    margin-top: 0px;
+}
+
+/* also re-shows the .mobile sort list hidden in trail_rankings.css */
+.ranking-sort {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    line-height: 1.0;
+    row-gap: 8px;
+    column-gap: 16px;
+}
+
+.ranking-sort > * {
+    margin-right: 0;
+}
+
+.legend ul{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* same grid as .ranking-sort, so Share is one sort/region button wide */
+.share-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 16px;
+}
+
+.share-row .share-button {
+    width: 100%;
+    max-width: 300px;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.trail-table.mobile {
+    display: block;
+}
+
+.mobile table {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.mobile ul {
+    padding-bottom: 32px;
+}
+
+.header {
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding-top: 16px;
+}
+
+/* Share and the Filters & Info toggle go full width before the sort/region
+   buttons do */
+@media screen and (max-width: 500px) {
+    .share-row {
+        grid-template-columns: 1fr;
+    }
+
+    #content > .collapse-toggle {
+        width: 100%;
+    }
+
+    #content > .collapse-toggle,
+    .share-row .share-button {
+        max-width: none;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    #submit {
+        margin-top: 8px;
+        margin-left: 0;
+        width: 100%;
+    }
+
+    select {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 350px) {
+    .ranking-sort {
+        grid-template-columns: 1fr;
+    }
+
+    .legend ul{
+        grid-template-columns: 1fr;
+    }
+}
