@@ -147,6 +147,14 @@ main {
         margin-top: 16px;
     }
 
+    /* sized and styled like the Search button below it */
+    #filters input[type=submit] {
+        width: 100%;
+        height: 40px;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
     #ezoic-pub-ad-placeholder-124 {
         display: none;
     }
