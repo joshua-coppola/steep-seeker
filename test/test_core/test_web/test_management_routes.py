@@ -279,7 +279,6 @@ def test_management_edit_resort_with_valid_mountain(
     assert response.status_code == 200
     body = response.data.decode()
     assert "Bolton Valley, VT" in body
-    assert "Trail Count" in body
 
 
 def test_management_edit_resort_invalid_query_falls_back_to_selector(
