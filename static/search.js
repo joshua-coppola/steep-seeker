@@ -245,16 +245,26 @@
             this.sliderRight.addEventListener('change', function () {
               t.updateSlider()
             }),
-            this.svg.addEventListener('mousedown', function (e) {
+            // pointer events so touch drags work too. pressed tracks the
+            // pointer itself; mouseDown (dragging the chosen thumb) only
+            // starts in the deferred onMouseDown, and only if still pressed,
+            // since a tap's pointerup can land before the timeout runs (which
+            // used to leave the slider stuck following the finger) and an
+            // early pointermove would otherwise drag the wrong thumb
+            this.svg.addEventListener('pointerdown', function (e) {
               t.isDisabled() ||
+                ((t.pressed = !0),
                 setTimeout(function () {
                   return t.onMouseDown(e)
-                }, 0)
+                }, 0))
             }),
-            document.addEventListener('mouseup', function (e) {
-              t.mouseDown = !1
+            document.addEventListener('pointerup', function (e) {
+              ;(t.pressed = !1), (t.mouseDown = !1)
             }),
-            document.addEventListener('mousemove', function (e) {
+            document.addEventListener('pointercancel', function (e) {
+              ;(t.pressed = !1), (t.mouseDown = !1)
+            }),
+            document.addEventListener('pointermove', function (e) {
               t.onMouseMove(e)
             })
         }),
@@ -271,7 +281,7 @@
               : this.rightThumbBorder.classList.remove('focused')
         }),
         (e.prototype.onMouseDown = function (t) {
-          this.mouseDown = !0
+          this.mouseDown = !!this.pressed
           var e = this.computeSliderValue(t),
             i = Math.abs(e - this.sliderLeft.valueAsNumber),
             s = Math.abs(e - this.sliderRight.valueAsNumber),
@@ -484,16 +494,22 @@
             this.sliderRight.addEventListener('change', function () {
               t.updateSlider()
             }),
-            this.svg.addEventListener('mousedown', function (e) {
+            // same pointer handling as the range slider above; release is
+            // caught off the slider too so a drag that ends outside it lets go
+            this.svg.addEventListener('pointerdown', function (e) {
               t.isDisabled() ||
+                ((t.pressed = !0),
                 setTimeout(function () {
                   return t.onMouseDown(e)
-                }, 0)
+                }, 0))
             }),
-            this.svg.addEventListener('mouseup', function () {
-              t.mouseDown = !1
+            document.addEventListener('pointerup', function () {
+              ;(t.pressed = !1), (t.mouseDown = !1)
             }),
-            this.svg.addEventListener('mousemove', function (e) {
+            document.addEventListener('pointercancel', function () {
+              ;(t.pressed = !1), (t.mouseDown = !1)
+            }),
+            document.addEventListener('pointermove', function (e) {
               t.onMouseMove(e)
             })
         }),
@@ -502,7 +518,7 @@
           return ((t.clientX - e.left) / e.width) * 5
         }),
         (e.prototype.onMouseDown = function (t) {
-          this.mouseDown = !0
+          this.mouseDown = !!this.pressed
           var e = this.computeFloatingSliderValue(t),
             i = Math.abs(this.sliderLeft.valueAsNumber - e),
             s = Math.abs(this.sliderRight.valueAsNumber - e),
