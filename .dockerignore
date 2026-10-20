@@ -18,6 +18,9 @@ pyproject.toml
 requirements.in
 requirements.txt
 
+# leftover local npm installs; leaflet.heightgraph is vendored under static/vendor/
+static/node_modules
+
 # Management app: served by a separate process and intentionally excluded
 # from the public site image.
 management.py
