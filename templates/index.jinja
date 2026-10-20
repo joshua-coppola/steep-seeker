@@ -5,7 +5,7 @@ Steep Seeker - Universal Ski Trail Rating System
 {% endblock title %}
 
 {% block pagehead %}
-<link href="/index.css" rel="stylesheet" />
+<link href="{{ asset_url('/index.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -49,11 +49,6 @@ Steep Seeker - Universal Ski Trail Rating System
         ezstandalone.cmd.push(function () {
             ezstandalone.showAds(101, 102);
         });
-    </script>
-    <script>
-        if (typeof navigator.serviceWorker !== 'undefined') {
-            navigator.serviceWorker.register('sw.js')
-        }
     </script>
 
 </section>

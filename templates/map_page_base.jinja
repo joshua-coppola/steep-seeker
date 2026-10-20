@@ -1,0 +1,75 @@
+{#
+Shared layout for the per-mountain map pages -- the static map (map.jinja)
+and the interactive map (interactive_map.jinja). Owns everything the two have
+in common: the Details button and the mountain details panel (legend,
+overview, trail/lift/hike-to lists -- built from map_macros.jinja, shared with
+the management edit page -- plus ad slots) and its show/hide script.
+
+A page fills in:
+  - map_title:  page-specific part of the <title>
+  - map_head:   page-specific CSS/JS (map_shared.css is added after it)
+  - map_view:   the map itself plus its own buttons
+  - map_script: page-specific inline script
+and can set `selectable_sidebar = true` (top-level {% set %}) to make the
+trail/lift/hike-to rows clickable (see .sidebar-item in interactive-map.js).
+#}
+{% extends "page_base.jinja" %}
+{% import "map_macros.jinja" as map_macros with context %}
+
+{% block title %}
+{{mountain.name}} - {% block map_title %}{% endblock map_title %}
+{% endblock title %}
+
+{% block pagehead %}
+{% block map_head %}{% endblock map_head %}
+<link href="{{ asset_url('/map_shared.css') }}" rel="stylesheet" />
+{% endblock pagehead %}
+
+{% block content %}
+<main>
+    <a href="javascript:void(0);" class="button-cta2 map-button" id="hideButton">
+        <img alt="Mountain Details" height="17" width="17" src="/icons/mountain_black.png">
+        &nbsp;Details&nbsp;
+        <img alt="Mountain Details" height="17" width="17" src="/hamburger-menu-light.svg">
+    </a>
+    <div class="map-pane mountain-details" id="mountain-details">
+        <div class="mountain-title">
+            <h1>{{mountain.name}}</h1>
+            <span class="mountain-location">{{mountain.state.value}}</span>
+        </div>
+{{ map_macros.legend() }}
+{{ map_macros.overview(mountain, weather_modifier) }}
+        <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
+        <div id="ezoic-pub-ad-placeholder-124"></div>
+        <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
+{{ map_macros.trail_list(trails, selectable_sidebar) }}
+        <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
+        <div id="ezoic-pub-ad-placeholder-125"></div>
+        <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
+{{ map_macros.lift_list(lifts, selectable_sidebar) }}
+{{ map_macros.hike_list(lifts, selectable_sidebar) }}
+        <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
+        <div id="ezoic-pub-ad-placeholder-126"></div>
+        <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->
+    </div>
+    {% block map_view %}{% endblock map_view %}
+    <script>
+        document.getElementById("hideButton").addEventListener("click", function() {
+            var x = document.getElementById("mountain-details");
+            if (x.checkVisibility()) {
+                x.style.display = "none";
+            } else {
+                x.style.display = "block";
+            }
+            // repositions the button over the open panel (map_shared.css)
+            this.classList.toggle("details-open", x.checkVisibility());
+        });
+    </script>
+    {% block map_script %}{% endblock map_script %}
+    <script>
+        ezstandalone.cmd.push(function () {
+            ezstandalone.showAds(124, 125, 126);
+        });
+    </script>
+</main>
+{% endblock content %}
