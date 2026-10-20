@@ -89,7 +89,7 @@ main {
     }
 }
 
-@media screen and (max-width: 1116px){
+@media screen and (max-width: 1232px){
     #submit {
         width: auto;
     }
@@ -121,13 +121,33 @@ main {
     }
 }
 
+/* keep this breakpoint in sync with the ad script in search.jinja and the
+   collapsible sections in page.css */
 @media screen and (max-width: 700px) {
-    #sidebar {
-        visibility: hidden;
-        width: 0px;
-    }
-
     main {
         padding: 0px;
+        grid-template-rows: min-content min-content 1fr;
+    }
+
+    /* filters collapse into a toggle between the title and the results */
+    #sidebar {
+        grid-column: 2;
+        grid-row: 2;
+        max-width: none;
+    }
+    #content {
+        grid-row: 3;
+    }
+
+    #sidebar h2 {
+        display: none;
+    }
+
+    #filters {
+        margin-top: 16px;
+    }
+
+    #ezoic-pub-ad-placeholder-124 {
+        display: none;
     }
 }

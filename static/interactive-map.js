@@ -66,7 +66,7 @@ function run_map(trails, map, editable = false, editQuery = null){
     // Dispatches a click on a trail/lift layer to whichever bulk mode is
     // active (delete flags any item; modifiers only apply to trails).
     // Returns true if the click was consumed, so callers skip their normal
-    // popup/heightgraph behavior.
+    // feature-sheet behavior.
     function handleModeClick(layer) {
         if (!editable) return false;
         if (deleteMode) {
@@ -112,6 +112,10 @@ function run_map(trails, map, editable = false, editQuery = null){
         const panel = document.getElementById('mountain-details');
         if (panel && window.matchMedia('(max-width: 950px)').matches) {
             panel.style.display = 'none';
+            // the Details button moves back off the (now closed) panel --
+            // see #hideButton.details-open in map_shared.css
+            const button = document.getElementById('hideButton');
+            if (button) button.classList.remove('details-open');
         }
     }
 
@@ -149,21 +153,41 @@ function run_map(trails, map, editable = false, editQuery = null){
     function selectFeature(kind, id) {
         const layer = idToLayer.get(featureKey(kind, id));
         if (!layer) return;
-        map.closePopup();
-        selectedLayer = layer;
-        clearSelectionShadow();
-        addSelectionShadow(layer);
+        openFeatureSheet(layer);
+        // Fit the feature into the part of the map left visible under the
+        // sheet: zoom to fit (map minus sheet, plus 40px margins) and
+        // shift it down by half the sheet's height.
         const bounds = layer.getBounds();
-        const opts = {maxZoom: 17, padding: [40, 40]};
+        const sheetBottom = featureSheetBottom();
+        const zoom = Math.min(17, map.getBoundsZoom(bounds, false, L.point(80, 80 + sheetBottom)));
+        const center = centerForOffset(bounds.getCenter(), L.point(0, sheetBottom / 2), zoom);
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            map.fitBounds(bounds, opts);
+            map.setView(center, zoom);
         } else {
-            map.flyToBounds(bounds, {...opts, duration: 0.75});
+            map.flyTo(center, zoom, {duration: 0.75});
         }
         closeMobileSidebarIfOpen();
     }
 
+    // The map center that, at `zoom`, puts `latlng` at `offset` screen
+    // pixels from the middle of the map. Worked out from
+    // containerPointToLatLng() (which honors the map's bearing) rather than
+    // Leaflet's padding options/panInside(), which leaflet-rotate applies in
+    // the unrotated frame -- pushing the feature sideways (or off-screen) on
+    // a rotated resort.
+    // (A screen-pixel offset is the same number of world pixels at every
+    // zoom, so the offset measured at the current zoom applies as-is.)
+    function centerForOffset(latlng, offset, zoom) {
+        const mid = map.getSize().divideBy(2);
+        const worldOffset = map.project(map.containerPointToLatLng(mid.add(offset)))
+            .subtract(map.project(map.containerPointToLatLng(mid)));
+        return map.unproject(map.project(latlng, zoom).subtract(worldOffset), zoom);
+    }
+
+    // Selecting a feature and showing its sheet always go together, so
+    // clearing the selection also closes the sheet.
     function clearSelection() {
+        closeFeatureSheet();
         if (!selectedLayer) return;
         selectedLayer = null;
         clearSelectionShadow();
@@ -175,13 +199,13 @@ function run_map(trails, map, editable = false, editQuery = null){
         selectFeature(item.dataset.kind, item.dataset.itemId);
     });
 
-    // Define two basemaps
-    const topoBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    // Define two basemaps (corsTileLayer: see /tile-layer.js)
+    const topoBasemap = corsTileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
 
-    const satelliteBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    const satelliteBasemap = corsTileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     });
@@ -230,32 +254,74 @@ function run_map(trails, map, editable = false, editQuery = null){
     
     L.control.basemapToggle({ position: 'topright' }).addTo(map);
 
-    let heightgraph_width = 800;
-    let heightgraph_height = 280;
-    let position = "bottomleft";
+    // Clicking a trail/lift opens a sheet docked to the top of the map that
+    // holds both its elevation profile and its stats (formerly a separate
+    // floating heightgraph control and a Leaflet popup). It's built here,
+    // inside the map container, so it lines up with #map on every page
+    // that calls run_map regardless of that page's header height. It sizes
+    // to its content (management mode's edit forms make it much taller)
+    // and its width is capped on desktop, and the top Leaflet control
+    // corners are pushed down below it via --feature-sheet-offset[-right]
+    // (see interactive-map.css).
+    const sheet = L.DomUtil.create('section', 'feature-sheet', map.getContainer());
+    sheet.hidden = true;
+    sheet.innerHTML =
+        '<header class="feature-sheet-header">' +
+        '<h3 class="feature-sheet-title"></h3>' +
+        '<button type="button" class="feature-sheet-close" aria-label="Close">&times;</button>' +
+        '</header>' +
+        '<div class="feature-sheet-graph"></div>' +
+        '<div class="feature-sheet-stats"></div>' +
+        '<div class="feature-sheet-admin"></div>';
+    L.DomEvent.disableClickPropagation(sheet);
+    L.DomEvent.disableScrollPropagation(sheet);
+    const sheetTitle = sheet.querySelector('.feature-sheet-title');
+    const sheetGraph = sheet.querySelector('.feature-sheet-graph');
+    const sheetStats = sheet.querySelector('.feature-sheet-stats');
+    const sheetAdmin = sheet.querySelector('.feature-sheet-admin');
+    sheet.querySelector('.feature-sheet-close').addEventListener('click', function () {
+        clearSelection();
+    });
 
-    function getWidth() {
-        return Math.max(
-            document.body.scrollWidth,
-            document.documentElement.scrollWidth,
-            document.body.offsetWidth,
-            document.documentElement.offsetWidth,
-            document.documentElement.clientWidth
-        );
+    // Gap between the sheet and the controls pushed below it, matching
+    // Leaflet's own .leaflet-control margin.
+    const SHEET_GAP = 10;
+
+    // The top-left corner always sits under the sheet; the top-right one
+    // only does when the map is too narrow for the width-capped sheet and
+    // that corner's controls to fit side by side, so it's only pushed down
+    // then. Re-checked whenever either one resizes (the management page's
+    // bulk forms widen the right corner when a mode is toggled on).
+    const container = map.getContainer();
+    const rightCorner = container.querySelector('.leaflet-top.leaflet-right');
+
+    function updateControlOffsets() {
+        const height = sheet.offsetHeight;
+        const offset = height ? (height + SHEET_GAP) + 'px' : '0px';
+        const overlapsRight = height &&
+            sheet.offsetLeft + sheet.offsetWidth + SHEET_GAP > rightCorner.offsetLeft;
+        container.style.setProperty('--feature-sheet-offset', offset);
+        container.style.setProperty('--feature-sheet-offset-right', overlapsRight ? offset : '0px');
     }
 
-    let window_width = getWidth();
-    if(window_width < 1400) {
-        heightgraph_width = window_width - 632;
+    const controlOffsetObserver = new ResizeObserver(updateControlOffsets);
+    controlOffsetObserver.observe(sheet);
+    controlOffsetObserver.observe(rightCorner);
+    controlOffsetObserver.observe(container);
+
+    // Bottom edge of the sheet in map-container pixels (0 when closed), for
+    // keeping the selected feature from landing underneath it.
+    function featureSheetBottom() {
+        return sheet.hidden ? 0 : sheet.offsetTop + sheet.offsetHeight;
     }
-    if(window_width <=  950){
-        heightgraph_width = window_width - 20;
+
+    // Breakpoints match the site's own: 950px (desktop vs. mobile layout,
+    // see map_shared.css) and 500px (phones).
+    function heightgraphHeight() {
+        if (window.matchMedia('(max-width: 500px)').matches) return 130;
+        if (window.matchMedia('(max-width: 950px)').matches) return 160;
+        return 200;
     }
-    if(window_width <= 500){
-        heightgraph_width = window_width - 20;
-        heightgraph_height = 200;
-    }
-    position = "topright";
 
     const hg = L.control.heightgraph({
         mappings: colorMappings,
@@ -264,11 +330,11 @@ function run_map(trails, map, editable = false, editQuery = null){
             'fill-opacity': 0.5,
             'stroke-width': '2px'
         },
-        expandControls: true,
-        expand: false,
-        position: position,
-        width: heightgraph_width,
-        height: heightgraph_height,
+        // The sheet's own open/close replaces the control's expand toggle.
+        expandControls: false,
+        expand: true,
+        width: 300,
+        height: heightgraphHeight(),
         highlightStyle: {
             color: "purple"
         },
@@ -280,26 +346,17 @@ function run_map(trails, map, editable = false, editQuery = null){
             legend: "Legend"
         },
         margins: {
-            top: 30,
+            top: 10,
+            // room for the last x-axis tick label (e.g. "1476 ft"), which
+            // is centered on the axis's right end
             right: 30,
-            bottom: 50,
-            left: 75
+            bottom: 40,
+            left: 60
         }
     }).addTo(map);
-
-    setTimeout(() => {
-        const svg = document.querySelector(".heightgraph svg");
-        if (!svg) return;
-      
-        const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        title.setAttribute("x", "50%");
-        title.setAttribute("y", "20");
-        title.setAttribute("text-anchor", "middle");
-        title.setAttribute("class", "heightgraph-svg-title");
-        title.textContent = "Elevation Profile (No Trail Selected)";
-      
-        svg.prepend(title);
-    });
+    // Still added to the map (it draws its hover marker/highlight there),
+    // but its DOM lives in the sheet rather than a control corner.
+    sheetGraph.appendChild(hg.getContainer());
 
     function escapeHtml(value) {
         const div = document.createElement('div');
@@ -352,46 +409,101 @@ function run_map(trails, map, editable = false, editQuery = null){
         ) + buildDeleteFormHtml(id);
     }
 
-    function buildTrailPopupHtml(data, id) {
-        let badges = '';
-        if (data.gladed) badges += '<i class="icon gladed"></i>';
-        if (data.ungroomed) badges += '<i class="icon ungroomed"></i>';
-        if (data.hazardous) badges += '<i class="icon hazardous"></i>';
-
-        let html = `<h3>${escapeHtml(data.name)}${badges}</h3>`;
-        html += `<p>Rating: ${data.difficulty}<span class="icon difficulty-${data.color}"></span></p>`;
-        html += `<p>Length: ${data.length_feet} ft</p>`;
-        html += `<p>Vertical Drop: ${data.vertical_feet} ft</p>`;
-        data.pitches.forEach(function (pitch) {
-            html += `<p>${pitch.label} Pitch: ${pitch.value}°<span class="icon difficulty-${pitch.color}"></span></p>`;
-        });
-        if (data.debug_id) {
-            html += `<p>Trail ID: ${escapeHtml(data.debug_id)}</p>`;
-        }
-        if (editable) html += buildTrailEditFormsHtml(id, data);
-        return html;
+    function formatFeet(value) {
+        return value == null ? '–' : Number(value).toLocaleString('en-US') + ' ft';
     }
 
-    function buildLiftPopupHtml(data, id) {
-        let html = `<h3>${escapeHtml(data.name)}</h3>`;
+    // Stats layout shared by trails and lifts: a summary line of headline
+    // facts (led by a rating badge for trails), then a row of small cards
+    // -- trails: one per steepest-pitch window, edged in that pitch's
+    // difficulty color; lifts: type/seats/amenities. Styled after the
+    // site's buttons and rankings (see .sheet-chip in interactive-map.css).
+    function sheetFactHtml(value, label) {
+        return `<span class="sheet-fact">${value} <span class="sheet-muted">${label}</span></span>`;
+    }
+
+    function sheetChipHtml(label, valueHtml, color) {
+        const colorClass = color ? ` chip-${color}` : '';
+        return (
+            `<div class="sheet-chip${colorClass}">` +
+            `<span class="sheet-chip-label">${label}</span>` +
+            `<span class="sheet-chip-value">${valueHtml}</span>` +
+            '</div>'
+        );
+    }
+
+    // Icon first, then value -- how the rankings tables write difficulty.
+    function difficultyValueHtml(value, color, suffix) {
+        return `<span class="icon difficulty-${color}"></span>${value}${suffix || ''}`;
+    }
+
+    function debugIdHtml(label, id) {
+        return id ? `<p class="sheet-debug sheet-muted">${label} ID: ${escapeHtml(id)}</p>` : '';
+    }
+
+    // Each sheet builder returns its title (h3 contents), stats and, in
+    // management mode, admin forms as separate HTML so they land in their
+    // own regions of the sheet.
+    function buildTrailSheetHtml(data, id) {
+        let badges = '';
+        if (data.gladed) badges += '<i class="icon gladed" title="Gladed"></i>';
+        if (data.ungroomed) badges += '<i class="icon ungroomed" title="Ungroomed/Moguls"></i>';
+        if (data.hazardous) badges += '<i class="icon hazardous" title="Hazardous"></i>';
+
+        const level = colorMappings.Difficulty[data.color];
+        let html = '<div class="sheet-summary">';
+        html += (
+            `<span class="sheet-rating chip-${data.color}">` +
+            difficultyValueHtml(data.difficulty, data.color) +
+            (level ? ` <span class="sheet-rating-level">${level.text}</span>` : '') +
+            '</span>'
+        );
+        html += sheetFactHtml(formatFeet(data.length_feet), 'long');
+        html += sheetFactHtml('&darr; ' + formatFeet(data.vertical_feet), 'vertical');
+        html += '</div>';
+
+        if (data.pitches.length) {
+            html += '<p class="sheet-section-label">Steepest pitch over</p>';
+            html += '<div class="sheet-chips">';
+            data.pitches.forEach(function (pitch) {
+                html += sheetChipHtml(
+                    pitch.label, difficultyValueHtml(pitch.value, pitch.color, '°'), pitch.color
+                );
+            });
+            html += '</div>';
+        }
+        html += debugIdHtml('Trail', data.debug_id);
+        return {
+            title: escapeHtml(data.name) + badges,
+            stats: html,
+            admin: editable ? buildTrailEditFormsHtml(id, data) : '',
+        };
+    }
+
+    function buildLiftSheetHtml(data, id) {
+        let html = '<div class="sheet-summary">';
+        html += sheetFactHtml(formatFeet(data.length_feet), 'long');
+        html += sheetFactHtml('&uarr; ' + formatFeet(data.vertical_feet), 'vertical');
+        html += sheetFactHtml(`${data.average_slope}°`, 'avg pitch');
+        html += '</div>';
+
+        html += '<div class="sheet-chips sheet-chips-auto">';
+        html += sheetChipHtml('Type', escapeHtml(data.lift_type_label));
         if (data.occupancy) {
-            if (data.occupancy <= 4) {
-                html += '<p>' + '<span class="icon person"></span>'.repeat(data.occupancy) + '</p>';
-            } else {
-                html += `<p class="occupancy">${data.occupancy}<span class="small-spacer"></span><span class="icon person"></span></p>`;
-            }
+            const seats = data.occupancy <= 4
+                ? '<span class="icon person"></span>'.repeat(data.occupancy)
+                : `${data.occupancy}<span class="small-spacer"></span><span class="icon person"></span>`;
+            html += sheetChipHtml('Seats', seats);
         }
-        html += `<p>Type: ${escapeHtml(data.lift_type_label)}</p>`;
-        html += `<p>Length: ${data.length_feet} ft</p>`;
-        html += `<p>Vertical Rise: ${data.vertical_feet} ft</p>`;
-        html += `<p>Average Pitch: ${data.average_slope}°</p>`;
-        if (data.bubble) html += '<p>&#x2705; Bubble</p>';
-        if (data.heating) html += '<p>&#x2705; Heated</p>';
-        if (data.debug_id) {
-            html += `<p>Lift ID: ${escapeHtml(data.debug_id)}</p>`;
-        }
-        if (editable) html += buildDeleteFormHtml(id);
-        return html;
+        if (data.bubble) html += sheetChipHtml('Bubble', 'Yes');
+        if (data.heating) html += sheetChipHtml('Heated', 'Yes');
+        html += '</div>';
+        html += debugIdHtml('Lift', data.debug_id);
+        return {
+            title: escapeHtml(data.name),
+            stats: html,
+            admin: editable ? buildDeleteFormHtml(id) : '',
+        };
     }
 
     function labelAttributes() {
@@ -453,16 +565,6 @@ function run_map(trails, map, editable = false, editQuery = null){
     }
 
     function onEachFeature(feature, layer) {
-        if (feature.properties && feature.properties.popupData) {
-            // Built lazily -- only when a popup is actually opened -- since
-            // most of a resort's 600+ trails/lifts never get clicked in a
-            // given visit.
-            layer.bindPopup(function () {
-                const data = feature.properties.popupData;
-                const id = feature.properties.item_id;
-                return data.kind === 'lift' ? buildLiftPopupHtml(data, id) : buildTrailPopupHtml(data, id);
-            });
-        }
         applyLabel(layer, feature);
     }
 
@@ -587,6 +689,9 @@ function run_map(trails, map, editable = false, editQuery = null){
         return output_feature;
     }
 
+    // Draws the layer's profile into the sheet's heightgraph. Returns false
+    // (leaving the graph hidden) for features with no elevation profile,
+    // e.g. an area trail without a computed route.
     function addHeightGraphData(layer) {
         let coordinates = null;
         if (layer.feature.geometry.type == "LineString") {
@@ -594,21 +699,95 @@ function run_map(trails, map, editable = false, editQuery = null){
         } else if (layer.feature.properties.routeCoordinates) {
             coordinates = layer.feature.properties.routeCoordinates;
         }
+        if (!coordinates) return false;
 
-        if (coordinates) {
-            let difficulty_modifier = layer.feature.properties.difficulty_modifier;
-            let json_data = [];
-            json_data.push(create_height_graph_json(coordinates, difficulty_modifier, "Difficulty"));
-            json_data.push(create_height_graph_json(coordinates, 0, "Steepness"));
+        let difficulty_modifier = layer.feature.properties.difficulty_modifier;
+        let json_data = [];
+        json_data.push(create_height_graph_json(coordinates, difficulty_modifier, "Difficulty"));
+        json_data.push(create_height_graph_json(coordinates, 0, "Steepness"));
 
-            document.querySelector(".heightgraph-svg-title").textContent = layer.feature.properties.name;
-            hg.addData(json_data);
-        }
-        else {
-            document.querySelector(".heightgraph-svg-title").textContent = "Elevation Profile: N/A";
-            hg.addData({})
-        }
+        // The sheet's width varies by viewport (and the sheet was hidden
+        // until just now), so size the graph to it on every open -- set
+        // directly rather than via hg.resize(), which would redraw the
+        // previous feature's data first.
+        hg.options.width = sheetGraph.clientWidth;
+        hg.options.height = heightgraphHeight();
+        hg.getContainer().querySelectorAll('svg').forEach(function (svg) {
+            svg.setAttribute('width', hg.options.width);
+            svg.setAttribute('height', hg.options.height);
+        });
+        hg.addData(json_data);
+        return true;
     }
+
+    function openFeatureSheet(layer) {
+        const data = layer.feature && layer.feature.properties.popupData;
+        if (!data) return;
+        const parts = data.kind === 'lift'
+            ? buildLiftSheetHtml(data, layer.feature.properties.item_id)
+            : buildTrailSheetHtml(data, layer.feature.properties.item_id);
+        sheetTitle.innerHTML = parts.title;
+        sheetStats.innerHTML = parts.stats;
+        sheetAdmin.innerHTML = parts.admin;
+        sheetAdmin.hidden = !parts.admin;
+        sheet.hidden = false;
+        clearHeightgraphMarker();
+        sheetGraph.hidden = false;
+        sheetGraph.hidden = !addHeightGraphData(layer);
+
+        selectedLayer = layer;
+        clearSelectionShadow();
+        addSelectionShadow(layer);
+    }
+
+    // The heightgraph draws its position marker (dot/line/elevation label)
+    // straight into the map's overlay SVG and only hides it on a mouseout
+    // from the chart -- which never comes if the sheet closes or switches
+    // features first, or on a touch device. mapMouseoutHandler(0) is the
+    // control's own (public) way to hide it.
+    function clearHeightgraphMarker() {
+        hg.mapMouseoutHandler(0);
+    }
+
+    function closeFeatureSheet() {
+        if (sheet.hidden) return;
+        sheet.hidden = true;
+        clearHeightgraphMarker();
+        // Clears the heightgraph's drag-selected segments from the map
+        // along with the chart itself.
+        hg.addData({});
+    }
+
+    // A click on a feature also bubbles to the map's own 'click' (which
+    // closes the sheet), and both the layer's direct click and AlmostOver's
+    // near-miss 'almost:click' can fire for the same physical click -- this
+    // flag, set for the rest of the click's dispatch, lets the map handler
+    // tell the two cases apart.
+    let featureClickInProgress = false;
+
+    function onFeatureClick(layer, latlng) {
+        featureClickInProgress = true;
+        setTimeout(function () { featureClickInProgress = false; });
+        if (handleModeClick(layer)) return;
+        if (layer === selectedLayer && !sheet.hidden) return;
+        openFeatureSheet(layer);
+        if (!latlng || sheet.hidden) return;
+        // If the clicked spot is now under the sheet, pan it just below.
+        const point = map.latLngToContainerPoint(latlng);
+        const minY = featureSheetBottom() + 40;
+        if (point.y >= minY) return;
+        const mid = map.getSize().divideBy(2);
+        map.panTo(centerForOffset(latlng, L.point(point.x - mid.x, minY - mid.y), map.getZoom()));
+    }
+
+    window.addEventListener('resize', function () {
+        if (sheet.hidden || sheetGraph.hidden) return;
+        hg.resize({width: sheetGraph.clientWidth, height: heightgraphHeight()});
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') clearSelection();
+    });
 
     let geojson_features;
 
@@ -617,9 +796,8 @@ function run_map(trails, map, editable = false, editQuery = null){
         map.almostOver.addLayer(geojson_features);
 
         geojson_features.eachLayer(function (layer) {
-            layer.on("click", function () {
-                if (handleModeClick(layer)) return;
-                addHeightGraphData(layer);
+            layer.on("click", function (e) {
+                onFeatureClick(layer, e.latlng);
             });
             if (editable && isFlagged(layer)) {
                 layer.setStyle(flaggedStyle(layer));
@@ -712,11 +890,10 @@ function run_map(trails, map, editable = false, editQuery = null){
         updateTrailLabels();
     });
 
-    map.on('popupopen', function () {
-        if (editable && (deleteMode || modifierMode)) map.closePopup();
+    map.on('click', function () {
+        if (featureClickInProgress) return;
+        clearSelection();
     });
-
-    map.on('click', function () { clearSelection(); });
 
     map.on('almost:over', function (e) {
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
@@ -730,30 +907,10 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     map.on('almost:click', function (e) {
         if (e.layer.feature && e.layer.feature.properties.isRoute) return;
-        if (handleModeClick(e.layer)) return;
-        e.layer.openPopup();
-        const clickedLayer = e.layer;
-        if (clickedLayer) {
-            addHeightGraphData(clickedLayer);
-        }
+        onFeatureClick(e.layer, e.latlng);
     });
 
-    var legend = L.control({ position: "bottomright" });
-
-    legend.onAdd = function(map) {
-        var div = L.DomUtil.create("div", "legend");
-        div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
-        div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
-        div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
-        div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
-        div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
-        div.innerHTML += '<span>- - - Gladed</span><br>';
-        L.DomEvent.disableClickPropagation(div);
-        return div;
-    };
-
-    legend.addTo(map);
-
+    
     L.control.locate().addTo(map);
 
     if (editable) {

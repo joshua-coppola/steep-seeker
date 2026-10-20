@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
 
-    <link href="/base.css" rel="stylesheet" />
+    <link href="{{ asset_url('/base.css') }}" rel="stylesheet" />
 
     <script src="https://cmp.gatekeeperconsent.com/min.js" data-cfasync="false"></script>
     <script src="https://the.gatekeeperconsent.com/cmp.min.js" data-cfasync="false"></script>
@@ -18,6 +18,10 @@
     </script>
 
     <link rel="manifest" href="/manifest.json">
+    <!-- theme.js swaps this to black when the dark theme is on -->
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="description" content="{% block description %}Standardized ski trail difficulty ratings, comparable across resorts.{% endblock description %}">
 
     {% block head %}
 
@@ -41,7 +45,14 @@
 
     {% endblock %}
 
-    <script src="/theme.js"></script>
+    <script src="{{ asset_url('/theme.js') }}"></script>
+    <script src="{{ asset_url('/share.js') }}"></script>
+    <script src="{{ asset_url('/install.js') }}"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
 
     {% block postbody %}
 

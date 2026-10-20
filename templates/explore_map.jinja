@@ -21,8 +21,9 @@ Explore Resorts - Find Ski Resorts Across the USA
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+<script src="{{ asset_url('/tile-layer.js') }}"></script>
 
-<link href="/explore.css" rel="stylesheet" />
+<link href="{{ asset_url('/explore.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -42,7 +43,8 @@ Explore Resorts - Find Ski Resorts Across the USA
     locations = {{ geojson | tojson }}
     var map = L.map('map').setView([47.8281, -113.5795], 4);
 
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    // corsTileLayer: see /tile-layer.js
+    corsTileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
         attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
     }).addTo(map);
