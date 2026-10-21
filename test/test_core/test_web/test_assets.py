@@ -1,8 +1,39 @@
+import json
+import mimetypes
 import os
 import re
 
 from core.web.app import create_app
-from core.web.assets import VERSION_LENGTH, versioned_asset_url
+from core.web.assets import (
+    VERSION_LENGTH,
+    register_static_mimetypes,
+    versioned_asset_url,
+)
+
+
+def test_webp_mimetype_registered_without_system_mime_types(monkeypatch):
+    # the slim Docker image has no /etc/mime.types, leaving only Python's
+    # built-in table, which (before 3.13) has no .webp entry
+    monkeypatch.setattr(mimetypes, "_db", mimetypes.MimeTypes(filenames=()))
+    monkeypatch.setattr(mimetypes, "inited", True)
+
+    register_static_mimetypes()
+
+    assert mimetypes.guess_type("screenshot.webp")[0] == "image/webp"
+
+
+def test_manifest_screenshots_served_as_images(db_path):
+    app = create_app(db_path=db_path)
+    app.testing = True
+    client = app.test_client()
+    with open(os.path.join(app.static_folder, "manifest.json")) as f:
+        screenshots = json.load(f)["screenshots"]
+
+    assert screenshots
+    for screenshot in screenshots:
+        response = client.get(screenshot["src"])
+        assert response.status_code == 200, screenshot["src"]
+        assert response.mimetype == screenshot["type"], screenshot["src"]
 
 
 def test_versioned_url_appends_content_hash(tmp_path):
