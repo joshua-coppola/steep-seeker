@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.steepseeker.twa",
+        "sha256_cert_fingerprints": ["79:28:61:5C:56:89:31:FD:F5:9D:3C:23:EE:FF:1A:65:39:91:23:46:48:C1:4E:AD:BA:62:A7:3E:25:20:7A:BD"]
+      }
+    }]

@@ -22,6 +22,21 @@ def test_webp_mimetype_registered_without_system_mime_types(monkeypatch):
     assert mimetypes.guess_type("screenshot.webp")[0] == "image/webp"
 
 
+def test_assetlinks_served_from_well_known(db_path):
+    # Android checks exactly this path to verify the Play Store app (a Trusted
+    # Web Activity) belongs to this site; anywhere else it shows a browser bar
+    app = create_app(db_path=db_path)
+    app.testing = True
+
+    response = app.test_client().get("/.well-known/assetlinks.json")
+
+    assert response.status_code == 200
+    assert response.mimetype == "application/json"
+    statement = response.get_json()[0]
+    assert statement["relation"] == ["delegate_permission/common.handle_all_urls"]
+    assert statement["target"]["namespace"] == "android_app"
+
+
 def test_manifest_screenshots_served_as_images(db_path):
     app = create_app(db_path=db_path)
     app.testing = True
