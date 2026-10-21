@@ -23,7 +23,14 @@ const PRECACHE_URLS = [
   "/hamburger-menu.svg",
 ];
 
-importScripts("https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js");
+// Workbox is self-hosted (static/workbox-v5.1.2/, copied from the official
+// 5.1.2 CDN release) rather than loaded from storage.googleapis.com: ad-blocking
+// DNS / blockers can block that domain, which made this worker fail to install
+// for those visitors. setConfig must run before any workbox.* module is used,
+// so the modules load from the same folder too.
+const WORKBOX_PATH = "/workbox-v5.1.2/";
+importScripts(`${WORKBOX_PATH}workbox-sw.js`);
+workbox.setConfig({ modulePathPrefix: WORKBOX_PATH });
 
 // workbox-sw loads modules lazily, and importScripts only works while the
 // worker script is first evaluated, so touch every module needed up front

@@ -1,10 +1,25 @@
 import hashlib
+import mimetypes
 import os
 from functools import lru_cache
 
 # hex characters of the content hash kept in ?v=; plenty to make collisions
 # between two versions of the same file a non-issue
 VERSION_LENGTH = 10
+
+
+def register_static_mimetypes() -> None:
+    """
+    Flask picks a static file's Content-Type from Python's mimetypes table,
+    which falls back to the OS's /etc/mime.types for anything it doesn't know.
+    Python < 3.13 has no built-in .webp entry and the slim Docker image has no
+    /etc/mime.types, so without this the manifest screenshots are served as
+    application/octet-stream and installers (e.g. PWABuilder) reject them.
+    """
+    mimetypes.add_type("image/webp", ".webp")
+
+
+register_static_mimetypes()
 
 
 @lru_cache(maxsize=256)
