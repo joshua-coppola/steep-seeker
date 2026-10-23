@@ -253,7 +253,8 @@ p.copy {
 /* a .collapse-toggle button (aria-controls = the section's id, onclick =
    toggleCollapse(this)) folds a .collapsible section away on phones; on
    wider screens the button is hidden and the section always shows.
-   search.jinja's ad script relies on this same 700px breakpoint, and
+   search.jinja's and rankings.jinja's ad scripts rely on this same 700px
+   breakpoint, and
    trail_rankings_mobile.css repeats these rules at the trail/lift pages' own
    breakpoints */
 .collapse-toggle {
@@ -343,3 +344,10 @@ p.copy {
     font-weight: bold;
     cursor: pointer;
 }
+
+/* uncomment to preview where each ad slot sits as a black box
+[id^="ezoic-pub-ad-placeholder-"] {
+    background-color: black;
+    height: 100px;
+}
+*/

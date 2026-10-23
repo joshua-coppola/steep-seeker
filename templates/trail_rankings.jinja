@@ -10,6 +10,10 @@ Trail Rankings - Find the Hardest Trails in the USA
 {% endblock pagehead %}
 
 {% block content %}
+<section id="sidebar">
+    <div id="ezoic-pub-ad-placeholder-107"></div>
+</section>
+
 <section id="content">
 
     <h1>Trail Rankings</h1>
@@ -184,6 +188,9 @@ Trail Rankings - Find the Hardest Trails in the USA
         </table>
     </div>
 
+    {# ads between results (see inline_ad_slots) only go in this phone
+       layout; the desktop table has no spot for them #}
+    {% set inline_ads = inline_ad_slots(trails|length) %}
     <div class="trail-table mobile">
         {% for trail in trails %}
         {% if not '' == trail.name %}
@@ -242,6 +249,9 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% endfor %}
         </table>
         {% endif %}
+        {% if loop.index in inline_ads %}
+        <div class="inline-ad" id="ezoic-pub-ad-placeholder-{{ inline_ads[loop.index] }}"></div>
+        {% endif %}
         {% endfor %}
     </div>
 
@@ -261,7 +271,20 @@ Trail Rankings - Find the Hardest Trails in the USA
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
-            ezstandalone.showAds(101, 102);
+            const inlineAds = {{ inline_ads.values()|list|tojson }};
+            // the sidebar ad slot (107) is hidden in the mobile layout and the
+            // ads between results are hidden in the desktop one, so drop
+            // whichever is hidden instead of requesting ads for it; keep this
+            // breakpoint in sync with the trail_rankings_mobile.css <link media> above
+            if (window.matchMedia("(max-width: 1000px)").matches) {
+                document.getElementById("ezoic-pub-ad-placeholder-107").remove();
+                ezstandalone.showAds(101, 102, ...inlineAds);
+            } else {
+                inlineAds.forEach(function (id) {
+                    document.getElementById("ezoic-pub-ad-placeholder-" + id).remove();
+                });
+                ezstandalone.showAds(101, 102, 107);
+            }
         });
     </script>
 

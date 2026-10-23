@@ -1,5 +1,14 @@
 main {
     --center-width: 900px !important;
+    /* the sidebar column (filters + the ad slot) is guaranteed whatever is
+       left once #content is full width, up to 400px, so narrowing the page
+       takes space from the right column first, then the sidebar, and only
+       then #content. 100% is main's content box; 64px is page.css's two 32px
+       gaps */
+    grid-template-columns:
+        minmax(clamp(0px, 100% - 64px - var(--center-width), 400px), 1fr)
+        minmax(auto, var(--center-width))
+        1fr;
 }
 
 .result {
@@ -8,6 +17,15 @@ main {
     margin-bottom: 16px;
 }
 .result > * {
+    margin-bottom: 16px;
+}
+
+/* an ad between results (inline_ad_slots), spaced and divided like a .result */
+.result-ad {
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 16px;
+}
+.result-ad > * {
     margin-bottom: 16px;
 }
 .map-link {
@@ -84,6 +102,12 @@ main {
 }
 
 @media screen and (max-width: 1250px){
+    /* below here the guaranteed sidebar width is too narrow for the filters,
+       so go back to page.css's columns, which grow to fit them */
+    main {
+        grid-template-columns: 1fr minmax(auto, var(--center-width)) 1fr;
+    }
+
     .search-form #search {
         width: auto;
     }
@@ -155,7 +179,7 @@ main {
         font-weight: bold;
     }
 
-    #ezoic-pub-ad-placeholder-124 {
+    #ezoic-pub-ad-placeholder-107 {
         display: none;
     }
 }

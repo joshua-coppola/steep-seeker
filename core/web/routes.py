@@ -48,6 +48,29 @@ def asset_url(path: str) -> str:
     return versioned_asset_url(current_app.static_folder, path)
 
 
+# Ezoic placeholder ids for the ads interleaved with a page of results, in
+# page order; pages cap at 50 results, so four is the most ever placed
+INLINE_AD_IDS = (111, 112, 113, 114)
+
+
+@web.app_template_global()
+def inline_ad_slots(
+    result_count: int, min_results: int = 10, middle_max: int = 20, every: int = 10
+) -> dict[int, int]:
+    # {result position (1-based) to place an ad after: its placeholder id}.
+    # min_results to middle_max results get one ad in the middle; more than
+    # middle_max get one after every `every`th result, never after the last
+    # one, and at most len(INLINE_AD_IDS) of them (the mountain rankings can
+    # list every mountain at once)
+    if result_count < min_results:
+        return {}
+    if result_count <= middle_max:
+        positions = [result_count // 2]
+    else:
+        positions = range(every, result_count, every)
+    return dict(zip(positions, INLINE_AD_IDS))
+
+
 @web.app_context_processor
 def inject_rating_colors():
     # so templates can color a difficulty / beginner-friendliness number

@@ -1,7 +1,12 @@
 /* the phone layout for trail_rankings.jinja and lift_rankings.jinja; each
    loads it through a <link media> at its own breakpoint (trail 1000px, lift
    1300px, where its wider table stops fitting), since media queries can't
-   take a variable. Load it after trail_rankings.css, whose rules it overrides */
+   take a variable. Load it after trail_rankings.css, whose rules it overrides.
+   Each page's ad script repeats its breakpoint to drop the sidebar ad slot */
+
+#sidebar {
+    display: none;
+}
 
 #content > *,
 #content > .collapsible > * {
@@ -84,6 +89,11 @@ main {
 .mobile table {
     width: 100%;
     margin-top: 4px;
+}
+
+/* an ad between results (inline_ad_slots) */
+.mobile .inline-ad {
+    margin: 16px 0;
 }
 
 .mobile ul {
