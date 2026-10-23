@@ -1,9 +1,23 @@
 main {
     --center-width: 900px;
+    /* the sidebar column (the ad slot) is guaranteed whatever is left once
+       #content is full width, up to 400px, so narrowing the page takes space
+       from the right column first, then the sidebar, and only then #content.
+       100% is main's content box; 64px is page.css's two 32px gaps */
+    grid-template-columns:
+        minmax(clamp(0px, 100% - 64px - var(--center-width), 400px), 1fr)
+        minmax(auto, var(--center-width))
+        1fr;
 }
 
 #content {
     grid-row: 1;
+}
+
+/* holds the left ad slot (107); same cap as search.css's sidebar */
+#sidebar {
+    grid-row: 1;
+    max-width: 400px;
 }
 
 .ranking-sort {
@@ -132,7 +146,13 @@ select {
     }
 }
 
+/* keep this breakpoint in sync with the ad script in rankings.jinja and the
+   collapsible sections in page.css */
 @media screen and (max-width: 700px) {
+    #sidebar {
+        display: none;
+    }
+
     #content > *,
     #content > .collapsible > * {
         margin-bottom: 36px;

@@ -10,6 +10,10 @@ Trail Rankings - Find the Hardest Trails in the USA
 {% endblock pagehead %}
 
 {% block content %}
+<section id="sidebar">
+    <div id="ezoic-pub-ad-placeholder-107"></div>
+</section>
+
 <section id="content">
 
     <h1>Trail Rankings</h1>
@@ -261,7 +265,15 @@ Trail Rankings - Find the Hardest Trails in the USA
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
-            ezstandalone.showAds(101, 102);
+            // the sidebar ad slot (107) is hidden in the mobile layout, so drop it
+            // there instead of requesting an ad for it; keep this breakpoint in
+            // sync with the trail_rankings_mobile.css <link media> above
+            if (window.matchMedia("(max-width: 1000px)").matches) {
+                document.getElementById("ezoic-pub-ad-placeholder-107").remove();
+                ezstandalone.showAds(101, 102);
+            } else {
+                ezstandalone.showAds(101, 102, 107);
+            }
         });
     </script>
 
