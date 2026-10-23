@@ -271,20 +271,30 @@ Trail Rankings - Find the Hardest Trails in the USA
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
+            const ads = [101, 102];
             const inlineAds = {{ inline_ads.values()|list|tojson }};
-            // the sidebar ad slot (107) is hidden in the mobile layout and the
-            // ads between results are hidden in the desktop one, so drop
-            // whichever is hidden instead of requesting ads for it; keep this
-            // breakpoint in sync with the trail_rankings_mobile.css <link media> above
+            // the ads between results (see inline_ad_slots) are only in the
+            // mobile layout, so drop them in the desktop one instead of
+            // requesting ads for them; keep this breakpoint in sync with the
+            // trail_rankings_mobile.css <link media> above
             if (window.matchMedia("(max-width: 1000px)").matches) {
-                document.getElementById("ezoic-pub-ad-placeholder-107").remove();
-                ezstandalone.showAds(101, 102, ...inlineAds);
+                ads.push(...inlineAds);
             } else {
                 inlineAds.forEach(function (id) {
                     document.getElementById("ezoic-pub-ad-placeholder-" + id).remove();
                 });
-                ezstandalone.showAds(101, 102, 107);
             }
+            // the sidebar ad slot (107) overflows and breaks the layout when an ad
+            // fills it with less than 300px of room, so drop it then instead of
+            // requesting an ad for it; this also covers the mobile layout, which
+            // hides the sidebar (0px wide)
+            const sidebarAd = document.getElementById("ezoic-pub-ad-placeholder-107");
+            if (sidebarAd.offsetWidth < 300) {
+                sidebarAd.remove();
+            } else {
+                ads.push(107);
+            }
+            ezstandalone.showAds(...ads);
         });
     </script>
 

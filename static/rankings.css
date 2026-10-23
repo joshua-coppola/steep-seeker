@@ -155,8 +155,7 @@ select {
     }
 }
 
-/* keep this breakpoint in sync with the ad script in rankings.jinja and the
-   collapsible sections in page.css */
+/* keep this breakpoint in sync with the collapsible sections in page.css */
 @media screen and (max-width: 700px) {
     #sidebar {
         display: none;

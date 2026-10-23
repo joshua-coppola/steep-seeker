@@ -145,8 +145,7 @@ main {
     }
 }
 
-/* keep this breakpoint in sync with the ad script in search.jinja and the
-   collapsible sections in page.css */
+/* keep this breakpoint in sync with the collapsible sections in page.css */
 @media screen and (max-width: 700px) {
     main {
         padding: 0px;

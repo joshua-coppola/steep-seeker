@@ -2,7 +2,8 @@
    loads it through a <link media> at its own breakpoint (trail 1000px, lift
    1300px, where its wider table stops fitting), since media queries can't
    take a variable. Load it after trail_rankings.css, whose rules it overrides.
-   Each page's ad script repeats its breakpoint to drop the sidebar ad slot */
+   Each page's ad script repeats its breakpoint to drop the ads between
+   results in the desktop layout */
 
 #sidebar {
     display: none;
