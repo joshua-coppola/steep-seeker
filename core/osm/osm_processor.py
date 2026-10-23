@@ -267,7 +267,7 @@ class OSMProcessor:
 
         by_match_fields = defaultdict(list)
         for item_id, item in items.items():
-            # Area trails are never multi-route candidates 
+            # Area trails are never multi-route candidates
             if item.get("area"):
                 continue
             by_match_fields[tuple(item[field] for field in grouping_fields)].append(
@@ -275,7 +275,7 @@ class OSMProcessor:
             )
 
         parent = {item_id: item_id for item_id in items}
-        
+
         component_name = {
             item_id: (items[item_id]["name"] if match_by_name else None) or None
             for item_id in items

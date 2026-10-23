@@ -19,6 +19,11 @@ main {
 .result > * {
     margin-bottom: 16px;
 }
+
+/* an ad between results (inline_ad_slots), spaced like a .result */
+.result-ad {
+    margin-bottom: 16px;
+}
 .map-link {
     font-size: 1.25rem;
     position: absolute;

@@ -91,6 +91,11 @@ main {
     margin-top: 4px;
 }
 
+/* an ad between results (inline_ad_slots) */
+.mobile .inline-ad {
+    margin: 16px 0;
+}
+
 .mobile ul {
     padding-bottom: 32px;
 }

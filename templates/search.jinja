@@ -60,6 +60,7 @@ Search Ski Resorts
         {% endif %}
     </div>
 
+    {% set inline_ads = inline_ad_slots(mountains|length) %}
     <ul class="results">
         {% for mountain in mountains %}
         <li class="result">
@@ -98,6 +99,9 @@ Search Ski Resorts
             </p>
             <a class="map-link" href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}">View map</a>
         </li>
+        {% if loop.index in inline_ads %}
+        <li class="result-ad"><div id="ezoic-pub-ad-placeholder-{{ inline_ads[loop.index] }}"></div></li>
+        {% endif %}
         {% endfor %}
         {% if not mountains %}
         <p>No results found. Please double check spelling, and keep in mind that only US mountains are in the system.</p>
@@ -121,14 +125,16 @@ Search Ski Resorts
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
+            // the ads between results (see inline_ad_slots) show at every width
+            const inlineAds = {{ inline_ads.values()|list|tojson }};
             // the sidebar ad slot (107) sits under the collapsible filters in the
             // mobile layout, so drop it there instead of requesting an ad for it;
             // keep this breakpoint in sync with search.css and page.css
             if (window.matchMedia("(max-width: 700px)").matches) {
                 document.getElementById("ezoic-pub-ad-placeholder-107").remove();
-                ezstandalone.showAds(101, 102);
+                ezstandalone.showAds(101, 102, ...inlineAds);
             } else {
-                ezstandalone.showAds(101, 102, 107);
+                ezstandalone.showAds(101, 102, 107, ...inlineAds);
             }
         });
     </script>

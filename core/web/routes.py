@@ -48,6 +48,25 @@ def asset_url(path: str) -> str:
     return versioned_asset_url(current_app.static_folder, path)
 
 
+# Ezoic placeholder ids for the ads interleaved with a page of results, in
+# page order; pages cap at 50 results, so four is the most ever placed
+INLINE_AD_IDS = (111, 112, 113, 114)
+
+
+@web.app_template_global()
+def inline_ad_slots(result_count: int) -> dict[int, int]:
+    # {result position (1-based) to place an ad after: its placeholder id}.
+    # 10-20 results get one ad in the middle; more than 20 get one after
+    # every 10th result, never after the last one
+    if result_count < 10:
+        return {}
+    if result_count <= 20:
+        positions = [result_count // 2]
+    else:
+        positions = range(10, result_count, 10)
+    return dict(zip(positions, INLINE_AD_IDS))
+
+
 @web.app_context_processor
 def inject_rating_colors():
     # so templates can color a difficulty / beginner-friendliness number

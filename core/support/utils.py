@@ -222,7 +222,7 @@ def space_line_points_evenly(
 
     # Convert feet to meters because EPSG:5070 is in meters
     spacing_meters = spacing_feet / 3.28084
-    
+
     num_points = max(ceil(line_proj.length / spacing_meters), 1)
     distances = np.arange(num_points + 1) * spacing_meters
 
@@ -249,7 +249,7 @@ def simplify_geometry(
     tolerance: float | None,
 ) -> shapely.LineString | shapely.Polygon | shapely.MultiLineString:
     """
-    Thins a trail/lift geometry via Douglas-Peucker simplification. Returns 
+    Thins a trail/lift geometry via Douglas-Peucker simplification. Returns
     geometry unchanged when tolerance is falsy.
 
     Shared by maps.py's static SVG rendering and routes.py's interactive
@@ -282,7 +282,7 @@ def _simplify_points_max_gap(
     simplified = (
         shapely.LineString(points).simplify(tolerance, preserve_topology=True).coords
     )
-    
+
     kept = set()
     cursor = 0
     for point in simplified:
