@@ -213,6 +213,22 @@ def test_inline_ad_slots(result_count, expected):
     assert inline_ad_slots(result_count) == expected
 
 
+@pytest.mark.parametrize(
+    "result_count, expected",
+    [
+        (25, {}),
+        (26, {13: 111}),
+        (50, {25: 111}),
+        (51, {50: 111}),
+        (150, {50: 111, 100: 112}),
+        (500, {50: 111, 100: 112, 150: 113, 200: 114}),
+    ],
+)
+def test_inline_ad_slots_mountain_rankings(result_count, expected):
+    # rankings.jinja's thresholds: more than 25 results, then every 50
+    assert inline_ad_slots(result_count, 26, 50, 50) == expected
+
+
 def test_rankings_defaults_to_difficulty_desc(seeded_client):
     response = seeded_client.get("/rankings")
 

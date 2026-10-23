@@ -63,7 +63,8 @@ main {
 .rankings {
     display: grid;
     grid-template-columns: max-content 1fr;
-    grid-auto-rows: 28px;
+    /* min, not fixed, so a row holding an .inline-ad can grow to fit it */
+    grid-auto-rows: minmax(28px, auto);
     row-gap: 6px;
     column-gap: 64px;
     align-items: center;
@@ -105,6 +106,12 @@ main {
     width: 100%;
 }
 
+/* an ad between results (inline_ad_slots), across both columns */
+.rankings > .inline-ad {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
 .links {
     display: flex;
     align-items: center;
@@ -129,12 +136,14 @@ select {
     margin-left: 8px;
 }
 
-.rankings > p:nth-child(4n+1),
-.rankings > .bar-div:nth-child(4n+2) {
+/* of-type, not nth-child, so an .inline-ad (an <aside>) between rows doesn't
+   shift the striping */
+.rankings > p:nth-of-type(odd),
+.rankings > .bar-div:nth-of-type(odd) {
     background-color: rgb(243, 242, 242); /* Light gray for alternate rows */
 }
 
-.rankings > .bar-div:nth-child(4n+2) {
+.rankings > .bar-div:nth-of-type(odd) {
     margin-left: -64px;
     padding-left: 64px;
     width: calc(100% + 64px);
@@ -168,7 +177,12 @@ select {
         line-height: 1.7rem;
     }
 
-    .rankings > .bar-div:nth-child(4n+2) {
+    /* the list is no longer a grid here, so there's no row-gap around it */
+    .rankings > .inline-ad {
+        margin: 16px 0;
+    }
+
+    .rankings > .bar-div:nth-of-type(odd) {
         margin-left: 0;
         padding-left: 4px;
         width: 100%;

@@ -344,3 +344,10 @@ p.copy {
     font-weight: bold;
     cursor: pointer;
 }
+
+/* uncomment to preview where each ad slot sits as a black box
+[id^="ezoic-pub-ad-placeholder-"] {
+    background-color: black;
+    height: 100px;
+}
+*/

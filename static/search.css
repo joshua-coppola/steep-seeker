@@ -20,8 +20,12 @@ main {
     margin-bottom: 16px;
 }
 
-/* an ad between results (inline_ad_slots), spaced like a .result */
+/* an ad between results (inline_ad_slots), spaced and divided like a .result */
 .result-ad {
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 16px;
+}
+.result-ad > * {
     margin-bottom: 16px;
 }
 .map-link {

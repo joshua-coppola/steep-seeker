@@ -137,6 +137,8 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         </ul>
     </div>
 
+    {# more than 25 results get an ad in the middle, more than 50 one every 50 #}
+    {% set inline_ads = inline_ad_slots(mountains|length, 26, 50, 50) %}
     <div class="rankings">
         {% for mountain in mountains %}
         {% if sort == "difficulty" %}
@@ -172,19 +174,25 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
                 (mountain.beginner_friendliness)/beginner_friendliness_max * 100}}%; --bar-color: {{ beginner_color(mountain.beginner_friendliness) }};">{{mountain.beginner_friendliness}}
         </span></div>
         {% endif %}
+        {% if loop.index in inline_ads %}
+        {# an <aside>, not a <div>, so rankings.css's nth-of-type striping skips it #}
+        <aside class="inline-ad"><div id="ezoic-pub-ad-placeholder-{{ inline_ads[loop.index] }}"></div></aside>
+        {% endif %}
         {% endfor %}
     </div>
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
+            // the ads between results (see inline_ad_slots) show at every width
+            const inlineAds = {{ inline_ads.values()|list|tojson }};
             // the sidebar ad slot (107) is hidden in the mobile layout, so drop it
             // there instead of requesting an ad for it; keep this breakpoint in
             // sync with rankings.css and page.css
             if (window.matchMedia("(max-width: 700px)").matches) {
                 document.getElementById("ezoic-pub-ad-placeholder-107").remove();
-                ezstandalone.showAds(101, 102);
+                ezstandalone.showAds(101, 102, ...inlineAds);
             } else {
-                ezstandalone.showAds(101, 102, 107);
+                ezstandalone.showAds(101, 102, 107, ...inlineAds);
             }
         });
     </script>
