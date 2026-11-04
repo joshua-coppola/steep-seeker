@@ -22,7 +22,7 @@ Search Ski Resorts
     </button>
 
     <form id="filters" class="collapsible"></form>
-    <div id="ezoic-pub-ad-placeholder-107"></div>
+    <div id="ezoic-pub-ad-placeholder-124"></div>
 </section>
 
 <section id="content">
@@ -127,15 +127,15 @@ Search Ski Resorts
         ezstandalone.cmd.push(function () {
             // the ads between results (see inline_ad_slots) show at every width
             const ads = [101, 102].concat({{ inline_ads.values()|list|tojson }});
-            // the sidebar ad slot (107) overflows and breaks the layout when an ad
+            // the sidebar ad slot (124) overflows and breaks the layout when an ad
             // fills it with less than 300px of room, so drop it then instead of
             // requesting an ad for it; this also covers the mobile layout, which
             // hides the sidebar (0px wide)
-            const sidebarAd = document.getElementById("ezoic-pub-ad-placeholder-107");
+            const sidebarAd = document.getElementById("ezoic-pub-ad-placeholder-124");
             if (sidebarAd.offsetWidth < 300) {
                 sidebarAd.remove();
             } else {
-                ads.push(107);
+                ads.push(124);
             }
             ezstandalone.showAds(...ads);
         });
