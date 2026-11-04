@@ -42,5 +42,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/')" || exit 1
 
+# No gunicorn access log: Apache in front already keeps one (rotated by
+# config/logrotate-steep-seeker), and a second copy in `docker logs` would sit
+# outside the privacy policy's 14-day retention.
 CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:8000", \
-     "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+     "--error-logfile", "-", "app:app"]
