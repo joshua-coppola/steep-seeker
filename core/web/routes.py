@@ -17,6 +17,7 @@ from flask import (
 from markupsafe import escape
 
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.support.lift_query import list_lifts
 from core.support.mountain import Mountain
@@ -651,8 +652,9 @@ def explore_map():
             f"{escape(mountain.name)}</a></h3>"
         )
         for season_pass in mountain.season_passes:
+            ext = "svg" if season_pass == Season_Pass.SNOW_PASS else "png"
             popup_content += (
-                f'<img src="icons/{season_pass.value}.png" class="pass-icon"/>'
+                f'<img src="icons/{season_pass.value}.{ext}" class="pass-icon"/>'
             )
         popup_content += (
             f"<p>Vertical: {mountain.vertical} ft</p>"
