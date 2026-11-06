@@ -27,6 +27,8 @@ docker run -d \
     --name "$CONTAINER_NAME" \
     -p "127.0.0.1:$PORT:$PORT" \
     --restart unless-stopped \
+    --log-opt max-size=10m \
+    --log-opt max-file=3 \
     "$IMAGE_NAME:$TAG"
 
 echo "==> Pruning dangling images left over from previous builds"

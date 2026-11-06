@@ -9,6 +9,7 @@ from core.web.routes import (
     _orientation,
     _sorted_trails_and_lifts,
     _trail_features,
+    inline_ad_slots,
 )
 
 
@@ -193,6 +194,39 @@ def test_search_accepts_infinity_trailsmax(seeded_client):
 def test_list_pages_tolerate_junk_pagination_params(seeded_client, path):
     # bad query params should fall back to defaults, not 500
     assert seeded_client.get(path).status_code == 200
+
+
+@pytest.mark.parametrize(
+    "result_count, expected",
+    [
+        (0, {}),
+        (9, {}),
+        (10, {5: 111}),
+        (15, {7: 111}),
+        (20, {10: 111}),
+        (21, {10: 111, 20: 112}),
+        (30, {10: 111, 20: 112}),
+        (50, {10: 111, 20: 112, 30: 113, 40: 114}),
+    ],
+)
+def test_inline_ad_slots(result_count, expected):
+    assert inline_ad_slots(result_count) == expected
+
+
+@pytest.mark.parametrize(
+    "result_count, expected",
+    [
+        (25, {}),
+        (26, {13: 111}),
+        (50, {25: 111}),
+        (51, {50: 111}),
+        (150, {50: 111, 100: 112}),
+        (500, {50: 111, 100: 112, 150: 113, 200: 114}),
+    ],
+)
+def test_inline_ad_slots_mountain_rankings(result_count, expected):
+    # rankings.jinja's thresholds: more than 25 results, then every 50
+    assert inline_ad_slots(result_count, 26, 50, 50) == expected
 
 
 def test_rankings_defaults_to_difficulty_desc(seeded_client):

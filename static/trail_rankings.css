@@ -1,5 +1,13 @@
 main {
     --center-width: 1600px;
+    /* the sidebar column (the ad slot) is guaranteed whatever is left once
+       #content is full width, up to 400px, so narrowing the page takes space
+       from the right column first, then the sidebar, and only then #content.
+       100% is main's content box; 64px is page.css's two 32px gaps */
+    grid-template-columns:
+        minmax(clamp(0px, 100% - 64px - var(--center-width), 400px), 1fr)
+        minmax(auto, var(--center-width))
+        1fr;
 }
 
 #content {
@@ -8,6 +16,12 @@ main {
        let a wide table widen the whole page instead of scrolling within
        .trail-table.desktop */
     min-width: 0;
+}
+
+/* holds the left ad slot (107); same cap as search.css's sidebar */
+#sidebar {
+    grid-row: 1;
+    max-width: 400px;
 }
 
 .ranking-sort {

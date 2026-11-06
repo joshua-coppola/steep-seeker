@@ -17,6 +17,7 @@ from flask import (
 from markupsafe import escape
 
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.support.lift_query import list_lifts
 from core.support.mountain import Mountain
@@ -46,6 +47,29 @@ def asset_url(path: str) -> str:
     # templates link local CSS/JS through this (e.g. {{ asset_url('/page.css') }})
     # so each deploy's changed files get a new URL; see core.web.assets
     return versioned_asset_url(current_app.static_folder, path)
+
+
+# Ezoic placeholder ids for the ads interleaved with a page of results, in
+# page order; pages cap at 50 results, so four is the most ever placed
+INLINE_AD_IDS = (111, 112, 113, 114)
+
+
+@web.app_template_global()
+def inline_ad_slots(
+    result_count: int, min_results: int = 10, middle_max: int = 20, every: int = 10
+) -> dict[int, int]:
+    # {result position (1-based) to place an ad after: its placeholder id}.
+    # min_results to middle_max results get one ad in the middle; more than
+    # middle_max get one after every `every`th result, never after the last
+    # one, and at most len(INLINE_AD_IDS) of them (the mountain rankings can
+    # list every mountain at once)
+    if result_count < min_results:
+        return {}
+    if result_count <= middle_max:
+        positions = [result_count // 2]
+    else:
+        positions = range(every, result_count, every)
+    return dict(zip(positions, INLINE_AD_IDS))
 
 
 @web.app_context_processor
@@ -628,8 +652,9 @@ def explore_map():
             f"{escape(mountain.name)}</a></h3>"
         )
         for season_pass in mountain.season_passes:
+            ext = "svg" if season_pass == Season_Pass.SNOW_PASS else "png"
             popup_content += (
-                f'<img src="icons/{season_pass.value}.png" class="pass-icon"/>'
+                f'<img src="icons/{season_pass.value}.{ext}" class="pass-icon"/>'
             )
         popup_content += (
             f"<p>Vertical: {mountain.vertical} ft</p>"
