@@ -1,4 +1,11 @@
 function run_map(trails, map, editable = false, editQuery = null){
+    // TEMP (Firefox Android rotated-map freeze bisect): ?perf=nolabels,nohalo,noblur,nobasemap
+    const PERF_OFF = new Set((new URLSearchParams(window.location.search).get('perf') || '').split(','));
+    if (PERF_OFF.has('noblur')) {
+        const s = document.createElement('style');
+        s.textContent = '.route-line-soft { filter: none !important; }';
+        document.head.appendChild(s);
+    }
     let deleteMode = false;
     let modifierMode = false;
     const DELETE_STYLE = {
@@ -211,7 +218,7 @@ function run_map(trails, map, editable = false, editQuery = null){
     });
     
     // Add the default basemap
-    topoBasemap.addTo(map);
+    if (!PERF_OFF.has('nobasemap')) topoBasemap.addTo(map);
     
     // Track current basemap
     let currentBasemap = 'topo';
@@ -512,6 +519,7 @@ function run_map(trails, map, editable = false, editQuery = null){
         // +3px per zoom level above 15, where labels first appear at the
         // base 14px.
         const fontSize = 14 + (Math.max(0, map.getZoom() - 15) * 3);
+        if (PERF_OFF.has('nohalo')) return {fill: textColor, 'font-size': fontSize + 'px'};
         return {
             fill: textColor,
             'font-size': fontSize + 'px',
@@ -542,6 +550,7 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     function applyLabel(layer, feature) {
         if (!feature.properties || !feature.properties.label) return;
+        if (PERF_OFF.has('nolabels')) return;
         layer.setText(null);
         if (map.getZoom() > 14) {
             const rating = ratingRun(feature);
