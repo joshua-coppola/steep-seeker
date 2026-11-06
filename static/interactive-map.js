@@ -579,15 +579,20 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     function style(feature) {
         if (feature.properties.isRoute) {
-            return {
+            const routeStyle = {
                 color: feature.properties.color,
                 weight: 16,
                 opacity: 0.25,
                 interactive: false,
                 lineCap: 'round',
                 lineJoin: 'round',
-                className: 'route-line-soft'
-            }
+            };
+            // A multi-route trail's route line gets no blur: CSS-filtered
+            // SVG paths under leaflet-rotate's rotation froze Firefox for
+            // Android for up to a minute once labels appeared (e.g. Jackson
+            // Hole, Magic, Mad River Glen).
+            if (!feature.properties.multiRoute) routeStyle.className = 'route-line-soft';
+            return routeStyle;
         }
         if (feature.properties.gladed) {
             if (feature.properties.gladed == 'True') {

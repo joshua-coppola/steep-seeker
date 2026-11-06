@@ -553,6 +553,9 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
                 "type": "Feature",
                 "properties": {
                     "isRoute": True,
+                    # drawn without the area route's blur -- see style() in
+                    # interactive-map.js
+                    "multiRoute": bool(trail.multi_route),
                     "color": properties["color"],
                     "label": trail.name,
                     "orientation": route_orientation,
