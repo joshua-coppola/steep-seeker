@@ -1,11 +1,4 @@
 function run_map(trails, map, editable = false, editQuery = null){
-    // TEMP (Firefox Android rotated-map freeze bisect): ?perf=nolabels,nohalo,noblur,nobasemap
-    const PERF_OFF = new Set((new URLSearchParams(window.location.search).get('perf') || '').split(','));
-    if (PERF_OFF.has('noblur')) {
-        const s = document.createElement('style');
-        s.textContent = '.route-line-soft { filter: none !important; }';
-        document.head.appendChild(s);
-    }
     let deleteMode = false;
     let modifierMode = false;
     const DELETE_STYLE = {
@@ -127,8 +120,8 @@ function run_map(trails, map, editable = false, editQuery = null){
     }
 
     // Selection is drawn as a soft glow underneath the feature's own
-    // geometry -- the same wide/blurred/translucent treatment area and
-    // multi-route trails already use for their route line (see
+    // geometry -- the same wide/blurred/translucent treatment area trails
+    // already use for their route line (see
     // 'route-line-soft' in style()/interactive-map.css) -- rather than
     // recoloring the feature itself.
     function clearSelectionShadow() {
@@ -218,7 +211,7 @@ function run_map(trails, map, editable = false, editQuery = null){
     });
     
     // Add the default basemap
-    if (!PERF_OFF.has('nobasemap')) topoBasemap.addTo(map);
+    topoBasemap.addTo(map);
     
     // Track current basemap
     let currentBasemap = 'topo';
@@ -519,7 +512,6 @@ function run_map(trails, map, editable = false, editQuery = null){
         // +3px per zoom level above 15, where labels first appear at the
         // base 14px.
         const fontSize = 14 + (Math.max(0, map.getZoom() - 15) * 3);
-        if (PERF_OFF.has('nohalo')) return {fill: textColor, 'font-size': fontSize + 'px'};
         return {
             fill: textColor,
             'font-size': fontSize + 'px',
@@ -550,7 +542,6 @@ function run_map(trails, map, editable = false, editQuery = null){
 
     function applyLabel(layer, feature) {
         if (!feature.properties || !feature.properties.label) return;
-        if (PERF_OFF.has('nolabels')) return;
         layer.setText(null);
         if (map.getZoom() > 14) {
             const rating = ratingRun(feature);
@@ -578,21 +569,25 @@ function run_map(trails, map, editable = false, editQuery = null){
     }
 
     function style(feature) {
+        // A multi-route trail's route line isn't drawn at all -- it's only
+        // there to carry the trail's name label (see _trail_features in
+        // routes.py), since its branches are already drawn as real trail
+        // lines. (It used to share the area route's blurred band, which
+        // under leaflet-rotate's rotation froze Firefox for Android for up
+        // to a minute once labels appeared.)
+        if (feature.properties.multiRoute) {
+            return {stroke: false, interactive: false};
+        }
         if (feature.properties.isRoute) {
-            const routeStyle = {
+            return {
                 color: feature.properties.color,
                 weight: 16,
                 opacity: 0.25,
                 interactive: false,
                 lineCap: 'round',
                 lineJoin: 'round',
-            };
-            // A multi-route trail's route line gets no blur: CSS-filtered
-            // SVG paths under leaflet-rotate's rotation froze Firefox for
-            // Android for up to a minute once labels appeared (e.g. Jackson
-            // Hole, Magic, Mad River Glen).
-            if (!feature.properties.multiRoute) routeStyle.className = 'route-line-soft';
-            return routeStyle;
+                className: 'route-line-soft'
+            }
         }
         if (feature.properties.gladed) {
             if (feature.properties.gladed == 'True') {

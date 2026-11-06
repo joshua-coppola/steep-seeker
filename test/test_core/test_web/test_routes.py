@@ -713,8 +713,8 @@ def test_trail_features_route_feature_flags_multi_route_only(trail_factory):
     area_route = _trail_features(area_trail, direction="n", debug_mode=False)[1]
     multi_route = _trail_features(multi_route_trail, direction="n", debug_mode=False)[1]
 
-    # interactive-map.js blurs only area routes; multi-route ones are drawn
-    # unblurred (see style())
+    # interactive-map.js draws only area routes; a multi-route one just
+    # carries the label (see style())
     assert area_route["properties"]["multiRoute"] is False
     assert multi_route["properties"]["isRoute"] is True
     assert multi_route["properties"]["multiRoute"] is True
