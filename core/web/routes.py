@@ -444,9 +444,11 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     merged from several OSM ways) is a MultiLineString feature with one
     part per branch, every part rendered as a real trail line.
 
-    Both area and multi-route trails additionally get a second, faint/
+    Both area and multi-route trails additionally get a second,
     non-interactive LineString feature (styled in interactive-map.js)
-    carrying their computed route's elevation profile. The main feature's
+    carrying their computed route's elevation profile and the trail's name
+    label -- drawn as a faint band for an area trail, but left undrawn
+    (label only) for a multi-route trail, whose branches already show it. The main feature's
     own properties carry the route's profile too (as routeCoordinates), so
     interactive-map.js can show a real heightgraph when it's clicked
     directly.
@@ -553,6 +555,9 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
                 "type": "Feature",
                 "properties": {
                     "isRoute": True,
+                    # label-only (no visible line) -- see style() in
+                    # interactive-map.js
+                    "multiRoute": bool(trail.multi_route),
                     "color": properties["color"],
                     "label": trail.name,
                     "orientation": route_orientation,

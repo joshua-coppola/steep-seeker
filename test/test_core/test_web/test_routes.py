@@ -1,5 +1,5 @@
 import pytest
-from shapely import LineString, Point, Polygon
+from shapely import LineString, MultiLineString, Point, Polygon
 
 from core.datamodels.state import State
 from core.web.app import create_app
@@ -688,6 +688,36 @@ def test_trail_features_area_trail_with_route_adds_route_feature(trail_factory):
     # name identifies the trail for the elevation-profile title regardless
     # of which feature was clicked, unlike label (on-map text only)
     assert polygon_feature["properties"]["name"] == area_trail.name
+
+
+def test_trail_features_route_feature_flags_multi_route_only(trail_factory):
+    area_trail = trail_factory(
+        area=True,
+        geometry=Polygon(
+            [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
+        ),
+        interior_geometry=LineString([[0.4, 0.4, 80], [0.6, 0.6, 70]]),
+        route=LineString([[0, 1, 100], [0.5, 0.5, 75], [1, 0, 50]]),
+    )
+    multi_route_trail = trail_factory(
+        multi_route=True,
+        geometry=MultiLineString(
+            [
+                [[0, 1, 100], [0.4, 0.5, 75], [1, 0, 50]],
+                [[0, 1, 100], [0.6, 0.5, 75], [1, 0, 50]],
+            ]
+        ),
+        route=LineString([[0, 1, 100], [0.4, 0.5, 75], [1, 0, 50]]),
+    )
+
+    area_route = _trail_features(area_trail, direction="n", debug_mode=False)[1]
+    multi_route = _trail_features(multi_route_trail, direction="n", debug_mode=False)[1]
+
+    # interactive-map.js draws only area routes; a multi-route one just
+    # carries the label (see style())
+    assert area_route["properties"]["multiRoute"] is False
+    assert multi_route["properties"]["isRoute"] is True
+    assert multi_route["properties"]["multiRoute"] is True
 
 
 def test_trail_features_area_trail_without_route_has_single_feature(trail_factory):

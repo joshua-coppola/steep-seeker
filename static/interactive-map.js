@@ -120,8 +120,8 @@ function run_map(trails, map, editable = false, editQuery = null){
     }
 
     // Selection is drawn as a soft glow underneath the feature's own
-    // geometry -- the same wide/blurred/translucent treatment area and
-    // multi-route trails already use for their route line (see
+    // geometry -- the same wide/blurred/translucent treatment area trails
+    // already use for their route line (see
     // 'route-line-soft' in style()/interactive-map.css) -- rather than
     // recoloring the feature itself.
     function clearSelectionShadow() {
@@ -569,6 +569,15 @@ function run_map(trails, map, editable = false, editQuery = null){
     }
 
     function style(feature) {
+        // A multi-route trail's route line isn't drawn at all -- it's only
+        // there to carry the trail's name label (see _trail_features in
+        // routes.py), since its branches are already drawn as real trail
+        // lines. (It used to share the area route's blurred band, which
+        // under leaflet-rotate's rotation froze Firefox for Android for up
+        // to a minute once labels appeared.)
+        if (feature.properties.multiRoute) {
+            return {stroke: false, interactive: false};
+        }
         if (feature.properties.isRoute) {
             return {
                 color: feature.properties.color,
