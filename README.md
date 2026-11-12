@@ -51,7 +51,7 @@ these-united-states==1.2.0.24
 - [x] Add mobile support
     - [x] Improve nav bar with collapsible hamburger menu
 - [x] Add footer
-- [ ] Improve comments on code
+- [x] Improve comments on code
 - [x] Add hover animations to buttons
 
 ### Python
@@ -69,12 +69,12 @@ these-united-states==1.2.0.24
 
 ### Search
 
-- [ ] Add missing settings from desktop to mobile
+- [x] Add missing settings from desktop to mobile
 
 ### Mountain Rankings
 
 - [ ] Add better filters
-- [ ] Improve appearance
+- [x] Improve appearance
 
 ### Trail Rankings
 
@@ -86,12 +86,12 @@ these-united-states==1.2.0.24
 - [ ] 3d maps
 - [x] Leaflet / interactive maps
     - [x] Add Map Rotation
-    - [ ] Add elevation profile on click
+    - [x] Add elevation profile on click
     - [ ] Color each section of a trail based on pitch
     - [ ] Show icon for nearby mountains
     - [x] Improve toggle button between map modes
-    - [ ] Allow user to click on trail name in list and highlight trail on map
-    - [ ] Improve readability of trail information
+    - [x] Allow user to click on trail name in list and highlight trail on map
+    - [x] Improve readability of trail information
 
 ### Stats Page
 
@@ -104,22 +104,7 @@ these-united-states==1.2.0.24
 - [x] Create management page
 - [ ] Add logins
 
-### Maps to fix
-
-- Echo Mountain - Title & sources cut off
-- Kendall Mountain - Title cut off
-- Telluride - normal trails marked as areas
-- Appalachian Ski Mountain - title cut off
-
 ### Mountains with no trails/lifts (not a complete list)
 
-- Barker Mountain
-- Coppervale
-- Hidden Valley, OH
-- Paoli Peaks
-- Labrador, NY
-- Song, NY
-- Swain, NY
-- Titus, NY
-- Mt Waterman, CA
-  
+- Snowstar, IL (Indy) https://skisnowstar.com/
+- Elm Creek, MN (Indy) https://www.threeriversparks.org/elmcreekwinter
