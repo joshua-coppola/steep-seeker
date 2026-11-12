@@ -12,6 +12,8 @@ Search Ski Resorts
     window.US_STATES = {{ us_states | tojson }};
     // [param, name, state codes] triples for its region dropdown
     window.US_REGIONS = {{ us_regions | tojson }};
+    // [param, name] pairs for its season pass dropdown
+    window.SEASON_PASSES = {{ season_pass_options | tojson }};
 </script>
 {% endblock pagehead %}
 
@@ -74,7 +76,11 @@ Search Ski Resorts
                 <img alt="{{mountain.name}} - {{mountain.state.value}}" class="thumbnail" src="thumbnails/{{mountain.state.value}}/{{mountain.name}}.svg" width=125px
                     height=100px />
             </a>
-            <h2><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>
+            <h2><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a>
+                {% for season_pass in mountain.season_passes %}
+                <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
+                {% endfor %}
+            </h2>
             <div>
                 {% if mountain.difficulty > 0 %}
                 {% if mountain.beginner_friendliness > display_beginner_friendliness(difficulty_thresholds.beginner_max) %}

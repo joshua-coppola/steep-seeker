@@ -1,6 +1,7 @@
 import pytest
 from shapely import LineString, MultiLineString, Point, Polygon
 
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.web.app import create_app
 from core.web.routes import (
@@ -164,6 +165,34 @@ def test_search_state_overrides_region(seeded_client):
     body = response.data.decode()
     assert "Alta" in body
     assert "Killington" not in body
+
+
+def test_search_filters_by_season_pass(client, db_path, mountain_factory):
+    mountain_factory(
+        mountain_id="1", name="Epic Mountain", season_passes=[Season_Pass.EPIC]
+    ).to_db(db_path)
+    mountain_factory(
+        mountain_id="2",
+        name="Collective Mountain",
+        season_passes=[Season_Pass.MOUNTAIN_COLLECTIVE],
+        lifts={},
+    ).to_db(db_path)
+
+    response = client.get("/search?pass=mountain_collective")
+
+    body = response.data.decode()
+    assert "Collective Mountain" in body
+    assert "Epic Mountain" not in body
+
+
+def test_search_invalid_season_pass_returns_no_results(seeded_client):
+    response = seeded_client.get("/search?pass=nonexistent")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Bolton Valley" not in body
+    assert "Killington" not in body
+    assert "Alta" not in body
 
 
 def test_search_invalid_state_returns_no_results(seeded_client):

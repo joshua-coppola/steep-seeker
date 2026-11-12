@@ -2,6 +2,7 @@ import pytest
 from shapely import Point
 
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.support.mountain_query import list_mountains
 
@@ -119,6 +120,28 @@ def test_list_mountains_handles_empty_season_passes(mountain_factory, db_path):
     summaries, _ = list_mountains(db_path=db_path)
 
     assert summaries[0].season_passes == []
+
+
+def test_list_mountains_filters_by_season_pass(mountain_factory, db_path):
+    mountain_factory(
+        mountain_id="1", name="Epic Mountain", season_passes=[Season_Pass.EPIC]
+    ).to_db(db_path)
+    mountain_factory(
+        mountain_id="2",
+        name="Indy Mountain",
+        season_passes=[Season_Pass.INDY, Season_Pass.FREEDOM],
+        lifts={},
+    ).to_db(db_path)
+    mountain_factory(
+        mountain_id="3", name="No Pass Mountain", season_passes=[], lifts={}
+    ).to_db(db_path)
+
+    summaries, total_count = list_mountains(
+        db_path=db_path, season_pass=Season_Pass.FREEDOM
+    )
+
+    assert total_count == 1
+    assert summaries[0].name == "Indy Mountain"
 
 
 def test_mountain_summary_vertical_converted_to_feet(mountain_factory, db_path):

@@ -35,6 +35,12 @@ main {
     right: 0;
 }
 
+.pass-icon {
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
+}
+
 .result-difficulty {
     display: flex;
     align-items: center;

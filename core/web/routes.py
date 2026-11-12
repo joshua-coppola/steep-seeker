@@ -99,6 +99,10 @@ def inject_rating_colors():
             (region.name.lower(), region.name.title(), [s.value for s in region.value])
             for region in Region
         ],
+        # (param, name) pairs for search.js's season pass dropdown
+        "season_pass_options": [
+            (season_pass.name.lower(), season_pass.value) for season_pass in Season_Pass
+        ],
     }
 
 
@@ -186,6 +190,27 @@ def _parse_region(region_param: str, state: State | None) -> Region | None:
         return None
 
 
+class _InvalidSeasonPass:
+    """Sentinel: a pass value was given but doesn't parse to a real Season_Pass."""
+
+
+_INVALID_SEASON_PASS = _InvalidSeasonPass()
+
+
+def _parse_season_pass(value: str | None) -> Season_Pass | None | _InvalidSeasonPass:
+    """
+    Parses a ?pass= param (a lowercased Season_Pass name, e.g.
+    "mountain_collective"). Like _parse_state, an unparseable value is
+    _INVALID_SEASON_PASS, which callers must treat as "matches nothing".
+    """
+    if not value:
+        return None
+    try:
+        return Season_Pass[value.upper()]
+    except KeyError:
+        return _INVALID_SEASON_PASS
+
+
 def _int_arg(
     name: str, default: int, minimum: int | None = None, maximum: int | None = None
 ) -> int:
@@ -240,11 +265,12 @@ def search():
     order = request.args.get("order") or "asc"
     state = _parse_state(request.args.get("location"))
     region_param = request.args.get("region") or "usa"
+    season_pass = _parse_season_pass(request.args.get("pass"))
 
     offset = limit * (page - 1)
 
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if state is _INVALID_STATE or season_pass is _INVALID_SEASON_PASS:
         mountains, total_mountain_count = [], 0
     else:
         mountains, total_mountain_count = list_mountains(
@@ -252,6 +278,7 @@ def search():
             name_query=q or None,
             state=state,
             region=_parse_region(region_param, state),
+            season_pass=season_pass,
             difficulty_min=diffmin,
             difficulty_max=diffmax,
             trail_count_min=trailsmin,

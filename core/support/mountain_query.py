@@ -53,6 +53,7 @@ def list_mountains(
     name_query: str | None = None,
     state: State | None = None,
     region: Region | None = None,
+    season_pass: Season_Pass | None = None,
     difficulty_min: float = 0,
     difficulty_max: float = 100,
     trail_count_min: float = 0,
@@ -119,6 +120,8 @@ def list_mountains(
         summaries = [s for s in summaries if s.state == state]
     if region is not None:
         summaries = [s for s in summaries if s.region() == region]
+    if season_pass is not None:
+        summaries = [s for s in summaries if season_pass in s.season_passes]
     summaries = [
         s
         for s in summaries

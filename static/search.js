@@ -643,6 +643,7 @@
         (e.diffmax = d(l.difficulty.d_value[1]).toString())),
       l.location &&
         ((e.region = l.location.region), (e.location = l.location.state)),
+      l.season_pass && (e.pass = l.season_pass.pass),
       l.trail_count)
     ) {
       ;(e.trailsmin = Math.round(l.trail_count.tc_value[0]).toString()),
@@ -698,6 +699,7 @@
     var m = {
         difficulty: [0, 5],
         location: { region: '', state: '' },
+        seasonPass: '',
         trailCount: [0, 1 / 0]
       },
       p = !1,
@@ -715,6 +717,8 @@
           region: m.location.region,
           state: m.location.state
         })),
+      g.pass &&
+        ((m.seasonPass = g.pass), (l.season_pass = { pass: m.seasonPass })),
       g.trailsmin &&
         ((b = !0),
         (m.trailCount = [
@@ -763,6 +767,14 @@
       x.fieldEl.addEventListener('change', function () {
         k.setOptions(w(x.fieldEl.value), '')
       }),
+      y.add(
+        new s(
+          'Season Pass',
+          'season_pass',
+          [new S('pass', 'All Passes', window.SEASON_PASSES, m.seasonPass)],
+          !!g.pass
+        )
+      ),
       y.add(
         new s(
           'Trail Count',
