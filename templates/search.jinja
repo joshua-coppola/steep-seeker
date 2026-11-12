@@ -18,9 +18,11 @@ Search Ski Resorts
 {% endblock pagehead %}
 
 {% block content %}
-<h1 id="title">Search Mountains</h1>
-
-<section id="sidebar">
+<section id="sidebar" class="pane">
+    {# the mobile layout's title, above the Filters toggle; #content's copy
+       is the one shown at wider widths (search.css hides whichever isn't in
+       use, so only one is ever rendered) #}
+    <h1 class="mobile-title">Search Mountains</h1>
     <h2>Filters</h2>
     {# only shown in the mobile layout, where the filters start collapsed #}
     <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="filters"
@@ -33,7 +35,8 @@ Search Ski Resorts
     <div id="ezoic-pub-ad-placeholder-124"></div>
 </section>
 
-<section id="content">
+<section id="content" class="pane">
+    <h1 class="desktop-title">Search Mountains</h1>
     <form id="search-form" class="search-form">
         <input id="search" name="q" type="search" placeholder="Search all mountains" />
         <!-- Rework this field to click on arrow to change sort direction instead of having dropdown for each -->

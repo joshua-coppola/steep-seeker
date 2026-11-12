@@ -4,7 +4,18 @@ body {
 
 /* NAV */
 
+/* the nav stays pinned to the top while the page scrolls; anchor jumps
+   land below it rather than under it. --nav-height is kept current by
+   page_base.jinja (it changes at the hamburger breakpoint and when the
+   hamburger menu opens) */
+html {
+    scroll-padding-top: var(--nav-height, 0px);
+}
+
 nav {
+    position: sticky;
+    top: 0;
+    z-index: 9;
     font-size: 1rem;
     padding: 4px;
     box-shadow: 0 0 4px var(--color-shadow);

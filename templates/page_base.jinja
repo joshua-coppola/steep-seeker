@@ -47,6 +47,11 @@
             }
         }
 
+        /* Publish the (sticky) nav's height as --nav-height, so things pinned below it can clear it (see page.css) */
+        new ResizeObserver(function (entries) {
+            document.documentElement.style.setProperty("--nav-height", entries[0].target.offsetHeight + "px");
+        }).observe(document.querySelector("nav"));
+
         /* Expand/collapse the .collapsible section a .collapse-toggle button controls (mobile layout only, see page.css) */
         function toggleCollapse(button) {
             var target = document.getElementById(button.getAttribute("aria-controls"));

@@ -1,14 +1,90 @@
+/* laid out like the map pages (map_shared.css): white panes over the map
+   background, inset 16px from the page edges and from each other */
+body {
+    background-color: var(--color-map-background);
+}
+
 main {
-    --center-width: 900px !important;
-    /* the sidebar column (filters + the ad slot) is guaranteed whatever is
-       left once #content is full width, up to 400px, so narrowing the page
-       takes space from the right column first, then the sidebar, and only
-       then #content. 100% is main's content box; 64px is page.css's two 32px
-       gaps */
-    grid-template-columns:
-        minmax(clamp(0px, 100% - 64px - var(--center-width), 400px), 1fr)
-        minmax(auto, var(--center-width))
-        1fr;
+    margin-top: 0;
+    padding: 16px;
+    gap: 16px;
+    grid-template-rows: auto;
+    grid-template-columns: 400px minmax(0, 1fr);
+}
+
+/* same look as map_shared.css's .map-pane */
+.pane {
+    background-color: var(--color-background);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
+    padding: 16px;
+}
+
+#sidebar {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+/* on desktop both panes reach the bottom of the window even with few
+   results: the body fills the window's height, main takes what the nav
+   leaves, and its one grid row (both panes) stretches to fill main */
+@media screen and (min-width: 701px) {
+    /* the whole sidebar pane is pinned like the map pages' details panel:
+       exactly where it starts out (16px below the sticky nav, see page.css)
+       so it never shifts when the page scrolls, sized to end 16px above
+       the bottom of the window, and scrolling itself if the filters + ad
+       run taller than that */
+    #sidebar {
+        position: sticky;
+        top: calc(var(--nav-height, 0px) + 16px);
+        align-self: start;
+        height: calc(100vh - var(--nav-height, 0px) - 32px);
+        overflow-y: auto;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    main {
+        flex: 1;
+        /* page.css centers main with auto margins, which would shrink it
+           to its content's width as a flex item */
+        margin: 0;
+        grid-template-rows: 1fr;
+    }
+}
+#sidebar h2 {
+    margin-bottom: 24px;
+}
+
+#content {
+    grid-column: 2;
+    grid-row: 1;
+}
+/* both panes' titles size to their pane (cqi = 1% of its content width),
+   staying on one line when it's narrow: "Search Mountains" runs about 9.6
+   times its font size wide */
+.pane {
+    container-type: inline-size;
+}
+
+/* page.css's standard 3rem h1, like the rankings pages' titles, shrunk to
+   fit the pane when it's narrow */
+#content > h1 {
+    font-size: min(3rem, 100cqi / 9.6);
+    margin-bottom: 24px;
+}
+.mobile-title {
+    display: none;
+}
+
+/* the pane grows with the window, but results keep the 900px cap the page
+   had before it did, so each result's map link (pinned to its right edge)
+   stays near its name instead of drifting to the window's far side */
+.results {
+    max-width: 900px;
 }
 
 .result {
@@ -33,6 +109,22 @@ main {
     position: absolute;
     bottom: 0;
     right: 0;
+}
+/* keeps the stats line from running under the map link when the results
+   pane is narrow (it wraps instead) */
+.result .copy {
+    padding-right: 100px;
+}
+
+/* narrower, the link is dropped -- the thumbnail and name already link to
+   the same map -- so the stats line gets the full width back */
+@media screen and (max-width: 1100px) {
+    .map-link {
+        display: none;
+    }
+    .result .copy {
+        padding-right: 0;
+    }
 }
 
 .pass-icon {
@@ -60,9 +152,12 @@ main {
     align-items: center;
 }
 
+/* a fixed size (its width/height attributes) now that the results pane
+   grows with the window, where a percentage width would stretch it */
 .thumbnail {
     float: left;
-    width: 20%;
+    width: 175px;
+    margin-right: 16px;
 }
 
 .search-form {
@@ -81,7 +176,12 @@ main {
 .search-form #search {
     background-color: transparent;
     height: 40px;
-    width: 532px;
+    /* fills what the sort dropdown and button leave of the row, up to
+       532px, and can shrink below its default width so the row never
+       overflows the pane */
+    flex: 1 1 532px;
+    min-width: 0;
+    max-width: 532px;
 }
 .search-form #search::placeholder {
     color: var(--color-tertiary);
@@ -99,50 +199,39 @@ main {
     padding-right: 1rem;
 }
 
-#sidebar {
-    max-width: 400px;
-}
-#sidebar h2 {
-    margin-top: 80px;
-    margin-bottom: 40px;
-}
-
-@media screen and (max-width: 1250px){
-    /* below here the guaranteed sidebar width is too narrow for the filters,
-       so go back to page.css's columns, which grow to fit them */
-    main {
-        grid-template-columns: 1fr minmax(auto, var(--center-width)) 1fr;
-    }
-
-    .search-form #search {
-        width: auto;
-    }
-}
-
 @media screen and (max-width: 1232px){
     #submit {
         width: auto;
     }
 }
 
-@media screen and (max-width: 950px){
+@media screen and (max-width: 1050px){
+    /* a narrower sidebar, still wide enough for the filters and its ad
+       slot's 300px minimum (see search.jinja) */
+    main {
+        grid-template-columns: 340px minmax(0, 1fr);
+    }
+}
+
+/* the search box, sort dropdown, and button stack once the results pane
+   (the nearest .pane container) is too narrow to give the search box a
+   usable ~250px beside the other two */
+@container (max-width: 660px) {
     .search-form {
         display: grid;
-        padding-bottom: 110px;
+        /* one column no wider than the pane, even on the narrowest phones
+           where the sort dropdown's longest option would otherwise set it */
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
     }
-
-    #sidebar h2 {
-        margin-top: 160px;
+    .search-form #search {
+        max-width: none;
     }
 }
 
 @media screen and (max-width: 800px) {
     .result {
         display: grid;
-    }
-
-    .map-link {
-        position: relative;
     }
 
     .thumbnail {
@@ -153,19 +242,58 @@ main {
 
 /* keep this breakpoint in sync with the collapsible sections in page.css */
 @media screen and (max-width: 700px) {
+    /* the panes stack, inset 8px like the map pages' mobile panel; the
+       filters collapse into a toggle above the results pane */
     main {
-        padding: 0px;
-        grid-template-rows: min-content min-content 1fr;
+        padding: 8px;
+        gap: 8px;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
     }
 
-    /* filters collapse into a toggle between the title and the results */
     #sidebar {
-        grid-column: 2;
-        grid-row: 2;
-        max-width: none;
+        grid-column: 1;
+        grid-row: 1;
+    }
+    /* the title moves up into the sidebar pane, above the Filters toggle */
+    .desktop-title {
+        display: none;
+    }
+    .mobile-title {
+        display: block;
+        /* as big as fits on one line across the pane, up to 2.25rem */
+        font-size: min(2.25rem, 100cqi / 9.6);
+        margin-bottom: 16px;
+    }
+    #sidebar .collapse-toggle {
+        width: 100%;
+    }
+
+    /* the sidebar (title + filters) and results join into one pane: no gap
+       or rounding where they meet, and the sidebar's bottom padding stands
+       in for the results' top padding */
+    main {
+        row-gap: 0;
+    }
+    #sidebar {
+        border-radius: 4px 4px 0 0;
+    }
+    /* open, the filters end in a divider like the ones between their
+       groups (form.css), so Apply doesn't run into the search box */
+    #filters.open {
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 16px;
     }
     #content {
-        grid-row: 3;
+        border-radius: 0 0 4px 4px;
+        padding-top: 0;
+        /* clips the results' shadow off its top edge, where it would draw
+           a seam across the joined pane */
+        clip-path: inset(0 -16px -16px -16px);
+    }
+    #content {
+        grid-column: 1;
+        grid-row: 2;
     }
 
     #sidebar h2 {
