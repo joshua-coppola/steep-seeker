@@ -148,6 +148,24 @@ def test_search_filters_by_state(seeded_client):
     assert "Killington" not in body
 
 
+def test_search_filters_by_region(seeded_client):
+    response = seeded_client.get("/search?region=northeast")
+
+    body = response.data.decode()
+    assert "Bolton Valley" in body
+    assert "Killington" in body
+    assert "Alta" not in body
+
+
+def test_search_state_overrides_region(seeded_client):
+    # same rule as the rankings pages: a state, when given, wins over region
+    response = seeded_client.get("/search?region=northeast&location=UT")
+
+    body = response.data.decode()
+    assert "Alta" in body
+    assert "Killington" not in body
+
+
 def test_search_invalid_state_returns_no_results(seeded_client):
     # an unparseable location should match nothing, not silently show
     # every mountain the way a missing/empty location does

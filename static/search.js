@@ -37,23 +37,50 @@
         e
       )
     })(),
-    i = (function () {
-      function e (t, e) {
-        void 0 === e && (e = ''), (this.id = t), (this.defaultValue = e)
+    // a dropdown of [value, label] options, with a leading "" option for
+    // "no filter"
+    S = (function () {
+      function e (t, e, i, s) {
+        void 0 === s && (s = ''),
+          (this.id = t),
+          (this.placeholder = e),
+          (this.options = i),
+          (this.defaultValue = s)
       }
       return (
         (e.prototype.attach = function (e) {
           ;(this.fieldEl = t(
-            '<input type="text" name="'
+            '<select name="'
               .concat(this.id, '" id="')
-              .concat(this.id, '" value="')
-              .concat(this.defaultValue, '" />')
+              .concat(this.id, '"></select>')
           )),
+            this.setOptions(this.options, this.defaultValue),
             e.appendChild(this.fieldEl)
+        }),
+        // swaps in a new option list, keeping the current selection when
+        // it's still offered
+        (e.prototype.setOptions = function (t, e) {
+          var i = this
+          void 0 === e && (e = this.fieldEl.value),
+            (this.options = t),
+            (this.fieldEl.innerHTML = ''),
+            this.fieldEl.appendChild(new Option(this.placeholder, '')),
+            t.forEach(function (t) {
+              i.fieldEl.appendChild(new Option(t[1], t[0]))
+            }),
+            (this.fieldEl.value = e),
+            // the selection may be a label rather than a value (older links
+            // used ?location=Utah, which the server still accepts)
+            -1 == this.fieldEl.selectedIndex &&
+              t.forEach(function (t) {
+                t[1].toLowerCase() == e.toLowerCase() && (i.fieldEl.value = t[0])
+              }),
+            // anything else unrecognized falls back to the placeholder
+            -1 == this.fieldEl.selectedIndex && (this.fieldEl.selectedIndex = 0)
         }),
         (e.prototype.evaluate = function () {
           if (this.fieldEl) return this.fieldEl.value
-          console.warn('FormTextField '.concat(this.id, ' was not attached'))
+          console.warn('FormSelectField '.concat(this.id, ' was not attached'))
         }),
         e
       )
@@ -614,7 +641,8 @@
       (l.difficulty &&
         ((e.diffmin = d(l.difficulty.d_value[0]).toString()),
         (e.diffmax = d(l.difficulty.d_value[1]).toString())),
-      l.location && (e.location = l.location.state),
+      l.location &&
+        ((e.region = l.location.region), (e.location = l.location.state)),
       l.trail_count)
     ) {
       ;(e.trailsmin = Math.round(l.trail_count.tc_value[0]).toString()),
@@ -669,7 +697,7 @@
         ((u = g.sort), (a = g.order), (d.value = ''.concat(u, '-').concat(a)))
     var m = {
         difficulty: [0, 5],
-        location: { state: '' },
+        location: { region: '', state: '' },
         trailCount: [0, 1 / 0]
       },
       p = !1,
@@ -679,10 +707,14 @@
       ((p = !0),
       (m.difficulty = [c(parseInt(g.diffmin)), c(parseInt(g.diffmax))]),
       (l.difficulty = { d_value: m.difficulty })),
-      g.location &&
+      (g.region || g.location) &&
         ((v = !0),
-        (m.location.state = g.location),
-        (l.location = { state: m.location.state })),
+        (m.location.region = g.region || ''),
+        (m.location.state = g.location || ''),
+        (l.location = {
+          region: m.location.region,
+          state: m.location.state
+        })),
       g.trailsmin &&
         ((b = !0),
         (m.trailCount = [
@@ -690,7 +722,27 @@
           'Infinity' === g.trailsmax ? 1 / 0 : parseInt(g.trailsmax)
         ]),
         (l.trail_count = { tc_value: m.trailCount }))
-    var y = new e(document.getElementById('filters'))
+    // the states offered for a region param ('' offers them all)
+    function w (t) {
+      var e = window.US_REGIONS.find(function (e) {
+        return e[0] == t
+      })
+      return e
+        ? window.US_STATES.filter(function (t) {
+            return e[2].indexOf(t[0]) >= 0
+          })
+        : window.US_STATES
+    }
+    var x = new S(
+        'region',
+        'All Regions',
+        window.US_REGIONS.map(function (t) {
+          return [t[0], t[1]]
+        }),
+        m.location.region
+      ),
+      k = new S('state', 'All States', w(m.location.region), m.location.state),
+      y = new e(document.getElementById('filters'))
     y.add(
       new s(
         'Difficulty',
@@ -704,7 +756,13 @@
         p
       )
     ),
-      y.add(new s('State', 'location', [new i('state', m.location.state)], v)),
+      y.add(new s('Location', 'location', [x, k], v)),
+      // narrow the state list to the picked region, so a state can't
+      // contradict it (the server lets a state override the region), and
+      // reset any picked state, since changing region means starting over
+      x.fieldEl.addEventListener('change', function () {
+        k.setOptions(w(x.fieldEl.value), '')
+      }),
       y.add(
         new s(
           'Trail Count',

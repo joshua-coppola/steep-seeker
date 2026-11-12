@@ -7,6 +7,12 @@ Search Ski Resorts
 {% block pagehead %}
 <link href="{{ asset_url('/search.css') }}" rel="stylesheet" />
 <link href="{{ asset_url('/form.css') }}" rel="stylesheet" />
+<script>
+    // [code, name] pairs for search.js's state dropdown, same list as the rankings pages
+    window.US_STATES = {{ us_states | tojson }};
+    // [param, name, state codes] triples for its region dropdown
+    window.US_REGIONS = {{ us_regions | tojson }};
+</script>
 {% endblock pagehead %}
 
 {% block content %}

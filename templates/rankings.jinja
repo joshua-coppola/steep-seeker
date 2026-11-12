@@ -68,19 +68,7 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         <form id="search-form" class="search-form" action="/rankings" method="get">
             <select id="state" name="state" required>
                 <option value="" disabled {% if not state %}selected{% endif %}>Select State</option>
-                {% set states = {
-                    "AL":"Alabama", "AK":"Alaska", "AZ":"Arizona", "AR":"Arkansas", "CA":"California",
-                    "CO":"Colorado", "CT":"Connecticut", "DE":"Delaware", "FL":"Florida", "GA":"Georgia",
-                    "HI":"Hawaii", "ID":"Idaho", "IL":"Illinois", "IN":"Indiana", "IA":"Iowa",
-                    "KS":"Kansas", "KY":"Kentucky", "LA":"Louisiana", "ME":"Maine", "MD":"Maryland",
-                    "MA":"Massachusetts", "MI":"Michigan", "MN":"Minnesota", "MS":"Mississippi", "MO":"Missouri",
-                    "MT":"Montana", "NE":"Nebraska", "NV":"Nevada", "NH":"New Hampshire", "NJ":"New Jersey",
-                    "NM":"New Mexico", "NY":"New York", "NC":"North Carolina", "ND":"North Dakota", "OH":"Ohio",
-                    "OK":"Oklahoma", "OR":"Oregon", "PA":"Pennsylvania", "RI":"Rhode Island", "SC":"South Carolina",
-                    "SD":"South Dakota", "TN":"Tennessee", "TX":"Texas", "UT":"Utah", "VT":"Vermont",
-                    "VA":"Virginia", "WA":"Washington", "WV":"West Virginia", "WI":"Wisconsin", "WY":"Wyoming"
-                } %}
-                {% for code, name in states.items() %}
+                {% for code, name in us_states %}
                     <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ name }}</option>
                 {% endfor %}
             </select>

@@ -87,6 +87,18 @@ def inject_rating_colors():
         "difficulty_thresholds": asdict(DIFFICULTY_CONSTANTS),
         "beginner_friendliness_max": BEGINNER_FRIENDLINESS_FLIP,
         "display_beginner_friendliness": display_beginner_friendliness,
+        # (code, name) pairs for every state dropdown (search + rankings);
+        # pairs rather than a dict so |tojson keeps them in name order
+        # instead of sorting them by code
+        "us_states": [
+            (state.value, state.name.replace("_", " ").title()) for state in State
+        ],
+        # (param, name, state codes) for search.js's region dropdown, which
+        # narrows its state dropdown to the chosen region
+        "us_regions": [
+            (region.name.lower(), region.name.title(), [s.value for s in region.value])
+            for region in Region
+        ],
     }
 
 
@@ -227,6 +239,7 @@ def search():
     sort = request.args.get("sort") or "name"
     order = request.args.get("order") or "asc"
     state = _parse_state(request.args.get("location"))
+    region_param = request.args.get("region") or "usa"
 
     offset = limit * (page - 1)
 
@@ -238,6 +251,7 @@ def search():
             db_path=db_path,
             name_query=q or None,
             state=state,
+            region=_parse_region(region_param, state),
             difficulty_min=diffmin,
             difficulty_max=diffmax,
             trail_count_min=trailsmin,
