@@ -176,6 +176,21 @@ def test_search_state_overrides_region(seeded_client):
     assert "Killington" not in body
 
 
+@pytest.mark.parametrize("path", ["/search", "/rankings"])
+def test_filters_by_vertical(client, db_path, mountain_factory, path):
+    # both pages share the filters sidebar; vertmin/vertmax are feet
+    # (vertical is stored in meters: 100m is ~328ft, 500m is ~1640ft)
+    mountain_factory(mountain_id="1", name="Small Hill", vertical=100).to_db(db_path)
+    mountain_factory(
+        mountain_id="2", name="Big Mountain", vertical=500, lifts={}
+    ).to_db(db_path)
+
+    body = client.get(f"{path}?vertmin=1000&vertmax=Infinity").data.decode()
+
+    assert "Big Mountain" in body
+    assert "Small Hill" not in body
+
+
 def test_search_filters_by_season_pass(client, db_path, mountain_factory):
     mountain_factory(
         mountain_id="1", name="Epic Mountain", season_passes=[Season_Pass.EPIC]

@@ -647,8 +647,26 @@
     'pass',
     'trailsmin',
     'trailsmax',
+    'vertmin',
+    'vertmax',
     'page'
   ]
+
+  // a range slider's [min, max] from its URL params, open-ended (0 to
+  // Infinity) when they're absent
+  function rangeFromParams (params, minKey, maxKey) {
+    if (!params.has(minKey)) return [0, 1 / 0]
+    var max = params.get(maxKey)
+    return [parseInt(params.get(minKey)), max === 'Infinity' ? 1 / 0 : parseInt(max)]
+  }
+
+  // a range slider's [min, max] into its URL params, left out when it's
+  // still open-ended
+  function setRangeParams (params, minKey, maxKey, range) {
+    if (Math.round(range[0]) == 0 && range[1] === 1 / 0) return
+    params.set(minKey, Math.round(range[0]))
+    params.set(maxKey, range[1] === 1 / 0 ? 'Infinity' : Math.round(range[1]))
+  }
 
   // the states offered for a region param ('' offers them all)
   function statesIn (region) {
@@ -677,11 +695,8 @@
     values.location.region && params.set('region', values.location.region)
     values.location.state && params.set('state', values.location.state)
     values.season_pass.pass && params.set('pass', values.season_pass.pass)
-    var trails = values.trail_count.tc_value
-    if (Math.round(trails[0]) != 0 || trails[1] !== 1 / 0) {
-      params.set('trailsmin', Math.round(trails[0]))
-      params.set('trailsmax', trails[1] === 1 / 0 ? 'Infinity' : Math.round(trails[1]))
-    }
+    setRangeParams(params, 'trailsmin', 'trailsmax', values.trail_count.tc_value)
+    setRangeParams(params, 'vertmin', 'vertmax', values.vertical.v_value)
     location.search = params.toString()
   }
 
@@ -693,14 +708,8 @@
       : [0, 5]
     var region = params.get('region') || ''
     var state = params.get('state') || params.get('location') || ''
-    var trailCount = params.has('trailsmin')
-      ? [
-          parseInt(params.get('trailsmin')),
-          params.get('trailsmax') === 'Infinity'
-            ? 1 / 0
-            : parseInt(params.get('trailsmax'))
-        ]
-      : [0, 1 / 0]
+    var trailCount = rangeFromParams(params, 'trailsmin', 'trailsmax')
+    var vertical = rangeFromParams(params, 'vertmin', 'vertmax')
 
     var regionField = new S(
       'region',
@@ -739,6 +748,20 @@
           ticks: [0, 25, 50, 100, 200, 1 / 0],
           leftDefault: trailCount[0],
           rightDefault: trailCount[1]
+        })
+      ])
+    )
+    // in feet; the ticks split the resorts into roughly even bands
+    form.add(
+      new s('Vertical Drop', 'vertical', [
+        new r('v_value', {
+          type: 'infinite',
+          start: 0,
+          steps: 6,
+          ticks: [0, 500, 1000, 2000, 3000, 1 / 0],
+          unit: 'ft',
+          leftDefault: vertical[0],
+          rightDefault: vertical[1]
         })
       ])
     )

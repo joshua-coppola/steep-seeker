@@ -280,6 +280,8 @@ def _mountain_filters() -> dict | None:
         "difficulty_max": _float_arg("diffmax", 100),
         "trail_count_min": _float_arg("trailsmin", 0),
         "trail_count_max": _float_arg("trailsmax", 1000),
+        "vertical_min": _float_arg("vertmin", 0),
+        "vertical_max": _float_arg("vertmax", 100_000),
     }
 
 

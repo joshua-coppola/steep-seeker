@@ -157,6 +157,22 @@ def test_mountain_summary_vertical_converted_to_feet(mountain_factory, db_path):
     assert summaries[0].vertical == round(1024 * 3.28084)
 
 
+def test_list_mountains_filters_by_vertical_in_feet(mountain_factory, db_path):
+    # vertical is stored in meters, but the filter (like the summary) is feet:
+    # 100m is ~328ft and 500m is ~1640ft
+    mountain_factory(mountain_id="1", name="Small Hill", vertical=100).to_db(db_path)
+    mountain_factory(
+        mountain_id="2", name="Big Mountain", vertical=500, lifts={}
+    ).to_db(db_path)
+
+    summaries, total_count = list_mountains(
+        db_path=db_path, vertical_min=1000, vertical_max=2000
+    )
+
+    assert total_count == 1
+    assert summaries[0].name == "Big Mountain"
+
+
 def test_mountain_summary_includes_coordinates(mountain_factory, db_path):
     mountain_factory(
         mountain_id="6", name="Coordinates Mountain", coordinates=Point(-72.5, 43.5)

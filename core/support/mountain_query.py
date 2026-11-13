@@ -58,6 +58,8 @@ def list_mountains(
     difficulty_max: float = 100,
     trail_count_min: float = 0,
     trail_count_max: float = 10_000,
+    vertical_min: float = 0,
+    vertical_max: float = 100_000,
     sort: str = "name",
     order: str = "asc",
     limit: int | None = None,
@@ -65,8 +67,10 @@ def list_mountains(
 ) -> tuple[list[MountainSummary], int]:
     """
     Returns mountain summaries matching the given filters, sorted and
-    paginated. region/trail_count/lift_count aren't stored columns (they're
-    computed on Mountain the same way), so filtering/sorting/pagination on
+    paginated. vertical_min/vertical_max are in feet, like
+    MountainSummary.vertical. region/trail_count/lift_count aren't stored
+    columns (they're computed on Mountain the same way), so
+    filtering/sorting/pagination on
     them happens here in Python rather than in SQL -- the site's mountain
     count is small enough (low hundreds) for that to be cheap.
 
@@ -127,6 +131,7 @@ def list_mountains(
         for s in summaries
         if difficulty_min <= s.difficulty <= difficulty_max
         and trail_count_min <= s.trail_count <= trail_count_max
+        and vertical_min <= s.vertical <= vertical_max
     ]
 
     summaries.sort(
