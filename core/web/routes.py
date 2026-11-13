@@ -233,7 +233,7 @@ def _int_arg(
 def _float_arg(name: str, default: float) -> float:
     """
     Reads a float query param, falling back to `default` when it's missing,
-    blank, or not a number. "Infinity" parses natively (search.js sends it
+    blank, or not a number. "Infinity" parses natively (filters.js sends it
     for a maxed-out slider handle).
     """
     try:
@@ -242,14 +242,45 @@ def _float_arg(name: str, default: float) -> float:
         return default
 
 
+def _url_with_args(base_path: str, **changes: str) -> str:
+    """
+    Current request's query string with `changes` swapped in, for links
+    that change one thing (page, sort) but keep the rest (filters, search).
+    """
+    args = request.args.to_dict()
+    args.update(changes)
+    return f"{base_path}?{urlencode(args)}"
+
+
 def _pagination_url(base_path: str, target_page: int) -> str:
     """
     Current request's query string with `page` swapped to target_page,
     for a list page's prev/next links.
     """
-    args = request.args.to_dict()
-    args["page"] = str(target_page)
-    return f"{base_path}?{urlencode(args)}"
+    return _url_with_args(base_path, page=str(target_page))
+
+
+def _mountain_filters() -> dict | None:
+    """
+    Reads the filters sidebar's params (filters.js, shared by search and
+    mountain rankings) into list_mountains keyword args. Returns None when
+    a state or pass was given but isn't real, which should match nothing.
+    `location` is search's old name for `state`, still read so old links
+    keep working.
+    """
+    state = _parse_state(request.args.get("state") or request.args.get("location"))
+    season_pass = _parse_season_pass(request.args.get("pass"))
+    if state is _INVALID_STATE or season_pass is _INVALID_SEASON_PASS:
+        return None
+    return {
+        "state": state,
+        "region": _parse_region(request.args.get("region") or "usa", state),
+        "season_pass": season_pass,
+        "difficulty_min": _float_arg("diffmin", 0),
+        "difficulty_max": _float_arg("diffmax", 100),
+        "trail_count_min": _float_arg("trailsmin", 0),
+        "trail_count_max": _float_arg("trailsmax", 1000),
+    }
 
 
 @web.route("/search", methods=["GET", "POST"])
@@ -257,32 +288,20 @@ def search():
     q = (request.args.get("q") or "").strip()
     page = _int_arg("page", 1, minimum=1)
     limit = _int_arg("limit", 20, minimum=1)
-    diffmin = _float_arg("diffmin", 0)
-    diffmax = _float_arg("diffmax", 100)
-    trailsmin = _float_arg("trailsmin", 0)
-    trailsmax = _float_arg("trailsmax", 1000)
     sort = request.args.get("sort") or "name"
     order = request.args.get("order") or "asc"
-    state = _parse_state(request.args.get("location"))
-    region_param = request.args.get("region") or "usa"
-    season_pass = _parse_season_pass(request.args.get("pass"))
+    filters = _mountain_filters()
 
     offset = limit * (page - 1)
 
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE or season_pass is _INVALID_SEASON_PASS:
+    if filters is None:
         mountains, total_mountain_count = [], 0
     else:
         mountains, total_mountain_count = list_mountains(
             db_path=db_path,
             name_query=q or None,
-            state=state,
-            region=_parse_region(region_param, state),
-            season_pass=season_pass,
-            difficulty_min=diffmin,
-            difficulty_max=diffmax,
-            trail_count_min=trailsmin,
-            trail_count_max=trailsmax,
+            **filters,
             sort=sort,
             order=order,
             limit=limit,
@@ -303,33 +322,49 @@ def search():
     )
 
 
+@dataclass
+class SortLink:
+    label: str
+    url: str
+    active: bool
+
+
+_RANKING_SORTS = {"difficulty": "Difficulty", "beginner": "Beginner Friendliness"}
+
+
 @web.route("/rankings")
 def rankings():
-    sort = request.args.get("sort") or "difficulty"
+    sort = request.args.get("sort")
+    if sort not in _RANKING_SORTS:
+        sort = "difficulty"
     order = request.args.get("order")
-    region_param = request.args.get("region") or "usa"
-    state_param = request.args.get("state")
-    if state_param == "None":
-        state_param = None
-
-    sort_by = "beginner_friendliness" if sort == "beginner" else "difficulty"
     if order not in ("asc", "desc"):
         order = "desc"
-
-    state = _parse_state(state_param)
+    sort_by = "beginner_friendliness" if sort == "beginner" else "difficulty"
+    filters = _mountain_filters()
 
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         mountains = []
     else:
-        region = _parse_region(region_param, state)
         mountains, _ = list_mountains(
-            db_path=db_path,
-            state=state,
-            region=region,
-            sort=sort_by,
-            order=order,
+            db_path=db_path, **filters, sort=sort_by, order=order
         )
+
+    # clicking the active sort flips its order; another starts descending.
+    # Either way the filters carry over
+    sort_links = [
+        SortLink(
+            label=label,
+            url=_url_with_args(
+                "/rankings",
+                sort=key,
+                order=("asc" if order == "desc" else "desc") if key == sort else "desc",
+            ),
+            active=key == sort,
+        )
+        for key, label in _RANKING_SORTS.items()
+    ]
 
     return render_template(
         "rankings.jinja",
@@ -337,8 +372,7 @@ def rankings():
         mountains=mountains,
         sort=sort,
         order=order,
-        region=region_param,
-        state=state_param,
+        sort_links=sort_links,
     )
 
 

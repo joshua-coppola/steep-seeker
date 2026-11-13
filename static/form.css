@@ -57,6 +57,7 @@
 .ts-form {
     font-size: 1.1rem;
     gap: 16px;
+    margin-bottom: 24px;
 }
 
 .ts-form input {

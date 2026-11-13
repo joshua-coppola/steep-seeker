@@ -53,9 +53,12 @@
         }).observe(document.querySelector("nav"));
 
         /* Expand/collapse the .collapsible section a .collapse-toggle button controls (mobile layout only, see page.css) */
+        /* aria-controls may list several ids (space-separated), which open and close together */
         function toggleCollapse(button) {
-            var target = document.getElementById(button.getAttribute("aria-controls"));
-            var open = target.classList.toggle("open");
+            var open = button.getAttribute("aria-expanded") !== "true";
+            button.getAttribute("aria-controls").split(" ").forEach(function (id) {
+                document.getElementById(id).classList.toggle("open", open);
+            });
             button.setAttribute("aria-expanded", open);
         }
     </script>

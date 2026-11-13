@@ -1,0 +1,52 @@
+{#
+The filters sidebar shared by the search and mountain rankings pages: a
+white pane (panes.css) beside the page's main #content pane, holding the
+filter form filters.js builds from the URL's filter params (read back on the
+server by routes._mountain_filters). Import it with context, then:
+  - head():               in pagehead, before the page's own CSS
+  - sidebar(title, ad):   first thing in content; title is the page's h1
+                          (shown here on phones, see below), ad its sidebar
+                          ad slot number. On phones the filters fold behind
+                          a toggle; toggle_label and also_controls (ids of
+                          the page's own .collapsible sections) let it fold
+                          away more than the filters, e.g. "Filters & Info"
+  - script():             in postbody
+The page's #content pane starts with <h1 class="desktop-title">, the same
+title; panes.css shows whichever of the two fits the layout.
+#}
+
+{% macro head() %}
+<link href="{{ asset_url('/panes.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/form.css') }}" rel="stylesheet" />
+<script>
+    // [code, name] pairs for filters.js's state dropdown, same list as the trail/lift rankings pages
+    window.US_STATES = {{ us_states | tojson }};
+    // [param, name, state codes] triples for its region dropdown
+    window.US_REGIONS = {{ us_regions | tojson }};
+    // [param, name] pairs for its season pass dropdown
+    window.SEASON_PASSES = {{ season_pass_options | tojson }};
+</script>
+{% endmacro %}
+
+{% macro sidebar(title, ad_slot, toggle_label="Filters", also_controls="") %}
+<section id="sidebar" class="pane">
+    {# the mobile layout's title, above the Filters toggle; #content's copy
+       is the one shown at wider widths (panes.css hides whichever isn't in
+       use, so only one is ever rendered) #}
+    <h1 class="mobile-title">{{ title }}</h1>
+    <h2>Filters</h2>
+    {# only shown in the mobile layout, where the filters start collapsed #}
+    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false"
+        aria-controls="{{ ('filters ' ~ also_controls) | trim }}" onclick="toggleCollapse(this)">
+        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
+        {{ toggle_label }}
+    </button>
+
+    <form id="filters" class="collapsible"></form>
+    <div id="ezoic-pub-ad-placeholder-{{ ad_slot }}"></div>
+</section>
+{% endmacro %}
+
+{% macro script() %}
+<script src="{{ asset_url('/filters.js') }}"></script>
+{% endmacro %}

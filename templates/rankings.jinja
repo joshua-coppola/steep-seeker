@@ -1,82 +1,34 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 
 {% block title %}
 Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
 {% endblock title %}
 
 {% block pagehead %}
+{{ filters.head() }}
 <link href="{{ asset_url('/rankings.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
-<section id="sidebar">
-    <div id="ezoic-pub-ad-placeholder-107"></div>
-</section>
+{# on phones one toggle folds away both the filters and the explanation #}
+{{ filters.sidebar("Mountain Rankings", 107, toggle_label="Filters &amp; Info", also_controls="ranking-info") }}
 
-<section id="content">
-    <h1>Mountain Rankings</h1>
+<section id="content" class="pane">
+    <h1 class="desktop-title">Mountain Rankings</h1>
 
-    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="ranking-controls"
-        onclick="toggleCollapse(this)">
-        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
-        Filters &amp; Info
-    </button>
+    <ul class="ranking-sort">
+        {% for link in sort_links %}
+        <li>
+            <a href="{{ link.url }}" class="{{ 'button-cta' if link.active else 'button-cta2' }}">
+                {{ link.label }}{% if link.active %} {% if order == "desc" %}&#x25bc;{% else %}&#x25b2;{% endif %}{% endif %}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
 
-    <div id="ranking-controls" class="collapsible">
-        <ul class="ranking-sort">
-            {% set sorts = {
-                "difficulty": "Difficulty",
-                "beginner": "Beginner Friendliness"
-            } %}
-
-            {% for key, label in sorts.items() %}
-                {% if sort == key %}
-                    {% set new_order = "asc" if order == "desc" else "desc" %}
-                    <li>
-                        <a href="/rankings?sort={{ key }}&order={{ new_order }}&region={{ region }}&state={{ state }}"
-                        class="button-cta">
-                            {{ label }} {% if order == "desc" %}&#x25bc;{% else %}&#x25b2;{% endif %}
-                        </a>
-                    </li>
-                {% else %}
-                    <li>
-                        <a class="button-cta2"
-                        href="/rankings?sort={{ key }}&order=desc&region={{ region }}&state={{ state }}">
-                            {{ label }}
-                        </a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-
-        <ul class="ranking-sort">
-            {% set regions = ["usa", "northeast", "southeast", "midwest", "west"] %}
-            {% for r in regions %}
-                <li>
-                    {% if r == region and state == None %}
-                        <a class="button-cta">{{ r|capitalize }}</a>
-                    {% else %}
-                        <a class="button-cta2"
-                        href="/rankings?sort={{ sort }}&order={{ order }}&region={{ r }}">
-                            {{ r|capitalize }}
-                        </a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-
-        <form id="search-form" class="search-form" action="/rankings" method="get">
-            <select id="state" name="state" required>
-                <option value="" disabled {% if not state %}selected{% endif %}>Select State</option>
-                {% for code, name in us_states %}
-                    <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-            <input type="hidden" name="sort" value="{{ sort }}">
-            <input type="hidden" name="order" value="{{ order }}">
-            <input class="button-cta" id="submit" type="submit" value="Select" />
-        </form>
-
+    {# folded away on phones, behind the sidebar's Filters & Info toggle #}
+    <div id="ranking-info" class="collapsible">
         <p class="detail">
             {% if sort == "beginner" %}
             The Beginner Friendliness ranking is a weighted average of the easiest trails at each resort. It shows how easy
@@ -168,6 +120,9 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         {% endif %}
         {% endfor %}
     </div>
+    {% if not mountains %}
+    <p class="detail">No mountains match these filters.</p>
+    {% endif %}
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
@@ -189,3 +144,7 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
 
 </section>
 {% endblock content %}
+
+{% block postbody %}
+{{ filters.script() }}
+{% endblock postbody %}

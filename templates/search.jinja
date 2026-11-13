@@ -1,39 +1,17 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 
 {% block title %}
 Search Ski Resorts
 {% endblock title %}
 
 {% block pagehead %}
+{{ filters.head() }}
 <link href="{{ asset_url('/search.css') }}" rel="stylesheet" />
-<link href="{{ asset_url('/form.css') }}" rel="stylesheet" />
-<script>
-    // [code, name] pairs for search.js's state dropdown, same list as the rankings pages
-    window.US_STATES = {{ us_states | tojson }};
-    // [param, name, state codes] triples for its region dropdown
-    window.US_REGIONS = {{ us_regions | tojson }};
-    // [param, name] pairs for its season pass dropdown
-    window.SEASON_PASSES = {{ season_pass_options | tojson }};
-</script>
 {% endblock pagehead %}
 
 {% block content %}
-<section id="sidebar" class="pane">
-    {# the mobile layout's title, above the Filters toggle; #content's copy
-       is the one shown at wider widths (search.css hides whichever isn't in
-       use, so only one is ever rendered) #}
-    <h1 class="mobile-title">Search Mountains</h1>
-    <h2>Filters</h2>
-    {# only shown in the mobile layout, where the filters start collapsed #}
-    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="filters"
-        onclick="toggleCollapse(this)">
-        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
-        Filters
-    </button>
-
-    <form id="filters" class="collapsible"></form>
-    <div id="ezoic-pub-ad-placeholder-124"></div>
-</section>
+{{ filters.sidebar("Search Mountains", 124) }}
 
 <section id="content" class="pane">
     <h1 class="desktop-title">Search Mountains</h1>
@@ -160,5 +138,6 @@ Search Ski Resorts
 {% endblock content %}
 
 {% block postbody %}
+{{ filters.script() }}
 <script src="{{ asset_url('/search.js') }}"></script>
 {% endblock postbody %}

@@ -149,6 +149,15 @@ def test_search_filters_by_state(seeded_client):
     assert "Killington" not in body
 
 
+def test_search_filters_by_state_param(seeded_client):
+    # filters.js sends state=; location= (above) is the old name, still read
+    response = seeded_client.get("/search?state=UT")
+
+    body = response.data.decode()
+    assert "Alta" in body
+    assert "Killington" not in body
+
+
 def test_search_filters_by_region(seeded_client):
     response = seeded_client.get("/search?region=northeast")
 
@@ -309,6 +318,45 @@ def test_rankings_invalid_state_returns_no_results(seeded_client):
     assert "Bolton Valley" not in body
     assert "Killington" not in body
     assert "Alta" not in body
+
+
+def test_rankings_filters_by_difficulty(seeded_client):
+    # the filters sidebar (filters.js) is shared with search, so rankings
+    # takes the same difficulty/trail count params
+    response = seeded_client.get("/rankings?diffmin=60&diffmax=100")
+
+    body = response.data.decode()
+    assert "Killington" in body
+    assert "Alta" in body
+    assert "Bolton Valley" not in body
+
+
+def test_rankings_filters_by_trail_count(seeded_client):
+    response = seeded_client.get("/rankings?trailsmin=4&trailsmax=8")
+
+    body = response.data.decode()
+    assert "Alta" in body
+    assert "Killington" not in body
+    assert "Bolton Valley" not in body
+
+
+def test_rankings_sort_links_keep_filters(seeded_client):
+    response = seeded_client.get(
+        "/rankings?region=northeast&sort=difficulty&order=desc"
+    )
+
+    body = response.data.decode()
+    # the inactive sort starts descending; the active one flips its order
+    assert "region=northeast&sort=beginner&order=desc" in body
+    assert "region=northeast&sort=difficulty&order=asc" in body
+
+
+def test_rankings_invalid_sort_falls_back_to_difficulty(seeded_client):
+    response = seeded_client.get("/rankings?sort=bogus")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert body.index("Alta") < body.index("Killington") < body.index("Bolton Valley")
 
 
 def test_rankings_beginner_sort(seeded_client):

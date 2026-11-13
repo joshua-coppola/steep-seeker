@@ -1,84 +1,5 @@
-/* laid out like the map pages (map_shared.css): white panes over the map
-   background, inset 16px from the page edges and from each other */
-body {
-    background-color: var(--color-map-background);
-}
-
-main {
-    margin-top: 0;
-    padding: 16px;
-    gap: 16px;
-    grid-template-rows: auto;
-    grid-template-columns: 400px minmax(0, 1fr);
-}
-
-/* same look as map_shared.css's .map-pane */
-.pane {
-    background-color: var(--color-background);
-    border-radius: 4px;
-    box-shadow: 0 0 8px var(--color-shadow);
-    padding: 16px;
-}
-
-#sidebar {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-/* on desktop both panes reach the bottom of the window even with few
-   results: the body fills the window's height, main takes what the nav
-   leaves, and its one grid row (both panes) stretches to fill main */
-@media screen and (min-width: 701px) {
-    /* the whole sidebar pane is pinned like the map pages' details panel:
-       exactly where it starts out (16px below the sticky nav, see page.css)
-       so it never shifts when the page scrolls, sized to end 16px above
-       the bottom of the window, and scrolling itself if the filters + ad
-       run taller than that */
-    #sidebar {
-        position: sticky;
-        top: calc(var(--nav-height, 0px) + 16px);
-        align-self: start;
-        height: calc(100vh - var(--nav-height, 0px) - 32px);
-        overflow-y: auto;
-    }
-
-    body {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-    main {
-        flex: 1;
-        /* page.css centers main with auto margins, which would shrink it
-           to its content's width as a flex item */
-        margin: 0;
-        grid-template-rows: 1fr;
-    }
-}
-#sidebar h2 {
-    margin-bottom: 24px;
-}
-
-#content {
-    grid-column: 2;
-    grid-row: 1;
-}
-/* both panes' titles size to their pane (cqi = 1% of its content width),
-   staying on one line when it's narrow: "Search Mountains" runs about 9.6
-   times its font size wide */
-.pane {
-    container-type: inline-size;
-}
-
-/* page.css's standard 3rem h1, like the rankings pages' titles, shrunk to
-   fit the pane when it's narrow */
-#content > h1 {
-    font-size: min(3rem, 100cqi / 9.6);
-    margin-bottom: 24px;
-}
-.mobile-title {
-    display: none;
-}
+/* The search page's results list and search bar; the panes layout and
+   filters sidebar it sits in are panes.css */
 
 /* the pane grows with the window, but results keep the 900px cap the page
    had before it did, so each result's map link (pinned to its right edge)
@@ -205,14 +126,6 @@ main {
     }
 }
 
-@media screen and (max-width: 1050px){
-    /* a narrower sidebar, still wide enough for the filters and its ad
-       slot's 300px minimum (see search.jinja) */
-    main {
-        grid-template-columns: 340px minmax(0, 1fr);
-    }
-}
-
 /* the search box, sort dropdown, and button stack once the results pane
    (the nearest .pane container) is too narrow to give the search box a
    usable ~250px beside the other two */
@@ -237,82 +150,5 @@ main {
     .thumbnail {
         width: auto;
         height: 100px;
-    }
-}
-
-/* keep this breakpoint in sync with the collapsible sections in page.css */
-@media screen and (max-width: 700px) {
-    /* the panes stack, inset 8px like the map pages' mobile panel; the
-       filters collapse into a toggle above the results pane */
-    main {
-        padding: 8px;
-        gap: 8px;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto;
-    }
-
-    #sidebar {
-        grid-column: 1;
-        grid-row: 1;
-    }
-    /* the title moves up into the sidebar pane, above the Filters toggle */
-    .desktop-title {
-        display: none;
-    }
-    .mobile-title {
-        display: block;
-        /* as big as fits on one line across the pane, up to 2.25rem */
-        font-size: min(2.25rem, 100cqi / 9.6);
-        margin-bottom: 16px;
-    }
-    #sidebar .collapse-toggle {
-        width: 100%;
-    }
-
-    /* the sidebar (title + filters) and results join into one pane: no gap
-       or rounding where they meet, and the sidebar's bottom padding stands
-       in for the results' top padding */
-    main {
-        row-gap: 0;
-    }
-    #sidebar {
-        border-radius: 4px 4px 0 0;
-    }
-    /* open, the filters end in a divider like the ones between their
-       groups (form.css), so Apply doesn't run into the search box */
-    #filters.open {
-        border-bottom: 1px solid var(--color-border);
-        padding-bottom: 16px;
-    }
-    #content {
-        border-radius: 0 0 4px 4px;
-        padding-top: 0;
-        /* clips the results' shadow off its top edge, where it would draw
-           a seam across the joined pane */
-        clip-path: inset(0 -16px -16px -16px);
-    }
-    #content {
-        grid-column: 1;
-        grid-row: 2;
-    }
-
-    #sidebar h2 {
-        display: none;
-    }
-
-    #filters {
-        margin-top: 16px;
-    }
-
-    /* sized and styled like the Search button below it */
-    #filters input[type=submit] {
-        width: 100%;
-        height: 40px;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-
-    #ezoic-pub-ad-placeholder-124 {
-        display: none;
     }
 }

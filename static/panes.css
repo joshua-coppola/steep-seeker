@@ -1,0 +1,172 @@
+/* The layout shared by the pages with the filters sidebar (search, mountain
+   rankings; see templates/filters_sidebar.jinja): laid out like the map
+   pages (map_shared.css), a white #sidebar pane and #content pane over the
+   map background, inset 16px from the page edges and from each other. The
+   page's own CSS loads after this. */
+body {
+    background-color: var(--color-map-background);
+}
+
+#content > *,
+#content > .collapsible > * {
+    margin-bottom: 24px;
+}
+
+main {
+    margin-top: 0;
+    padding: 16px;
+    gap: 16px;
+    grid-template-rows: auto;
+    grid-template-columns: 400px minmax(0, 1fr);
+}
+
+/* same look as map_shared.css's .map-pane. Each pane is also a container
+   (cqi = 1% of its content width) so its title, and the page's own CSS,
+   can size to it rather than to the window */
+.pane {
+    background-color: var(--color-background);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
+    padding: 16px;
+    container-type: inline-size;
+}
+
+#sidebar {
+    grid-column: 1;
+    grid-row: 1;
+}
+#sidebar h2 {
+    margin-bottom: 24px;
+}
+
+#content {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+/* on desktop both panes reach the bottom of the window even with few
+   results: the body fills the window's height, main takes what the nav
+   leaves, and its one grid row (both panes) stretches to fill main */
+@media screen and (min-width: 701px) {
+    /* the whole sidebar pane is pinned like the map pages' details panel:
+       exactly where it starts out (16px below the sticky nav, see page.css)
+       so it never shifts when the page scrolls, sized to end 16px above
+       the bottom of the window, and scrolling itself if the filters + ad
+       run taller than that */
+    #sidebar {
+        position: sticky;
+        top: calc(var(--nav-height, 0px) + 16px);
+        align-self: start;
+        height: calc(100vh - var(--nav-height, 0px) - 32px);
+        overflow-y: auto;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    main {
+        flex: 1;
+        /* page.css centers main with auto margins, which would shrink it
+           to its content's width as a flex item */
+        margin: 0;
+        grid-template-rows: 1fr;
+    }
+}
+
+/* page.css's standard 3rem h1, shrunk to stay on one line when the pane is
+   narrow. --title-ems is how many times its font size the page's title
+   runs wide (about 9.6 for "Search Mountains"); a page with a longer or
+   shorter title sets its own */
+.desktop-title {
+    font-size: min(3rem, 100cqi / var(--title-ems, 9.6));
+    margin-bottom: 24px;
+}
+.mobile-title {
+    display: none;
+}
+
+@media screen and (max-width: 1050px){
+    /* a narrower sidebar, still wide enough for the filters and its ad
+       slot's 300px minimum (see the pages' ad scripts) */
+    main {
+        grid-template-columns: 340px minmax(0, 1fr);
+    }
+}
+
+/* keep this breakpoint in sync with the collapsible sections in page.css */
+@media screen and (max-width: 700px) {
+    /* the panes stack, inset 8px like the map pages' mobile panel, and join
+       into one: no gap or rounding where they meet, and the sidebar's
+       bottom padding stands in for the content's top padding. The filters
+       collapse into a toggle under the title */
+    main {
+        padding: 8px;
+        gap: 8px;
+        row-gap: 0;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+    }
+
+    #sidebar {
+        grid-column: 1;
+        grid-row: 1;
+        border-radius: 4px 4px 0 0;
+        /* clips its shadow off its bottom edge, where it would draw a seam
+           across the joined pane (as #content's does off its top) */
+        clip-path: inset(-16px -16px 0 -16px);
+    }
+    #content {
+        grid-column: 1;
+        grid-row: 2;
+        border-radius: 0 0 4px 4px;
+        padding-top: 0;
+        /* tucked 1px under the sidebar: where they meet on a fractional
+           pixel, both edges are anti-aliased and the background showed
+           through as a faint line */
+        margin-top: -1px;
+        /* clips the content's shadow off its top edge, where it would draw
+           a seam across the joined pane */
+        clip-path: inset(0 -16px -16px -16px);
+    }
+
+    /* the title moves up into the sidebar pane, above the Filters toggle */
+    .desktop-title {
+        display: none;
+    }
+    .mobile-title {
+        display: block;
+        /* as big as fits on one line across the pane, up to 2.25rem */
+        font-size: min(2.25rem, 100cqi / var(--title-ems, 9.6));
+        margin-bottom: 16px;
+    }
+
+    #sidebar h2 {
+        display: none;
+    }
+    #sidebar .collapse-toggle {
+        width: 100%;
+    }
+
+    #filters {
+        margin-top: 16px;
+    }
+    /* open, the filters end in a divider like the ones between their
+       groups (form.css), so Apply doesn't run into the content below */
+    #filters.open {
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 16px;
+    }
+    /* full width and bold, like the page's other buttons at this size */
+    #filters input[type=submit] {
+        width: 100%;
+        height: 40px;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    #sidebar [id^="ezoic-pub-ad-placeholder-"] {
+        display: none;
+    }
+}
