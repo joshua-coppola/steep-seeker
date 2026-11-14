@@ -69,6 +69,31 @@ main {
     grid-template-columns: repeat(2, 1fr);
 }
 
+/* two columns like the trail legend. Its bigger samples leave its widest
+   entry ("Bubble Chairlift", ~178px) too wide for half a phone screen, so
+   labels may wrap, beside their icon (flex) rather than under it */
+.lift-legend ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+}
+.lift-legend ul li {
+    margin-right: 0;
+    display: flex;
+    align-items: center;
+    white-space: normal;
+}
+/* flex centers the icon, so it drops base.css's centering margin, and
+   keeps its size however little room the label leaves */
+.lift-legend .lift-icon {
+    flex: none;
+    margin-top: 0;
+}
+/* the li's tall line-height sizes the icons; a wrapped label doesn't
+   need its lines that far apart */
+.lift-legend li span {
+    line-height: 1.2;
+}
+
 /* same grid as .ranking-sort, so Share is one sort/region button wide */
 .share-row {
     display: grid;

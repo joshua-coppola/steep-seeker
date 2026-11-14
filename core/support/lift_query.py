@@ -5,6 +5,7 @@ from core.datamodels.database import LiftTable, MountainTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
+from core.support.lift_icons import LiftIcon, lift_icons
 from core.support.query_common import name_and_location_where, parse_season_passes
 from core.support.utils import meters_to_feet, round_degrees, round_feet
 
@@ -42,6 +43,13 @@ class LiftSummary:
     detachable: bool | None
     bubble: bool | None
     heating: bool | None
+    lift_type: str | None = None
+
+    def icons(self) -> list[LiftIcon]:
+        """The badges shown beside the lift's name (see lift_icons)."""
+        return lift_icons(
+            self.lift_type, self.occupancy, self.bubble, self.detachable, self.heating
+        )
 
 
 def list_lifts(
@@ -93,7 +101,8 @@ def list_lifts(
                 Lifts.{LiftTable.capacity},
                 Lifts.{LiftTable.detachable},
                 Lifts.{LiftTable.bubble},
-                Lifts.{LiftTable.heating}
+                Lifts.{LiftTable.heating},
+                Lifts.{LiftTable.lift_type}
             FROM Lifts
             INNER JOIN Mountains
                 ON Lifts.{LiftTable.mountain_id} = Mountains.{MountainTable.mountain_id}
@@ -122,6 +131,7 @@ def list_lifts(
             detachable=_bool_or_none(row[LiftTable.detachable]),
             bubble=_bool_or_none(row[LiftTable.bubble]),
             heating=_bool_or_none(row[LiftTable.heating]),
+            lift_type=row[LiftTable.lift_type],
         )
         for row in rows
     ]

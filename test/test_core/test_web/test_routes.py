@@ -475,16 +475,48 @@ def test_lift_rankings_sorts_by_average_slope(ranked_client):
     assert body.index("Lift A") < body.index("Lift B")
 
 
-def test_lift_rankings_shows_capacity_detachable_heating(ranked_client):
+def test_lift_rankings_shows_capacity(ranked_client):
     body = ranked_client.get("/lift-rankings").data.decode()
 
     assert "Capacity" in body
-    assert "Detachable" in body
-    assert "Heating" in body
+    # bubble/detachable/heating have no columns (or sort options) of their
+    # own; the lift icons after each name show them instead
+    for column in ("Bubble", "Detachable", "Heating"):
+        assert f">{column}</a>" not in body
+        assert f"<td>{column}</td>" not in body
+        assert f"sort={column.lower()}" not in body
     assert (
         '3000<span class="small-spacer"></span><span class="icon person"></span>/hr'
         in body
     )
+
+
+def test_lift_rankings_shows_lift_icons(ranked_client):
+    # Lift A is a heated quad, Lift B a plain quad; each layout (desktop
+    # table, phone cards) shows them, so each icon appears twice per lift.
+    # Counted by their titles, which the legend's samples don't have
+    body = ranked_client.get("/lift-rankings").data.decode()
+
+    assert body.count('title="Quad chair"') == 4
+    assert body.count('title="Heated"') == 2
+    assert 'title="Express (detachable)"' not in body
+
+
+def test_lift_rankings_shows_lift_icon_legend(ranked_client):
+    body = ranked_client.get("/lift-rankings").data.decode()
+    legend = body[body.index('<div class="legend lift-legend">') :]
+    legend = legend[: legend.index("</div>")]
+
+    for icon, label in [
+        ("quad_chair", "Chairlift"),
+        ("quad_bubble_chair", "Bubble Chairlift"),
+        ("gondola", "Gondola/<wbr>Tram"),
+        ("surface_lift", "Surface Lift"),
+        ("heated", "Heated"),
+        ("express", "Express"),
+    ]:
+        assert f'src="/icons/{icon}.svg"' in legend
+        assert f"<span>{label}</span>" in legend
 
 
 def test_lift_rankings_sorts_by_capacity(ranked_client):
@@ -619,8 +651,8 @@ def test_map_sidebar_shows_lift_occupancy(
     body = client.get("/map/VT/OccMountain").data.decode()
 
     def lift_li(name):
-        end = body.index(f"{name} -")
-        return body[body.rindex("<li>", 0, end) : end]
+        start = body.rindex("<li>", 0, body.index(f"<span>{name}"))
+        return body[start : body.index("</li>", start)]
 
     # occupancy <= 2 repeats the person icon; > 2 shows the number beside one
     assert lift_li("Double").count('class="icon person"') == 2
@@ -628,6 +660,12 @@ def test_map_sidebar_shows_lift_occupancy(
     assert six.count('class="icon person"') == 1
     assert "6<span" in six
     assert 'class="icon person"' not in lift_li("Mystery")
+
+    # and the lift icons (templates/lift_icons.jinja) follow each name; a
+    # chair of unknown size gets none
+    assert 'src="/icons/double_chair.svg"' in lift_li("Double")
+    assert 'src="/icons/six_pack_chair.svg"' in six
+    assert "/icons/" not in lift_li("Mystery")
 
 
 def test_interactive_map_returns_ok(mapped_client):
@@ -742,6 +780,24 @@ def test_lift_feature_popup_shows_type(lift_factory):
     feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
 
     assert feature["properties"]["popupData"]["lift_type_label"] == "Chairlift"
+
+
+def test_lift_feature_popup_includes_icons(lift_factory):
+    # the popup's title shows the same badges as the sidebar (lift_icons.py)
+    lift = lift_factory(
+        lift_type="chair_lift",
+        occupancy=4,
+        bubble=True,
+        heating=True,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert feature["properties"]["popupData"]["icons"] == [
+        {"file": "quad_bubble_chair", "label": "Bubble quad chair", "kind": "chair"},
+        {"file": "heated", "label": "Heated", "kind": "heated"},
+    ]
 
 
 def test_lift_feature_popup_shows_hike_type(lift_factory):

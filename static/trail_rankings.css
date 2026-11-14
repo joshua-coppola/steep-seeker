@@ -66,6 +66,18 @@ main {
     color: var(--color-primary);
 }
 
+/* in the legend the lift icons lead their label, spaced like .icon's */
+.legend .lift-icon {
+    margin-left: 0;
+    margin-right: .5em;
+}
+
+/* the lift icons size to their line (base.css), so a taller line here
+   draws the legend's samples bigger than the ones beside lift names */
+.lift-legend li {
+    line-height: 1.6;
+}
+
 /* phone-layout-only elements, shown again by trail_rankings_mobile.css */
 .mobile {
     display: none;
@@ -110,10 +122,14 @@ th:last-child, td:last-child {
     border-right: none;
 }
 
+/* centered within the line the same way as .lift-icon (base.css), so it never
+   makes the line taller (vertical-align: middle centers it on the text's
+   x-height instead, which left it poking out a pixel) */
 .pass-icon {
     width: 18px;
     height: 18px;
-    vertical-align: middle;
+    vertical-align: top;
+    margin-top: calc((1lh - 18px) / 2);
 }
 
 .icon.person {

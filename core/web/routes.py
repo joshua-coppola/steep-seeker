@@ -709,6 +709,9 @@ def _lift_feature(
         "average_slope": round_degrees(lift.average_slope),
         "bubble": lift.bubble,
         "heating": lift.heating,
+        # the same badges as the sidebar and lift rankings (lift_icons.py),
+        # shown after the popup's title
+        "icons": [asdict(icon) for icon in lift.icons()],
         "debug_id": lift.lift_id if debug_mode else None,
     }
 

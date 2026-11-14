@@ -5,6 +5,7 @@ from shapely import LineString, wkt
 
 from core.connectors.database import DATABASE_PATH, cursor, db_id
 from core.datamodels.database import LiftTable
+from core.support.lift_icons import LiftIcon, lift_icons
 from core.support.utils import meters_to_feet, round_feet, round_geometry_precision
 
 
@@ -35,6 +36,12 @@ class Lift:
         Returns length in feet, for display. Length is stored in meters.
         """
         return round_feet(meters_to_feet(self.length))
+
+    def icons(self) -> list[LiftIcon]:
+        """The badges shown beside the lift's name (see lift_icons)."""
+        return lift_icons(
+            self.lift_type, self.occupancy, self.bubble, self.detachable, self.heating
+        )
 
     def vertical_feet(self) -> int | None:
         """

@@ -1,4 +1,5 @@
 {% extends "page_base.jinja" %}
+{% from "lift_icons.jinja" import lift_icons %}
 
 {% block title %}
 Lift Rankings - Compare Chairlifts Across the USA
@@ -60,9 +61,6 @@ Lift Rankings - Compare Chairlifts Across the USA
                 "average_slope": "Average Pitch",
                 "occupancy": "Occupancy",
                 "capacity": "Capacity",
-                "bubble": "Has Bubble",
-                "detachable": "Is Detachable",
-                "heating": "Has Heating",
             } %}
 
             {% for key, label in sorts.items() %}
@@ -87,6 +85,19 @@ Lift Rankings - Compare Chairlifts Across the USA
     </div>
 
     <div class="share-row"><button type="button" class="button-cta2 share-button" data-share>Share⤷</button></div>
+
+    {# the badges lift_icons() puts after lift names; quads stand in for
+       every chair size #}
+    <div class="legend lift-legend">
+        <ul>
+            <li><img src="/icons/quad_chair.svg" class="lift-icon chair" alt=""/><span>Chairlift</span></li>
+            <li><img src="/icons/quad_bubble_chair.svg" class="lift-icon chair" alt=""/><span>Bubble Chairlift</span></li>
+            <li><img src="/icons/gondola.svg" class="lift-icon gondola" alt=""/><span>Gondola/<wbr>Tram</span></li>
+            <li><img src="/icons/surface_lift.svg" class="lift-icon surface" alt=""/><span>Surface Lift</span></li>
+            <li><img src="/icons/heated.svg" class="lift-icon heated" alt=""/><span>Heated</span></li>
+            <li><img src="/icons/express.svg" class="lift-icon express" alt=""/><span>Express</span></li>
+        </ul>
+    </div>
 
     <div id="ezoic-pub-ad-placeholder-102"></div>
 
@@ -135,27 +146,13 @@ Lift Rankings - Compare Chairlifts Across the USA
                 {% else %}
                 <th><a href="{{pages.first}}&sort=capacity">Capacity</a></th>
                 {% endif %}
-                {% if sort_by == "bubble"%}
-                <th><a class="active">Bubble</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=bubble">Bubble</a></th>
-                {% endif %}
-                {% if sort_by == "detachable"%}
-                <th><a class="active">Detachable</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=detachable">Detachable</a></th>
-                {% endif %}
-                {% if sort_by == "heating"%}
-                <th><a class="active">Heating</a></th>
-                {% else %}
-                <th><a href="{{pages.first}}&sort=heating">Heating</a></th>
-                {% endif %}
             {% for lift in lifts %}
             {% if not '' == lift.name %}
             <tr>
                 <td>
                     <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">
                             {{lift.name}}
+                            {{ lift_icons(lift) }}
                         </a></p>
                 </td>
                 <td>
@@ -184,9 +181,6 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <td></td>
                 {% endif%}
                 <td>{% if lift.capacity %}{{lift.capacity}}<span class="small-spacer"></span><span class="icon person"></span>/hr{% endif %}</td>
-                <td>{% if lift.bubble %}Yes{% else %}No{% endif %}</td>
-                <td>{% if lift.detachable %}Yes{% else %}No{% endif %}</td>
-                <td>{% if lift.heating %}Yes{% else %}No{% endif %}</td>
             </tr>
             {% endif %}
             {% endfor %}
@@ -206,6 +200,7 @@ Lift Rankings - Compare Chairlifts Across the USA
                     <td>
                         {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">
                                 {{lift.name}}, {{lift.resort_name}} ({{lift.state.value}})
+                                {{ lift_icons(lift) }}
                             </a>
                             {% for season_pass in lift.season_passes %}
                             <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
@@ -279,48 +274,6 @@ Lift Rankings - Compare Chairlifts Across the USA
                     {{lift.capacity}}<span class="small-spacer"></span><span class="icon person"></span>/hr
                 {% else %}
                     --
-                {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "bubble"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>Bubble</td>
-                <td>
-                {% if lift.bubble %}
-                    Yes
-                {% else %}
-                    No
-                {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "detachable"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>Detachable</td>
-                <td>
-                {% if lift.detachable %}
-                    Yes
-                {% else %}
-                    No
-                {% endif %}
-                </td>
-            </tr>
-            {% if sort_by == "heating"%}
-            <tr style="background-color: var(--color-accent-very-light)">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td>Heating</td>
-                <td>
-                {% if lift.heating %}
-                    Yes
-                {% else %}
-                    No
                 {% endif %}
                 </td>
             </tr>

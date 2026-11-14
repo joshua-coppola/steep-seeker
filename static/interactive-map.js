@@ -481,6 +481,14 @@ function run_map(trails, map, editable = false, editQuery = null){
     }
 
     function buildLiftSheetHtml(data, id) {
+        // the lift's chair size/surface lift, express and heated badges, the
+        // same markup as templates/lift_icons.jinja (sized in base.css)
+        const badges = (data.icons || []).map(function (icon) {
+            const label = escapeAttr(icon.label);
+            return `<img src="/icons/${encodeURIComponent(icon.file)}.svg" ` +
+                `class="lift-icon ${escapeAttr(icon.kind)}" alt="${label}" title="${label}">`;
+        }).join('');
+
         let html = '<div class="sheet-summary">';
         html += sheetFactHtml(formatFeet(data.length_feet), 'long');
         html += sheetFactHtml('&uarr; ' + formatFeet(data.vertical_feet), 'vertical');
@@ -500,7 +508,7 @@ function run_map(trails, map, editable = false, editQuery = null){
         html += '</div>';
         html += debugIdHtml('Lift', data.debug_id);
         return {
-            title: escapeHtml(data.name),
+            title: escapeHtml(data.name) + badges,
             stats: html,
             admin: editable ? buildDeleteFormHtml(id) : '',
         };

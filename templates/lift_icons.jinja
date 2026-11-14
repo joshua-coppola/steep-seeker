@@ -1,0 +1,7 @@
+{# A lift's chair size/surface lift, express and heated badges (see
+   core/support/lift_icons.py), placed after its name like the trail icons
+   after a trail's; sized in base.css. Shared by the lift rankings page and
+   the map pages' sidebar (map_macros.jinja). #}
+{% macro lift_icons(lift) -%}
+{% for icon in lift.icons() %}<img src="/icons/{{ icon.file }}.svg" class="lift-icon {{ icon.kind }}" alt="{{ icon.label }}" title="{{ icon.label }}"/>{% endfor %}
+{%- endmacro %}
