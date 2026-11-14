@@ -709,6 +709,10 @@ def _lift_feature(
         "average_slope": round_degrees(lift.average_slope),
         "bubble": lift.bubble,
         "heating": lift.heating,
+        # capacity has its own card; detachable shows only as the express
+        # icon, but the management edit map's lift form starts from both
+        "detachable": lift.detachable,
+        "capacity": lift.capacity,
         # the same badges as the sidebar and lift rankings (lift_icons.py),
         # shown after the popup's title
         "icons": [asdict(icon) for icon in lift.icons()],

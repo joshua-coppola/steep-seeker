@@ -458,6 +458,78 @@ def test_management_edit_resort_updates_trail_gladed_and_recomputes_difficulty(
     assert updated_trail.difficulty == 33.0
 
 
+def _mountain_with_lift(mountain_factory, lift_factory, db_path, **lift_fields):
+    lift = lift_factory(lift_id="l7", mountain_id="1", name="Test Lift", **lift_fields)
+    mountain_factory(
+        mountain_id="1", name="Bolton Valley", state=State.VERMONT, lifts={"l7": lift}
+    ).to_db(db_path)
+
+
+def test_management_edit_resort_updates_lift_details(
+    management_client, db_path, mountain_factory, lift_factory
+):
+    _mountain_with_lift(
+        mountain_factory,
+        lift_factory,
+        db_path,
+        occupancy=None,
+        capacity=None,
+        detachable=None,
+        bubble=None,
+        heating=None,
+    )
+
+    response = management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "lift_id": "l7",
+            "occupancy": "6",
+            "capacity": "3000",
+            "detachable": "True",
+            "bubble": "True",
+            "heating": "True",
+        },
+    )
+
+    assert response.status_code == 200
+    lift = Mountain.from_name("Bolton Valley", State.VERMONT, db_path).lifts["l7"]
+    assert (lift.occupancy, lift.capacity) == (6, 3000)
+    assert (lift.detachable, lift.bubble, lift.heating) == (True, True, True)
+
+
+def test_management_edit_resort_lift_blanks_unchecks_and_bad_numbers(
+    management_client, db_path, mountain_factory, lift_factory
+):
+    _mountain_with_lift(
+        mountain_factory,
+        lift_factory,
+        db_path,
+        occupancy=4,
+        capacity=2400,
+        detachable=True,
+        bubble=True,
+        heating=True,
+    )
+
+    # occupancy blanked (unknown), capacity not a number (left alone), and
+    # every box unchecked (False, like a trail's tags)
+    management_client.get(
+        "/management-edit-resort",
+        query_string={
+            "q": "Bolton Valley, VT",
+            "lift_id": "l7",
+            "occupancy": "",
+            "capacity": "lots",
+        },
+    )
+
+    lift = Mountain.from_name("Bolton Valley", State.VERMONT, db_path).lifts["l7"]
+    assert lift.occupancy is None
+    assert lift.capacity == 2400
+    assert (lift.detachable, lift.bubble, lift.heating) == (False, False, False)
+
+
 def test_management_edit_resort_unchecking_gladed_removes_bonus(
     management_client, db_path, mountain_factory, trail_factory
 ):
@@ -1337,6 +1409,89 @@ def test_management_edit_resort_stats_refresh_preserve_modifiers_fills_missing_t
     assert (
         trail.difficulty == trail.steepest_150ft + 3.0 + 5.0
     )  # weather + hazard bonus
+
+
+def _refresh_with_manual_lift_details(
+    management_client, db_path, mountain_factory, trail_factory, lift_factory, preserve
+):
+    # manual edits (as _apply_lift_edit saves them) on two lifts the OSM file
+    # parses: Morning Star Triple (w44077716) is tagged 3 seats, no capacity,
+    # not detachable/heated; Sunburst Six (w44077724) is tagged heated
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        state=State.VERMONT,
+        trails={"old-trail": trail_factory(trail_id="old-trail", mountain_id="1")},
+        lifts={
+            "w44077716": lift_factory(
+                lift_id="w44077716",
+                mountain_id="1",
+                occupancy=4,
+                capacity=1800,
+                detachable=True,
+                bubble=False,
+                heating=True,
+            ),
+            "w44077724": lift_factory(
+                lift_id="w44077724",
+                mountain_id="1",
+                occupancy=6,
+                capacity=None,
+                detachable=False,
+                bubble=True,
+                heating=False,
+            ),
+        },
+    ).to_db(db_path)
+
+    query = {"q": "Bolton Valley, VT", "stats_refresh": "True"}
+    if preserve:
+        query["preserve_modifiers"] = "True"
+    response = management_client.get("/management-edit-resort", query_string=query)
+    assert response.status_code == 200
+    return Mountain.from_name("Bolton Valley", State.VERMONT, db_path).lifts
+
+
+def test_management_edit_resort_stats_refresh_without_preserve_modifiers_loses_lift_details(
+    management_client,
+    db_path,
+    refresh_setup,
+    mountain_factory,
+    trail_factory,
+    lift_factory,
+):
+    lifts = _refresh_with_manual_lift_details(
+        management_client, db_path, mountain_factory, trail_factory, lift_factory, False
+    )
+
+    triple = lifts["w44077716"]
+    assert (triple.occupancy, triple.capacity) == (3, None)
+    assert (triple.detachable, triple.heating) == (False, False)
+
+
+def test_management_edit_resort_stats_refresh_preserve_modifiers_fills_lift_details(
+    management_client,
+    db_path,
+    refresh_setup,
+    mountain_factory,
+    trail_factory,
+    lift_factory,
+):
+    lifts = _refresh_with_manual_lift_details(
+        management_client, db_path, mountain_factory, trail_factory, lift_factory, True
+    )
+
+    triple = lifts["w44077716"]
+    # OSM's tagged seat count wins over the manual 4; what OSM doesn't tag
+    # (capacity, detachable, heating) comes back from the manual edit
+    assert triple.occupancy == 3
+    assert triple.capacity == 1800
+    assert (triple.detachable, triple.bubble, triple.heating) == (True, False, True)
+
+    # OSM tags Sunburst Six heated, which wins over the manual "not heated"
+    six = lifts["w44077724"]
+    assert six.heating is True
+    assert six.bubble is True
 
 
 def test_management_edit_resort_stats_refresh_preserve_modifiers_never_double_stacks_surface_bonus(

@@ -409,6 +409,41 @@ function run_map(trails, map, editable = false, editQuery = null){
         ) + buildDeleteFormHtml(id);
     }
 
+    // The lift counterpart of the trail form above, handled by
+    // _apply_lift_edit: seats and riders/hour (blank = unknown), plus the
+    // express (detachable)/bubble/heated tags the lift icons show.
+    function buildLiftEditFormsHtml(id, data) {
+        const q = escapeAttr(editQuery);
+        const numberField = function (name, label, value) {
+            return (
+                '<span class="checkbox-group number-group">' +
+                `<label for="${name}">${label}</label>` +
+                `<input type="number" id="${name}" name="${name}" min="1" step="1" ` +
+                `value="${value == null ? '' : escapeAttr(value)}">` +
+                '</span>'
+            );
+        };
+        const checkbox = function (name, label, checked) {
+            return (
+                '<span class="checkbox-group">' +
+                `<input type="checkbox" id="${name}" name="${name}" value=True ${checked ? 'checked' : ''}>` +
+                `<label for="${name}">${label}</label>` +
+                '</span>'
+            );
+        };
+        return (
+            '<form id="update_lift" class="search-form">' +
+            `<input type="hidden" name="q" value="${q}">` +
+            `<input type="hidden" name="lift_id" value="${escapeAttr(id)}">` +
+            numberField('occupancy', 'Seats', data.occupancy) +
+            numberField('capacity', 'Riders/hr', data.capacity) +
+            checkbox('detachable', 'Express', data.detachable) +
+            checkbox('bubble', 'Bubble', data.bubble) +
+            checkbox('heating', 'Heated', data.heating) +
+            '<input class="button-cta" id="update_lift_submit" type="submit" value="Update" /></form>'
+        ) + buildDeleteFormHtml(id);
+    }
+
     function formatFeet(value) {
         return value == null ? '–' : Number(value).toLocaleString('en-US') + ' ft';
     }
@@ -503,14 +538,21 @@ function run_map(trails, map, editable = false, editQuery = null){
                 : `${data.occupancy}<span class="small-spacer"></span><span class="icon person"></span>`;
             html += sheetChipHtml('Seats', seats);
         }
-        if (data.bubble) html += sheetChipHtml('Bubble', 'Yes');
-        if (data.heating) html += sheetChipHtml('Heated', 'Yes');
+        // riders per hour, written like the lift rankings' capacity column;
+        // bubble/heated have no cards, since the title's icons show them
+        if (data.capacity) {
+            html += sheetChipHtml(
+                'Capacity',
+                `${Number(data.capacity).toLocaleString('en-US')}` +
+                '<span class="small-spacer"></span><span class="icon person"></span>/hr'
+            );
+        }
         html += '</div>';
         html += debugIdHtml('Lift', data.debug_id);
         return {
             title: escapeHtml(data.name) + badges,
             stats: html,
-            admin: editable ? buildDeleteFormHtml(id) : '',
+            admin: editable ? buildLiftEditFormsHtml(id, data) : '',
         };
     }
 

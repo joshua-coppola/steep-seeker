@@ -59,6 +59,12 @@
     gap: .25rem;
 }
 
+/* the lift form's seats/riders-per-hour boxes (interactive-map.js) only
+   need room for a few digits */
+.number-group input {
+    width: 5em;
+}
+
 #refresh {
     flex-direction: column;
     align-items: flex-start;
