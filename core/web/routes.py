@@ -260,11 +260,12 @@ def _pagination_url(base_path: str, target_page: int) -> str:
     return _url_with_args(base_path, page=str(target_page))
 
 
-def _mountain_filters() -> dict | None:
+def _location_filters() -> dict | None:
     """
-    Reads the filters sidebar's params (filters.js, shared by search and
-    mountain rankings) into list_mountains keyword args. Returns None when
-    a state or pass was given but isn't real, which should match nothing.
+    Reads the filters sidebar's location and season pass params
+    (filters.js) into list_* keyword args (state/region/season_pass), the
+    filters every page with the sidebar shares. Returns None when a state
+    or pass was given but isn't real, which should match nothing.
     `location` is search's old name for `state`, still read so old links
     keep working.
     """
@@ -276,6 +277,20 @@ def _mountain_filters() -> dict | None:
         "state": state,
         "region": _parse_region(request.args.get("region") or "usa", state),
         "season_pass": season_pass,
+    }
+
+
+def _mountain_filters() -> dict | None:
+    """
+    _location_filters plus the sidebar's mountain-only filters (difficulty,
+    trail count, vertical), for search and mountain rankings. None when
+    _location_filters is.
+    """
+    filters = _location_filters()
+    if filters is None:
+        return None
+    return {
+        **filters,
         "difficulty_min": _float_arg("diffmin", 0),
         "difficulty_max": _float_arg("diffmax", 100),
         "trail_count_min": _float_arg("trailsmin", 0),
@@ -283,6 +298,18 @@ def _mountain_filters() -> dict | None:
         "vertical_min": _float_arg("vertmin", 0),
         "vertical_max": _float_arg("vertmax", 100_000),
     }
+
+
+def _sort_base_url(base_path: str) -> str:
+    """
+    The current request's URL minus its page and sort, for a list page's
+    sort links to append "&sort=..." to: a new sort keeps the filters and
+    starts back on the first page.
+    """
+    args = request.args.to_dict()
+    args.pop("page", None)
+    args.pop("sort", None)
+    return f"{base_path}?{urlencode(args)}"
 
 
 @web.route("/search", methods=["GET", "POST"])
@@ -380,30 +407,19 @@ def rankings():
 
 @web.route("/trail-rankings")
 def trail_rankings():
-    region_param = request.args.get("region") or "usa"
-    state_param = request.args.get("state")
-    if state_param == "None":
-        state_param = None
     page = _int_arg("page", 1, minimum=1)
     limit = _int_arg("limit", 50, minimum=1, maximum=200)
     sort_by = request.args.get("sort") or "difficulty"
+    filters = _location_filters()
 
     offset = limit * (page - 1)
 
-    state = _parse_state(state_param)
-
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         trails, total_trail_count = [], 0
     else:
-        region = _parse_region(region_param, state)
         trails, total_trail_count = list_trails(
-            db_path=db_path,
-            state=state,
-            region=region,
-            sort=sort_by,
-            limit=limit,
-            offset=offset,
+            db_path=db_path, **filters, sort=sort_by, limit=limit, offset=offset
         )
 
     pages = {"offset": offset}
@@ -411,17 +427,12 @@ def trail_rankings():
         pages["next"] = _pagination_url("/trail-rankings", page + 1)
     if offset != 0:
         pages["prev"] = _pagination_url("/trail-rankings", page - 1)
-    first_args = {"region": region_param, "limit": limit}
-    if state_param:
-        first_args["state"] = state_param
-    pages["first"] = f"/trail-rankings?{urlencode(first_args)}"
+    pages["first"] = _sort_base_url("/trail-rankings")
 
     return render_template(
         "trail_rankings.jinja",
         active_page="trail_rankings",
         trails=trails,
-        region=region_param,
-        state=state_param,
         pages=pages,
         sort_by=sort_by,
         pitch_fields=PITCH_WINDOW_LABELS,
@@ -430,30 +441,19 @@ def trail_rankings():
 
 @web.route("/lift-rankings")
 def lift_rankings():
-    region_param = request.args.get("region") or "usa"
-    state_param = request.args.get("state")
-    if state_param == "None":
-        state_param = None
     page = _int_arg("page", 1, minimum=1)
     limit = _int_arg("limit", 50, minimum=1, maximum=200)
     sort_by = request.args.get("sort") or "vertical"
+    filters = _location_filters()
 
     offset = limit * (page - 1)
 
-    state = _parse_state(state_param)
-
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         lifts, total_lift_count = [], 0
     else:
-        region = _parse_region(region_param, state)
         lifts, total_lift_count = list_lifts(
-            db_path=db_path,
-            state=state,
-            region=region,
-            sort=sort_by,
-            limit=limit,
-            offset=offset,
+            db_path=db_path, **filters, sort=sort_by, limit=limit, offset=offset
         )
 
     pages = {"offset": offset}
@@ -461,17 +461,12 @@ def lift_rankings():
         pages["next"] = _pagination_url("/lift-rankings", page + 1)
     if offset != 0:
         pages["prev"] = _pagination_url("/lift-rankings", page - 1)
-    first_args = {"region": region_param, "limit": limit}
-    if state_param:
-        first_args["state"] = state_param
-    pages["first"] = f"/lift-rankings?{urlencode(first_args)}"
+    pages["first"] = _sort_base_url("/lift-rankings")
 
     return render_template(
         "lift_rankings.jinja",
         active_page="lift_rankings",
         lifts=lifts,
-        region=region_param,
-        state=state_param,
         pages=pages,
         sort_by=sort_by,
     )

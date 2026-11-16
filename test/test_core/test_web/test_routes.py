@@ -450,6 +450,73 @@ def test_trail_rankings_filters_by_state(ranked_client):
     assert "Trail A" not in body
 
 
+@pytest.fixture
+def pass_client(client, db_path, mountain_factory, trail_factory, lift_factory):
+    # one Epic resort and one Indy resort, each with a trail and a lift
+    for mountain_id, name, season_pass in (
+        ("1", "Epic Resort", Season_Pass.EPIC),
+        ("2", "Indy Resort", Season_Pass.INDY),
+    ):
+        mountain_factory(
+            mountain_id=mountain_id,
+            name=name,
+            season_passes=[season_pass],
+            trails={
+                f"t{mountain_id}": trail_factory(
+                    trail_id=f"t{mountain_id}",
+                    mountain_id=mountain_id,
+                    name=f"{name} Trail",
+                )
+            },
+            lifts={
+                f"l{mountain_id}": lift_factory(
+                    lift_id=f"l{mountain_id}",
+                    mountain_id=mountain_id,
+                    name=f"{name} Lift",
+                )
+            },
+        ).to_db(db_path)
+    return client
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_filter_by_season_pass(pass_client, path):
+    # the shared filters sidebar's pass filter, applied by the resort
+    body = pass_client.get(f"{path}?pass=indy").data.decode()
+
+    assert "Indy Resort" in body
+    assert "Epic Resort" not in body
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_invalid_pass_returns_no_results(pass_client, path):
+    body = pass_client.get(f"{path}?pass=nonexistent").data.decode()
+
+    assert "Indy Resort" not in body
+    assert "Epic Resort" not in body
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_sort_links_keep_filters(pass_client, path):
+    body = pass_client.get(
+        f"{path}?region=west&pass=indy&sort=length&page=2"
+    ).data.decode()
+
+    # sort links start from the current filters, minus page and sort
+    assert f'href="{path}?region=west&pass=indy&sort=' in body
+    assert "page=2&sort=" not in body
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_sidebar_has_location_and_pass_only(pass_client, path):
+    body = pass_client.get(path).data.decode()
+
+    assert (
+        '<form id="filters" class="collapsible" data-groups="location,season_pass">'
+        in body
+    )
+
+
 def test_trail_rankings_invalid_state_returns_no_results(ranked_client):
     response = ranked_client.get("/trail-rankings?state=Nonexistent")
 

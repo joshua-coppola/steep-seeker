@@ -263,9 +263,7 @@ p.copy {
 
 /* a .collapse-toggle button (aria-controls = the section's id, onclick =
    toggleCollapse(this)) folds a .collapsible section away on phones; on
-   wider screens the button is hidden and the section always shows.
-   trail_rankings_mobile.css repeats these rules at the trail/lift pages' own
-   breakpoints */
+   wider screens the button is hidden and the section always shows */
 .collapse-toggle {
     display: none;
 }
@@ -298,8 +296,8 @@ p.copy {
 }
 
 /* on the rankings pages, stay button-sized past the general 1232px
-   full-width switch; rankings.css / trail_rankings_mobile.css size it to match
-   their sort/region buttons once those switch to a grid */
+   full-width switch; rankings.css / trail_rankings.css size it to match
+   their sort buttons once those switch to a grid */
 .share-row .share-button {
     width: auto;
 }

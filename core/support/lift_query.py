@@ -56,6 +56,7 @@ def list_lifts(
     db_path: str = DATABASE_PATH,
     state: State | None = None,
     region: Region | None = None,
+    season_pass: Season_Pass | None = None,
     sort: str = "vertical",
     limit: int | None = None,
     offset: int = 0,
@@ -63,7 +64,7 @@ def list_lifts(
     """
     Returns lift summaries (joined with resort name/state) for lifts
     matching the given region/state filter (state takes priority when both
-    are given), sorted descending by `sort` and paginated.
+    are given) and resort season pass, sorted descending by `sort` and paginated.
 
     Returns (summaries, total_count), where total_count is the number of
     matches before pagination, for building pager UIs.
@@ -71,7 +72,9 @@ def list_lifts(
     if sort not in VALID_SORT_FIELDS:
         sort = "vertical"
 
-    where_sql, params = name_and_location_where("Lifts", LiftTable.name, state, region)
+    where_sql, params = name_and_location_where(
+        "Lifts", LiftTable.name, state, region, season_pass
+    )
     # hike-to access routes are stored as lifts (lift_type="hike") but
     # aren't a lift in the ranked sense, so they're excluded here
     where_sql = f"{where_sql} AND Lifts.{LiftTable.lift_type} != ?"

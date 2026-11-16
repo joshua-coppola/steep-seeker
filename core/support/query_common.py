@@ -13,14 +13,18 @@ def parse_season_passes(value: str | None) -> list[Season_Pass]:
 
 
 def name_and_location_where(
-    table: str, name_column: str, state: State | None, region: Region | None
+    table: str,
+    name_column: str,
+    state: State | None,
+    region: Region | None,
+    season_pass: Season_Pass | None = None,
 ) -> tuple[str, list]:
     """
     Builds the WHERE clause shared by the trail-rankings and lift-rankings
     queries: a non-empty name on `table`, plus an optional state (exact
-    match) or region (state IN (...)) filter on the joined Mountains row.
-    state wins when both are given. Returns (sql, params) for a
-    parameterized query.
+    match) or region (state IN (...)) filter on the joined Mountains row
+    (state wins when both are given), and an optional season pass the
+    resort must be on. Returns (sql, params) for a parameterized query.
     """
     clauses = [f'{table}.{name_column} <> ""']
     params: list = []
@@ -33,5 +37,13 @@ def name_and_location_where(
         placeholders = ",".join("?" * len(state_values))
         clauses.append(f"Mountains.{MountainTable.state} IN ({placeholders})")
         params.extend(state_values)
+
+    if season_pass is not None:
+        # season_passes is comma-joined ("Epic,Ikon"); wrapping both it and
+        # the value in commas makes this an exact match on one entry
+        clauses.append(
+            f"instr(',' || Mountains.{MountainTable.season_passes} || ',', ?) > 0"
+        )
+        params.append(f",{season_pass.value},")
 
     return " AND ".join(clauses), params

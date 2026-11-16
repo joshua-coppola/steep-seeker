@@ -687,21 +687,42 @@
     FILTER_PARAMS.forEach(function (p) {
       params.delete(p)
     })
-    var difficulty = values.difficulty.d_value
-    if (difficulty[0] != 0 || difficulty[1] != 5) {
-      params.set('diffmin', d(difficulty[0]))
-      params.set('diffmax', d(difficulty[1]))
+    // only the groups this page's sidebar has (its data-groups) are in values
+    if (values.difficulty) {
+      var difficulty = values.difficulty.d_value
+      if (difficulty[0] != 0 || difficulty[1] != 5) {
+        params.set('diffmin', d(difficulty[0]))
+        params.set('diffmax', d(difficulty[1]))
+      }
     }
-    values.location.region && params.set('region', values.location.region)
-    values.location.state && params.set('state', values.location.state)
-    values.season_pass.pass && params.set('pass', values.season_pass.pass)
-    setRangeParams(params, 'trailsmin', 'trailsmax', values.trail_count.tc_value)
-    setRangeParams(params, 'vertmin', 'vertmax', values.vertical.v_value)
+    if (values.location) {
+      values.location.region && params.set('region', values.location.region)
+      values.location.state && params.set('state', values.location.state)
+    }
+    if (values.season_pass) {
+      values.season_pass.pass && params.set('pass', values.season_pass.pass)
+    }
+    if (values.trail_count) {
+      setRangeParams(params, 'trailsmin', 'trailsmax', values.trail_count.tc_value)
+    }
+    if (values.vertical) {
+      setRangeParams(params, 'vertmin', 'vertmax', values.vertical.v_value)
+    }
     location.search = params.toString()
   }
 
-  // builds the sidebar's form into #filters, starting from the URL's filters
+  // builds the sidebar's form into #filters, starting from the URL's filters.
+  // A page can limit which groups it gets with data-groups on #filters, a
+  // comma-separated list of group ids (filters_sidebar.jinja's `groups`);
+  // without it, it gets all of them
   window.addEventListener('load', function () {
+    var filtersEl = document.getElementById('filters')
+    var groups = filtersEl.dataset.groups
+      ? filtersEl.dataset.groups.split(',')
+      : ['difficulty', 'location', 'season_pass', 'trail_count', 'vertical']
+    var has = function (group) {
+      return groups.indexOf(group) >= 0
+    }
     var params = new URLSearchParams(location.search)
     var difficulty = params.has('diffmin')
       ? [c(parseFloat(params.get('diffmin'))), c(parseFloat(params.get('diffmax')))]
@@ -721,25 +742,31 @@
     )
     var stateField = new S('state', 'All States', statesIn(region), state)
 
-    var form = new e(document.getElementById('filters'))
-    form.add(
-      new s('Difficulty', 'difficulty', [
-        new o('d_value', { defaultLeft: difficulty[0], defaultRight: difficulty[1] })
-      ])
-    )
-    form.add(new s('Location', 'location', [regionField, stateField]))
-    // narrow the state list to the picked region, so a state can't
-    // contradict it (the server lets a state override the region), and
-    // reset any picked state, since changing region means starting over
-    regionField.fieldEl.addEventListener('change', function () {
-      stateField.setOptions(statesIn(regionField.fieldEl.value), '')
-    })
-    form.add(
-      new s('Season Pass', 'season_pass', [
-        new S('pass', 'All Passes', window.SEASON_PASSES, params.get('pass') || '')
-      ])
-    )
-    form.add(
+    var form = new e(filtersEl)
+    if (has('difficulty')) {
+      form.add(
+        new s('Difficulty', 'difficulty', [
+          new o('d_value', { defaultLeft: difficulty[0], defaultRight: difficulty[1] })
+        ])
+      )
+    }
+    if (has('location')) {
+      form.add(new s('Location', 'location', [regionField, stateField]))
+      // narrow the state list to the picked region, so a state can't
+      // contradict it (the server lets a state override the region), and
+      // reset any picked state, since changing region means starting over
+      regionField.fieldEl.addEventListener('change', function () {
+        stateField.setOptions(statesIn(regionField.fieldEl.value), '')
+      })
+    }
+    if (has('season_pass')) {
+      form.add(
+        new s('Season Pass', 'season_pass', [
+          new S('pass', 'All Passes', window.SEASON_PASSES, params.get('pass') || '')
+        ])
+      )
+    }
+    if (has('trail_count')) form.add(
       new s('Trail Count', 'trail_count', [
         new r('tc_value', {
           type: 'infinite',
@@ -752,7 +779,7 @@
       ])
     )
     // in feet; the ticks split the resorts into roughly even bands
-    form.add(
+    if (has('vertical')) form.add(
       new s('Vertical Drop', 'vertical', [
         new r('v_value', {
           type: 'infinite',

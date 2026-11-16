@@ -1,27 +1,14 @@
-main {
-    --center-width: 1600px;
-    /* the sidebar column (the ad slot) is guaranteed whatever is left once
-       #content is full width, up to 400px, so narrowing the page takes space
-       from the right column first, then the sidebar, and only then #content.
-       100% is main's content box; 64px is page.css's two 32px gaps */
-    grid-template-columns:
-        minmax(clamp(0px, 100% - 64px - var(--center-width), 400px), 1fr)
-        minmax(auto, var(--center-width))
-        1fr;
-}
+/* The trail and lift rankings pages' tables, cards, sort buttons and
+   legends; the panes layout and filters sidebar they sit in are panes.css */
 
-#content {
-    grid-row: 1;
-    /* a grid item won't shrink below its content's width by default, which
-       let a wide table widen the whole page instead of scrolling within
-       .trail-table.desktop */
-    min-width: 0;
+/* "Trail Rankings"/"Lift Rankings" are shorter than "Search Mountains", so
+   their titles can stay bigger in a narrow pane (see panes.css). On the
+   root, since the phone layout's copy of the title is in the sidebar */
+html:has(.trail-rankings-page) {
+    --title-ems: 8.4;
 }
-
-/* holds the left ad slot (107); same cap as search.css's sidebar */
-#sidebar {
-    grid-row: 1;
-    max-width: 400px;
+html:has(.lift-rankings-page) {
+    --title-ems: 7.8;
 }
 
 .ranking-sort {
@@ -78,7 +65,7 @@ main {
     line-height: 1.6;
 }
 
-/* phone-layout-only elements, shown again by trail_rankings_mobile.css */
+/* card-layout-only elements, shown again by the container query below */
 .mobile {
     display: none;
 }
@@ -96,8 +83,8 @@ table {
     font-size: 1.25rem;
 }
 
-/* the lift table is wide (11 columns); let it scroll rather than
-   overflow the page on narrower desktops */
+/* scrolls rather than overflowing the pane, should a page of long names
+   ever need more room than the container query below allows for */
 .trail-table.desktop {
     overflow-x: auto;
 }
@@ -122,19 +109,28 @@ th:last-child, td:last-child {
     border-right: none;
 }
 
-/* centered within the line the same way as .lift-icon (base.css), so it never
-   makes the line taller (vertical-align: middle centers it on the text's
-   x-height instead, which left it poking out a pixel) */
+/* exactly one line height (1lh), like a chair .lift-icon (base.css), so it
+   matches the text-sized trail icons beside it at any font size and never
+   makes the line taller */
 .pass-icon {
-    width: 18px;
-    height: 18px;
+    width: 1lh;
+    height: 1lh;
     vertical-align: top;
-    margin-top: calc((1lh - 18px) / 2);
 }
 
 .icon.person {
     font-size: 18px;
     vertical-align: top;
+}
+
+/* after a trail's name, spaced like .lift-icon (base.css) -- a little on
+   the left -- instead of .icon's .5em on the right, which added to the
+   space before the pass icons that follow */
+.trail-table .icon.gladed,
+.trail-table .icon.ungroomed,
+.trail-table .icon.hazardous {
+    margin-right: 0;
+    margin-left: .25em;
 }
 
 tr:nth-child(even) {
@@ -145,22 +141,120 @@ tr a.active {
     color: var(--color-accent);
 }
 
-select {
-    width: 222px;
-    height: 37px;
-    font-size: 1.1rem;
-    border-width: 2px;
-    border-radius: 4px;
-    border-color: var(--color-secondary);
+/* THE CARD LAYOUT: one card per trail/lift instead of the table, with sort
+   buttons in place of the table's sortable headers. Shown when the results
+   pane (the nearest .pane container, panes.css) is narrower than the
+   tables need without scrolling: measured over 2,000 trails, the trail
+   table needs up to ~1100px and the lift table ~1010px, so one threshold
+   covers both -- windows under ~1600px beside the sidebar, and every
+   phone. Each page's ad script checks .trail-table.mobile's visibility to
+   match */
+@container (max-width: 1120px) {
+    .desktop {
+        display: none;
+    }
+
+    /* also re-shows the .mobile sort list hidden above */
+    .ranking-sort {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        line-height: 1.0;
+        row-gap: 8px;
+        column-gap: 16px;
+    }
+
+    .ranking-sort > * {
+        margin-right: 0;
+    }
+
+    .legend ul {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* two columns like the trail legend. Its bigger samples leave its widest
+       entry ("Bubble Chairlift", ~178px) too wide for half a phone screen, so
+       labels may wrap, beside their icon (flex) rather than under it */
+    .lift-legend ul {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 16px;
+    }
+    .lift-legend ul li {
+        margin-right: 0;
+        display: flex;
+        align-items: center;
+        white-space: normal;
+    }
+    /* flex centers the icon, so it drops base.css's centering margin, and
+       keeps its size however little room the label leaves */
+    .lift-legend .lift-icon {
+        flex: none;
+        margin-top: 0;
+    }
+    /* the li's tall line-height sizes the icons; a wrapped label doesn't
+       need its lines that far apart */
+    .lift-legend li span {
+        line-height: 1.2;
+    }
+
+    /* same grid as .ranking-sort, so Share is one sort button wide */
+    .share-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 16px;
+    }
+
+    .share-row .share-button {
+        width: 100%;
+        max-width: 300px;
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
+    .trail-table.mobile {
+        display: block;
+    }
+
+    .mobile table {
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    /* an ad between results (inline_ad_slots) */
+    .mobile .inline-ad {
+        margin: 16px 0;
+    }
+
+    .mobile ul {
+        padding-bottom: 32px;
+    }
+
+    .header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding-top: 16px;
+    }
 }
 
-#submit {
-    font-size: 1.1rem;
-    margin-left: 8px;
+/* Share goes full width before the sort buttons do. These two were window
+   breakpoints (500px, 350px) before the panes; on a phone the pane's
+   content is the window less 48px of insets and padding */
+@container (max-width: 452px) {
+    .share-row {
+        grid-template-columns: 1fr;
+    }
+
+    .share-row .share-button {
+        max-width: none;
+    }
 }
 
-@media screen and (max-width: 1232px) {
-    #submit {
-        width: auto;
+@container (max-width: 302px) {
+    .ranking-sort {
+        grid-template-columns: 1fr;
+    }
+
+    .legend ul {
+        grid-template-columns: 1fr;
     }
 }

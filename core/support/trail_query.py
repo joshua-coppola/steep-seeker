@@ -56,6 +56,7 @@ def list_trails(
     db_path: str = DATABASE_PATH,
     state: State | None = None,
     region: Region | None = None,
+    season_pass: Season_Pass | None = None,
     sort: str = "difficulty",
     limit: int | None = None,
     offset: int = 0,
@@ -63,7 +64,7 @@ def list_trails(
     """
     Returns trail summaries (joined with resort name/state) for trails
     matching the given region/state filter (state takes priority when both
-    are given), sorted descending by `sort`, and paginated.
+    are given) and resort season pass, sorted descending by `sort`, and paginated.
 
     Returns (summaries, total_count), where total_count is the number of
     matches before pagination, for building pager UIs.
@@ -72,7 +73,7 @@ def list_trails(
         sort = "difficulty"
 
     where_sql, params = name_and_location_where(
-        "Trails", TrailTable.name, state, region
+        "Trails", TrailTable.name, state, region, season_pass
     )
 
     with cursor(db_path=db_path) as cur:

@@ -1,4 +1,5 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 {% from "lift_icons.jinja" import lift_icons %}
 
 {% block title %}
@@ -6,54 +7,22 @@ Lift Rankings - Compare Chairlifts Across the USA
 {% endblock title %}
 
 {% block pagehead %}
+{{ filters.head() }}
 <link href="{{ asset_url('/trail_rankings.css') }}" rel="stylesheet" />
-<link href="{{ asset_url('/trail_rankings_mobile.css') }}" rel="stylesheet" media="screen and (max-width: 1300px)" />
 {% endblock pagehead %}
 
 {% block content %}
-<section id="sidebar">
-    <div id="ezoic-pub-ad-placeholder-107"></div>
-</section>
+{# lifts are filtered by their resort's location/season pass; difficulty,
+   trail count and vertical describe a mountain, so they're left out. On
+   phones one toggle folds away both the filters and the explanation #}
+{{ filters.sidebar("Lift Rankings", 107, toggle_label="Filters &amp; Info", also_controls="ranking-info", groups="location,season_pass") }}
 
-<section id="content">
+<section id="content" class="pane lift-rankings-page">
+    <h1 class="desktop-title">Lift Rankings</h1>
 
-    <h1>Lift Rankings</h1>
-
-    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="ranking-controls"
-        onclick="toggleCollapse(this)">
-        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
-        Filters &amp; Info
-    </button>
-
-    <div id="ranking-controls" class="collapsible">
-        <ul class="ranking-sort">
-            {% set regions = ["usa", "northeast", "southeast", "midwest", "west"] %}
-            {% for r in regions %}
-                <li>
-                    {% if r == region and state == None %}
-                        <a class="button-cta">{{ r|capitalize }}</a>
-                    {% else %}
-                        <a class="button-cta2"
-                        href="/lift-rankings?region={{ r }}&sort={{ sort_by }}">
-                            {{ r|capitalize }}
-                        </a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-
-        <form id="search-form" class="search-form" action="/lift-rankings" method="get">
-            <select id="state" name="state" required>
-                <option value="" disabled {% if not state %}selected{% endif %}>Select State</option>
-                {% for code, name in us_states %}
-                    <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-
-            <input type="hidden" name="sort" value="{{ sort_by }}">
-            <input class="button-cta" id="submit" type="submit" value="Select" />
-        </form>
-
+    {# folded away on phones, behind the sidebar's Filters & Info toggle #}
+    <div id="ranking-info" class="collapsible">
+        {# the card layout's sort buttons; the table sorts by its headers #}
         <ul class="ranking-sort mobile">
             {% set sorts = {
                 "vertical": "Vertical Rise",
@@ -68,8 +37,7 @@ Lift Rankings - Compare Chairlifts Across the USA
                     {% if sort_by == key %}
                         <a class="button-cta">{{ label }}</a>
                     {% else %}
-                        <a class="button-cta2"
-                        href="{{ pages.first }}&sort={{ key }}{% if state %}&state={{ state }}{% endif %}">
+                        <a class="button-cta2" href="{{ pages.first }}&sort={{ key }}">
                             {{ label }}
                         </a>
                     {% endif %}
@@ -78,9 +46,8 @@ Lift Rankings - Compare Chairlifts Across the USA
         </ul>
 
         <p class="detail">
-            Lifts can be filtered by region to find what lifts are the longest or by 
-            steepest pitch to find which lifts would be best to lap to get the most 
-            vertical.
+            Lifts can be filtered by their resort's location and season pass to find what lifts are the longest, or
+            sorted by steepest pitch to find which lifts would be best to lap to get the most vertical.
         </p>
     </div>
 
@@ -151,9 +118,9 @@ Lift Rankings - Compare Chairlifts Across the USA
             <tr>
                 <td>
                     <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">
-                            {{lift.name}}
+                            {{lift.name}}</a>
                             {{ lift_icons(lift) }}
-                        </a></p>
+                        </p>
                 </td>
                 <td>
                     <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">{{lift.resort_name}}</a>
@@ -199,9 +166,8 @@ Lift Rankings - Compare Chairlifts Across the USA
                 <tr>
                     <td>
                         {{pages.offset + loop.index}}. <a href="/interactive-map/{{lift.state.value}}/{{lift.resort_name}}?select=lift:{{lift.lift_id}}">
-                                {{lift.name}}, {{lift.resort_name}} ({{lift.state.value}})
+                                {{lift.name}}, {{lift.resort_name}} ({{lift.state.value}})</a>
                                 {{ lift_icons(lift) }}
-                            </a>
                             {% for season_pass in lift.season_passes %}
                             <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
                             {% endfor %}
@@ -304,10 +270,10 @@ Lift Rankings - Compare Chairlifts Across the USA
             const ads = [101, 102];
             const inlineAds = {{ inline_ads.values()|list|tojson }};
             // the ads between results (see inline_ad_slots) are only in the
-            // mobile layout, so drop them in the desktop one instead of
-            // requesting ads for them; keep this breakpoint in sync with the
-            // trail_rankings_mobile.css <link media> above
-            if (window.matchMedia("(max-width: 1300px)").matches) {
+            // card layout (trail_rankings.css shows it when the results pane
+            // is too narrow for the table), so drop them while the table
+            // shows instead of requesting ads for them
+            if (document.querySelector(".trail-table.mobile").checkVisibility()) {
                 ads.push(...inlineAds);
             } else {
                 inlineAds.forEach(function (id) {
@@ -330,3 +296,7 @@ Lift Rankings - Compare Chairlifts Across the USA
 
 </section>
 {% endblock content %}
+
+{% block postbody %}
+{{ filters.script() }}
+{% endblock postbody %}
