@@ -6,13 +6,19 @@ back on the server by routes._mountain_filters/_location_filters). Import it
 with context, then:
   - head():               in pagehead, before the page's own CSS
   - sidebar(title, ad):   first thing in content; title is the page's h1
-                          (shown here on phones, see below), ad its sidebar
+                          (shown here on phones, see below; None for no
+                          title, as on the explore map), ad its sidebar
                           ad slot number. On phones the filters fold behind
                           a toggle; toggle_label and also_controls (ids of
                           the page's own .collapsible sections) let it fold
                           away more than the filters, e.g. "Filters & Info".
                           groups (comma-separated filters.js group ids)
-                          limits which filters it has; all of them if empty
+                          limits which filters it has; all of them if empty.
+                          apply_in_page makes Apply update the URL in place
+                          and fire a "filters:apply" event on #filters for
+                          the page to handle, instead of reloading. A
+                          {% call %} block's contents go after the form.
+                          ad_slot may be None, for no sidebar ad
   - script():             in postbody
 The page's #content pane starts with <h1 class="desktop-title">, the same
 title; panes.css shows whichever of the two fits the layout.
@@ -31,12 +37,12 @@ title; panes.css shows whichever of the two fits the layout.
 </script>
 {% endmacro %}
 
-{% macro sidebar(title, ad_slot, toggle_label="Filters", also_controls="", groups="") %}
+{% macro sidebar(title, ad_slot, toggle_label="Filters", also_controls="", groups="", apply_in_page=False) %}
 <section id="sidebar" class="pane">
     {# the mobile layout's title, above the Filters toggle; #content's copy
        is the one shown at wider widths (panes.css hides whichever isn't in
        use, so only one is ever rendered) #}
-    <h1 class="mobile-title">{{ title }}</h1>
+    {% if title %}<h1 class="mobile-title">{{ title }}</h1>{% endif %}
     <h2>Filters</h2>
     {# only shown in the mobile layout, where the filters start collapsed #}
     <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false"
@@ -45,8 +51,9 @@ title; panes.css shows whichever of the two fits the layout.
         {{ toggle_label }}
     </button>
 
-    <form id="filters" class="collapsible"{% if groups %} data-groups="{{ groups }}"{% endif %}></form>
-    <div id="ezoic-pub-ad-placeholder-{{ ad_slot }}"></div>
+    <form id="filters" class="collapsible"{% if groups %} data-groups="{{ groups }}"{% endif %}{% if apply_in_page %} data-apply="page"{% endif %}></form>
+    {% if caller is defined %}{{ caller() }}{% endif %}
+    {% if ad_slot is not none %}<div id="ezoic-pub-ad-placeholder-{{ ad_slot }}"></div>{% endif %}
 </section>
 {% endmacro %}
 

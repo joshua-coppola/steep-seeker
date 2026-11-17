@@ -123,6 +123,26 @@ def test_explore_map_returns_ok_with_all_mountains(seeded_client):
     assert '"type": "Point"' in body
 
 
+def test_explore_map_has_in_page_filters_and_pass_data(
+    client, db_path, mountain_factory
+):
+    # explore.js filters the embedded mountains in the page, so each needs its
+    # passes as data, and the sidebar applies without reloading
+    mountain_factory(
+        mountain_id="1",
+        name="Collective Mountain",
+        season_passes=[Season_Pass.MOUNTAIN_COLLECTIVE, Season_Pass.INDY],
+    ).to_db(db_path)
+
+    body = client.get("/explore-map").data.decode()
+
+    assert '"passes": ["mountain_collective", "indy"]' in body
+    assert 'data-apply="page"' in body
+    assert 'id="match-count"' in body
+    # the same sidebar ad slot as the search page
+    assert 'id="ezoic-pub-ad-placeholder-124"' in body
+
+
 def test_search_returns_all_mountains_by_default(seeded_client):
     response = seeded_client.get("/search")
 

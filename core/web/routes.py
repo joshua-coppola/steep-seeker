@@ -757,6 +757,12 @@ def explore_map():
                     "vertical": mountain.vertical,
                     "difficulty": mountain.difficulty,
                     "beginner_friendliness": mountain.beginner_friendliness,
+                    # for explore.js's in-page filtering: the pass param
+                    # values (Season_Pass names, lowercased) the resort is on
+                    "passes": [
+                        season_pass.name.lower()
+                        for season_pass in mountain.season_passes
+                    ],
                     "size": mountain.vertical ** (1 / 3) / 20,
                     "popupContent": popup_content,
                     "icon": f"icons/mountain_{difficulty_color}.png",

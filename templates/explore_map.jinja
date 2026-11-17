@@ -1,4 +1,5 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 
 {% block title %}
 Explore Resorts - Find Ski Resorts Across the USA
@@ -13,95 +14,69 @@ Explore Resorts - Find Ski Resorts Across the USA
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.GeometryUtil@master/src/leaflet.geometryutil.js">
-</script>
-
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/makinacorpus/Leaflet.AlmostOver@master/src/leaflet.almostover.js">
-</script>
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
 <script src="{{ asset_url('/tile-layer.js') }}"></script>
 
+{{ filters.head() }}
 <link href="{{ asset_url('/explore.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
-<section id="content">
-<div class="legend-mobile">
-    <ul>
-        <li><span class="icon difficulty-green"></span> Beginner</li>
-        <li><span class="icon difficulty-royalblue"></span> Intermediate</li>
-        <li><span class="icon difficulty-black"></span> Advanced</li>
-        <li><span class="icon difficulty-red"></span> Expert</li>
-        <li><span class="icon difficulty-gold"></span> Extreme</li>
-    </ul>
-</div>
+{# the same filters as search, applied to the map's markers in place
+   (explore.js) rather than by reloading; on phones the sidebar is a panel
+   over the map (with the legend in it), opened by #filtersButton like the
+   map pages' Details #}
+{% call filters.sidebar(None, 124, apply_in_page=True) %}
+    <p id="match-count" class="match-count" aria-live="polite"></p>
+    {# phone only (explore.css), shown under the title there; the map's own
+       legend box takes the place of this one on wider screens #}
+    <div class="legend-mobile">
+        <p class="legend-heading">Legend</p>
+        <ul>
+            <li><span class="icon difficulty-green"></span> Beginner</li>
+            <li><span class="icon difficulty-royalblue"></span> Intermediate</li>
+            <li><span class="icon difficulty-black"></span> Advanced</li>
+            <li><span class="icon difficulty-red"></span> Expert</li>
+            <li><span class="icon difficulty-gold"></span> Extreme</li>
+        </ul>
+    </div>
+{% endcall %}
 
-<div id='map'></div>
-<script>
-    locations = {{ geojson | tojson }}
-    var map = L.map('map').setView([47.8281, -113.5795], 4);
+{# just the map, edge to edge in its pane like the interactive map's, and
+   no title at any width (the sidebar's is turned off above) #}
+<section id="content" class="pane">
+    <div class="map-wrap">
+        <button type="button" class="button-cta2 map-button" id="filtersButton" aria-expanded="false"
+            aria-controls="sidebar">
+            Filters &amp; Legend
+            <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
+        </button>
+        <div id="map"></div>
+    </div>
 
-    // corsTileLayer: see /tile-layer.js
-    corsTileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19,
-        attribution: 'Data: OSM, USGS. Tiles &copy; Esri'
-    }).addTo(map);
-
-    function onEachFeature(feature, layer) {
-        if (feature.properties && feature.properties.popupContent) {
-            var mountainIcon = L.divIcon({
-                className: 'mountain-icon',
-                html: `
-                    <div>
-                        <img src="${feature.properties.icon}" 
-                            style="width:${100 * feature.properties.size}px;height:auto;" />
-                        <div class="mountain-icon">
-                            ${feature.properties.name}
-                        </div>
-                    </div>
-                `,
-                iconSize: [100 * feature.properties.size, 61 * feature.properties.size],
-                iconAnchor: [50 * feature.properties.size, 30 * feature.properties.size],
-                popupAnchor: [0, 0]
-            })
-            // Create a custom marker with text below the icon
-            L.marker(layer.getLatLng(), {icon: mountainIcon}).bindPopup(feature.properties.popupContent).addTo(map);
-        }
-    }
-
-
-    geojson_features = L.geoJSON(locations, {onEachFeature: onEachFeature});
-    map.fitBounds(geojson_features.getBounds());
-
-    var legend = L.control({ position: "topright" });
-
-    legend.onAdd = function(map) {
-    var div = L.DomUtil.create("div", "legend");
-        div.innerHTML += '<i style="background: green"></i><span>Beginner</span><br>';
-        div.innerHTML += '<i style="background: royalblue"></i><span>Intermediate</span><br>';
-        div.innerHTML += '<i style="background: black"></i><span>Advanced</span><br>';
-        div.innerHTML += '<i style="background: red"></i><span>Expert</span><br>';
-        div.innerHTML += '<i style="background: gold"></i><span>Extreme</span><br>';
-        return div;
-    };
-
-    legend.addTo(map);
-
-    map.almostOver.addLayer(geojson_features);
-
-    map.on('almost:click', function (e) {
-        e.layer.openPopup();
-    });
-
-    L.control.locate().addTo(map);
-</script>
-<script>
-    ezstandalone.cmd.push(function () {
-        ezstandalone.showAds();
-    });
-</script>
-
+    <script>
+        ezstandalone.cmd.push(function () {
+            // the sidebar ad slot (124, the same as the search page's)
+            // overflows and breaks the layout when an ad fills it with less
+            // than 300px of room, so drop it then instead of requesting an
+            // ad for it; this also covers the phone layout, where the sidebar
+            // is a hidden panel (0px wide). showAds() with no ids loads every
+            // slot left on the page
+            const sidebarAd = document.getElementById("ezoic-pub-ad-placeholder-124");
+            if (sidebarAd.offsetWidth < 300) {
+                sidebarAd.remove();
+            }
+            ezstandalone.showAds();
+        });
+    </script>
 </section>
-{% endblock content%}
+{% endblock content %}
+
+{% block postbody %}
+{{ filters.script() }}
+<script src="{{ asset_url('/explore.js') }}"></script>
+<script>
+    runExploreMap({{ geojson | tojson }});
+</script>
+{% endblock postbody %}

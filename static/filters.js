@@ -708,6 +708,17 @@
     if (values.vertical) {
       setRangeParams(params, 'vertmin', 'vertmax', values.vertical.v_value)
     }
+
+    // a page that filters what it already has (data-apply="page", e.g. the
+    // explore map) gets the params as an event instead of a reload; the URL
+    // still updates, so the filtered view can be shared or refreshed
+    var filtersEl = document.getElementById('filters')
+    if (filtersEl.dataset.apply === 'page') {
+      var query = params.toString()
+      history.replaceState(null, '', location.pathname + (query ? '?' + query : ''))
+      filtersEl.dispatchEvent(new CustomEvent('filters:apply', { detail: params }))
+      return
+    }
     location.search = params.toString()
   }
 
