@@ -127,6 +127,28 @@ def test_identify_trails_keeps_dual_tagged_trail_with_piste_name():
     assert "w1" in identify_trails(ways, {})["trails"]
 
 
+def test_identify_lifts_detachable_from_name():
+    names = {
+        "w1": "Lewis and Clark 4 - High Speed",
+        "w2": "Summit High-Speed Quad",
+        "w3": "Ramcharger EXPRESS",
+        "w4": "Plain Old Double",
+    }
+    ways = {
+        way_id: {"nodes": [1, 2], "tags": {"aerialway": "chair_lift", "name": name}}
+        for way_id, name in names.items()
+    }
+
+    lifts = identify_lifts(ways)["lifts"]
+
+    assert {way_id: lift["detachable"] for way_id, lift in lifts.items()} == {
+        "w1": True,
+        "w2": True,
+        "w3": True,
+        "w4": False,
+    }
+
+
 def test_identify_hikes():
     ways = {
         "w1": {

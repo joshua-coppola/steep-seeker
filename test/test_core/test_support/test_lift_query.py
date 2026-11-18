@@ -1,9 +1,11 @@
+import dataclasses
+
 import pytest
 
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
-from core.support.lift_query import list_lifts
+from core.support.lift_query import LiftSummary, list_lifts
 
 
 @pytest.fixture
@@ -168,3 +170,67 @@ def test_list_lifts_handles_none_capacity(seeded_db_path):
 
     lift_b = next(s for s in summaries if s.name == "Lift B")
     assert lift_b.capacity is None
+
+
+# a plain fixed-grip chair, which each icon test case tweaks
+_BASE_LIFT = LiftSummary(
+    lift_id="x",
+    name="Lift",
+    resort_name="Resort",
+    state=State.VERMONT,
+    season_passes=[],
+    vertical=None,
+    length=None,
+    average_slope=None,
+    occupancy=None,
+    capacity=None,
+    detachable=False,
+    bubble=False,
+    heating=False,
+    lift_type="chair_lift",
+)
+
+
+@pytest.mark.parametrize(
+    "fields, expected",
+    [
+        ({"occupancy": 2}, ["double_chair"]),
+        ({"occupancy": 4, "bubble": True}, ["quad_bubble_chair"]),
+        ({"occupancy": 8, "bubble": True}, ["eight_pack_bubble_chair"]),
+        # there's no bubble triple icon, so it's a plain triple
+        ({"occupancy": 3, "bubble": True}, ["triple_chair"]),
+        (
+            {"occupancy": 6, "detachable": True, "heating": True},
+            ["six_pack_chair", "express", "heated"],
+        ),
+        ({"lift_type": "t-bar", "occupancy": 2}, ["surface_lift"]),
+        ({"lift_type": "magic_carpet"}, ["surface_lift"]),
+        # gondolas and trams (cable_car) share the gondola icon
+        (
+            {"lift_type": "gondola", "occupancy": 8, "detachable": True},
+            ["gondola", "express"],
+        ),
+        ({"lift_type": "cable_car", "occupancy": 100}, ["gondola"]),
+        # no icon fits a chair of unknown size
+        ({"occupancy": None}, []),
+    ],
+)
+def test_lift_summary_icons(fields, expected):
+    lift = dataclasses.replace(_BASE_LIFT, **fields)
+
+    assert [icon.file for icon in lift.icons()] == expected
+
+
+def test_list_lifts_includes_lift_type(seeded_db_path):
+    summaries, _ = list_lifts(db_path=seeded_db_path)
+
+    assert all(s.lift_type == "chair_lift" for s in summaries)
+
+
+@pytest.mark.parametrize(
+    "lift_type, label", [("gondola", "Gondola"), ("cable_car", "Tram")]
+)
+def test_lift_summary_cabin_icon_label(lift_type, label):
+    lift = dataclasses.replace(_BASE_LIFT, lift_type=lift_type)
+
+    assert [icon.label for icon in lift.icons()] == [label]

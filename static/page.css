@@ -4,7 +4,18 @@ body {
 
 /* NAV */
 
+/* the nav stays pinned to the top while the page scrolls; anchor jumps
+   land below it rather than under it. --nav-height is kept current by
+   page_base.jinja (it changes at the hamburger breakpoint and when the
+   hamburger menu opens) */
+html {
+    scroll-padding-top: var(--nav-height, 0px);
+}
+
 nav {
+    position: sticky;
+    top: 0;
+    z-index: 9;
     font-size: 1rem;
     padding: 4px;
     box-shadow: 0 0 4px var(--color-shadow);
@@ -252,9 +263,7 @@ p.copy {
 
 /* a .collapse-toggle button (aria-controls = the section's id, onclick =
    toggleCollapse(this)) folds a .collapsible section away on phones; on
-   wider screens the button is hidden and the section always shows.
-   trail_rankings_mobile.css repeats these rules at the trail/lift pages' own
-   breakpoints */
+   wider screens the button is hidden and the section always shows */
 .collapse-toggle {
     display: none;
 }
@@ -287,8 +296,8 @@ p.copy {
 }
 
 /* on the rankings pages, stay button-sized past the general 1232px
-   full-width switch; rankings.css / trail_rankings_mobile.css size it to match
-   their sort/region buttons once those switch to a grid */
+   full-width switch; rankings.css / trail_rankings.css size it to match
+   their sort buttons once those switch to a grid */
 .share-row .share-button {
     width: auto;
 }
@@ -341,6 +350,25 @@ p.copy {
     font: inherit;
     font-weight: bold;
     cursor: pointer;
+}
+
+/* SOCIAL LINKS */
+
+/* the Discord/Instagram icon links on the about and home pages */
+.social-links {
+    display: inline-flex;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.social-links img {
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+}
+
+.social-links a:hover img {
+    opacity: 1;
 }
 
 /* uncomment to preview where each ad slot sits as a black box

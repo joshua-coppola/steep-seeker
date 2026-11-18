@@ -1,31 +1,20 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 
 {% block title %}
 Search Ski Resorts
 {% endblock title %}
 
 {% block pagehead %}
+{{ filters.head() }}
 <link href="{{ asset_url('/search.css') }}" rel="stylesheet" />
-<link href="{{ asset_url('/form.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
-<h1 id="title">Search Mountains</h1>
+{{ filters.sidebar("Search Mountains", 124) }}
 
-<section id="sidebar">
-    <h2>Filters</h2>
-    {# only shown in the mobile layout, where the filters start collapsed #}
-    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="filters"
-        onclick="toggleCollapse(this)">
-        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
-        Filters
-    </button>
-
-    <form id="filters" class="collapsible"></form>
-    <div id="ezoic-pub-ad-placeholder-124"></div>
-</section>
-
-<section id="content">
+<section id="content" class="pane">
+    <h1 class="desktop-title">Search Mountains</h1>
     <form id="search-form" class="search-form">
         <input id="search" name="q" type="search" placeholder="Search all mountains" />
         <!-- Rework this field to click on arrow to change sort direction instead of having dropdown for each -->
@@ -68,7 +57,11 @@ Search Ski Resorts
                 <img alt="{{mountain.name}} - {{mountain.state.value}}" class="thumbnail" src="thumbnails/{{mountain.state.value}}/{{mountain.name}}.svg" width=125px
                     height=100px />
             </a>
-            <h2><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a></h2>
+            <h2><a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}" style="color: black">{{mountain.name}}</a>
+                {% for season_pass in mountain.season_passes %}
+                <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
+                {% endfor %}
+            </h2>
             <div>
                 {% if mountain.difficulty > 0 %}
                 {% if mountain.beginner_friendliness > display_beginner_friendliness(difficulty_thresholds.beginner_max) %}
@@ -145,5 +138,6 @@ Search Ski Resorts
 {% endblock content %}
 
 {% block postbody %}
+{{ filters.script() }}
 <script src="{{ asset_url('/search.js') }}"></script>
 {% endblock postbody %}

@@ -16,6 +16,14 @@ def test_lift_length_feet(lift_factory):
     assert lift.length_feet() == round(100 * 3.28084)
 
 
+def test_lift_icons(lift_factory):
+    # the same badges as the lift rankings page (core/support/lift_icons.py,
+    # tested in test_lift_query.py), for the map pages' sidebar
+    lift = lift_factory(occupancy=6, bubble=True, detachable=True, heating=False)
+
+    assert [icon.file for icon in lift.icons()] == ["six_pack_bubble_chair", "express"]
+
+
 def test_lift_vertical_feet(lift_factory):
     lift = lift_factory(vertical=50)
     assert lift.vertical_feet() == round(50 * 3.28084)

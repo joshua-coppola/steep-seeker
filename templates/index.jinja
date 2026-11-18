@@ -10,7 +10,6 @@ Steep Seeker - Universal Ski Trail Rating System
 
 {% block content %}
 <section id="content">
-    <div id="ezoic-pub-ad-placeholder-102"></div>
     <div class="hero-image">
         <a href="/search">
             <img alt="Example Map - Brighton Ski Resort" src="/thumbnails/UT/Brighton.svg" width="500"/>
@@ -42,12 +41,28 @@ Steep Seeker - Universal Ski Trail Rating System
             how the ratings are calculated and where all the data comes from can be found
             on the <a href="/about">About</a> page.
         </p>
+
+        <div class="community">
+            <p>Want to join the community? Come chat about the slopes and get updates first.</p>
+            <div class="social-links">
+                <a href="https://discord.gg/yk9BKW8yFn"
+                    target="_blank" rel="noopener"
+                    aria-label="Join the Steepseeker Discord">
+                    <img alt="" height="28" width="28" src="/icons/discord.svg" />
+                </a>
+                <a href="https://www.instagram.com/steepseeker/"
+                    target="_blank" rel="noopener"
+                    aria-label="Follow Steepseeker on Instagram">
+                    <img alt="" height="28" width="28" src="/icons/instagram.svg" />
+                </a>
+            </div>
+        </div>
     </div>
-    <br>
-    <div id="ezoic-pub-ad-placeholder-101"></div>
+    {# no ad slots on this page, but Ezoic still needs showAds() to place
+       its anchor ad, as on the About page #}
     <script>
         ezstandalone.cmd.push(function () {
-            ezstandalone.showAds(101, 102);
+            ezstandalone.showAds();
         });
     </script>
 
