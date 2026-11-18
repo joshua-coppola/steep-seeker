@@ -234,6 +234,14 @@ tr a.active {
         font-weight: 600;
         padding-top: 16px;
     }
+
+    /* the card's second line, the resort and its passes: lighter than the
+       trail/lift name above it */
+    .header .card-resort {
+        font-size: 1.25rem;
+        font-weight: normal;
+        margin-top: 2px;
+    }
 }
 
 /* Share goes full width before the sort buttons do. These two were window

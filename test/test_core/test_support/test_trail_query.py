@@ -134,3 +134,26 @@ def test_list_trails_includes_max_and_average_slope(seeded_db_path):
 
     assert summaries[0].max_slope == 50
     assert summaries[0].average_slope == 35
+
+
+def test_list_trails_includes_gladed_ungroomed_hazardous(
+    mountain_factory, trail_factory, db_path
+):
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        trails={
+            "t1": trail_factory(
+                trail_id="t1",
+                mountain_id="1",
+                name="Cliffs",
+                gladed=False,
+                ungroomed=True,
+                hazardous=True,
+            ),
+        },
+    ).to_db(db_path)
+
+    summary = list_trails(db_path=db_path)[0][0]
+
+    assert (summary.gladed, summary.ungroomed, summary.hazardous) == (False, True, True)

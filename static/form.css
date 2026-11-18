@@ -76,6 +76,9 @@
     border-width: 2px;
     border-radius: 4px;
     border-color: var(--color-secondary);
+    /* set rather than left to the browser, which differs (Firefox's
+       default is grey, Chrome's white); the theme's lightest grey */
+    background-color: var(--color-border);
 }
 
 .ts-form input[type=submit] {

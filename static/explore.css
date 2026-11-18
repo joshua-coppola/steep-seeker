@@ -84,13 +84,13 @@
     margin: 0 8px 0 0;
 }
 
-/* a marker's name under its icon (explore.js), on a white box so it reads
-   over the map's terrain and over other markers */
+/* a marker's name under its icon (explore.js), on a see-through white box
+   so it reads over the map's terrain and over other markers */
 .mountain-label {
     display: inline-block;
     padding: 0 4px;
     border-radius: 3px;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.7);
     color: var(--color-primary);
     font-size: .8rem;
     font-weight: bold;

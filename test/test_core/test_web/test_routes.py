@@ -454,6 +454,26 @@ def ranked_client(client, db_path, mountain_factory, trail_factory, lift_factory
     return client
 
 
+def test_trail_rankings_shows_hazardous_icon(
+    client, db_path, mountain_factory, trail_factory
+):
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        trails={
+            "t1": trail_factory(
+                trail_id="t1", mountain_id="1", name="Cliffs", hazardous=True
+            ),
+        },
+    ).to_db(db_path)
+
+    body = client.get("/trail-rankings").data.decode()
+
+    # once beside the name in the table, once in the phone cards, and once
+    # in the legend
+    assert body.count('<span class="icon hazardous"></span>') == 3
+
+
 def test_trail_rankings_defaults_to_difficulty_desc(ranked_client):
     response = ranked_client.get("/trail-rankings")
 

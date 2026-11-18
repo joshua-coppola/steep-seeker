@@ -39,6 +39,7 @@ class TrailSummary:
     season_passes: list[Season_Pass]
     gladed: bool
     ungroomed: bool
+    hazardous: bool
     length: int | None
     difficulty: float | None
     max_slope: float | None
@@ -95,6 +96,7 @@ def list_trails(
                 Mountains.{MountainTable.season_passes} AS resort_season_passes,
                 Trails.{TrailTable.gladed},
                 Trails.{TrailTable.ungroomed},
+                Trails.{TrailTable.hazardous},
                 Trails.{TrailTable.length},
                 Trails.{TrailTable.difficulty},
                 Trails.{TrailTable.max_slope},
@@ -125,6 +127,7 @@ def list_trails(
             season_passes=parse_season_passes(row["resort_season_passes"]),
             gladed=bool(row[TrailTable.gladed]),
             ungroomed=bool(row[TrailTable.ungroomed]),
+            hazardous=bool(row[TrailTable.hazardous]),
             length=round_feet(meters_to_feet(row[TrailTable.length])),
             difficulty=round_degrees(row[TrailTable.difficulty]),
             max_slope=round_degrees(row[TrailTable.max_slope]),

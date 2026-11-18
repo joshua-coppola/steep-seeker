@@ -352,6 +352,25 @@ p.copy {
     cursor: pointer;
 }
 
+/* SOCIAL LINKS */
+
+/* the Discord/Instagram icon links on the about and home pages */
+.social-links {
+    display: inline-flex;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.social-links img {
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+}
+
+.social-links a:hover img {
+    opacity: 1;
+}
+
 /* uncomment to preview where each ad slot sits as a black box
 [id^="ezoic-pub-ad-placeholder-"] {
     background-color: black;

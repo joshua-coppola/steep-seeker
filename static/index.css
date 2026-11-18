@@ -1,20 +1,65 @@
+/* The home page, laid out like the rest of the site (panes.css, minus its
+   sidebar): one white pane over the map background, inset 16px from the
+   window and reaching its bottom, with the hero at its top, centered
+   across it */
+body {
+    background-color: var(--color-map-background);
+}
+
 main {
-  --center-width: 1300px;
+    display: flex;
+    margin: 0;
+    padding: 16px;
 }
 
-footer {
-    position: fixed;
-}
-
-/* #content (a grid item of main) and .hero-text (a flex item of #content)
-   both default to a minimum width of their content's, which for the
-   hero-links grid is 3 buttons across; min-width: 0 lets them shrink to the
-   screen so the grid can reflow to 2 across or stacked */
+/* same look as panes.css's .pane. #content and .hero-text (a flex item of
+   #content) both default to a minimum width of their content's, which for
+   the hero-links grid is 3 buttons across; min-width: 0 lets them shrink to
+   the screen so the grid can reflow to 2 across or stacked */
 #content {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-wrap: wrap;
+    /* centered across the pane, but starting from its top: the pane can be
+       much taller than the hero. Side by side, the image and the text block
+       line up along their tops, so the image sits level with the title */
+    justify-content: center;
+    align-content: flex-start;
+    align-items: flex-start;
     gap: 32px;
-    min-width: 0;
+    padding: 32px;
+    background-color: var(--color-background);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
+}
+
+/* the pane's gap spaces its items, so they drop page.css's 48px bottom
+   margins, which added to it */
+#content > * {
+    margin-bottom: 0;
+}
+
+/* the pane reaches the bottom of the window even when the hero is shorter,
+   at every width -- with no sidebar, phones don't stack panes the way
+   panes.css's pages do (the body fills the window's height and main takes
+   what the nav leaves). dvh, where supported, is the height left between a
+   phone browser's toolbars */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+main {
+    flex: 1;
+}
+
+/* 100px of extra room above the image and title on desktop */
+@media screen and (min-width: 701px) {
+    #content {
+        padding-top: 132px;
+    }
 }
 
 .hero-text {
@@ -24,6 +69,11 @@ footer {
 
 .hero-text > * {
     margin-bottom: 32px;
+}
+
+/* so the hero is centered in the pane by its content, not its margin */
+.hero-text > :last-child {
+    margin-bottom: 0;
 }
 
 .hero-text h1 {
@@ -69,13 +119,15 @@ img {
     }
 }
 
-@media screen and (max-width: 650px) {
+/* keep in sync with panes.css's phone breakpoint: inset 8px, like the
+   other pages' panes there */
+@media screen and (max-width: 700px) {
     main {
-        margin: 0;
-        padding: 0;
+        padding: 8px;
     }
 
-    #content > * {
-        margin: 0;
+    #content {
+        padding: 16px;
+        gap: 24px;
     }
 }
