@@ -1,6 +1,7 @@
 import pytest
-from shapely import LineString, Point, Polygon
+from shapely import LineString, MultiLineString, Point, Polygon
 
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.web.app import create_app
 from core.web.routes import (
@@ -9,6 +10,7 @@ from core.web.routes import (
     _orientation,
     _sorted_trails_and_lifts,
     _trail_features,
+    inline_ad_slots,
 )
 
 
@@ -121,6 +123,26 @@ def test_explore_map_returns_ok_with_all_mountains(seeded_client):
     assert '"type": "Point"' in body
 
 
+def test_explore_map_has_in_page_filters_and_pass_data(
+    client, db_path, mountain_factory
+):
+    # explore.js filters the embedded mountains in the page, so each needs its
+    # passes as data, and the sidebar applies without reloading
+    mountain_factory(
+        mountain_id="1",
+        name="Collective Mountain",
+        season_passes=[Season_Pass.MOUNTAIN_COLLECTIVE, Season_Pass.INDY],
+    ).to_db(db_path)
+
+    body = client.get("/explore-map").data.decode()
+
+    assert '"passes": ["mountain_collective", "indy"]' in body
+    assert 'data-apply="page"' in body
+    assert 'id="match-count"' in body
+    # the same sidebar ad slot as the search page
+    assert 'id="ezoic-pub-ad-placeholder-124"' in body
+
+
 def test_search_returns_all_mountains_by_default(seeded_client):
     response = seeded_client.get("/search")
 
@@ -145,6 +167,76 @@ def test_search_filters_by_state(seeded_client):
     body = response.data.decode()
     assert "Alta" in body
     assert "Killington" not in body
+
+
+def test_search_filters_by_state_param(seeded_client):
+    # filters.js sends state=; location= (above) is the old name, still read
+    response = seeded_client.get("/search?state=UT")
+
+    body = response.data.decode()
+    assert "Alta" in body
+    assert "Killington" not in body
+
+
+def test_search_filters_by_region(seeded_client):
+    response = seeded_client.get("/search?region=northeast")
+
+    body = response.data.decode()
+    assert "Bolton Valley" in body
+    assert "Killington" in body
+    assert "Alta" not in body
+
+
+def test_search_state_overrides_region(seeded_client):
+    # same rule as the rankings pages: a state, when given, wins over region
+    response = seeded_client.get("/search?region=northeast&location=UT")
+
+    body = response.data.decode()
+    assert "Alta" in body
+    assert "Killington" not in body
+
+
+@pytest.mark.parametrize("path", ["/search", "/rankings"])
+def test_filters_by_vertical(client, db_path, mountain_factory, path):
+    # both pages share the filters sidebar; vertmin/vertmax are feet
+    # (vertical is stored in meters: 100m is ~328ft, 500m is ~1640ft)
+    mountain_factory(mountain_id="1", name="Small Hill", vertical=100).to_db(db_path)
+    mountain_factory(
+        mountain_id="2", name="Big Mountain", vertical=500, lifts={}
+    ).to_db(db_path)
+
+    body = client.get(f"{path}?vertmin=1000&vertmax=Infinity").data.decode()
+
+    assert "Big Mountain" in body
+    assert "Small Hill" not in body
+
+
+def test_search_filters_by_season_pass(client, db_path, mountain_factory):
+    mountain_factory(
+        mountain_id="1", name="Epic Mountain", season_passes=[Season_Pass.EPIC]
+    ).to_db(db_path)
+    mountain_factory(
+        mountain_id="2",
+        name="Collective Mountain",
+        season_passes=[Season_Pass.MOUNTAIN_COLLECTIVE],
+        lifts={},
+    ).to_db(db_path)
+
+    response = client.get("/search?pass=mountain_collective")
+
+    body = response.data.decode()
+    assert "Collective Mountain" in body
+    assert "Epic Mountain" not in body
+
+
+def test_search_invalid_season_pass_returns_no_results(seeded_client):
+    response = seeded_client.get("/search?pass=nonexistent")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert "Bolton Valley" not in body
+    assert "Killington" not in body
+    assert "Alta" not in body
 
 
 def test_search_invalid_state_returns_no_results(seeded_client):
@@ -195,6 +287,39 @@ def test_list_pages_tolerate_junk_pagination_params(seeded_client, path):
     assert seeded_client.get(path).status_code == 200
 
 
+@pytest.mark.parametrize(
+    "result_count, expected",
+    [
+        (0, {}),
+        (9, {}),
+        (10, {5: 111}),
+        (15, {7: 111}),
+        (20, {10: 111}),
+        (21, {10: 111, 20: 112}),
+        (30, {10: 111, 20: 112}),
+        (50, {10: 111, 20: 112, 30: 113, 40: 114}),
+    ],
+)
+def test_inline_ad_slots(result_count, expected):
+    assert inline_ad_slots(result_count) == expected
+
+
+@pytest.mark.parametrize(
+    "result_count, expected",
+    [
+        (25, {}),
+        (26, {13: 111}),
+        (50, {25: 111}),
+        (51, {50: 111}),
+        (150, {50: 111, 100: 112}),
+        (500, {50: 111, 100: 112, 150: 113, 200: 114}),
+    ],
+)
+def test_inline_ad_slots_mountain_rankings(result_count, expected):
+    # rankings.jinja's thresholds: more than 25 results, then every 50
+    assert inline_ad_slots(result_count, 26, 50, 50) == expected
+
+
 def test_rankings_defaults_to_difficulty_desc(seeded_client):
     response = seeded_client.get("/rankings")
 
@@ -228,6 +353,45 @@ def test_rankings_invalid_state_returns_no_results(seeded_client):
     assert "Bolton Valley" not in body
     assert "Killington" not in body
     assert "Alta" not in body
+
+
+def test_rankings_filters_by_difficulty(seeded_client):
+    # the filters sidebar (filters.js) is shared with search, so rankings
+    # takes the same difficulty/trail count params
+    response = seeded_client.get("/rankings?diffmin=60&diffmax=100")
+
+    body = response.data.decode()
+    assert "Killington" in body
+    assert "Alta" in body
+    assert "Bolton Valley" not in body
+
+
+def test_rankings_filters_by_trail_count(seeded_client):
+    response = seeded_client.get("/rankings?trailsmin=4&trailsmax=8")
+
+    body = response.data.decode()
+    assert "Alta" in body
+    assert "Killington" not in body
+    assert "Bolton Valley" not in body
+
+
+def test_rankings_sort_links_keep_filters(seeded_client):
+    response = seeded_client.get(
+        "/rankings?region=northeast&sort=difficulty&order=desc"
+    )
+
+    body = response.data.decode()
+    # the inactive sort starts descending; the active one flips its order
+    assert "region=northeast&sort=beginner&order=desc" in body
+    assert "region=northeast&sort=difficulty&order=asc" in body
+
+
+def test_rankings_invalid_sort_falls_back_to_difficulty(seeded_client):
+    response = seeded_client.get("/rankings?sort=bogus")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert body.index("Alta") < body.index("Killington") < body.index("Bolton Valley")
 
 
 def test_rankings_beginner_sort(seeded_client):
@@ -290,6 +454,26 @@ def ranked_client(client, db_path, mountain_factory, trail_factory, lift_factory
     return client
 
 
+def test_trail_rankings_shows_hazardous_icon(
+    client, db_path, mountain_factory, trail_factory
+):
+    mountain_factory(
+        mountain_id="1",
+        name="Bolton Valley",
+        trails={
+            "t1": trail_factory(
+                trail_id="t1", mountain_id="1", name="Cliffs", hazardous=True
+            ),
+        },
+    ).to_db(db_path)
+
+    body = client.get("/trail-rankings").data.decode()
+
+    # once beside the name in the table, once in the phone cards, and once
+    # in the legend
+    assert body.count('<span class="icon hazardous"></span>') == 3
+
+
 def test_trail_rankings_defaults_to_difficulty_desc(ranked_client):
     response = ranked_client.get("/trail-rankings")
 
@@ -304,6 +488,73 @@ def test_trail_rankings_filters_by_state(ranked_client):
     body = response.data.decode()
     assert "Trail B" in body
     assert "Trail A" not in body
+
+
+@pytest.fixture
+def pass_client(client, db_path, mountain_factory, trail_factory, lift_factory):
+    # one Epic resort and one Indy resort, each with a trail and a lift
+    for mountain_id, name, season_pass in (
+        ("1", "Epic Resort", Season_Pass.EPIC),
+        ("2", "Indy Resort", Season_Pass.INDY),
+    ):
+        mountain_factory(
+            mountain_id=mountain_id,
+            name=name,
+            season_passes=[season_pass],
+            trails={
+                f"t{mountain_id}": trail_factory(
+                    trail_id=f"t{mountain_id}",
+                    mountain_id=mountain_id,
+                    name=f"{name} Trail",
+                )
+            },
+            lifts={
+                f"l{mountain_id}": lift_factory(
+                    lift_id=f"l{mountain_id}",
+                    mountain_id=mountain_id,
+                    name=f"{name} Lift",
+                )
+            },
+        ).to_db(db_path)
+    return client
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_filter_by_season_pass(pass_client, path):
+    # the shared filters sidebar's pass filter, applied by the resort
+    body = pass_client.get(f"{path}?pass=indy").data.decode()
+
+    assert "Indy Resort" in body
+    assert "Epic Resort" not in body
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_invalid_pass_returns_no_results(pass_client, path):
+    body = pass_client.get(f"{path}?pass=nonexistent").data.decode()
+
+    assert "Indy Resort" not in body
+    assert "Epic Resort" not in body
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_sort_links_keep_filters(pass_client, path):
+    body = pass_client.get(
+        f"{path}?region=west&pass=indy&sort=length&page=2"
+    ).data.decode()
+
+    # sort links start from the current filters, minus page and sort
+    assert f'href="{path}?region=west&pass=indy&sort=' in body
+    assert "page=2&sort=" not in body
+
+
+@pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
+def test_trail_and_lift_rankings_sidebar_has_location_and_pass_only(pass_client, path):
+    body = pass_client.get(path).data.decode()
+
+    assert (
+        '<form id="filters" class="collapsible" data-groups="location,season_pass">'
+        in body
+    )
 
 
 def test_trail_rankings_invalid_state_returns_no_results(ranked_client):
@@ -331,16 +582,48 @@ def test_lift_rankings_sorts_by_average_slope(ranked_client):
     assert body.index("Lift A") < body.index("Lift B")
 
 
-def test_lift_rankings_shows_capacity_detachable_heating(ranked_client):
+def test_lift_rankings_shows_capacity(ranked_client):
     body = ranked_client.get("/lift-rankings").data.decode()
 
     assert "Capacity" in body
-    assert "Detachable" in body
-    assert "Heating" in body
+    # bubble/detachable/heating have no columns (or sort options) of their
+    # own; the lift icons after each name show them instead
+    for column in ("Bubble", "Detachable", "Heating"):
+        assert f">{column}</a>" not in body
+        assert f"<td>{column}</td>" not in body
+        assert f"sort={column.lower()}" not in body
     assert (
         '3000<span class="small-spacer"></span><span class="icon person"></span>/hr'
         in body
     )
+
+
+def test_lift_rankings_shows_lift_icons(ranked_client):
+    # Lift A is a heated quad, Lift B a plain quad; each layout (desktop
+    # table, phone cards) shows them, so each icon appears twice per lift.
+    # Counted by their titles, which the legend's samples don't have
+    body = ranked_client.get("/lift-rankings").data.decode()
+
+    assert body.count('title="Quad chair"') == 4
+    assert body.count('title="Heated"') == 2
+    assert 'title="Express (detachable)"' not in body
+
+
+def test_lift_rankings_shows_lift_icon_legend(ranked_client):
+    body = ranked_client.get("/lift-rankings").data.decode()
+    legend = body[body.index('<div class="legend lift-legend">') :]
+    legend = legend[: legend.index("</div>")]
+
+    for icon, label in [
+        ("quad_chair", "Chairlift"),
+        ("quad_bubble_chair", "Bubble Chairlift"),
+        ("gondola", "Gondola/<wbr>Tram"),
+        ("surface_lift", "Surface Lift"),
+        ("heated", "Heated"),
+        ("express", "Express"),
+    ]:
+        assert f'src="/icons/{icon}.svg"' in legend
+        assert f"<span>{label}</span>" in legend
 
 
 def test_lift_rankings_sorts_by_capacity(ranked_client):
@@ -475,8 +758,8 @@ def test_map_sidebar_shows_lift_occupancy(
     body = client.get("/map/VT/OccMountain").data.decode()
 
     def lift_li(name):
-        end = body.index(f"{name} -")
-        return body[body.rindex("<li>", 0, end) : end]
+        start = body.rindex("<li>", 0, body.index(f"<span>{name}"))
+        return body[start : body.index("</li>", start)]
 
     # occupancy <= 2 repeats the person icon; > 2 shows the number beside one
     assert lift_li("Double").count('class="icon person"') == 2
@@ -484,6 +767,12 @@ def test_map_sidebar_shows_lift_occupancy(
     assert six.count('class="icon person"') == 1
     assert "6<span" in six
     assert 'class="icon person"' not in lift_li("Mystery")
+
+    # and the lift icons (templates/lift_icons.jinja) follow each name; a
+    # chair of unknown size gets none
+    assert 'src="/icons/double_chair.svg"' in lift_li("Double")
+    assert 'src="/icons/six_pack_chair.svg"' in six
+    assert "/icons/" not in lift_li("Mystery")
 
 
 def test_interactive_map_returns_ok(mapped_client):
@@ -600,6 +889,24 @@ def test_lift_feature_popup_shows_type(lift_factory):
     assert feature["properties"]["popupData"]["lift_type_label"] == "Chairlift"
 
 
+def test_lift_feature_popup_includes_icons(lift_factory):
+    # the popup's title shows the same badges as the sidebar (lift_icons.py)
+    lift = lift_factory(
+        lift_type="chair_lift",
+        occupancy=4,
+        bubble=True,
+        heating=True,
+        geometry=LineString([[-72.0, 43.0, 1000], [-72.001, 43.001, 1100]]),
+    )
+
+    feature = _lift_feature(lift, direction="n", weather_modifier=0, debug_mode=False)
+
+    assert feature["properties"]["popupData"]["icons"] == [
+        {"file": "quad_bubble_chair", "label": "Bubble quad chair", "kind": "chair"},
+        {"file": "heated", "label": "Heated", "kind": "heated"},
+    ]
+
+
 def test_lift_feature_popup_shows_hike_type(lift_factory):
     lift = lift_factory(
         lift_type="hike",
@@ -654,6 +961,36 @@ def test_trail_features_area_trail_with_route_adds_route_feature(trail_factory):
     # name identifies the trail for the elevation-profile title regardless
     # of which feature was clicked, unlike label (on-map text only)
     assert polygon_feature["properties"]["name"] == area_trail.name
+
+
+def test_trail_features_route_feature_flags_multi_route_only(trail_factory):
+    area_trail = trail_factory(
+        area=True,
+        geometry=Polygon(
+            [[0, 0, 100], [0, 1, 100], [1, 1, 50], [1, 0, 50], [0, 0, 100]]
+        ),
+        interior_geometry=LineString([[0.4, 0.4, 80], [0.6, 0.6, 70]]),
+        route=LineString([[0, 1, 100], [0.5, 0.5, 75], [1, 0, 50]]),
+    )
+    multi_route_trail = trail_factory(
+        multi_route=True,
+        geometry=MultiLineString(
+            [
+                [[0, 1, 100], [0.4, 0.5, 75], [1, 0, 50]],
+                [[0, 1, 100], [0.6, 0.5, 75], [1, 0, 50]],
+            ]
+        ),
+        route=LineString([[0, 1, 100], [0.4, 0.5, 75], [1, 0, 50]]),
+    )
+
+    area_route = _trail_features(area_trail, direction="n", debug_mode=False)[1]
+    multi_route = _trail_features(multi_route_trail, direction="n", debug_mode=False)[1]
+
+    # interactive-map.js draws only area routes; a multi-route one just
+    # carries the label (see style())
+    assert area_route["properties"]["multiRoute"] is False
+    assert multi_route["properties"]["isRoute"] is True
+    assert multi_route["properties"]["multiRoute"] is True
 
 
 def test_trail_features_area_trail_without_route_has_single_feature(trail_factory):

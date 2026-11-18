@@ -17,6 +17,7 @@ from flask import (
 from markupsafe import escape
 
 from core.datamodels.region import Region
+from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.support.lift_query import list_lifts
 from core.support.mountain import Mountain
@@ -48,6 +49,29 @@ def asset_url(path: str) -> str:
     return versioned_asset_url(current_app.static_folder, path)
 
 
+# Ezoic placeholder ids for the ads interleaved with a page of results, in
+# page order; pages cap at 50 results, so four is the most ever placed
+INLINE_AD_IDS = (111, 112, 113, 114)
+
+
+@web.app_template_global()
+def inline_ad_slots(
+    result_count: int, min_results: int = 10, middle_max: int = 20, every: int = 10
+) -> dict[int, int]:
+    # {result position (1-based) to place an ad after: its placeholder id}.
+    # min_results to middle_max results get one ad in the middle; more than
+    # middle_max get one after every `every`th result, never after the last
+    # one, and at most len(INLINE_AD_IDS) of them (the mountain rankings can
+    # list every mountain at once)
+    if result_count < min_results:
+        return {}
+    if result_count <= middle_max:
+        positions = [result_count // 2]
+    else:
+        positions = range(every, result_count, every)
+    return dict(zip(positions, INLINE_AD_IDS))
+
+
 @web.app_context_processor
 def inject_rating_colors():
     # so templates can color a difficulty / beginner-friendliness number
@@ -63,6 +87,22 @@ def inject_rating_colors():
         "difficulty_thresholds": asdict(DIFFICULTY_CONSTANTS),
         "beginner_friendliness_max": BEGINNER_FRIENDLINESS_FLIP,
         "display_beginner_friendliness": display_beginner_friendliness,
+        # (code, name) pairs for every state dropdown (search + rankings);
+        # pairs rather than a dict so |tojson keeps them in name order
+        # instead of sorting them by code
+        "us_states": [
+            (state.value, state.name.replace("_", " ").title()) for state in State
+        ],
+        # (param, name, state codes) for search.js's region dropdown, which
+        # narrows its state dropdown to the chosen region
+        "us_regions": [
+            (region.name.lower(), region.name.title(), [s.value for s in region.value])
+            for region in Region
+        ],
+        # (param, name) pairs for search.js's season pass dropdown
+        "season_pass_options": [
+            (season_pass.name.lower(), season_pass.value) for season_pass in Season_Pass
+        ],
     }
 
 
@@ -150,6 +190,27 @@ def _parse_region(region_param: str, state: State | None) -> Region | None:
         return None
 
 
+class _InvalidSeasonPass:
+    """Sentinel: a pass value was given but doesn't parse to a real Season_Pass."""
+
+
+_INVALID_SEASON_PASS = _InvalidSeasonPass()
+
+
+def _parse_season_pass(value: str | None) -> Season_Pass | None | _InvalidSeasonPass:
+    """
+    Parses a ?pass= param (a lowercased Season_Pass name, e.g.
+    "mountain_collective"). Like _parse_state, an unparseable value is
+    _INVALID_SEASON_PASS, which callers must treat as "matches nothing".
+    """
+    if not value:
+        return None
+    try:
+        return Season_Pass[value.upper()]
+    except KeyError:
+        return _INVALID_SEASON_PASS
+
+
 def _int_arg(
     name: str, default: int, minimum: int | None = None, maximum: int | None = None
 ) -> int:
@@ -172,7 +233,7 @@ def _int_arg(
 def _float_arg(name: str, default: float) -> float:
     """
     Reads a float query param, falling back to `default` when it's missing,
-    blank, or not a number. "Infinity" parses natively (search.js sends it
+    blank, or not a number. "Infinity" parses natively (filters.js sends it
     for a maxed-out slider handle).
     """
     try:
@@ -181,13 +242,73 @@ def _float_arg(name: str, default: float) -> float:
         return default
 
 
+def _url_with_args(base_path: str, **changes: str) -> str:
+    """
+    Current request's query string with `changes` swapped in, for links
+    that change one thing (page, sort) but keep the rest (filters, search).
+    """
+    args = request.args.to_dict()
+    args.update(changes)
+    return f"{base_path}?{urlencode(args)}"
+
+
 def _pagination_url(base_path: str, target_page: int) -> str:
     """
     Current request's query string with `page` swapped to target_page,
     for a list page's prev/next links.
     """
+    return _url_with_args(base_path, page=str(target_page))
+
+
+def _location_filters() -> dict | None:
+    """
+    Reads the filters sidebar's location and season pass params
+    (filters.js) into list_* keyword args (state/region/season_pass), the
+    filters every page with the sidebar shares. Returns None when a state
+    or pass was given but isn't real, which should match nothing.
+    `location` is search's old name for `state`, still read so old links
+    keep working.
+    """
+    state = _parse_state(request.args.get("state") or request.args.get("location"))
+    season_pass = _parse_season_pass(request.args.get("pass"))
+    if state is _INVALID_STATE or season_pass is _INVALID_SEASON_PASS:
+        return None
+    return {
+        "state": state,
+        "region": _parse_region(request.args.get("region") or "usa", state),
+        "season_pass": season_pass,
+    }
+
+
+def _mountain_filters() -> dict | None:
+    """
+    _location_filters plus the sidebar's mountain-only filters (difficulty,
+    trail count, vertical), for search and mountain rankings. None when
+    _location_filters is.
+    """
+    filters = _location_filters()
+    if filters is None:
+        return None
+    return {
+        **filters,
+        "difficulty_min": _float_arg("diffmin", 0),
+        "difficulty_max": _float_arg("diffmax", 100),
+        "trail_count_min": _float_arg("trailsmin", 0),
+        "trail_count_max": _float_arg("trailsmax", 1000),
+        "vertical_min": _float_arg("vertmin", 0),
+        "vertical_max": _float_arg("vertmax", 100_000),
+    }
+
+
+def _sort_base_url(base_path: str) -> str:
+    """
+    The current request's URL minus its page and sort, for a list page's
+    sort links to append "&sort=..." to: a new sort keeps the filters and
+    starts back on the first page.
+    """
     args = request.args.to_dict()
-    args["page"] = str(target_page)
+    args.pop("page", None)
+    args.pop("sort", None)
     return f"{base_path}?{urlencode(args)}"
 
 
@@ -196,28 +317,20 @@ def search():
     q = (request.args.get("q") or "").strip()
     page = _int_arg("page", 1, minimum=1)
     limit = _int_arg("limit", 20, minimum=1)
-    diffmin = _float_arg("diffmin", 0)
-    diffmax = _float_arg("diffmax", 100)
-    trailsmin = _float_arg("trailsmin", 0)
-    trailsmax = _float_arg("trailsmax", 1000)
     sort = request.args.get("sort") or "name"
     order = request.args.get("order") or "asc"
-    state = _parse_state(request.args.get("location"))
+    filters = _mountain_filters()
 
     offset = limit * (page - 1)
 
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         mountains, total_mountain_count = [], 0
     else:
         mountains, total_mountain_count = list_mountains(
             db_path=db_path,
             name_query=q or None,
-            state=state,
-            difficulty_min=diffmin,
-            difficulty_max=diffmax,
-            trail_count_min=trailsmin,
-            trail_count_max=trailsmax,
+            **filters,
             sort=sort,
             order=order,
             limit=limit,
@@ -238,33 +351,49 @@ def search():
     )
 
 
+@dataclass
+class SortLink:
+    label: str
+    url: str
+    active: bool
+
+
+_RANKING_SORTS = {"difficulty": "Difficulty", "beginner": "Beginner Friendliness"}
+
+
 @web.route("/rankings")
 def rankings():
-    sort = request.args.get("sort") or "difficulty"
+    sort = request.args.get("sort")
+    if sort not in _RANKING_SORTS:
+        sort = "difficulty"
     order = request.args.get("order")
-    region_param = request.args.get("region") or "usa"
-    state_param = request.args.get("state")
-    if state_param == "None":
-        state_param = None
-
-    sort_by = "beginner_friendliness" if sort == "beginner" else "difficulty"
     if order not in ("asc", "desc"):
         order = "desc"
-
-    state = _parse_state(state_param)
+    sort_by = "beginner_friendliness" if sort == "beginner" else "difficulty"
+    filters = _mountain_filters()
 
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         mountains = []
     else:
-        region = _parse_region(region_param, state)
         mountains, _ = list_mountains(
-            db_path=db_path,
-            state=state,
-            region=region,
-            sort=sort_by,
-            order=order,
+            db_path=db_path, **filters, sort=sort_by, order=order
         )
+
+    # clicking the active sort flips its order; another starts descending.
+    # Either way the filters carry over
+    sort_links = [
+        SortLink(
+            label=label,
+            url=_url_with_args(
+                "/rankings",
+                sort=key,
+                order=("asc" if order == "desc" else "desc") if key == sort else "desc",
+            ),
+            active=key == sort,
+        )
+        for key, label in _RANKING_SORTS.items()
+    ]
 
     return render_template(
         "rankings.jinja",
@@ -272,37 +401,25 @@ def rankings():
         mountains=mountains,
         sort=sort,
         order=order,
-        region=region_param,
-        state=state_param,
+        sort_links=sort_links,
     )
 
 
 @web.route("/trail-rankings")
 def trail_rankings():
-    region_param = request.args.get("region") or "usa"
-    state_param = request.args.get("state")
-    if state_param == "None":
-        state_param = None
     page = _int_arg("page", 1, minimum=1)
     limit = _int_arg("limit", 50, minimum=1, maximum=200)
     sort_by = request.args.get("sort") or "difficulty"
+    filters = _location_filters()
 
     offset = limit * (page - 1)
 
-    state = _parse_state(state_param)
-
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         trails, total_trail_count = [], 0
     else:
-        region = _parse_region(region_param, state)
         trails, total_trail_count = list_trails(
-            db_path=db_path,
-            state=state,
-            region=region,
-            sort=sort_by,
-            limit=limit,
-            offset=offset,
+            db_path=db_path, **filters, sort=sort_by, limit=limit, offset=offset
         )
 
     pages = {"offset": offset}
@@ -310,17 +427,12 @@ def trail_rankings():
         pages["next"] = _pagination_url("/trail-rankings", page + 1)
     if offset != 0:
         pages["prev"] = _pagination_url("/trail-rankings", page - 1)
-    first_args = {"region": region_param, "limit": limit}
-    if state_param:
-        first_args["state"] = state_param
-    pages["first"] = f"/trail-rankings?{urlencode(first_args)}"
+    pages["first"] = _sort_base_url("/trail-rankings")
 
     return render_template(
         "trail_rankings.jinja",
         active_page="trail_rankings",
         trails=trails,
-        region=region_param,
-        state=state_param,
         pages=pages,
         sort_by=sort_by,
         pitch_fields=PITCH_WINDOW_LABELS,
@@ -329,30 +441,19 @@ def trail_rankings():
 
 @web.route("/lift-rankings")
 def lift_rankings():
-    region_param = request.args.get("region") or "usa"
-    state_param = request.args.get("state")
-    if state_param == "None":
-        state_param = None
     page = _int_arg("page", 1, minimum=1)
     limit = _int_arg("limit", 50, minimum=1, maximum=200)
     sort_by = request.args.get("sort") or "vertical"
+    filters = _location_filters()
 
     offset = limit * (page - 1)
 
-    state = _parse_state(state_param)
-
     db_path = current_app.config["DATABASE_PATH"]
-    if state is _INVALID_STATE:
+    if filters is None:
         lifts, total_lift_count = [], 0
     else:
-        region = _parse_region(region_param, state)
         lifts, total_lift_count = list_lifts(
-            db_path=db_path,
-            state=state,
-            region=region,
-            sort=sort_by,
-            limit=limit,
-            offset=offset,
+            db_path=db_path, **filters, sort=sort_by, limit=limit, offset=offset
         )
 
     pages = {"offset": offset}
@@ -360,17 +461,12 @@ def lift_rankings():
         pages["next"] = _pagination_url("/lift-rankings", page + 1)
     if offset != 0:
         pages["prev"] = _pagination_url("/lift-rankings", page - 1)
-    first_args = {"region": region_param, "limit": limit}
-    if state_param:
-        first_args["state"] = state_param
-    pages["first"] = f"/lift-rankings?{urlencode(first_args)}"
+    pages["first"] = _sort_base_url("/lift-rankings")
 
     return render_template(
         "lift_rankings.jinja",
         active_page="lift_rankings",
         lifts=lifts,
-        region=region_param,
-        state=state_param,
         pages=pages,
         sort_by=sort_by,
     )
@@ -420,9 +516,11 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
     merged from several OSM ways) is a MultiLineString feature with one
     part per branch, every part rendered as a real trail line.
 
-    Both area and multi-route trails additionally get a second, faint/
+    Both area and multi-route trails additionally get a second,
     non-interactive LineString feature (styled in interactive-map.js)
-    carrying their computed route's elevation profile. The main feature's
+    carrying their computed route's elevation profile and the trail's name
+    label -- drawn as a faint band for an area trail, but left undrawn
+    (label only) for a multi-route trail, whose branches already show it. The main feature's
     own properties carry the route's profile too (as routeCoordinates), so
     interactive-map.js can show a real heightgraph when it's clicked
     directly.
@@ -529,6 +627,9 @@ def _trail_features(trail, direction: str, debug_mode: bool) -> list[dict]:
                 "type": "Feature",
                 "properties": {
                     "isRoute": True,
+                    # label-only (no visible line) -- see style() in
+                    # interactive-map.js
+                    "multiRoute": bool(trail.multi_route),
                     "color": properties["color"],
                     "label": trail.name,
                     "orientation": route_orientation,
@@ -603,6 +704,13 @@ def _lift_feature(
         "average_slope": round_degrees(lift.average_slope),
         "bubble": lift.bubble,
         "heating": lift.heating,
+        # capacity has its own card; detachable shows only as the express
+        # icon, but the management edit map's lift form starts from both
+        "detachable": lift.detachable,
+        "capacity": lift.capacity,
+        # the same badges as the sidebar and lift rankings (lift_icons.py),
+        # shown after the popup's title
+        "icons": [asdict(icon) for icon in lift.icons()],
         "debug_id": lift.lift_id if debug_mode else None,
     }
 
@@ -628,8 +736,9 @@ def explore_map():
             f"{escape(mountain.name)}</a></h3>"
         )
         for season_pass in mountain.season_passes:
+            ext = "svg" if season_pass == Season_Pass.SNOW_PASS else "png"
             popup_content += (
-                f'<img src="icons/{season_pass.value}.png" class="pass-icon"/>'
+                f'<img src="icons/{season_pass.value}.{ext}" class="pass-icon"/>'
             )
         popup_content += (
             f"<p>Vertical: {mountain.vertical} ft</p>"
@@ -648,6 +757,12 @@ def explore_map():
                     "vertical": mountain.vertical,
                     "difficulty": mountain.difficulty,
                     "beginner_friendliness": mountain.beginner_friendliness,
+                    # for explore.js's in-page filtering: the pass param
+                    # values (Season_Pass names, lowercased) the resort is on
+                    "passes": [
+                        season_pass.name.lower()
+                        for season_pass in mountain.season_passes
+                    ],
                     "size": mountain.vertical ** (1 / 3) / 20,
                     "popupContent": popup_content,
                     "icon": f"icons/mountain_{difficulty_color}.png",

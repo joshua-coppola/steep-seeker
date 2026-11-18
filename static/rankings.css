@@ -1,22 +1,22 @@
-main {
-    --center-width: 900px;
+/* The mountain rankings list and its sort buttons; the panes layout and
+   filters sidebar it sits in are panes.css */
+
+/* "Mountain Rankings" is a little wider than "Search Mountains", so its
+   title shrinks a touch sooner in a narrow pane (see panes.css) */
+html {
+    --title-ems: 10.2;
 }
 
-#content {
-    grid-row: 1;
-}
-
+/* gap rather than margins, so buttons that wrap onto a second line in a
+   narrow pane are spaced apart vertically too */
 .ranking-sort {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    gap: 8px 16px;
     font-size: 1.1rem;
     line-height: 1.5rem;
     text-transform: uppercase;
-}
-
-.ranking-sort > * {
-    margin-right: 16px;
 }
 
 .ranking-sort a {
@@ -38,6 +38,13 @@ main {
     width: 100%;
 }
 
+/* the section's own bottom margin spaces it from what follows; in the
+   phone layout's flex column (below) the last paragraph's margin would no
+   longer merge into it and doubled the gap */
+#ranking-info > :last-child {
+    margin-bottom: 0;
+}
+
 .legend ul li {
     white-space: nowrap;
     display: inline;
@@ -46,16 +53,21 @@ main {
     color: var(--color-primary);
 }
 
+/* the pane grows with the window, but the list keeps the 900px cap the
+   page had before it did, so the bars stay a readable length */
 .rankings {
+    max-width: 900px;
     display: grid;
     grid-template-columns: max-content 1fr;
-    grid-auto-rows: 28px;
+    /* min, not fixed, so a row holding an .inline-ad can grow to fit it */
+    grid-auto-rows: minmax(28px, auto);
     row-gap: 6px;
     column-gap: 64px;
     align-items: center;
     justify-items: left;
 }
-.rankings a,p {
+.rankings a,
+.rankings p {
     color: var(--color-primary);
     font-size: 1.2rem;
 }
@@ -66,89 +78,82 @@ main {
     padding-left: 4px;
     padding-top: 4px;
 }
+/* the value is centered by flex, not padding, so it stays centered whatever
+   line-height the list has (the stacked layout below sets a tall one) */
 .rankings .ranking-bar {
     width: var(--bar-size);
     background-color: var(--bar-color);
     border-radius: 4px;
     height: 28px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
     font-size: .9rem;
     color: white;
-    padding: 8px;
+    padding: 0 8px;
 }
 .rankings .black-text {
     width: var(--bar-size);
     background-color: var(--bar-color);
     border-radius: 4px;
     height: 28px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
     font-size: .9rem;
     color: black;
-    padding: 8px;
+    padding: 0 8px;
 }
 
 .rankings .bar-div {
     width: 100%;
 }
 
-.links {
-    display: flex;
-    align-items: center;
+/* an ad between results (inline_ad_slots), across both columns */
+.rankings > .inline-ad {
+    grid-column: 1 / -1;
+    width: 100%;
 }
 
-select {
-    width: 222px;
-    height: 37px;
-    font-size: 1.1rem;
-    border-width: 2px;
-    border-radius: 4px;
-    border-color: var(--color-secondary);
-}
-
+/* the text's size (1em), centered in the line: the stacked layout's tall
+   line-height would otherwise size them well past the text. Pinned to the
+   line's top and pushed down by half the spare room, like .lift-icon
+   (base.css), so they never make a row taller */
 .pass-icon {
-    width: 18px;
-    height: 18px;
+    width: 1em;
+    height: 1em;
+    vertical-align: top;
+    margin-top: calc((1lh - 1em) / 2);
 }
 
-#submit {
-    font-size: 1.1rem;
-    margin-left: 8px;
-}
-
-.rankings > p:nth-child(4n+1),
-.rankings > .bar-div:nth-child(4n+2) {
+/* of-type, not nth-child, so an .inline-ad (an <aside>) between rows doesn't
+   shift the striping */
+.rankings > p:nth-of-type(odd),
+.rankings > .bar-div:nth-of-type(odd) {
     background-color: rgb(243, 242, 242); /* Light gray for alternate rows */
 }
 
-.rankings > .bar-div:nth-child(4n+2) {
+.rankings > .bar-div:nth-of-type(odd) {
     margin-left: -64px;
     padding-left: 64px;
     width: calc(100% + 64px);
 }
 
-@media screen and (max-width: 1232px) {
-    #submit {
-        width: auto;
-    }
-}
-
-@media screen and (max-width: 700px) {
-    #content > *,
-    #content > .collapsible > * {
-        margin-bottom: 36px;
-    }
-
-    h1 {
-        padding-top: 32px;
-    }
-
+/* each name goes above its bar, rather than beside it, once the content pane
+   (the nearest .pane container, see panes.css) is too narrow for both */
+@container (max-width: 640px) {
     .rankings {
         grid-template-columns: max-content;
         display: block;
         line-height: 1.7rem;
     }
 
-    .rankings > .bar-div:nth-child(4n+2) {
+    /* the list is no longer a grid here, so there's no row-gap around it */
+    .rankings > .inline-ad {
+        margin: 16px 0;
+    }
+
+    .rankings > .bar-div:nth-of-type(odd) {
         margin-left: 0;
         padding-left: 4px;
         width: 100%;
@@ -159,9 +164,32 @@ select {
         padding-bottom: 4px;
     }
 
-    main {
-        padding: 0px;
-        margin-top: 0px;
+    /* rows only need to fill their grid cell in the side-by-side layout */
+    .rankings p {
+        height: auto;
+    }
+}
+
+/* keep this breakpoint in sync with the collapsible sections in page.css */
+@media screen and (max-width: 700px) {
+    /* the sort buttons move down from under the title to just above the
+       list (after the legend), so the top isn't a stack of buttons */
+    #content {
+        display: flex;
+        flex-direction: column;
+    }
+    #content > .ranking-sort {
+        order: 1;
+    }
+    #content > .legend ~ * {
+        order: 2;
+    }
+    /* flex items' margins don't collapse into each other the way the
+       page's normal flow does, so an ad slot the ad hasn't filled would
+       add a second 24px gap; it stays in the layout so the ad can still
+       load into it */
+    #content > [id^="ezoic-pub-ad-placeholder-"]:empty {
+        margin-bottom: 0;
     }
 
     .ranking-sort {
@@ -173,7 +201,6 @@ select {
     }
 
     .ranking-sort > * {
-        margin-right: 0;
         height: 100%;
     }
 
@@ -190,51 +217,18 @@ select {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    /* same grid as .ranking-sort, so Share is one sort/region button wide */
+    /* full width, like the Filters & Info toggle above it. Its top margin
+       (page.css) merges into the gap above it in normal flow, but would
+       add to it in the flex column */
     .share-row {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        column-gap: 16px;
-    }
-
-    /* one .share-row column wide, so it lines up with Share below it */
-    #content > .collapse-toggle {
-        width: calc((100% - 16px) / 2);
+        margin-top: 0;
     }
 
     .share-row .share-button {
         width: 100%;
+        max-width: none;
         font-size: 1.1rem;
         line-height: 1;
-    }
-}
-
-/* Share and the Filters & Info toggle go full width before the sort/region
-   buttons do */
-@media screen and (max-width: 500px) {
-    .share-row {
-        grid-template-columns: 1fr;
-    }
-
-    #content > .collapse-toggle {
-        width: 100%;
-    }
-
-    #content > .collapse-toggle,
-    .share-row .share-button {
-        max-width: none;
-    }
-}
-
-@media screen and (max-width: 375px) {
-    #submit {
-        margin-top: 8px;
-        margin-left: 0;
-        width: 100%;
-    }
-
-    select {
-        width: 100%;
     }
 }
 

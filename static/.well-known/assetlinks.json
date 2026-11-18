@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.steepseeker.twa",
-        "sha256_cert_fingerprints": ["79:28:61:5C:56:89:31:FD:F5:9D:3C:23:EE:FF:1A:65:39:91:23:46:48:C1:4E:AD:BA:62:A7:3E:25:20:7A:BD"]
+        "sha256_cert_fingerprints": [
+          "79:28:61:5C:56:89:31:FD:F5:9D:3C:23:EE:FF:1A:65:39:91:23:46:48:C1:4E:AD:BA:62:A7:3E:25:20:7A:BD",
+          "5C:97:EC:46:41:C6:5E:5B:4B:87:7F:10:73:63:33:3E:50:6E:A5:04:BF:5B:18:9E:78:49:B9:CA:94:D2:90:91"
+        ]
       }
     }]

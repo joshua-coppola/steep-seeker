@@ -1,5 +1,11 @@
-main {
-    --center-width: 900px !important;
+/* The search page's results list and search bar; the panes layout and
+   filters sidebar it sits in are panes.css */
+
+/* the pane grows with the window, but results keep the 900px cap the page
+   had before it did, so each result's map link (pinned to its right edge)
+   stays near its name instead of drifting to the window's far side */
+.results {
+    max-width: 900px;
 }
 
 .result {
@@ -10,11 +16,42 @@ main {
 .result > * {
     margin-bottom: 16px;
 }
+
+/* an ad between results (inline_ad_slots), spaced and divided like a .result */
+.result-ad {
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 16px;
+}
+.result-ad > * {
+    margin-bottom: 16px;
+}
 .map-link {
     font-size: 1.25rem;
     position: absolute;
     bottom: 0;
     right: 0;
+}
+/* keeps the stats line from running under the map link when the results
+   pane is narrow (it wraps instead) */
+.result .copy {
+    padding-right: 100px;
+}
+
+/* narrower, the link is dropped -- the thumbnail and name already link to
+   the same map -- so the stats line gets the full width back */
+@media screen and (max-width: 1100px) {
+    .map-link {
+        display: none;
+    }
+    .result .copy {
+        padding-right: 0;
+    }
+}
+
+.pass-icon {
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
 }
 
 .result-difficulty {
@@ -36,9 +73,12 @@ main {
     align-items: center;
 }
 
+/* a fixed size (its width/height attributes) now that the results pane
+   grows with the window, where a percentage width would stretch it */
 .thumbnail {
     float: left;
-    width: 20%;
+    width: 175px;
+    margin-right: 16px;
 }
 
 .search-form {
@@ -57,7 +97,12 @@ main {
 .search-form #search {
     background-color: transparent;
     height: 40px;
-    width: 532px;
+    /* fills what the sort dropdown and button leave of the row, up to
+       532px, and can shrink below its default width so the row never
+       overflows the pane */
+    flex: 1 1 532px;
+    min-width: 0;
+    max-width: 532px;
 }
 .search-form #search::placeholder {
     color: var(--color-tertiary);
@@ -75,34 +120,25 @@ main {
     padding-right: 1rem;
 }
 
-#sidebar {
-    max-width: 400px;
-}
-#sidebar h2 {
-    margin-top: 80px;
-    margin-bottom: 40px;
-}
-
-@media screen and (max-width: 1250px){
-    .search-form #search {
-        width: auto;
-    }
-}
-
 @media screen and (max-width: 1232px){
     #submit {
         width: auto;
     }
 }
 
-@media screen and (max-width: 950px){
+/* the search box, sort dropdown, and button stack once the results pane
+   (the nearest .pane container) is too narrow to give the search box a
+   usable ~250px beside the other two */
+@container (max-width: 660px) {
     .search-form {
         display: grid;
-        padding-bottom: 110px;
+        /* one column no wider than the pane, even on the narrowest phones
+           where the sort dropdown's longest option would otherwise set it */
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
     }
-
-    #sidebar h2 {
-        margin-top: 160px;
+    .search-form #search {
+        max-width: none;
     }
 }
 
@@ -111,51 +147,8 @@ main {
         display: grid;
     }
 
-    .map-link {
-        position: relative;
-    }
-
     .thumbnail {
         width: auto;
         height: 100px;
-    }
-}
-
-/* keep this breakpoint in sync with the ad script in search.jinja and the
-   collapsible sections in page.css */
-@media screen and (max-width: 700px) {
-    main {
-        padding: 0px;
-        grid-template-rows: min-content min-content 1fr;
-    }
-
-    /* filters collapse into a toggle between the title and the results */
-    #sidebar {
-        grid-column: 2;
-        grid-row: 2;
-        max-width: none;
-    }
-    #content {
-        grid-row: 3;
-    }
-
-    #sidebar h2 {
-        display: none;
-    }
-
-    #filters {
-        margin-top: 16px;
-    }
-
-    /* sized and styled like the Search button below it */
-    #filters input[type=submit] {
-        width: 100%;
-        height: 40px;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-
-    #ezoic-pub-ad-placeholder-124 {
-        display: none;
     }
 }

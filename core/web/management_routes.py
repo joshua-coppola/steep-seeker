@@ -251,6 +251,43 @@ def _apply_trail_edit(mountain: Mountain, db_path: str) -> None:
     mountain.update_stats_in_db(db_path)
 
 
+def _optional_int_arg(name: str, current: int | None) -> int | None:
+    """
+    A whole-number field from the lift edit form: blank means unknown
+    (None); anything that isn't a positive whole number keeps `current`.
+    """
+    value = (request.args.get(name) or "").strip()
+    if not value:
+        return None
+    try:
+        number = int(value)
+    except ValueError:
+        return current
+    return number if number > 0 else current
+
+
+def _apply_lift_edit(mountain: Mountain, db_path: str) -> None:
+    """
+    Applies an occupancy/capacity/detachable/bubble/heating edit to one lift
+    (identified by lift_id), the lift counterpart of _apply_trail_edit. An
+    unchecked box sets False rather than unknown, same as a trail's tags.
+    """
+    lift_id = request.args.get("lift_id")
+    if not lift_id:
+        return
+
+    lift = mountain.lifts.get(lift_id)
+    if lift is None:
+        return
+
+    lift.occupancy = _optional_int_arg("occupancy", lift.occupancy)
+    lift.capacity = _optional_int_arg("capacity", lift.capacity)
+    lift.detachable = bool(request.args.get("detachable"))
+    lift.bubble = bool(request.args.get("bubble"))
+    lift.heating = bool(request.args.get("heating"))
+    lift.to_db(db_path)
+
+
 def _apply_rotate(mountain: Mountain, db_path: str) -> None:
     """
     Rotates the mountain's map orientation a quarter turn clockwise or
@@ -328,6 +365,58 @@ def _fill_cached_modifiers(
         )
 
 
+LiftDetails = tuple[int | None, int | None, bool | None, bool | None, bool | None]
+
+
+def _snapshot_lift_details(mountain: Mountain) -> dict[str, LiftDetails]:
+    """
+    The lift counterpart of _snapshot_modifiers: every lift's occupancy,
+    capacity, detachable, bubble and heating, captured right before a
+    refresh overwrites them, so _fill_cached_lift_details can restore
+    values set on the edit-resort page (_apply_lift_edit) afterward.
+    """
+    return {
+        lift_id: (
+            lift.occupancy,
+            lift.capacity,
+            lift.detachable,
+            lift.bubble,
+            lift.heating,
+        )
+        for lift_id, lift in mountain.lifts.items()
+    }
+
+
+def _fill_cached_lift_details(
+    mountain: Mountain, cached: dict[str, LiftDetails]
+) -> None:
+    """
+    Fills in lift details on every lift of "mountain" from a
+    _snapshot_lift_details, by the same rule as _fill_cached_modifiers:
+    whatever the fresh OSM parse found wins, and only what it came back
+    without is filled from the cache. The parser leaves an untagged
+    occupancy/capacity as None, but defaults an untagged
+    detachable/bubble/heating to False, so for those (like a trail's tags)
+    only True counts as found. Lifts new since the snapshot are left alone.
+    """
+    for lift_id, lift in mountain.lifts.items():
+        snapshot = cached.get(lift_id)
+        if snapshot is None:
+            continue
+
+        occupancy, capacity, detachable, bubble, heating = snapshot
+        if lift.occupancy is None:
+            lift.occupancy = occupancy
+        if lift.capacity is None:
+            lift.capacity = capacity
+        if not lift.detachable and detachable is not None:
+            lift.detachable = detachable
+        if not lift.bubble and bubble is not None:
+            lift.bubble = bubble
+        if not lift.heating and heating is not None:
+            lift.heating = heating
+
+
 def _rebuild_from_osm_file(
     mountain: Mountain,
     osm_path: str,
@@ -347,10 +436,12 @@ def _rebuild_from_osm_file(
     the rebuild; "blacklist_areas" additionally blacklists those ids so
     they stay gone on future refreshes even without "ignore_areas".
 
-    When "preserve_modifiers" is set, gladed/ungroomed/hazardous flags that
-    were manually set on the edit-resort page (and so would otherwise be
-    lost when the fresh OSM parse comes back without them) are restored --
-    see _snapshot_modifiers/_fill_cached_modifiers.
+    When "preserve_modifiers" is set, trails' gladed/ungroomed/hazardous
+    flags and lifts' occupancy/capacity/detachable/bubble/heating that were
+    manually set on the edit-resort page (and so would otherwise be lost
+    when the fresh OSM parse comes back without them) are restored -- see
+    _snapshot_modifiers/_fill_cached_modifiers and
+    _snapshot_lift_details/_fill_cached_lift_details.
 
     Returns None (leaving the DB untouched) if the file is missing or the
     parse comes back with zero trails, since rebuilding from an empty or
@@ -360,6 +451,7 @@ def _rebuild_from_osm_file(
         return None
 
     cached_modifiers = _snapshot_modifiers(mountain) if preserve_modifiers else {}
+    cached_lift_details = _snapshot_lift_details(mountain) if preserve_modifiers else {}
 
     refreshed = Mountain.from_osm(
         osm_path,
@@ -400,6 +492,7 @@ def _rebuild_from_osm_file(
 
     if preserve_modifiers:
         _fill_cached_modifiers(refreshed, cached_modifiers)
+        _fill_cached_lift_details(refreshed, cached_lift_details)
 
     refreshed.recalculate_stats()
 
@@ -823,6 +916,7 @@ def management_edit_resort():
             _apply_mountain_edits(mountain, db_path)
             _apply_rotate(mountain, db_path)
             _apply_trail_edit(mountain, db_path)
+            _apply_lift_edit(mountain, db_path)
             _apply_delete(mountain, db_path)
             mountain.beginner_friendliness = display_beginner_friendliness(
                 mountain.beginner_friendliness

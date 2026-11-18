@@ -1,90 +1,34 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 
 {% block title %}
 Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
 {% endblock title %}
 
 {% block pagehead %}
+{{ filters.head() }}
 <link href="{{ asset_url('/rankings.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
-<section id="content">
-    <h1>Mountain Rankings</h1>
+{# on phones one toggle folds away both the filters and the explanation #}
+{{ filters.sidebar("Mountain Rankings", 107, toggle_label="Filters &amp; Info", also_controls="ranking-info") }}
 
-    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="ranking-controls"
-        onclick="toggleCollapse(this)">
-        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
-        Filters &amp; Info
-    </button>
+<section id="content" class="pane">
+    <h1 class="desktop-title">Mountain Rankings</h1>
 
-    <div id="ranking-controls" class="collapsible">
-        <ul class="ranking-sort">
-            {% set sorts = {
-                "difficulty": "Difficulty",
-                "beginner": "Beginner Friendliness"
-            } %}
+    <ul class="ranking-sort">
+        {% for link in sort_links %}
+        <li>
+            <a href="{{ link.url }}" class="{{ 'button-cta' if link.active else 'button-cta2' }}">
+                {{ link.label }}{% if link.active %} {% if order == "desc" %}&#x25bc;{% else %}&#x25b2;{% endif %}{% endif %}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
 
-            {% for key, label in sorts.items() %}
-                {% if sort == key %}
-                    {% set new_order = "asc" if order == "desc" else "desc" %}
-                    <li>
-                        <a href="/rankings?sort={{ key }}&order={{ new_order }}&region={{ region }}&state={{ state }}"
-                        class="button-cta">
-                            {{ label }} {% if order == "desc" %}&#x25bc;{% else %}&#x25b2;{% endif %}
-                        </a>
-                    </li>
-                {% else %}
-                    <li>
-                        <a class="button-cta2"
-                        href="/rankings?sort={{ key }}&order=desc&region={{ region }}&state={{ state }}">
-                            {{ label }}
-                        </a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-
-        <ul class="ranking-sort">
-            {% set regions = ["usa", "northeast", "southeast", "midwest", "west"] %}
-            {% for r in regions %}
-                <li>
-                    {% if r == region and state == None %}
-                        <a class="button-cta">{{ r|capitalize }}</a>
-                    {% else %}
-                        <a class="button-cta2"
-                        href="/rankings?sort={{ sort }}&order={{ order }}&region={{ r }}">
-                            {{ r|capitalize }}
-                        </a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-
-        <form id="search-form" class="search-form" action="/rankings" method="get">
-            <select id="state" name="state" required>
-                <option value="" disabled {% if not state %}selected{% endif %}>Select State</option>
-                {% set states = {
-                    "AL":"Alabama", "AK":"Alaska", "AZ":"Arizona", "AR":"Arkansas", "CA":"California",
-                    "CO":"Colorado", "CT":"Connecticut", "DE":"Delaware", "FL":"Florida", "GA":"Georgia",
-                    "HI":"Hawaii", "ID":"Idaho", "IL":"Illinois", "IN":"Indiana", "IA":"Iowa",
-                    "KS":"Kansas", "KY":"Kentucky", "LA":"Louisiana", "ME":"Maine", "MD":"Maryland",
-                    "MA":"Massachusetts", "MI":"Michigan", "MN":"Minnesota", "MS":"Mississippi", "MO":"Missouri",
-                    "MT":"Montana", "NE":"Nebraska", "NV":"Nevada", "NH":"New Hampshire", "NJ":"New Jersey",
-                    "NM":"New Mexico", "NY":"New York", "NC":"North Carolina", "ND":"North Dakota", "OH":"Ohio",
-                    "OK":"Oklahoma", "OR":"Oregon", "PA":"Pennsylvania", "RI":"Rhode Island", "SC":"South Carolina",
-                    "SD":"South Dakota", "TN":"Tennessee", "TX":"Texas", "UT":"Utah", "VT":"Vermont",
-                    "VA":"Virginia", "WA":"Washington", "WV":"West Virginia", "WI":"Wisconsin", "WY":"Wyoming"
-                } %}
-                {% for code, name in states.items() %}
-                    <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-            <input type="hidden" name="sort" value="{{ sort }}">
-            <input type="hidden" name="order" value="{{ order }}">
-            <input class="button-cta" id="submit" type="submit" value="Select" />
-        </form>
-
+    {# folded away on phones, behind the sidebar's Filters & Info toggle #}
+    <div id="ranking-info" class="collapsible">
         <p class="detail">
             {% if sort == "beginner" %}
             The Beginner Friendliness ranking is a weighted average of the easiest trails at each resort. It shows how easy
@@ -133,6 +77,8 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         </ul>
     </div>
 
+    {# more than 25 results get an ad in the middle, more than 50 one every 50 #}
+    {% set inline_ads = inline_ad_slots(mountains|length, 26, 50, 50) %}
     <div class="rankings">
         {% for mountain in mountains %}
         {% if sort == "difficulty" %}
@@ -140,8 +86,7 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         <p>{{loop.index}}.
             <a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}"
                 title="Difficulty: {{mountain.difficulty}}">
-                {{mountain.name}}, {{mountain.state.value}}
-            </a>
+                {{mountain.name}}, {{mountain.state.value}}</a>
             {% for season_pass in mountain.season_passes %}
             <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>
             {% endfor %}
@@ -157,8 +102,7 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
         <p>{{loop.index}}.
             <a href="/interactive-map/{{mountain.state.value}}/{{mountain.name}}"
                 title="Beginner Friendliness: {{mountain.beginner_friendliness}}">
-                {{mountain.name}}, {{mountain.state.value}}
-            </a>
+                {{mountain.name}}, {{mountain.state.value}}</a>
             {% for season_pass in mountain.season_passes %}
             <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>
             {% endfor %}
@@ -168,14 +112,37 @@ Mountain Rankings - Find the Easiest and Hardest Resorts in the USA
                 (mountain.beginner_friendliness)/beginner_friendliness_max * 100}}%; --bar-color: {{ beginner_color(mountain.beginner_friendliness) }};">{{mountain.beginner_friendliness}}
         </span></div>
         {% endif %}
+        {% if loop.index in inline_ads %}
+        {# an <aside>, not a <div>, so rankings.css's nth-of-type striping skips it #}
+        <aside class="inline-ad"><div id="ezoic-pub-ad-placeholder-{{ inline_ads[loop.index] }}"></div></aside>
+        {% endif %}
         {% endfor %}
     </div>
+    {% if not mountains %}
+    <p class="detail">No mountains match these filters.</p>
+    {% endif %}
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
-            ezstandalone.showAds(101, 102);
+            // the ads between results (see inline_ad_slots) show at every width
+            const ads = [101, 102].concat({{ inline_ads.values()|list|tojson }});
+            // the sidebar ad slot (107) overflows and breaks the layout when an ad
+            // fills it with less than 300px of room, so drop it then instead of
+            // requesting an ad for it; this also covers the mobile layout, which
+            // hides the sidebar (0px wide)
+            const sidebarAd = document.getElementById("ezoic-pub-ad-placeholder-107");
+            if (sidebarAd.offsetWidth < 300) {
+                sidebarAd.remove();
+            } else {
+                ads.push(107);
+            }
+            ezstandalone.showAds(...ads);
         });
     </script>
 
 </section>
 {% endblock content %}
+
+{% block postbody %}
+{{ filters.script() }}
+{% endblock postbody %}

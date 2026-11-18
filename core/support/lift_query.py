@@ -5,6 +5,7 @@ from core.datamodels.database import LiftTable, MountainTable
 from core.datamodels.region import Region
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
+from core.support.lift_icons import LiftIcon, lift_icons
 from core.support.query_common import name_and_location_where, parse_season_passes
 from core.support.utils import meters_to_feet, round_degrees, round_feet
 
@@ -42,12 +43,20 @@ class LiftSummary:
     detachable: bool | None
     bubble: bool | None
     heating: bool | None
+    lift_type: str | None = None
+
+    def icons(self) -> list[LiftIcon]:
+        """The badges shown beside the lift's name (see lift_icons)."""
+        return lift_icons(
+            self.lift_type, self.occupancy, self.bubble, self.detachable, self.heating
+        )
 
 
 def list_lifts(
     db_path: str = DATABASE_PATH,
     state: State | None = None,
     region: Region | None = None,
+    season_pass: Season_Pass | None = None,
     sort: str = "vertical",
     limit: int | None = None,
     offset: int = 0,
@@ -55,7 +64,7 @@ def list_lifts(
     """
     Returns lift summaries (joined with resort name/state) for lifts
     matching the given region/state filter (state takes priority when both
-    are given), sorted descending by `sort` and paginated.
+    are given) and resort season pass, sorted descending by `sort` and paginated.
 
     Returns (summaries, total_count), where total_count is the number of
     matches before pagination, for building pager UIs.
@@ -63,7 +72,9 @@ def list_lifts(
     if sort not in VALID_SORT_FIELDS:
         sort = "vertical"
 
-    where_sql, params = name_and_location_where("Lifts", LiftTable.name, state, region)
+    where_sql, params = name_and_location_where(
+        "Lifts", LiftTable.name, state, region, season_pass
+    )
     # hike-to access routes are stored as lifts (lift_type="hike") but
     # aren't a lift in the ranked sense, so they're excluded here
     where_sql = f"{where_sql} AND Lifts.{LiftTable.lift_type} != ?"
@@ -93,7 +104,8 @@ def list_lifts(
                 Lifts.{LiftTable.capacity},
                 Lifts.{LiftTable.detachable},
                 Lifts.{LiftTable.bubble},
-                Lifts.{LiftTable.heating}
+                Lifts.{LiftTable.heating},
+                Lifts.{LiftTable.lift_type}
             FROM Lifts
             INNER JOIN Mountains
                 ON Lifts.{LiftTable.mountain_id} = Mountains.{MountainTable.mountain_id}
@@ -122,6 +134,7 @@ def list_lifts(
             detachable=_bool_or_none(row[LiftTable.detachable]),
             bubble=_bool_or_none(row[LiftTable.bubble]),
             heating=_bool_or_none(row[LiftTable.heating]),
+            lift_type=row[LiftTable.lift_type],
         )
         for row in rows
     ]

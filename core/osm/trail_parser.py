@@ -172,6 +172,11 @@ def identify_hikes(ways, relations):
     return {"hikes": hikes, "relations": hike_relations}
 
 
+# lowercase, hyphens as spaces: a lift whose name contains one of these is
+# taken to be detachable even when OSM doesn't tag it aerialway:detachable
+DETACHABLE_NAME_HINTS = ("express", "high speed")
+
+
 def identify_lifts(ways):
     """
     Accepts a dict of ways and identifies the valid trails.
@@ -229,8 +234,11 @@ def identify_lifts(ways):
             capacity = None
         lift["capacity"] = capacity
 
-        if tags.get("aerialway:detachable") == "yes" or (
-            lift["name"] and "express" in lift["name"].lower()
+        # many detachable lifts aren't tagged as such, but their name gives
+        # it away ("Express", "High Speed"/"High-Speed"), whatever the case
+        name = (lift["name"] or "").lower().replace("-", " ")
+        if tags.get("aerialway:detachable") == "yes" or any(
+            hint in name for hint in DETACHABLE_NAME_HINTS
         ):
             lift["detachable"] = True
         else:

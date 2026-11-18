@@ -10,6 +10,7 @@ Import with context -- the macros use context-processor helpers
 `selectable` rows get the .sidebar-item hooks interactive-map.js uses to
 select and zoom to that trail/lift on the map.
 #}
+{% from "lift_icons.jinja" import lift_icons %}
 
 {% macro _item_open(kind, item_id, selectable) -%}
 {% if selectable %}<li class="sidebar-item" data-item-id="{{item_id}}" data-kind="{{kind}}">{% else %}<li>{% endif %}
@@ -97,7 +98,9 @@ select and zoom to that trail/lift on the map.
                         {% endif %}
                         {% endif %}
                     </span>
-                    {{lift.name}} - {{lift.length_feet()}} ft
+                    {# one span, so the li's flex layout treats the name, its icons
+                       and the length as one run of text that wraps together #}
+                    <span>{{lift.name}}{{ lift_icons(lift) }} - {{lift.length_feet()}} ft</span>
                 </li>
                 {% endif %}
                 {% endfor %}

@@ -1,66 +1,27 @@
 {% extends "page_base.jinja" %}
+{% import "filters_sidebar.jinja" as filters with context %}
 
 {% block title %}
 Trail Rankings - Find the Hardest Trails in the USA
 {% endblock title %}
 
 {% block pagehead %}
+{{ filters.head() }}
 <link href="{{ asset_url('/trail_rankings.css') }}" rel="stylesheet" />
-<link href="{{ asset_url('/trail_rankings_mobile.css') }}" rel="stylesheet" media="screen and (max-width: 1000px)" />
 {% endblock pagehead %}
 
 {% block content %}
-<section id="content">
+{# trails are filtered by their resort's location/season pass; difficulty,
+   trail count and vertical describe a mountain, so they're left out. On
+   phones one toggle folds away both the filters and the explanation #}
+{{ filters.sidebar("Trail Rankings", 107, toggle_label="Filters &amp; Info", also_controls="ranking-info", groups="location,season_pass") }}
 
-    <h1>Trail Rankings</h1>
+<section id="content" class="pane trail-rankings-page">
+    <h1 class="desktop-title">Trail Rankings</h1>
 
-    <button type="button" class="button-cta2 collapse-toggle" aria-expanded="false" aria-controls="ranking-controls"
-        onclick="toggleCollapse(this)">
-        <img alt="" height="17" width="17" src="/hamburger-menu-light.svg">
-        Filters &amp; Info
-    </button>
-
-    <div id="ranking-controls" class="collapsible">
-        <ul class="ranking-sort">
-            {% set regions = ["usa", "northeast", "southeast", "midwest", "west"] %}
-            {% for r in regions %}
-                <li>
-                    {% if r == region and state == None %}
-                        <a class="button-cta">{{ r|capitalize }}</a>
-                    {% else %}
-                        <a class="button-cta2"
-                        href="/trail-rankings?region={{ r }}&sort={{ sort_by }}">
-                            {{ r|capitalize }}
-                        </a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-
-        <form id="search-form" class="search-form" action="/trail-rankings" method="get">
-            <select id="state" name="state" required>
-                <option value="" disabled {% if not state %}selected{% endif %}>Select State</option>
-                {% set states = {
-                    "AL":"Alabama", "AK":"Alaska", "AZ":"Arizona", "AR":"Arkansas", "CA":"California",
-                    "CO":"Colorado", "CT":"Connecticut", "DE":"Delaware", "FL":"Florida", "GA":"Georgia",
-                    "HI":"Hawaii", "ID":"Idaho", "IL":"Illinois", "IN":"Indiana", "IA":"Iowa",
-                    "KS":"Kansas", "KY":"Kentucky", "LA":"Louisiana", "ME":"Maine", "MD":"Maryland",
-                    "MA":"Massachusetts", "MI":"Michigan", "MN":"Minnesota", "MS":"Mississippi", "MO":"Missouri",
-                    "MT":"Montana", "NE":"Nebraska", "NV":"Nevada", "NH":"New Hampshire", "NJ":"New Jersey",
-                    "NM":"New Mexico", "NY":"New York", "NC":"North Carolina", "ND":"North Dakota", "OH":"Ohio",
-                    "OK":"Oklahoma", "OR":"Oregon", "PA":"Pennsylvania", "RI":"Rhode Island", "SC":"South Carolina",
-                    "SD":"South Dakota", "TN":"Tennessee", "TX":"Texas", "UT":"Utah", "VT":"Vermont",
-                    "VA":"Virginia", "WA":"Washington", "WV":"West Virginia", "WI":"Wisconsin", "WY":"Wyoming"
-                } %}
-                {% for code, name in states.items() %}
-                    <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-
-            <input type="hidden" name="sort" value="{{ sort_by }}">
-            <input class="button-cta" id="submit" type="submit" value="Select" />
-        </form>
-
+    {# folded away on phones, behind the sidebar's Filters & Info toggle #}
+    <div id="ranking-info" class="collapsible">
+        {# the card layout's sort buttons; the table sorts by its headers #}
         <ul class="ranking-sort mobile">
             {% set sorts = [("difficulty", "Difficulty")] %}
             {% for key, label in pitch_fields %}
@@ -72,8 +33,7 @@ Trail Rankings - Find the Hardest Trails in the USA
                     {% if sort_by == key %}
                         <a class="button-cta">{{ label }}</a>
                     {% else %}
-                        <a class="button-cta2"
-                        href="{{ pages.first }}&sort={{ key }}{% if state %}&state={{ state }}{% endif %}">
+                        <a class="button-cta2" href="{{ pages.first }}&sort={{ key }}">
                             {{ label }}
                         </a>
                     {% endif %}
@@ -81,11 +41,10 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% endfor %}
         </ul>
 
-
         <p class="detail">
-            The trails can be filtered by their region within the US, and sorted by the length of the steepest pitch.
-            Keep in mind that trail difficulties are calculated using the 150 foot pitch value, as well as other factors
-            not shown here.
+            The trails can be filtered by their resort's location and season pass, and sorted by the length of the
+            steepest pitch. Keep in mind that trail difficulties are calculated using the 150 foot pitch value, as well
+            as other factors not shown here.
         </p>
     </div>
 
@@ -144,7 +103,7 @@ Trail Rankings - Find the Hardest Trails in the USA
             <tr>
                 <td>
                     <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
-                            {{trail.name}}
+                            {{trail.name}}</a>
                             {% if trail.gladed == True %}
                             <span class="icon gladed"></span>
                             {% endif %}
@@ -154,7 +113,7 @@ Trail Rankings - Find the Hardest Trails in the USA
                             {% if trail.hazardous == True%}
                             <span class="icon hazardous"></span>
                             {% endif %}
-                        </a></p>
+                        </p>
                 </td>
                 <td>
                     <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">{{trail.resort_name}}</a>
@@ -184,6 +143,9 @@ Trail Rankings - Find the Hardest Trails in the USA
         </table>
     </div>
 
+    {# ads between results (see inline_ad_slots) only go in this phone
+       layout; the desktop table has no spot for them #}
+    {% set inline_ads = inline_ad_slots(trails|length) %}
     <div class="trail-table mobile">
         {% for trail in trails %}
         {% if not '' == trail.name %}
@@ -192,7 +154,7 @@ Trail Rankings - Find the Hardest Trails in the USA
                 <tr>
                     <td>
                         <p>{{pages.offset + loop.index}}. <a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
-                                {{trail.name}}, {{trail.resort_name}} ({{trail.state.value}})
+                                {{trail.name}}</a>
                                 {% if trail.gladed == True %}
                                 <span class="icon gladed"></span>
                                 {% endif %}
@@ -202,7 +164,11 @@ Trail Rankings - Find the Hardest Trails in the USA
                                 {% if trail.hazardous == True%}
                                 <span class="icon hazardous"></span>
                                 {% endif %}
-                            </a>
+                        </p>
+                        {# the resort on its own line under the trail, like the table's
+                           Resort column #}
+                        <p class="card-resort"><a href="/interactive-map/{{trail.state.value}}/{{trail.resort_name}}?select=trail:{{trail.trail_id}}">
+                                {{trail.resort_name}} ({{trail.state.value}})</a>
                             {% for season_pass in trail.season_passes %}
                             <img src="icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon" alt="{{season_pass.value}}"/>
                             {% endfor %}
@@ -242,6 +208,9 @@ Trail Rankings - Find the Hardest Trails in the USA
             {% endfor %}
         </table>
         {% endif %}
+        {% if loop.index in inline_ads %}
+        <div class="inline-ad" id="ezoic-pub-ad-placeholder-{{ inline_ads[loop.index] }}"></div>
+        {% endif %}
         {% endfor %}
     </div>
 
@@ -261,9 +230,36 @@ Trail Rankings - Find the Hardest Trails in the USA
     <div id="ezoic-pub-ad-placeholder-101"></div>
     <script>
         ezstandalone.cmd.push(function () {
-            ezstandalone.showAds(101, 102);
+            const ads = [101, 102];
+            const inlineAds = {{ inline_ads.values()|list|tojson }};
+            // the ads between results (see inline_ad_slots) are only in the
+            // card layout (trail_rankings.css shows it when the results pane
+            // is too narrow for the table), so drop them while the table
+            // shows instead of requesting ads for them
+            if (document.querySelector(".trail-table.mobile").checkVisibility()) {
+                ads.push(...inlineAds);
+            } else {
+                inlineAds.forEach(function (id) {
+                    document.getElementById("ezoic-pub-ad-placeholder-" + id).remove();
+                });
+            }
+            // the sidebar ad slot (107) overflows and breaks the layout when an ad
+            // fills it with less than 300px of room, so drop it then instead of
+            // requesting an ad for it; this also covers the mobile layout, which
+            // hides the sidebar (0px wide)
+            const sidebarAd = document.getElementById("ezoic-pub-ad-placeholder-107");
+            if (sidebarAd.offsetWidth < 300) {
+                sidebarAd.remove();
+            } else {
+                ads.push(107);
+            }
+            ezstandalone.showAds(...ads);
         });
     </script>
 
 </section>
 {% endblock content %}
+
+{% block postbody %}
+{{ filters.script() }}
+{% endblock postbody %}

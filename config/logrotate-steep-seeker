@@ -1,0 +1,26 @@
+# Rotates the Apache logs written by steep-seeker.conf / steep-seeker-le-ssl.conf.
+# They live outside /var/log/apache2, so the stock /etc/logrotate.d/apache2
+# doesn't cover them. Keeps 14 days, matching the privacy policy.
+#
+# Install on the server (the log dir must stay root-owned and not group/world
+# writable, or logrotate refuses to touch it):
+#
+#     sudo install -d -m 755 -o root -g root /var/log/steep-seeker
+#     sudo cp config/logrotate-steep-seeker /etc/logrotate.d/steep-seeker
+#     sudo logrotate -d /etc/logrotate.d/steep-seeker   # dry run
+
+/var/log/steep-seeker/access.log /var/log/steep-seeker/error.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 640 root adm
+    sharedscripts
+    postrotate
+        if invoke-rc.d apache2 status > /dev/null 2>&1; then
+            invoke-rc.d apache2 reload > /dev/null 2>&1
+        fi
+    endscript
+}
