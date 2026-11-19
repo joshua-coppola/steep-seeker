@@ -133,6 +133,20 @@ def trail_color(difficulty: float) -> str:
     return "gold"
 
 
+def difficulty_distribution(trails) -> dict[str, int]:
+    """
+    Counts trails per trail_color tier, keyed by color in tier order
+    (green through gold, every tier present even when empty), for the map
+    sidebar's difficulty chart. Unrated trails (difficulty None) are skipped.
+    """
+    counts = dict.fromkeys(("green", "royalblue", "black", "red", "gold"), 0)
+    for trail in trails:
+        if trail.difficulty is not None:
+            counts[trail_color(trail.difficulty)] += 1
+
+    return counts
+
+
 def display_beginner_friendliness(beginner_friendliness: float | None) -> float | None:
     """
     Flips Mountain.beginner_friendliness as stored (the raw weighted average

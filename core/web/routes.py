@@ -30,6 +30,7 @@ from core.support.utils import (
     PITCH_WINDOW_LABELS,
     beginner_color,
     build_elevation_profile,
+    difficulty_distribution,
     difficulty_pitch_field,
     display_beginner_friendliness,
     round_degrees,
@@ -81,6 +82,8 @@ def inject_rating_colors():
     return {
         "trail_color": trail_color,
         "beginner_color": beginner_color,
+        # per-tier trail counts for the map sidebar's difficulty chart
+        "difficulty_distribution": difficulty_distribution,
         # a dict (not the dataclass instance) so it works with both Jinja's
         # dot-access convenience and the |tojson filter that hands it to
         # search.js/interactive-map.js via page_base.jinja

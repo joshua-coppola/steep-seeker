@@ -722,6 +722,16 @@ def test_static_map_returns_ok(mapped_client):
     assert "/interactive-map/VT/TestMountain" in body
 
 
+def test_map_sidebar_shows_difficulty_distribution(mapped_client):
+    # Line Trail (25.0) is intermediate and Area Trail (30.0) advanced
+    body = mapped_client.get("/map/VT/TestMountain").data.decode()
+
+    assert "Difficulty Distribution" in body
+    assert 'title="1 Intermediate trail (50%)"' in body
+    assert 'title="1 Advanced trail (50%)"' in body
+    assert 'title="0 Expert trails (0%)"' in body
+
+
 def test_interactive_map_404_for_unknown_mountain(client):
     response = client.get("/interactive-map/VT/Nonexistent")
 

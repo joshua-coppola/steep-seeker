@@ -63,6 +63,32 @@ select and zoom to that trail/lift on the map.
         </div>
 {% endmacro %}
 
+{# Horizontal bar per difficulty tier, scaled to the largest tier, with the
+   count (and share of rated trails) beside it. Styled in map_shared.css.
+   Skipped entirely when no trail has a difficulty yet. #}
+{% macro difficulty_chart(trails) %}
+{% set counts = difficulty_distribution(trails) %}
+{% set total = counts.values() | sum %}
+{% if total %}
+{% set peak = counts.values() | max %}
+        <div class="mountain-section">
+            <h2>Difficulty Distribution</h2>
+            <ul class="difficulty-chart">
+                {% for color, label in [("green", "Beginner"), ("royalblue", "Intermediate"), ("black", "Advanced"), ("red", "Expert"), ("gold", "Extreme")] %}
+                {% set count = counts[color] %}
+                {% set percent = (100 * count / total) | round | int %}
+                <li title="{{count}} {{label}} trail{{ '' if count == 1 else 's' }} ({{percent}}%)">
+                    <span class="icon difficulty-{{color}}"></span>
+                    <span>{{label}}</span>
+                    <span class="chart-track"><span class="chart-bar bar-{{color}}" style="width: {{ (100 * count / peak) | round(1) }}%"></span></span>
+                    <span class="chart-value">{{count}}<span class="chart-percent">{{percent}}%</span></span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+{% endif %}
+{% endmacro %}
+
 {% macro trail_list(trails, selectable=False) %}
         <div class="mountain-section">
             <h2>Trails - Sorted by Difficulty</h2>

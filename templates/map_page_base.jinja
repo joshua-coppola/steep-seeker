@@ -2,7 +2,7 @@
 Shared layout for the per-mountain map pages -- the static map (map.jinja)
 and the interactive map (interactive_map.jinja). Owns everything the two have
 in common: the Details button and the mountain details panel (legend,
-overview, trail/lift/hike-to lists -- built from map_macros.jinja, shared with
+overview, difficulty chart, trail/lift/hike-to lists -- built from map_macros.jinja, shared with
 the management edit page -- plus ad slots) and its show/hide script.
 
 A page fills in:
@@ -39,6 +39,7 @@ trail/lift/hike-to rows clickable (see .sidebar-item in interactive-map.js).
         </div>
 {{ map_macros.legend() }}
 {{ map_macros.overview(mountain, weather_modifier) }}
+{{ map_macros.difficulty_chart(trails) }}
         <!-- Ezoic - Mountain Info Sidebar - sidebar_middle -->
         <div id="ezoic-pub-ad-placeholder-124"></div>
         <!-- End Ezoic - Mountain Info Sidebar - sidebar_middle -->

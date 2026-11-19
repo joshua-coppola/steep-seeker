@@ -6,6 +6,7 @@ import shapely
 from core.support.utils import (
     METERS_TO_FEET,
     build_elevation_profile,
+    difficulty_distribution,
     difficulty_pitch_field,
     get_average_slope,
     get_bounding_box,
@@ -517,3 +518,24 @@ def test_get_mountain_rating_weights_extremes_more_heavily():
     )
     assert difficulty == 7.5
     assert beginner_friendliness == 3.5
+
+
+def test_difficulty_distribution_counts_trails_per_tier(trail_factory):
+    trails = [
+        trail_factory(trail_id="a", difficulty=10.0),
+        trail_factory(trail_id="b", difficulty=12.0),
+        trail_factory(trail_id="c", difficulty=30.0),
+        trail_factory(trail_id="d", difficulty=50.0),
+    ]
+    assert difficulty_distribution(trails) == {
+        "green": 2,
+        "royalblue": 0,
+        "black": 1,
+        "red": 0,
+        "gold": 1,
+    }
+
+
+def test_difficulty_distribution_skips_unrated_trails(trail_factory):
+    trails = [trail_factory(difficulty=None)]
+    assert sum(difficulty_distribution(trails).values()) == 0
