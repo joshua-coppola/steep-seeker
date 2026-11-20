@@ -313,12 +313,14 @@ p.copy {
     flex: 1;
 }
 
-/* same text size for both (Visit Website otherwise keeps the browser's
-   default button font, which is smaller than .share-button's) */
-.mountain-actions button {
+/* same text size for all of them (Visit Website otherwise keeps the
+   browser's default button font, which is smaller than .share-button's) */
+.mountain-actions button,
+.mountain-actions > a {
     font: inherit;
     font-size: 0.85rem;
     font-weight: bold;
+    text-align: center;
 }
 
 /* .button-cta2 is styled for links; reset the <button> defaults to match */

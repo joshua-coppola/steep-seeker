@@ -38,8 +38,9 @@ select and zoom to that trail/lift on the map.
         </div>
 {% endmacro %}
 
-{# share=False drops the Share button (e.g. on management pages, where the
-   page URL isn't one worth sharing). #}
+{# share=False drops the Compare and Share buttons (e.g. on management
+   pages, where the page URL isn't one worth sharing and the panel is for
+   editing, not browsing). #}
 {% macro overview(mountain, weather_modifier, share=True) %}
         <div class="mountain-section overview-section">
             <h2>Overview</h2>
@@ -58,33 +59,43 @@ select and zoom to that trail/lift on the map.
                 <li><strong>Beginner Friendliness:</strong>{{mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(mountain.beginner_friendliness) }}"></span></li>
                 <li><strong>Weather Modifier:</strong>{{weather_modifier}}°</li>
                 <li><strong>Last Updated:</strong>{{mountain.last_updated.date()}}</li>
-                <li class="mountain-actions"><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button>{% if share %}<button type="button" class="button-cta2 share-button" data-share>Share⤷</button>{% endif %}</li>
+                <li class="mountain-actions"><button class="button-cta2" id="url"><a href="{{mountain.url}}">Visit Website</a></button>{% if share %}<a class="button-cta2" href="{{ url_for('web.compare', m=mountain.name ~ ', ' ~ mountain.state.value) }}">Compare</a><button type="button" class="button-cta2 share-button" data-share>Share⤷</button>{% endif %}</li>
             </ul>
         </div>
 {% endmacro %}
 
-{# Horizontal bar per difficulty tier, scaled to the largest tier, with the
-   count (and share of rated trails) beside it. Styled in map_shared.css.
-   Skipped entirely when no trail has a difficulty yet. #}
-{% macro difficulty_chart(trails) %}
-{% set counts = difficulty_distribution(trails) %}
+{# Horizontal bar per difficulty tier, with the count (and share of rated
+   trails) beside it, from difficulty_distribution's per-tier counts.
+   Styled in difficulty_chart.css. By default bars scale to this mountain's
+   largest tier; pass full_share (a 0-1 share of rated trails) to put
+   several charts on one scale instead, as /compare does, where that share
+   fills the bar. Renders nothing when there are no rated trails. #}
+{% macro difficulty_bars(counts, full_share=None) %}
 {% set total = counts.values() | sum %}
 {% if total %}
 {% set peak = counts.values() | max %}
-        <div class="mountain-section">
-            <h2>Difficulty Distribution</h2>
             <ul class="difficulty-chart">
                 {% for color, label in [("green", "Beginner"), ("royalblue", "Intermediate"), ("black", "Advanced"), ("red", "Expert"), ("gold", "Extreme")] %}
                 {% set count = counts[color] %}
                 {% set percent = (100 * count / total) | round | int %}
-                <li title="{{count}} {{label}} trail{{ '' if count == 1 else 's' }} ({{percent}}%)">
+                {% set width = 100 * count / total / full_share if full_share else 100 * count / peak %}
+                <li class="chart-row" title="{{count}} {{label}} trail{{ '' if count == 1 else 's' }} ({{percent}}%)">
                     <span class="icon difficulty-{{color}}"></span>
                     <span>{{label}}</span>
-                    <span class="chart-track"><span class="chart-bar bar-{{color}}" style="width: {{ (100 * count / peak) | round(1) }}%"></span></span>
+                    <span class="chart-track"><span class="chart-bar bar-{{color}}" style="width: {{ width | round(1) }}%"></span></span>
                     <span class="chart-value">{{count}}<span class="chart-percent">{{percent}}%</span></span>
                 </li>
                 {% endfor %}
             </ul>
+{% endif %}
+{% endmacro %}
+
+{% macro difficulty_chart(trails) %}
+{% set counts = difficulty_distribution(trails) %}
+{% if counts.values() | sum %}
+        <div class="mountain-section">
+            <h2>Difficulty Distribution</h2>
+{{ difficulty_bars(counts) }}
         </div>
 {% endif %}
 {% endmacro %}

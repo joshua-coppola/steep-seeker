@@ -1,0 +1,386 @@
+/* /compare (templates/compare.jinja): the mountain picker, then the stats
+   table, distribution charts and hardest-trails table, each one column per
+   mountain. */
+
+/* Laid out like the home page (index.css): one white pane over the map
+   background, inset 16px from the window and reaching its bottom, with the
+   comparison centered across it */
+body {
+    background-color: var(--color-map-background);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    margin: 0;
+    padding: 16px;
+}
+
+/* same look as panes.css's .pane */
+#content {
+    flex: 1;
+    min-width: 0;
+    padding: 32px;
+    background-color: var(--color-background);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
+}
+
+/* drops page.css's 48px bottom margin, which would pad the pane's bottom */
+#content > * {
+    margin-bottom: 0;
+}
+
+.compare {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.compare > * {
+    margin-bottom: 32px;
+}
+
+/* page.css's 3rem h1 and 1.75rem h2; h3 matches the map pages' panel
+   headings, which the distribution charts come from */
+.compare h2 {
+    margin-bottom: 16px;
+}
+
+/* the mountain names over the distribution charts: bold (600) like the
+   names heading the stats and hardest-trails tables */
+.compare h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* PICKER -- the search page's search bar (search.css), twice over, with
+   labels in the main text color like the filters sidebar's (form.css) */
+
+/* three shared rows -- labels, boxes (and the button), "No mountain
+   named" errors -- that each label's own three parts sit in (subgrid), so
+   an error under one box only adds room below and never shifts either box
+   out of line with the other or the button */
+.compare-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-rows: auto auto auto;
+    gap: 4px 16px;
+}
+
+.compare-picker label {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+}
+
+/* its column too: an item with only a row set gets placed ahead of the
+   labels, so it would otherwise take the first column */
+.compare-picker input[type="submit"] {
+    grid-row: 2;
+    grid-column: 3;
+}
+
+.picker-label {
+    font-size: 1.2rem;
+    color: var(--color-primary);
+}
+
+.compare-picker input {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 4px;
+    border: 2px solid var(--color-secondary);
+    font: inherit;
+    font-size: 1.2rem;
+}
+
+.compare-picker input[type="search"] {
+    min-width: 0;
+    background-color: transparent;
+    color: var(--color-primary);
+}
+
+.compare-picker input[type="search"]::placeholder {
+    color: var(--color-tertiary);
+}
+
+.compare-picker input[type="submit"] {
+    font-weight: bold;
+    color: white;
+    border-color: var(--color-accent-dark);
+    cursor: pointer;
+}
+
+.picker-error {
+    color: red;
+}
+
+/* TABLES -- like the trail and lift rankings tables (trail_rankings.css):
+   a 2px primary-colored rule under the header, then alternately shaded
+   rows rather than grid lines */
+
+/* fixed layout so both mountains' columns are the same width, however
+   long one side's values or trail names run */
+.compare-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+}
+
+.compare-table th,
+.compare-table td {
+    padding: 8px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* trail_rankings.css's shade */
+.compare-table tbody tr:nth-child(even) {
+    background-color: rgb(243, 242, 242);
+}
+
+.compare-table thead th {
+    font-size: 1.5rem;
+    font-weight: 600;
+    vertical-align: bottom;
+}
+
+.compare-table thead > tr > * {
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.compare-table tbody th {
+    font-weight: 600;
+}
+
+.compare-table td {
+    font-weight: normal;
+}
+
+.compare-table td.better {
+    font-weight: bold;
+}
+
+.compare-table a {
+    color: var(--color-primary);
+}
+
+.compare-table tr > :first-child {
+    width: 28%;
+}
+
+.compare-trails tr > :first-child {
+    width: 50%;
+}
+
+/* fixed width so the scores after it line up down the column */
+.trail-rank {
+    display: inline-block;
+    min-width: 2em;
+    font-weight: 600;
+}
+
+/* the mountain names over the hardest trails match the ones over the
+   distribution charts (.compare h3) rather than the stats table's larger,
+   ruled header; doubled class to win over the phone layout's header size */
+.compare-table.compare-trails thead th {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.compare-table.compare-trails thead > tr > * {
+    border-bottom: none;
+}
+
+.compare-stats thead a {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.compare-stats .thumbnail {
+    width: 125px;
+    height: 100px;
+}
+
+.mountain-location {
+    font-size: 1.25rem;
+    font-weight: normal;
+    color: var(--color-tertiary);
+}
+
+.compare-table .icon {
+    margin: 0 0 0 .4em;
+}
+
+/* rank / "None" stay regular weight and muted, even in a bolded cell --
+   p.copy's tertiary text */
+.compare-table .rank {
+    display: block;
+    font-size: 1rem;
+    font-weight: normal;
+    color: var(--color-tertiary);
+}
+
+/* how far ahead this side is, beside its value; smaller and regular
+   weight, so the bolded value still reads first. Green (the site's
+   beginner green) where it marks the better side, muted grey in a row
+   where neither side is better (hike-tos) */
+.compare-table .difference {
+    margin-left: .5em;
+    font-size: 1rem;
+    font-weight: normal;
+    color: var(--color-tertiary);
+}
+
+.compare-table td.better .difference {
+    color: green;
+}
+
+.compare-table .pass {
+    display: block;
+}
+
+/* exactly one line height (1lh), as in trail_rankings.css, so it sits in
+   the row like the text beside it and never makes the line taller */
+.compare-table .pass-icon {
+    width: 1lh;
+    height: 1lh;
+    vertical-align: top;
+    margin-right: .4em;
+}
+
+.trail-difficulty {
+    display: inline-block;
+    min-width: 4.5em;
+}
+
+.compare-note {
+    margin-top: -16px;
+}
+
+/* DISTRIBUTION */
+
+/* inset and split to match the hardest-trails table below it (two 50%
+   columns whose cells pad their content 8px), so each mountain's chart
+   lines up with its trails: the columns start 8px in and 8px past the
+   middle */
+.compare-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+    padding: 0 8px;
+}
+
+/* PHONES -- keep in sync with index.css's breakpoint: inset 8px */
+
+@media screen and (max-width: 700px) {
+    main {
+        padding: 8px;
+    }
+
+    #content {
+        padding: 16px;
+    }
+
+    .compare > * {
+        margin-bottom: 24px;
+    }
+
+    /* stacked, each box with its own label and error, then the button --
+       nothing side by side to keep in line */
+    .compare-picker {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+        row-gap: 8px;
+    }
+
+    .compare-picker label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        grid-row: auto;
+    }
+
+    .compare-picker input[type="submit"] {
+        grid-row: auto;
+        grid-column: auto;
+    }
+
+    /* stacked; inset like the table cells' 4px here */
+    .compare-columns {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        padding: 0 4px;
+    }
+
+    /* sized like the trail rankings page's phone cards (trail_rankings.css):
+       1.1rem table text, labels included (the mountain names over the
+       stats are brought down to match below, to fit their columns) */
+    .compare-table {
+        font-size: 1.1rem;
+    }
+
+    .compare-table th,
+    .compare-table td {
+        padding: 8px 4px;
+    }
+
+    /* wide enough for the longest unbreakable label word ("Difficulty";
+       "Friendliness" can hyphenate, see compare.jinja), leaving the most
+       room for the mountains' names and values */
+    .compare-stats tr > :first-child {
+        width: 32%;
+    }
+
+    /* under the value rather than squeezed in beside it */
+    .compare-table .difference {
+        display: block;
+        margin-left: 0;
+    }
+
+    /* fit within the column but never taller than on desktop: a portrait
+       map at the column's full width would be several times taller */
+    .compare-stats .thumbnail {
+        width: 100%;
+        height: 100px;
+        object-fit: contain;
+        object-position: left bottom;
+    }
+
+    /* the columns are too narrow for 1.5rem names ("Killington" overran
+       its column): table-sized, and a word that still doesn't fit wraps
+       rather than running into the other mountain's name */
+    .compare-stats thead th {
+        font-size: 1.1rem;
+        overflow-wrap: break-word;
+    }
+
+    .mountain-location {
+        font-size: 1rem;
+    }
+
+    /* the trails line up by row anyway; the numbers just crowd the narrow
+       columns */
+    .trail-rank {
+        display: none;
+    }
+
+    /* rank and score on one line, the trail name (and its icons) under
+       them rather than squeezed in beside */
+    .trail-difficulty {
+        min-width: 0;
+    }
+
+    .trail-name {
+        display: block;
+    }
+}

@@ -20,7 +20,9 @@
 {% block map_script %}
     <script>
 {{ map_macros.create_map_js(mountain) }}
-        fetch("/interactive-map/{{mountain.state.value}}/{{mountain.name}}/geojson{% if debug_mode %}?debug=true{% endif %}")
+        {# tojson, not a bare {{ }} in the string: autoescaping's HTML
+           entities (Smugglers&#39; Notch) aren't decoded inside a script #}
+        fetch({{ url_for("web.interactive_map_geojson", state=mountain.state.value, name=mountain.name, debug="true" if debug_mode else None) | tojson }})
             .then(function (response) { return response.json(); })
             .then(function (trails) {
                 run_map(trails, createMountainMap(trails));

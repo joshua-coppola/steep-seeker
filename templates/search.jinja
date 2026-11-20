@@ -8,6 +8,7 @@ Search Ski Resorts
 {% block pagehead %}
 {{ filters.head() }}
 <link href="{{ asset_url('/search.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/autocomplete.css') }}" rel="stylesheet" />
 {% endblock pagehead %}
 
 {% block content %}
@@ -16,7 +17,11 @@ Search Ski Resorts
 <section id="content" class="pane">
     <h1 class="desktop-title">Search Mountains</h1>
     <form id="search-form" class="search-form">
-        <input id="search" name="q" type="search" placeholder="Search all mountains" />
+        {# suggests mountain names as you type (autocomplete.js), like
+           /compare's picker #}
+        <input id="search" name="q" type="search" placeholder="Search all mountains"
+            data-autocomplete="mountain-options" />
+        <script type="application/json" id="mountain-options">{{ mountain_options | tojson }}</script>
         <!-- Rework this field to click on arrow to change sort direction instead of having dropdown for each -->
         <select id="sort" name="sort">
             <option value="name-asc">Name A-Z</option>
@@ -140,4 +145,5 @@ Search Ski Resorts
 {% block postbody %}
 {{ filters.script() }}
 <script src="{{ asset_url('/search.js') }}"></script>
+<script src="{{ asset_url('/autocomplete.js') }}"></script>
 {% endblock postbody %}

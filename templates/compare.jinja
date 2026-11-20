@@ -1,0 +1,165 @@
+{#
+/compare: two mountains side by side -- overview stats (the better value in
+each row bolded, and how far apart the two are noted beside one value,
+per the `stats` routes.compare works out), their
+difficulty distributions on one shared scale, and their hardest trails
+lined up by rank. The picker at the top is always shown, so either
+mountain can be swapped; with fewer than two valid mountains it's all
+there is. Kept out of search results (noindex) -- every pairing is its own
+URL, far too many to be worth indexing.
+#}
+{% extends "page_base.jinja" %}
+{% import "map_macros.jinja" as map_macros with context %}
+
+{% block title %}
+{% if sides %}{{sides[0].mountain.name}} vs {{sides[1].mountain.name}} - {% endif %}Compare Ski Resorts
+{% endblock title %}
+
+{% block pagehead %}
+<meta name="robots" content="noindex">
+<link href="{{ asset_url('/difficulty_chart.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/compare.css') }}" rel="stylesheet" />
+<link href="{{ asset_url('/autocomplete.css') }}" rel="stylesheet" />
+<script src="{{ asset_url('/autocomplete.js') }}"></script>
+{% endblock pagehead %}
+
+{# One row of the stats table: the label, then each mountain's cell (the
+   caller's body, given that side and -- for a numeric row, by `key` -- the
+   difference to note beside its value, if it's on that side), the better
+   one bolded. #}
+{% macro stat_row(label, key=None) %}
+            {% set stat = stats.get(key) %}
+            <tr>
+                <th scope="row">{{label}}</th>
+                {% for side in sides %}
+                {% set difference = stat.difference if stat and stat.difference_side == loop.index0 %}
+                <td{% if stat and stat.better == loop.index0 %} class="better"{% endif %}>{{ caller(side, difference) }}</td>
+                {% endfor %}
+            </tr>
+{% endmacro %}
+
+{% macro difference_note(difference) -%}
+{% if difference %}<span class="difference">{{difference}}</span>{% endif %}
+{%- endmacro %}
+
+{% macro map_url(mountain) -%}
+/interactive-map/{{mountain.state.value}}/{{mountain.name}}
+{%- endmacro %}
+
+{% block content %}
+<section id="content">
+<div class="compare">
+    <h1>Compare Mountains</h1>
+
+    <form class="compare-picker" action="/compare">
+        {% for label in labels %}
+        <label>
+            <span class="picker-label">Mountain {{loop.index}}</span>
+            <input name="m" type="search" data-autocomplete="mountain-options" value="{{label}}"
+                placeholder="Search mountains" required />
+            {% if errors[loop.index0] %}<span class="picker-error">{{ errors[loop.index0] }}</span>{% endif %}
+        </label>
+        {% endfor %}
+        <input class="button-cta" type="submit" value="Compare" />
+        {# the boxes' suggestions (autocomplete.js); picking one fills in
+           "Name, ST", the form ?m= takes #}
+        <script type="application/json" id="mountain-options">{{ mountain_options | tojson }}</script>
+    </form>
+
+    {% if sides %}
+    <table class="compare-table compare-stats">
+        <thead>
+            <tr>
+                <td></td>
+                {% for side in sides %}
+                <th scope="col">
+                    <a href="{{ map_url(side.mountain) }}">
+                        <img alt="{{side.mountain.name}} trail map" class="thumbnail" width="125" height="100"
+                            src="/thumbnails/{{side.mountain.state.value}}/{{side.mountain.name}}.svg" />
+                        <span class="mountain-name">{{side.mountain.name}}</span>
+                    </a>
+                    <span class="mountain-location">{{side.mountain.state.value}}</span>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% call(side, difference) stat_row("Difficulty", "difficulty") %}
+            {{side.mountain.difficulty}}<span class="icon difficulty-{{ trail_color(side.mountain.difficulty) }}"></span>{{ difference_note(difference) }}
+            <span class="rank">#{{side.difficulty_rank}} of {{mountain_count}}</span>
+            {% endcall %}
+            {# soft hyphen: on phones "Friendliness" is the label column's
+               widest word, so it may break there instead of setting how wide
+               the column has to be #}
+            {% call(side, difference) stat_row("Beginner Friend\u00adliness", "beginner") %}
+            {{side.mountain.beginner_friendliness}}<span class="icon difficulty-{{ beginner_color(side.mountain.beginner_friendliness) }}"></span>{{ difference_note(difference) }}
+            <span class="rank">#{{side.beginner_rank}} of {{mountain_count}}</span>
+            {% endcall %}
+            {% call(side, difference) stat_row("Vertical", "vertical") %}{{side.mountain.vertical_feet()}} ft{{ difference_note(difference) }}{% endcall %}
+            {% call(side, difference) stat_row("Trails", "trails") %}{{side.mountain.trail_count()}}{{ difference_note(difference) }}{% endcall %}
+            {% call(side, difference) stat_row("Lifts", "lifts") %}{{side.mountain.lift_count()}}{{ difference_note(difference) }}{% endcall %}
+            {% call(side, difference) stat_row("Hike-to Access", "hikes") %}{{side.mountain.hike_count()}}{{ difference_note(difference) }}{% endcall %}
+            {% call(side, difference) stat_row("Weather Modifier", "weather") %}{{side.weather_modifier}}°{{ difference_note(difference) }}{% endcall %}
+            {% call(side, difference) stat_row("Passes") %}
+            {% for season_pass in side.mountain.season_passes %}
+            <span class="pass"><img alt="" src="/icons/{{season_pass.value}}.{{'svg' if season_pass.value == 'Snow Pass' else 'png'}}" class="pass-icon"/>{{season_pass.value}}</span>
+            {% else %}
+            <span class="rank">None</span>
+            {% endfor %}
+            {% endcall %}
+        </tbody>
+    </table>
+
+    <h2>Difficulty Distribution</h2>
+    <div class="compare-columns">
+        {% for side in sides %}
+        <div>
+            <h3>{{side.mountain.name}}</h3>
+            {% if side.distribution.values() | sum %}
+{{ map_macros.difficulty_bars(side.distribution, full_share) }}
+            {% else %}
+            <p class="copy">No rated trails yet.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2>Hardest Trails</h2>
+    {% set a, b = sides[0].hardest_trails, sides[1].hardest_trails %}
+    {# two even halves, each trail led by its rank, so the columns (and the
+       mountain names over them) line up with the distribution charts' #}
+    <table class="compare-table compare-trails">
+        <thead>
+            <tr>
+                {% for side in sides %}<th scope="col">{{side.mountain.name}}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in range([a | length, b | length] | max) %}
+            <tr>
+                {% for side in sides %}
+                {% set trail = side.hardest_trails[n] if n < side.hardest_trails | length %}
+                {% set other = sides[1 - loop.index0].hardest_trails[n] if n < sides[1 - loop.index0].hardest_trails | length %}
+                <td{% if trail and other and trail.difficulty > other.difficulty %} class="better"{% endif %}>
+                    {% if trail %}
+                    <span class="trail-rank">{{n + 1}}.</span>
+                    <span class="trail-difficulty">{{trail.difficulty}}<span class="icon difficulty-{{ trail_color(trail.difficulty) }}"></span></span>
+                    <span class="trail-name">
+                    <a href="{{ map_url(side.mountain) }}?select=trail:{{trail.trail_id}}">{{trail.name}}</a>
+                    {% if trail.gladed %}<span class="icon gladed"></span>{% endif %}
+                    {% if trail.ungroomed %}<span class="icon ungroomed"></span>{% endif %}
+                    {% if trail.hazardous %}<span class="icon hazardous"></span>{% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="share-row"><button type="button" class="button-cta2 share-button" data-share>Share⤷</button></div>
+    {% endif %}
+</div>
+</section>
+{% endblock content %}

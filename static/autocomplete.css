@@ -1,0 +1,34 @@
+/* The suggestion list autocomplete.js draws under a search box: bordered
+   like the search bar (search.css), each row a mountain name with its state
+   muted beside it, the keyboard-highlighted or hovered row shaded like the
+   map sidebar's selectable rows (map_shared.css) */
+.autocomplete-list {
+    position: absolute;
+    z-index: 10; /* over the sticky nav (page.css) */
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background-color: var(--color-background);
+    border: 2px solid var(--color-secondary);
+    border-radius: 4px;
+    box-shadow: 0 0 8px var(--color-shadow);
+    font-size: 1.2rem;
+    color: var(--color-primary);
+}
+
+.autocomplete-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.autocomplete-list li:hover,
+.autocomplete-list li[aria-selected="true"] {
+    background-color: var(--color-map-background);
+}
+
+.autocomplete-detail {
+    color: var(--color-tertiary);
+}

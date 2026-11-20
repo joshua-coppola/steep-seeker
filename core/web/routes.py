@@ -329,6 +329,7 @@ def search():
     db_path = current_app.config["DATABASE_PATH"]
     if filters is None:
         mountains, total_mountain_count = [], 0
+        suggestions = []
     else:
         mountains, total_mountain_count = list_mountains(
             db_path=db_path,
@@ -339,6 +340,10 @@ def search():
             limit=limit,
             offset=offset,
         )
+        # the search box's autocomplete: every mountain the sidebar's filters
+        # allow, whatever's typed or whichever page this is, so picking one
+        # never lands on an empty page
+        suggestions, _ = list_mountains(db_path=db_path, **filters)
 
     pages = {}
     if total_mountain_count > limit and (limit * page) < total_mountain_count:
@@ -351,7 +356,22 @@ def search():
         active_page="search",
         mountains=mountains,
         pages=pages,
+        # picking a suggestion fills in just the name, which is what q matches
+        mountain_options=_autocomplete_options(suggestions, lambda s: s.name),
     )
+
+
+def _autocomplete_options(summaries: list, value) -> list[dict]:
+    """
+    A search box's suggestions for autocomplete.js, in name (then state)
+    order: each
+    mountain's name and state to show and match against, and `value(summary)`
+    as what picking it fills in.
+    """
+    return [
+        {"value": value(s), "name": s.name, "detail": s.state.value}
+        for s in sorted(summaries, key=lambda s: (s.name.lower(), s.state.value))
+    ]
 
 
 @dataclass
@@ -906,6 +926,218 @@ def interactive_map_geojson(state, name):
     trails, lifts = _sorted_trails_and_lifts(mountain)
 
     return jsonify(_build_geojson(mountain, trails, lifts, debug_mode))
+
+
+COMPARE_HARDEST_TRAIL_COUNT = 5
+
+
+def _compare_label(state: State, name: str) -> str:
+    """
+    A mountain as /compare's ?m= params and picker spell it ("Stowe, VT"),
+    so a URL reads like the page it shows.
+    """
+    return f"{name}, {state.value}"
+
+
+def _resolve_compare_label(label: str, summaries: list) -> tuple[object | None, int]:
+    """
+    The mountain a /compare picker box's text means, as (summary, 1), or
+    (None, how many mountains it matches) when it isn't exactly one. A
+    picked suggestion is an exact "Name, ST"; text typed without picking one
+    still resolves when it narrows to a single mountain, matched the way
+    autocomplete.js suggests ("stow" -> Stowe, VT): anywhere in
+    "Name, ST", ignoring case. A whole name typed out wins over longer names
+    containing it ("alta" -> Alta, UT, not also Altamont).
+    """
+    query = label.lower()
+    matches = [s for s in summaries if query in _compare_label(s.state, s.name).lower()]
+    exact = [
+        s
+        for s in matches
+        if query in (s.name.lower(), _compare_label(s.state, s.name).lower())
+    ]
+    for candidates in (exact, matches):
+        if len(candidates) == 1:
+            return candidates[0], 1
+    return None, len(exact) or len(matches)
+
+
+def _rank(value: float, values: list[float]) -> int:
+    """
+    1-based rank of `value` among `values`, highest first; ties share
+    the better rank.
+    """
+    return 1 + sum(1 for other in values if other > value)
+
+
+@dataclass
+class StatComparison:
+    """
+    One numeric row of /compare's stats table: `better` is the index (0 or
+    1) of the side to bold, and `difference` the gap between the two values,
+    shown beside the value at index `difference_side` -- the better one,
+    or the larger one in a row where neither is better. All None on a tie
+    or when either value is missing.
+    """
+
+    better: int | None = None
+    difference_side: int | None = None
+    difference: str | None = None
+
+
+def _compare_stat(
+    a: float | None,
+    b: float | None,
+    higher_is_better: bool | None,
+    format_difference: str,
+) -> StatComparison:
+    """
+    Compares two sides' values for a /compare stats row. higher_is_better
+    None means neither value is better (nothing bolded). format_difference
+    formats the (positive) gap, e.g. "{:.1f}°"; it gets a + when it sits on
+    the higher value and a - on the lower.
+    """
+    if a is None or b is None or a == b:
+        return StatComparison()
+
+    larger = 0 if a > b else 1
+    if higher_is_better is None:
+        better, side = None, larger
+    else:
+        better = larger if higher_is_better else 1 - larger
+        side = better
+    sign = "+" if side == larger else "\N{MINUS SIGN}"
+
+    return StatComparison(
+        better=better,
+        difference_side=side,
+        difference=sign + format_difference.format(abs(a - b)),
+    )
+
+
+@dataclass
+class CompareSide:
+    """One mountain's column of /compare."""
+
+    mountain: Mountain
+    weather_modifier: float
+    difficulty_rank: int
+    beginner_rank: int
+    distribution: dict[str, int]
+    hardest_trails: list
+
+
+def _compare_side(mountain: Mountain, summaries: list) -> CompareSide:
+    trails, _ = _sorted_trails_and_lifts(mountain)
+    # rank against the same rounded values /rankings sorts by
+    summary = next(s for s in summaries if s.mountain_id == mountain.mountain_id)
+
+    return CompareSide(
+        mountain=mountain,
+        weather_modifier=round_degrees(_weather_modifier(trails)),
+        difficulty_rank=_rank(summary.difficulty, [s.difficulty for s in summaries]),
+        beginner_rank=_rank(
+            summary.beginner_friendliness,
+            [s.beginner_friendliness for s in summaries],
+        ),
+        distribution=difficulty_distribution(trails),
+        # unnamed trails are left out, as in the map sidebar's trail list
+        hardest_trails=[t for t in trails if t.difficulty is not None and t.name][
+            :COMPARE_HARDEST_TRAIL_COUNT
+        ],
+    )
+
+
+@web.route("/compare")
+def compare():
+    """
+    Two mountains side by side. With fewer than two ?m= params, or one that
+    doesn't name a mountain, it's just the picker (prefilled with whatever
+    was given, so the map sidebar's Compare button can link here with its
+    own mountain already chosen).
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+    summaries, _ = list_mountains(db_path=db_path)
+
+    labels = [label.strip() for label in request.args.getlist("m")[:2]]
+    labels += [""] * (2 - len(labels))
+    resolved = [
+        _resolve_compare_label(label, summaries) if label else (None, 0)
+        for label in labels
+    ]
+
+    # typed text that narrowed to one mountain: redirect to its "Name, ST",
+    # so the boxes show which mountain it took and the URL is the shareable one
+    canonical = [
+        _compare_label(summary.state, summary.name) if summary else label
+        for label, (summary, _) in zip(labels, resolved)
+    ]
+    if canonical != labels:
+        return redirect(url_for("web.compare", m=[c for c in canonical if c]))
+
+    # only complain about a box the user actually filled in
+    errors = [
+        None
+        if summary or not label
+        else f'"{label}" matches {count} mountains; pick one from the suggestions'
+        if count
+        else f'No mountain matches "{label}"'
+        for label, (summary, count) in zip(labels, resolved)
+    ]
+    mountains = [
+        Mountain.from_name(summary.name, summary.state, db_path) if summary else None
+        for summary, _ in resolved
+    ]
+
+    sides, stats, full_share = None, {}, None
+    if all(mountains):
+        for mountain in mountains:
+            mountain.beginner_friendliness = display_beginner_friendliness(
+                mountain.beginner_friendliness
+            )
+        sides = [_compare_side(mountain, summaries) for mountain in mountains]
+        a, b = (side.mountain for side in sides)
+        stats = {
+            "difficulty": _compare_stat(a.difficulty, b.difficulty, True, "{:.1f}"),
+            "beginner": _compare_stat(
+                a.beginner_friendliness, b.beginner_friendliness, True, "{:.1f}"
+            ),
+            "vertical": _compare_stat(
+                a.vertical_feet(), b.vertical_feet(), True, "{:,} ft"
+            ),
+            "trails": _compare_stat(a.trail_count(), b.trail_count(), True, "{:,}"),
+            "lifts": _compare_stat(a.lift_count(), b.lift_count(), True, "{:,}"),
+            "hikes": _compare_stat(a.hike_count(), b.hike_count(), None, "{:,}"),
+            # the modifier adds degrees for icier/rainier winters, so less is better
+            "weather": _compare_stat(
+                sides[0].weather_modifier, sides[1].weather_modifier, False, "{:.1f}°"
+            ),
+        }
+        # both distribution charts share one scale -- the larger mountain's
+        # counts would otherwise dwarf the smaller's -- topping out at the
+        # biggest single tier's share of either mountain's rated trails
+        full_share = max(
+            (
+                max(side.distribution.values()) / sum(side.distribution.values())
+                for side in sides
+                if sum(side.distribution.values())
+            ),
+            default=None,
+        )
+
+    return render_template(
+        "compare.jinja",
+        active_page="compare",
+        labels=labels,
+        errors=errors,
+        mountain_options=_autocomplete_options(
+            summaries, lambda s: _compare_label(s.state, s.name)
+        ),
+        mountain_count=len(summaries),
+        sides=sides,
+        stats=stats,
+        full_share=full_share,
+    )
 
 
 @web.route("/sitemap.xml")

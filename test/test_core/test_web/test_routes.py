@@ -1,13 +1,19 @@
+from types import SimpleNamespace
+
 import pytest
 from shapely import LineString, MultiLineString, Point, Polygon
 
 from core.datamodels.season_pass import Season_Pass
 from core.datamodels.state import State
 from core.web.app import create_app
+from core.web.management_app import create_management_app
 from core.web.routes import (
+    _compare_stat,
     _lift_feature,
     _lift_type_label,
     _orientation,
+    _rank,
+    _resolve_compare_label,
     _sorted_trails_and_lifts,
     _trail_features,
     inline_ad_slots,
@@ -156,9 +162,27 @@ def test_search_returns_all_mountains_by_default(seeded_client):
 def test_search_filters_by_name(seeded_client):
     response = seeded_client.get("/search?q=Kill")
 
+    # just the results: the search box's suggestions list every mountain
     body = response.data.decode()
-    assert "Killington" in body
-    assert "Bolton Valley" not in body
+    results = body[body.index('<ul class="results">') :]
+    assert "Killington" in results
+    assert "Bolton Valley" not in results
+
+
+def test_search_suggests_mountain_names_labeled_by_state(seeded_client):
+    body = seeded_client.get("/search?q=Kill").data.decode()
+
+    assert 'data-autocomplete="mountain-options"' in body
+    # whatever's typed, every mountain is still suggested
+    assert '{"detail": "VT", "name": "Bolton Valley", "value": "Bolton Valley"}' in body
+    assert '{"detail": "UT", "name": "Alta", "value": "Alta"}' in body
+
+
+def test_search_suggestions_follow_the_sidebar_filters(seeded_client):
+    body = seeded_client.get("/search?state=UT").data.decode()
+
+    assert '"name": "Alta"' in body
+    assert '"name": "Killington"' not in body
 
 
 def test_search_filters_by_state(seeded_client):
@@ -255,8 +279,9 @@ def test_search_paginates(seeded_client):
     response = seeded_client.get("/search?limit=1&sort=name&order=asc")
 
     body = response.data.decode()
-    assert "Alta" in body
-    assert "Bolton Valley" not in body
+    results = body[body.index('<ul class="results">') :]
+    assert "Alta" in results
+    assert "Bolton Valley" not in results
     assert "Next Page" in body
 
 
@@ -382,8 +407,9 @@ def test_rankings_sort_links_keep_filters(seeded_client):
 
     body = response.data.decode()
     # the inactive sort starts descending; the active one flips its order
-    assert "region=northeast&sort=beginner&order=desc" in body
-    assert "region=northeast&sort=difficulty&order=asc" in body
+    # (autoescaped, so the links' &s are &amp; in the HTML)
+    assert "region=northeast&amp;sort=beginner&amp;order=desc" in body
+    assert "region=northeast&amp;sort=difficulty&amp;order=asc" in body
 
 
 def test_rankings_invalid_sort_falls_back_to_difficulty(seeded_client):
@@ -543,8 +569,9 @@ def test_trail_and_lift_rankings_sort_links_keep_filters(pass_client, path):
     ).data.decode()
 
     # sort links start from the current filters, minus page and sort
-    assert f'href="{path}?region=west&pass=indy&sort=' in body
-    assert "page=2&sort=" not in body
+    # (autoescaped, so the links' &s are &amp; in the HTML)
+    assert f'href="{path}?region=west&amp;pass=indy&amp;sort=' in body
+    assert "page=2&amp;sort=" not in body
 
 
 @pytest.mark.parametrize("path", ["/trail-rankings", "/lift-rankings"])
@@ -730,6 +757,27 @@ def test_map_sidebar_shows_difficulty_distribution(mapped_client):
     assert 'title="1 Intermediate trail (50%)"' in body
     assert 'title="1 Advanced trail (50%)"' in body
     assert 'title="0 Expert trails (0%)"' in body
+
+
+@pytest.mark.parametrize("factory", [create_app, create_management_app])
+def test_apps_autoescape_jinja_templates(factory, db_path):
+    # Flask only autoescapes .html-style templates by extension; ours are
+    # .jinja, so each factory has to turn it on itself
+    assert factory(db_path=db_path).jinja_env.autoescape is True
+
+
+def test_interactive_map_geojson_url_survives_an_apostrophe(
+    client, db_path, mountain_factory
+):
+    # the URL sits in a <script>, where an HTML entity (&#39;) wouldn't be
+    # decoded and the map would fetch a path that doesn't exist
+    mountain_factory(mountain_id="1", name="Cochran's", state=State.VERMONT).to_db(
+        db_path
+    )
+
+    body = client.get("/interactive-map/VT/Cochran's").data.decode()
+
+    assert 'fetch("/interactive-map/VT/Cochran\\u0027s/geojson")' in body
 
 
 def test_interactive_map_404_for_unknown_mountain(client):
@@ -1058,3 +1106,167 @@ def test_lift_feature_popup_data_carries_raw_unescaped_name(lift_factory):
 def test_orientation_handles_degenerate_lines(points):
     # fewer than two points has no bearing -- return 0, don't IndexError
     assert _orientation(points, points, is_area=False, direction="s") == 0
+
+
+def test_compare_stat_notes_the_difference_on_the_better_side():
+    higher = _compare_stat(30, 20.5, True, "{:.1f}°")
+    assert (higher.better, higher.difference_side) == (0, 0)
+    assert higher.difference == "+9.5°"
+
+    lower = _compare_stat(30, 20.5, False, "{:.1f}°")
+    assert (lower.better, lower.difference_side) == (1, 1)
+    assert lower.difference == "\N{MINUS SIGN}9.5°"
+
+
+def test_compare_stat_without_a_better_side_notes_it_on_the_larger():
+    stat = _compare_stat(2, 5, None, "{:,}")
+    assert stat.better is None
+    assert (stat.difference_side, stat.difference) == (1, "+3")
+
+
+def test_compare_stat_is_empty_on_a_tie_or_missing_value():
+    assert _compare_stat(20, 20, True, "{:,}").difference is None
+    assert _compare_stat(None, 20, True, "{:,}").better is None
+
+
+def test_rank_is_one_based_and_ties_share_a_rank():
+    assert _rank(50, [10, 50, 50, 70]) == 2
+
+
+@pytest.fixture
+def compare_client(client, db_path, mountain_factory, trail_factory):
+    mountain_factory(
+        mountain_id="1",
+        name="Steep",
+        state=State.UTAH,
+        difficulty=40.0,
+        beginner_friendliness=10.0,
+        trails={
+            "s1": trail_factory(
+                trail_id="s1", mountain_id="1", name="Chute", difficulty=50.0
+            ),
+            "s2": trail_factory(
+                trail_id="s2", mountain_id="1", name="Bowl", difficulty=35.0
+            ),
+            "s3": trail_factory(
+                trail_id="s3", mountain_id="1", name="", difficulty=60.0
+            ),
+        },
+    ).to_db(db_path)
+    mountain_factory(
+        mountain_id="2",
+        name="Mellow",
+        state=State.VERMONT,
+        difficulty=20.0,
+        beginner_friendliness=5.0,
+        trails={
+            "m1": trail_factory(
+                trail_id="m1", mountain_id="2", name="Cruiser", difficulty=20.0
+            ),
+        },
+    ).to_db(db_path)
+
+    return client
+
+
+def test_compare_without_mountains_shows_only_the_picker(compare_client):
+    response = compare_client.get("/compare")
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert '{"detail": "VT", "name": "Mellow", "value": "Mellow, VT"}' in body
+    assert "compare-stats" not in body
+    assert '<meta name="robots" content="noindex">' in body
+
+
+def test_compare_prefills_the_picker(compare_client):
+    body = compare_client.get("/compare?m=Steep, UT").data.decode()
+
+    assert 'value="Steep, UT"' in body
+    assert "compare-stats" not in body
+
+
+def test_compare_flags_an_unknown_mountain(compare_client):
+    body = compare_client.get("/compare?m=Steep, UT&m=Nowhere, VT").data.decode()
+
+    assert "No mountain matches &#34;Nowhere, VT&#34;" in body
+
+
+def test_compare_escapes_typed_text(compare_client):
+    body = compare_client.get('/compare?m=<script>x</script>"').data.decode()
+
+    assert "<script>x</script>" not in body
+    assert 'value="&lt;script&gt;x&lt;/script&gt;&#34;"' in body
+    assert "compare-stats" not in body
+
+
+def test_compare_bolds_the_better_values(compare_client):
+    body = compare_client.get("/compare?m=Steep, UT&m=Mellow, VT").data.decode()
+
+    assert "<title>\nSteep vs Mellow - Compare Ski Resorts\n</title>" in body
+    # Steep is harder (40 vs 20); with Mellow's 5.0 stored beginner_friendliness
+    # flipping to the friendlier display score, Mellow wins that row
+    difficulty_row = body[
+        body.index(">Difficulty<") : body.index(
+            ">Beginner Friend\N{SOFT HYPHEN}liness<"
+        )
+    ]
+    assert difficulty_row.index('class="better"') < difficulty_row.index("#2 of 2")
+    beginner_row = body[
+        body.index(">Beginner Friend\N{SOFT HYPHEN}liness<") : body.index(">Vertical<")
+    ]
+    assert beginner_row.index('class="better"') > beginner_row.index("#2 of 2")
+
+
+def test_compare_hardest_trails_skip_unnamed_and_link_to_the_map(compare_client):
+    body = compare_client.get("/compare?m=Steep, UT&m=Mellow, VT").data.decode()
+    trails = body[body.index("Hardest Trails") :]
+
+    assert "/interactive-map/UT/Steep?select=trail:s1" in trails
+    assert "select=trail:s3" not in trails
+    assert trails.index("Chute") < trails.index("Bowl")
+
+
+def test_compare_distributions_share_one_scale(compare_client):
+    body = compare_client.get("/compare?m=Steep, UT&m=Mellow, VT").data.decode()
+
+    # Mellow's one trail (100% intermediate) sets the scale, so Steep's
+    # 2-of-3 extreme trails (the unnamed one counts here) fill 2/3 of the
+    # bar rather than all of it
+    assert 'class="chart-bar bar-royalblue" style="width: 100.0%"' in body
+    assert 'class="chart-bar bar-gold" style="width: 66.7%"' in body
+    assert 'class="chart-bar bar-black" style="width: 33.3%"' in body
+
+
+def test_map_sidebar_links_to_compare(mapped_client):
+    body = mapped_client.get("/map/VT/TestMountain").data.decode()
+
+    assert "/compare?m=TestMountain,+VT" in body
+
+
+def test_compare_resolves_typed_text_matching_one_mountain(compare_client):
+    # Enter without picking a suggestion: "stee" only matches Steep, UT
+    response = compare_client.get("/compare?m=stee&m=Mellow, VT")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/compare?m=Steep,+UT&m=Mellow,+VT"
+
+
+def test_compare_flags_typed_text_matching_several_mountains(compare_client):
+    # "e" is in both "Steep, UT" and "Mellow, VT"
+    body = compare_client.get("/compare?m=e&m=Mellow, VT").data.decode()
+
+    assert "&#34;e&#34; matches 2 mountains; pick one from the suggestions" in body
+    assert "compare-stats" not in body
+
+
+def test_resolve_compare_label_prefers_a_whole_name_typed_out():
+    def summary(name, state):
+        return SimpleNamespace(name=name, state=state)
+
+    alta = summary("Alta", State.UTAH)
+    summaries = [alta, summary("Altamont", State.NEW_YORK)]
+
+    assert _resolve_compare_label("alta", summaries) == (alta, 1)
+    assert _resolve_compare_label("alt", summaries) == (None, 2)
+    assert _resolve_compare_label("ALTA, ut", summaries) == (alta, 1)

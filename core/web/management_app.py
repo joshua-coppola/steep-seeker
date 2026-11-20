@@ -24,6 +24,7 @@ def create_management_app(db_path: str = DATABASE_PATH) -> Flask:
         template_folder="../../templates",
     )
     app.config["DATABASE_PATH"] = db_path
+    app.jinja_env.autoescape = True
 
     Compress(app)
     app.register_blueprint(web)

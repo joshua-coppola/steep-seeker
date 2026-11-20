@@ -17,6 +17,8 @@ def create_app(db_path: str = DATABASE_PATH) -> Flask:
         template_folder="../../templates",
     )
     app.config["DATABASE_PATH"] = db_path
+    # Flask only autoescapes .html/.htm/.xml/.svg templates by extension;
+    app.jinja_env.autoescape = True
     # static files (JS/CSS/icons/SVG maps) get cached for 1 day (86400 seconds)
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
     Compress(app)

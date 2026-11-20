@@ -126,55 +126,6 @@ main > * {
     margin: 0 0 0 .4em;
 }
 
-/* Difficulty distribution chart (difficulty_chart in map_macros.jinja):
-   one row per tier -- icon, label, bar, count -- on a shared grid so the
-   bars all start at the same x. Bar fills match the difficulty icons in
-   base.css; a bar is scaled to the largest tier, not to 100%. */
-.mountain-section ul.difficulty-chart li {
-    display: grid;
-    grid-template-columns: 1em 6.5em 1fr 4.5em;
-    column-gap: .5em;
-    align-items: center;
-    padding: 4px 0;
-}
-
-.difficulty-chart .icon {
-    margin: 0;
-}
-
-.chart-track {
-    height: 12px;
-}
-
-.chart-bar {
-    display: block;
-    height: 100%;
-    border-radius: 0 4px 4px 0;
-}
-.chart-bar.bar-green { background-color: green; }
-.chart-bar.bar-royalblue { background-color: royalblue; }
-.chart-bar.bar-black { background-color: black; }
-.chart-bar.bar-red { background-color: red; }
-.chart-bar.bar-gold { background-color: gold; }
-
-/* black on the dark theme's black panel would vanish, so outline it the
-   way the dark-mode black-diamond icon is */
-.dark .chart-bar.bar-black {
-    box-shadow: inset 0 0 0 1px white;
-}
-
-.chart-value {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-.chart-percent {
-    display: inline-block;
-    width: 2.75em;
-    color: var(--color-tertiary);
-    font-size: .85em;
-}
-
 .legend-line {
     width: 2.25em;
     height: 1em;
