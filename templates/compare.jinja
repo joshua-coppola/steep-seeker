@@ -66,6 +66,8 @@ URL, far too many to be worth indexing.
         <script type="application/json" id="mountain-options">{{ mountain_options | tojson }}</script>
     </form>
 
+    <div id="ezoic-pub-ad-placeholder-102"></div>
+
     {% if sides %}
     <table class="compare-table compare-stats">
         <thead>
@@ -160,6 +162,14 @@ URL, far too many to be worth indexing.
 
     <div class="share-row"><button type="button" class="button-cta2 share-button" data-share>Share⤷</button></div>
     {% endif %}
+
+    <div id="ezoic-pub-ad-placeholder-101"></div>
 </div>
 </section>
+
+<script>
+    ezstandalone.cmd.push(function () {
+        ezstandalone.showAds(101,102);
+    });
+</script>
 {% endblock content %}

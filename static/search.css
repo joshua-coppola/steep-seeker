@@ -8,6 +8,14 @@
     max-width: 900px;
 }
 
+/* the ad slots above and below the results share their cap: Ezoic centers
+   each ad in its slot, so a full-pane-width slot would center it on the
+   pane rather than the results */
+#ezoic-pub-ad-placeholder-101,
+#ezoic-pub-ad-placeholder-102 {
+    max-width: 900px;
+}
+
 .result {
     border-bottom: 1px solid var(--color-border);
     position: relative;

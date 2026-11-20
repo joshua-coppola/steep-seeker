@@ -83,6 +83,26 @@ table {
     font-size: 1.25rem;
 }
 
+/* ad slots 102 and 101 and the results between them (the templates'
+   .results-block), shrunk to the table's width: Ezoic centers each ad in
+   its slot, and on a wide pane the table stops short of the pane's edge,
+   so full-width slots put the ads off-center from the table. Empty slots
+   add no width, so the block is as wide as the table (capped at the pane).
+   Its children keep the pane's 24px spacing (panes.css), the last one
+   leaving that to the block itself */
+.results-block {
+    width: fit-content;
+    max-width: 100%;
+}
+
+.results-block > * {
+    margin-bottom: 24px;
+}
+
+.results-block > :last-child {
+    margin-bottom: 0;
+}
+
 /* scrolls rather than overflowing the pane, should a page of long names
    ever need more room than the container query below allows for */
 .trail-table.desktop {
@@ -152,6 +172,11 @@ tr a.active {
 @container (max-width: 1120px) {
     .desktop {
         display: none;
+    }
+
+    /* the cards fill the pane, so the ads center on it as they are */
+    .results-block {
+        width: auto;
     }
 
     /* also re-shows the .mobile sort list hidden above */

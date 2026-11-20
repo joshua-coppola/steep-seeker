@@ -55,6 +55,14 @@ html {
 
 /* the pane grows with the window, but the list keeps the 900px cap the
    page had before it did, so the bars stay a readable length */
+/* the ad slots above and below the list share its cap: Ezoic centers each
+   ad in its slot, so a full-pane-width slot would center it on the pane
+   rather than the list */
+#ezoic-pub-ad-placeholder-101,
+#ezoic-pub-ad-placeholder-102 {
+    max-width: 900px;
+}
+
 .rankings {
     max-width: 900px;
     display: grid;
